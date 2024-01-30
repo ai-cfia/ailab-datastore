@@ -14,10 +14,10 @@
                 Dev->>Azure Storage: Retrieve Key
                 Dev->>User: Send back subscription key
                 Note left of Dev: Email
-                User-> Azure Storage Explorer: SubscribeToStorage(key)
+                User-)Azure Storage Explorer: SubscribeToStorage(key)
             end
             loop for each file
-                User->>Azure Storage Explorer: Upload(file)
+                User-)Azure Storage Explorer: Upload(file)
                 Azure Storage Explorer-) Azure Storage: Send(file)
             end
             
