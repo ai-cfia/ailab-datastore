@@ -1,4 +1,12 @@
+# Metadata importation
 
+
+## Context
+
+The following documentation detail all the metadata importation for the Nachet
+pipeline. We showcase the workflow of everystep taken until the metadata is
+usable by our models. We also discuss the expected files structure and other
+important component regarding the metadata.
 
 
 ## Workflow: Metadata upload to Azure cloud 
@@ -20,9 +28,9 @@
                     Note left of Dev: Email
                     User-)Azure Storage Explorer: SubscribeToStorage(key)
                 end
-                loop for each file
-                    User-)Azure Storage Explorer: Upload(file)
-                    Azure Storage Explorer-) Azure Storage: Save(file)
+                loop for each project Folder
+                    User-)Azure Storage Explorer: Upload(Folder)
+                    Azure Storage Explorer-) Azure Storage: Save(folder)
                 end
                 
 ``` 
@@ -62,15 +70,24 @@
 | Azure Storage | Interface storing data in the cloud. |
 | Azure Storage Explorer | Application with GUI offering a user friendly access to a Azure Storage without granting full acess To the Azure Services. |
 | NoteBook | Azure Service enabling to run code with Azure Storage structure|
-| Files | All files should follow the file structure presented bellow. |
+| Folder | All project folder should follow the files structure presented bellow. |
 
 ## Files Structure
 
-We want to have a standard file structure enable the use of macro to manage the importation of files in the system. This would allow us to keep track  of the users uploading data and the content uploaded. Giving a default structure to the files will allow us to run scripts through those files efficiently. It will also allow us to populate a DB with the collected information and have a better insight on our models actual performance. 
+We want to have a standard file structure enable the use of macro to manage the
+importation of files in the system. This would allow us to keep track  of the
+users uploading data and the content uploaded. Giving a default structure to the
+files will allow us to run scripts through those files efficiently. It will also
+allow us to populate a DB with the collected information and have a better
+insight on our models actual performance. 
 
 ### Folder
 
-First, lets take a look at the whole struture of the folder a typical user would like to upload.We require the user to pack the entire upload into one singular folder. Within the project folder, multiple subfolder will exist to enforce an overall structure for the project, while allowing it to be incremental. The project folder should follow the following structure:
+First, lets take a look at the whole struture of the folder a typical user
+wouldlike to upload.We require the user to pack the entire upload into one
+singular folder. Within the project folder, multiple subfolder will exist to
+enforce an overall structure for the project, while allowing it to be
+incremental. The project folder should follow the following structure:
 ```
 project/
 │   index.yaml  
@@ -90,9 +107,12 @@ project/
 ### Files (.yaml)
 #### Index.yaml
 
-The index is the most important file. It will allow us to have all the knowledge about the user and the categorization of the image.
+The index is the most important file. It will allow us to have all the knowledge
+about the user and the categorization of the image.
 
-*Note: The index file located at the root of the project serves as the project index. Therefore, this index file content will differ from the session index, however it's structure will stay the same*
+*Note: The index file located at the root of the project serves as the project
+index. Therefore, this index file content will differ from the session index,
+however it's structure will stay the same*
 
 ```yaml
 index:
@@ -155,7 +175,9 @@ index:
 ```
 #### X.yaml
 
-Each picture should have their .yaml conterpart. This will allow us to run scripts into the session folder and monitor each picture easily. Each .yaml file should have the following structure:
+Each picture should have their .yaml conterpart. This will allow us to run
+scripts into the session folder and monitor each picture easily. Each .yaml file
+should have the following structure:
 
 *Note: X in this exemple is replacing the picture number or name*
 
@@ -183,4 +205,7 @@ X:
 
 ## Observation
 
-- The process of the user requesting the Subscription Access Key and obtaining it is not really efficient. The Dev has to manually create Storage space, the key is sent by email and no information links the user to the storage space. It would be interesting to have a SOP (standard operating procedure)
+- The process of the user requesting the Subscription Access Key and obtaining
+  it is not really efficient. The Dev has to manually create Storage space, the
+  key is sent by email and no information links the user to the storage space.
+  It would be interesting to have a SOP (standard operating procedure)
