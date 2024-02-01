@@ -205,7 +205,12 @@ X:
 
 ## Observation
 
-- The process of the user requesting the Subscription Access Key and obtaining
-  it is not really efficient. The Dev has to manually create Storage space, the
-  key is sent by email and no information links the user to the storage space.
-  It would be interesting to have a SOP (standard operating procedure)
+The process of the user requesting the Subscription Access Key and obtaining it
+  is not really efficient. The Dev has to manually create Storage space, the key
+  is sent by email and no information links the user to the storage space. It
+  would be interesting to have a SOP (standard operating procedure) automated by
+  a python script. This would enable us to automate the whole process, freeing
+  the dev from doing a manual task, we could also incorporate a process to
+  insert data into a DB with the python script, enabling us to also collect data
+  about the user. Therefore, we would have a database of our users, their keys,
+  storage, etc.
