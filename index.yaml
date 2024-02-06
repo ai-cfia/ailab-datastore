@@ -1,0 +1,47 @@
+#This is a Section filled by user 
+uploadDate: date
+clientData:
+  clientEmail: firstname.lastname@minister.gc.ca
+  clientExpertise: Level of expertise (1-2-3-4-5)
+imageData:
+  numberOfImages: number of image to process in the session/project
+  uploadCheck: boolean to verify sucessfull upload
+seedData: 
+  seedID: seedID
+  seedFamily: Family name
+  seedGenus: Genus name
+  seedSpecies: Species name
+seedCharacteristics:
+  color: color
+  shape: shape
+  size: size
+  texture: texture
+  pattern: pattern
+  weight: weight
+  seedCount: number of visible seeds
+  distinctFeatures: other unique feature of the seed
+sampleInformation:
+  geoLocation: coordinates
+  region: name of the region/area
+  temperature: temperature of the location
+  humidity: humidity level
+  soil: type of soil
+clientFeedback:
+  correctIdentification: true/false
+  comparison: links to historical data of similar seeds
+# ------------------------------------------------------    
+# Section filled by system
+classificationData:
+    model: ID of the used model
+    prediction: species predicted by the model
+    confidenceScore: score
+  errorHandling:
+      feedback: feedback received on the classification 
+      correctionApplied: correction applied based on the received feedback
+      errorDetails: details of the error
+  auditTrail:
+      editedBy: last userID that modified the records
+      editDate: date of the last modification
+      changeLog: log of all the changes made after the upload
+      accessLog: log of all the data access
+      privacyFlag: indicator for special privacy concerns

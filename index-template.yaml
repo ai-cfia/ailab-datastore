@@ -1,0 +1,31 @@
+#This is a Section filled by user 
+uploadDate: 
+clientData:
+  clientEmail: 
+  clientExpertise: 
+imageData:
+  numberOfImages: 
+  uploadCheck: 
+seedData: 
+  seedID: 
+  seedFamily: 
+  seedGenus: 
+  seedSpecies: 
+seedCharacteristics:
+  color: 
+  shape: 
+  size: 
+  texture: 
+  pattern: 
+  weight: 
+  seedCount: 
+  distinctFeatures:
+sampleInformation:
+  geoLocation: 
+  region: 
+  temperature: 
+  humidity: 
+  soil: 
+clientFeedback:
+  correctIdentification: 
+  comparison: 
