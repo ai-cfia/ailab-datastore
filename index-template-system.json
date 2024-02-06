@@ -1,0 +1,20 @@
+{
+  "classificationData": {
+    "model": "",
+    "prediction": "",
+    "confidenceScore": ""
+  },
+  "errorHandling": {
+    "feedback": "",
+    "correctionApplied": "",
+    "errorDetails": ""
+  },
+  "auditTrail": {
+    "editedBy": "",
+    "editDate": "",
+    "changeLog": "",
+    "accessLog": "",
+    "privacyFlag": "" 
+  }
+}
+      
