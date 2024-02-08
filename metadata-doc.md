@@ -59,6 +59,10 @@ sequenceDiagram
     end
                 
 ``` 
+This workflow showcase the 2 options that a user will face to upload data. The
+first one being he's a first time user. Therefore, the current process for a
+first time user is to contact the AI-Lab team and subscribe to the Blob storage
+with a given subscription key.
 ## Sequence of processing metadata for model
 
 ``` mermaid  
@@ -88,7 +92,7 @@ sequenceDiagram
                 Notebook -) Azure Storage: Processing files into metadata
                 DataScientist->> Azure Storage: Use files to train the model
 ``` 
-
+This sequence illustrate the manual task done by our team to maintain the storage of user's data. 
 ### Legend
 | Element                | Description                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -102,7 +106,7 @@ sequenceDiagram
 
 ## Development
 
-As explained in the context we aimn to implement a folder structure for user
+As explained in the context we aim to implement a folder structure for user
 uploads. This approach would allow to us add a data structure validator using
 [Pydantic](https://docs.pydantic.dev/latest/). By implementing a validator, we
 will be able to remove all manual metadata maintenance. Once the validation
@@ -136,6 +140,7 @@ flowchart LR;
     linkStyle 3,4,5 stroke:#f00,stroke-width:4px,color:red;
     style dbProcess stroke:#f00,stroke-width:2px
 ``` 
+*Note that the bottom process wont be present on the deployed versions of Nachet*
 ## New Process
 
 ``` mermaid  
@@ -181,7 +186,7 @@ flowchart LR;
 
 
 ``` 
-
+This sequence encapsulate the expected tasks of the new feature.  
 ### Files Structure
 
 We aim to have a standard file structure to enable the use of a script to manage
@@ -194,7 +199,11 @@ better insight on our models actual performance.
 
 #### Folder
 
-Lets begin by examinating the overall struture of the folder that a typical user will be expected to upload. We require that users pack their entire upload into a singular folder. Within the project folder, multiple subfolder will be present to enforce an overall structure for the project, while allowing futur addition. The project folder should adhere to the following structure:
+Lets begin by examinating the overall struture of the folder that a typical user
+will be expected to upload. We require that users pack their entire upload into
+a singular folder. Within the project folder, multiple subfolder will be present
+to enforce an overall structure for the project, while allowing futur addition.
+The project folder should adhere to the following structure:
 ```
 project/
 │   index.yaml  
@@ -231,15 +240,30 @@ should have the following structure:
 *Note: X in this exemple is replacing the picture number or name*
 
 ## Consequences
-  Implementing this structure and introducing the new backend features in Nachet will result in the following impact:
-- **Automation of file structure maintenance:** This process will autonomously manage the file structure, eliminating the need for manual maintenance and reducing workload for the AI-Lab team.
+  Implementing this structure and introducing the new backend features in Nachet
+  will result in the following impact:
+- **Automation of file structure maintenance:** This process will autonomously
+  manage the file structure, eliminating the need for manual maintenance and
+  reducing workload for the AI-Lab team.
 
-- **Streamlined subscription key management:** The new feature will eliminate the need for email communication between users and the AI-Lab team for subscription keys. The system may automatically create and connect to the appropriate BLOB storage without user intervention. Consequently, manual creation of storage by the AI-Lab team will be unnecessary, and all keys will be securely stored in the database.
+- **Streamlined subscription key management:** The new feature will eliminate
+  the need for email communication between users and the AI-Lab team for
+  subscription keys. The system may automatically create and connect to the
+  appropriate BLOB storage without user intervention. Consequently, manual
+  creation of storage by the AI-Lab team will be unnecessary, and all keys will
+  be securely stored in the database.
 
-- **Enhanced security:** The removal of email exchanges between users and the development team represents a substantial improvement in security protocols.
+- **Enhanced security:** The removal of email exchanges between users and the
+  development team represents a substantial improvement in security protocols.
 
-- **Improved model tracking and training:** Storing user metadata will enable more effective tracking of model performance and facilitate better training strategies.
+- **Improved model tracking and training:** Storing user metadata will enable
+  more effective tracking of model performance and facilitate better training
+  strategies.
 
-- **Automated metadata enrichment:** The process will enable the automatic addition of additional information to metadata, enhancing the depth of insights available.
+- **Automated metadata enrichment:** The process will enable the automatic
+  addition of additional information to metadata, enhancing the depth of
+  insights available.
   
-Overall, this new feature will empowers the AI-Lav team to have better control over the content fed to the models and ensures improved tool maintenance capabilities in the future.
+Overall, this new feature will empowers the AI-Lav team to have better control
+over the content fed to the models and ensures improved tool maintenance
+capabilities in the future.
