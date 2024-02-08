@@ -3,13 +3,14 @@
 
 ## Context
 
-The following documentation detail all the metadata importation for the Nachet
-pipeline. We showcase the workflow of everystep taken until the metadata is
-usable by our models. We also discuss the expected files structure and other
-important component regarding the metadata. 
+The following documentation provide an overview of the metadata importation
+process for the Nachet pipeline. We outline each steps of the workflow,
+illustrating how data progresses until it becomes usable by our models.
+Additionally, the upcoming process are showcased with the expected files
+structure. 
 ``` mermaid  
 ---
-title: Nachet folder upload
+title: Nachet data upload
 ---
 flowchart LR;
     DB[(Metadata)] 
@@ -20,7 +21,7 @@ flowchart LR;
 
     file --> FE
     FE-->BE
-    subgraph tdb [DB Process]
+    subgraph tdb [New Process]
     test:::hidden
     end
     BE -- TODO --- test
@@ -28,6 +29,9 @@ flowchart LR;
     test -- TODO --> DB & blob
 
 ``` 
+As shown above, we are currently working on a process to validate the files
+uploaded to the cloud. However, since Nachet is still a work in progress, here's
+the current workflow for our user to upload their images for the models.
 
 ## Workflow: Metadata upload to Azure cloud 
 ``` mermaid  
@@ -37,11 +41,12 @@ sequenceDiagram
     actor DataScientist
     participant Azure Portal
     participant Azure Storage Explorer
-    participant Azure Storage
+    
     alt New User
         User->>DataScientist: Storage subscription key request 
         Note right of User: Email
         DataScientist->>Azure Portal: Create Storage Blob
+        create participant Azure Storage
         Azure Portal-)Azure Storage: Create()
         DataScientist->>Azure Storage: Retrieve Key
         DataScientist->>User: Send back subscription key
@@ -54,7 +59,7 @@ sequenceDiagram
     end
                 
 ``` 
-## Sequence of Processing metadata for model
+## Sequence of processing metadata for model
 
 ``` mermaid  
             sequenceDiagram
@@ -68,9 +73,12 @@ sequenceDiagram
                 alt Wrong structure
                     DataScientist->>Azure Portal: Create Alt. Azure Storage
                     Azure Portal-)Azure Storage: Create(Alt)
-                    DataScientist-)Azure Storage: Copy files into Alt. Storage
-                    DataScientist-)Azure Storage: Rework structure + Edit files/folders
-                    DataScientist-)Azure Storage: Replace  Storage content with Alt. Storage content
+                    create participant Azure Storage Alt
+                    DataScientist-)Azure Storage Alt: Copy files
+                    DataScientist-)Azure Storage Alt: Rework structure + Edit files/folders
+                    DataScientist-)Azure Storage Alt: Replace Storage content with Alt. Storage content
+                    destroy Azure Storage Alt 
+                    Azure Storage Alt -) Azure Storage: Export files
                 end
                 DataScientist->>Azure Storage: Retrieve extraction code
                 DataScientist->>Notebook: Edit parameters of extraction code commands
@@ -82,32 +90,111 @@ sequenceDiagram
 ``` 
 
 ### Legend
-|Element|Description|
-|-------|-----------|
-| User | Anyone wanting to upload data. |
-| DataScientist | Member of the AI-Lab Team. |
-| Azure Portal | Interface managing Azure's services|
-| Azure Storage | Interface storing data in the cloud. |
-| Azure Storage Explorer | Application with GUI offering a user friendly access to a Azure Storage without granting full acess To the Azure Services. |
-| NoteBook | Azure Service enabling to run code with Azure Storage structure|
-| Folder | All project folder should follow the files structure presented bellow. |
+| Element                | Description                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| User                   | Anyone wanting to upload data.                                                                                             |
+| DataScientist          | Member of the AI-Lab Team.                                                                                                 |
+| Azure Portal           | Interface managing Azure's services                                                                                        |
+| Azure Storage          | Interface storing data in the cloud.                                                                                       |
+| Azure Storage Explorer | Application with GUI offering a user friendly access to a Azure Storage without granting full acess To the Azure Services. |
+| NoteBook               | Azure Service enabling to run code with Azure Storage structure                                                            |
+| Folder                 | All project folder should follow the files structure presented bellow.                                                     |
 
-## Files Structure
+## Development
 
-We want to have a standard file structure enable the use of macro to manage the
-importation of files in the system. This would allow us to keep track  of the
-users uploading data and the content uploaded. Giving a default structure to the
-files will allow us to run scripts through those files efficiently. It will also
-allow us to populate a DB with the collected information and have a better
-insight on our models actual performance. 
+As explained in the context we aimn to implement a folder structure for user
+uploads. This approach would allow to us add a data structure validator using
+[Pydantic](https://docs.pydantic.dev/latest/). By implementing a validator, we
+will be able to remove all manual metadata maintenance. Once the validation
+process is complete, the upload process will come into play, enabling the
+distribution of the files between the BLOB storage and a PostgreSQL database. 
 
-### Folder
+ We are currently working on such process, which will be added to the  backend
+ part of nachet once it is finished.
 
-First, lets take a look at the whole struture of the folder a typical user
-wouldlike to upload.We require the user to pack the entire upload into one
-singular folder. Within the project folder, multiple subfolder will exist to
-enforce an overall structure for the project, while allowing it to be
-incremental. The project folder should follow the following structure:
+``` mermaid  
+---
+title: Nachet folder upload
+---
+flowchart LR;
+    DB[(Metadata)] 
+    blob[(Blob)]
+    FE(Frontend)
+    BE(Backend)
+    file[/Folder/]
+    classDef foo stroke:#f00
+
+    file --> FE
+    FE-->BE
+    subgraph dbProcess [New Process]
+    test:::hidden
+    end
+    BE -- TODO --- test
+    file -- In progress --- test 
+    test -- TODO --> DB & blob
+
+    linkStyle 3,4,5 stroke:#f00,stroke-width:4px,color:red;
+    style dbProcess stroke:#f00,stroke-width:2px
+``` 
+## New Process
+
+``` mermaid  
+            sequenceDiagram
+
+
+                participant System
+                participant Folder Controller
+                Box Pydantic Validation
+                participant Folder Structure Template
+                participant Yaml file template
+                end
+                System -) Folder Controller: Send(User data)
+                Activate Folder Controller
+                note left of Folder Controller: Validation process
+                alt User first upload
+                    Folder Controller ->> Folder Structure Template: Check Project structure
+                end
+                Folder Controller ->>Folder Structure Template: Check Session structure
+                Folder Controller ->> Yaml file template: Check index structure
+                Folder Controller ->> Yaml file template: Check picture metadata structure
+                break Error raised 
+                    Folder Controller -) System: Reply(Error)
+                end
+                deactivate Folder Controller
+                Folder Controller -) Folder Controller: Transform User Yaml file into Json
+                Activate Folder Controller
+                note left of Folder Controller: Upload process
+                Folder Controller -) Json file template: Copy system  file structure
+                Folder Controller -) Folder Controller: Append metadata files with system structure
+                Folder Controller -) Folder Controller: Fill system metadata
+                alt User first upload
+                    create participant Azure Blob Storage
+                    Folder Controller -) Azure Blob Storage: Create
+                end
+                loop each picture in session
+                    Folder Controller -) Azure Blob Storage: upload(picture) 
+                    Folder Controller ->> Folder Controller: add info to picture metadata
+                end
+                Folder Controller -) Database: Upload(Metadata)
+                deactivate Folder Controller
+                Folder Controller ->> System: Reply(Upload successfull)
+
+
+``` 
+
+### Files Structure
+
+We aim to have a standard file structure to enable the use of a script to manage
+the importation of files into the system. This statarized structure will allow
+us to keep track  of the users uploads, the metadata feedback. By providing a
+default structure for the files, we can run scripts through those files and
+efficiently add/edit data within. Moreover, this approach will facilitate the
+population of a database with the collected information enabling us to have a
+better insight on our models actual performance. 
+
+#### Folder
+
+Lets begin by examinating the overall struture of the folder that a typical user will be expected to upload. We require that users pack their entire upload into a singular folder. Within the project folder, multiple subfolder will be present to enforce an overall structure for the project, while allowing futur addition. The project folder should adhere to the following structure:
 ```
 project/
 │   index.yaml  
@@ -124,8 +211,8 @@ project/
 │      └─────────────
 └──────────────────
 ```
-### Files (.yaml)
-#### [Index.yaml](index.yaml)
+#### Files (.yaml)
+##### [Index.yaml](index.yaml)
 
 The index is the most important file. It will allow us to have all the knowledge
 about the user and the categorization of the image.
@@ -135,7 +222,7 @@ index. Therefore, this index file content will differ from the session index,
 however it's structure will stay the same*
 
 
-#### [X.yaml](X.yaml)
+##### [X.yaml](X.yaml)
 
 Each picture should have their .yaml conterpart. This will allow us to run
 scripts into the session folder and monitor each picture easily. Each .yaml file
@@ -143,14 +230,16 @@ should have the following structure:
 
 *Note: X in this exemple is replacing the picture number or name*
 
-## Observation
+## Consequences
+  Implementing this structure and introducing the new backend features in Nachet will result in the following impact:
+- **Automation of file structure maintenance:** This process will autonomously manage the file structure, eliminating the need for manual maintenance and reducing workload for the AI-Lab team.
 
-The process of the user requesting the Subscription Access Key and obtaining it
-  is not really efficient. The Dev has to manually create Storage space, the key
-  is sent by email and no information links the user to the storage space. It
-  would be interesting to have a SOP (standard operating procedure) automated by
-  a python script. This would enable us to automate the whole process, freeing
-  the dev from doing a manual task, we could also incorporate a process to
-  insert data into a DB with the python script, enabling us to also collect data
-  about the user. Therefore, we would have a database of our users, their keys,
-  storage, etc.
+- **Streamlined subscription key management:** The new feature will eliminate the need for email communication between users and the AI-Lab team for subscription keys. The system may automatically create and connect to the appropriate BLOB storage without user intervention. Consequently, manual creation of storage by the AI-Lab team will be unnecessary, and all keys will be securely stored in the database.
+
+- **Enhanced security:** The removal of email exchanges between users and the development team represents a substantial improvement in security protocols.
+
+- **Improved model tracking and training:** Storing user metadata will enable more effective tracking of model performance and facilitate better training strategies.
+
+- **Automated metadata enrichment:** The process will enable the automatic addition of additional information to metadata, enhancing the depth of insights available.
+  
+Overall, this new feature will empowers the AI-Lav team to have better control over the content fed to the models and ensures improved tool maintenance capabilities in the future.
