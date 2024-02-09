@@ -1,15 +1,7 @@
 {
-  "classificationData": {
-    "model": "",
-    "prediction": "",
-    "confidenceScore": ""
-  },
-  "errorHandling": {
-    "feedback": "",
-    "correctionApplied": "",
-    "errorDetails": ""
-  },
   "auditTrail": {
+    "ownerEmail":"", 
+    "uploadDate":"",
     "editedBy": "",
     "editDate": "",
     "changeLog": "",

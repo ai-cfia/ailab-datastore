@@ -1,0 +1,23 @@
+{
+"OwnerData":{
+  "projectID": ""
+},
+"imageData":{
+  "edited": "",
+  "parentPath": "",
+  "uploadDate": "",
+  "source": "",
+  "format": "",
+  "height": "",
+  "width": "",
+  "resolution": ""
+},
+"qualityCheck":{
+  "imageChecksum": "",
+  "uploadCheck": "",
+  "uploadDate": "",
+  "validData": "",
+  "errorType": "",
+  "dataQualityScore": ""
+ }
+}

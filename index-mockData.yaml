@@ -1,54 +1,10 @@
-#This is a Section filled by user 
-uploadDate: 2024-01-31
 clientData:
   clientEmail: francois.werbrouck@inspection.gc.ca
-  clientExpertise: 2
+  clientExpertise: dev
 imageData:
-  numberOfImages: 2
-  seeds:
-    - seed1: 
-        seedID: 123456789
-        seedFamily: Family name
-        seedGenus: Genus name
-        seedSpecies: Species name
-        seedCharacteristics:
-          color: color
-          shape: shape
-          size: size
-          texture: texture
-          pattern: pattern
-          weight: 0.2532
-          seedCount: 3
-          distinctFeatures: other unique feature of the seed
-        sampleInformation:
-          geoLocation: coordinates
-          region: name of the region/area
-          temperature: 23.3
-          humidity: 80
-          soil: type of soil
-        clientFeedback:
-          correctIdentification: true
-          historicalComparison: www.somesite.com/repos
-    - seed2: 
-        seedID: 9876543210
-        seedFamily: Family name
-        seedGenus: Genus name
-        seedSpecies: Species name
-        seedCharacteristics:
-          color: color
-          shape: shape
-          size: size
-          texture: texture
-          pattern: pattern
-          weight: 0.123
-          seedCount: 1
-          distinctFeatures: other unique feature of the seed
-        sampleInformation:
-          geoLocation: coordinates
-          region: name of the region/area
-          temperature: 25.3
-          humidity: 70
-          soil: type of soil
-        clientFeedback:
-          correctIdentification: false
-          historicalComparison: www.somesite.com/reposs
+  numberOfImages: 4
+seedData: 
+  seedID: BrNa-02
+  seedFamily: ddada
+  seedGenus: dadaa
+  seedSpecies: dada
