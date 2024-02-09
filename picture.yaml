@@ -1,0 +1,53 @@
+# This is a Section filled by user 
+pictureData:
+  pictureFileName: name of the picture file with extension
+  description: description regarding zoom level, angles
+  numberOfDifferentSample: number of different sample in the picture
+  zoom: zoom level
+  
+
+# ------------------------------------------------------    
+# Section filled by system
+OwnerData: # TBD the usefullness
+  projectID: given to this project? # TBD the usefullness
+imageData:
+  edited: boolean
+  parentPath: pointing towards index if not edited or point towards parent image file #TBD if not simply a DB relationship
+  uploadDate: timestamp
+  source: url or path to the images
+  format: extension (.tiff, .jpg, .png, ...)
+  height: image height
+  width: image width
+  resolution: resolution of the images
+qualityCheck:
+  imageChecksum: checksum for image data integrity
+  uploadCheck: boolean to verify sucessfull upload
+  uploadDate: timestamp
+  validData: boolean indicating if the data is valid
+  errorType: Type of error if the data is erroneous
+  dataQualityScore: Overall score given to the data
+
+# ------------------------------------------------------    
+#Section filled after Inference by User
+clientData:
+  clientEmail: email
+clientFeedback:
+  levelOfExpertise: level
+  correctIdentification: True/False
+  comparison: link to historical data
+# ------------------------------------------------------    
+#Section filled after Inference by System
+classificationData: 
+  model: modelID
+  prediction: inference
+  confidenceScore: score
+auditTrail: 
+  editedBy: editorID
+  editDate: date
+  changeLog: changes
+  accessLog: log
+  privacyFlag: boolean
+errorHandling: 
+  feedback: 
+  correctionApplied: 
+  errorDetails: 

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from typing import List
 import yaml
 import json
+import os
 
 def fill_index_system(filename):
      if is_json_empty(filename):
@@ -39,30 +40,43 @@ class SeedData(BaseModel):
     seedFamily: str
     seedGenus: str
     seedSpecies: str
-    seedCharacteristics: SeedCharacteristics
-    sampleInformation: SampleInformation
-    clientFeedback: ClientFeedback
-    
-class ImageData(BaseModel):
+
+class ImageDataindex(BaseModel):
     numberOfImages: int
-    seeds: list
+    
+class ImageDatapic(BaseModel):
+    description: string
+    numberOfSeeds: int
+    zoom: float
 
-class MetaData(BaseModel):
-    uploadDate: date
+
+class Index(BaseModel):
     clientData: ClientData
-    imageData: ImageData
+    imageData: ImageDataindex
+    seedData: SeedData
     
-class Data(BaseModel):
-    primary_data: MetaData
     
-# Load YAML template
-with open('index-mockData.yaml', 'r') as file:
-    yaml_data = yaml.safe_load(file)
+def is_yaml_file(file_path):
+    _, file_extension = os.path.splitext(file_path)
+    return file_extension.lower() == '.yaml'
 
-# Validate and parse YAML data using Pydantic model
-data = MetaData(**yaml_data)
 
-# Serialize data to JSON
-json_data = data.json()
+    
+def openIndex(path):
+    if is_yaml_file(path):
+        # Load YAML template
+        with open(path, 'r') as file:
+            yaml_data = yaml.safe_load(file)
+    try: # Validate and parse YAML data using Pydantic model
+        data = Index(**yaml_data)
+    except Exception as error: # Error raised by Pydantic Validator
+        print(error)
+        
+    else:
+        json_data = data.json()
+        print(json_data)
+        #return(json_data)
 
-print(json_data)
+if __name__ == "__main__":
+    file_path = input("Path:")
+    openIndex(file_path)

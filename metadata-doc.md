@@ -223,21 +223,24 @@ project/
 #### Files (.yaml)
 ##### [Index.yaml](index.yaml)
 
-The index is the most important file. It will allow us to have all the knowledge
-about the user and the categorization of the image.
+The index is an most important file. It will allow us to have all the knowledge
+about the user and the project/session.
 
-*Note: The index file located at the root of the project serves as the project
-index. Therefore, this index file content will differ from the session index,
-however it's structure will stay the same*
+``` mermaid 
+erDiagram
+Index{
+  ClientData expertiseLevel
+}
+
+```
 
 
-##### [X.yaml](X.yaml)
+##### [picture.yaml](picture.yaml)
 
 Each picture should have their .yaml conterpart. This will allow us to run
-scripts into the session folder and monitor each picture easily. Each .yaml file
-should have the following structure:
+scripts into the session folder and monitor each picture easily.
 
-*Note: X in this exemple is replacing the picture number or name*
+*Note: 'picture' in this exemple is replacing the picture number or name of the .tiff file*
 
 ## Consequences
   Implementing this structure and introducing the new backend features in Nachet
