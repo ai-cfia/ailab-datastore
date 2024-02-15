@@ -1,12 +1,11 @@
 {
 "info":{  
   "uploadDate": "",
-  "projectID": ""
+  "userID": "",
+  "indexID": ""
 },
 "imageData":{
-  "edited": "",
   "parent": "",
-  "uploadDate": "",
   "source": "",
   "format": "",
   "height": "",
