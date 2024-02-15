@@ -12,10 +12,10 @@ seedData:
 # ------------------------------------------------------    
 # Section filled by system
 auditTrail:
-    ownerEmail: email of the user who uploaded the index
-    uploadDate: date uploaded
-    editedBy: last userID that modified the records
-    editDate: date of the last modification
-    changeLog: log of all the changes made after the upload
-    accessLog: log of all the data access
-    privacyFlag: indicator for special privacy concerns
+  ownerID: ID of the user who uploaded the picture, facilitate search
+  uploadDate: date uploaded
+  editedBy: last userID that modified the records
+  editDate: date of the last modification
+  changeLog: log of all the changes made after the upload
+  accessLog: log of all the data access
+  privacyFlag: indicator for special privacy concerns
