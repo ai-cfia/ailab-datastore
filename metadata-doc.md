@@ -241,6 +241,37 @@ Each picture should have their .yaml conterpart. This will allow us to run
 scripts into the session folder and monitor each picture easily.
 
 *Note: 'picture' in this exemple is replacing the picture number or name of the .tiff file*
+## Database
+
+``` mermaid 
+---
+title: Nachet DB Structure
+---
+erDiagram
+  users{
+    uuid id PK
+    string email  
+  }
+  indexes{
+    int id PK
+    json index
+    int ownerID FK
+  }
+  pictures{
+    int id PK
+    json picture
+    int indexID FK
+  }
+  Feedbacks{
+    int ID PK
+    json feedback
+  }
+
+  Users ||--|{ Indexes: uploads
+  Indexes ||--o{Pictures: contains
+  Pictures ||--o{Pictures: cropped
+
+```
 
 ## Consequences
   Implementing this structure and introducing the new backend features in Nachet
