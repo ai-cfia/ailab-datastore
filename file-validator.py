@@ -172,7 +172,7 @@ def PictureProcessing(jsonData:str):
      indexID=""
      parent=""
      source=input("Picture link: ")
-     format=""
+     format=".tiff"
      height=""
      width=""
      resolution=""

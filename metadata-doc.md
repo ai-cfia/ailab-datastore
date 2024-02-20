@@ -186,7 +186,36 @@ flowchart LR;
 
 
 ``` 
-This sequence encapsulate the expected tasks of the new feature.  
+This sequence encapsulate the expected tasks of the new feature. 
+
+### Requests (Backend)
+
+Nachet backend will need the following requests to be able to handle the new process.
+
+*Note the name of the requests are subject to change and are currently meant to be explicit about the purpose of the call*
+
+#### User requests
+| Name                | Description                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| isUserRegister                   |    Is this user uuid stored in the database                                                                                         |
+| getUserID          | Retrieve the uuid of the current user                                                                                                 |
+| userRegister | This will serve as creating an instance of the user in the DB. I assume this will also be used as a way to create the containers if the user is an expert and has the responsability to upload a data set for testing the models|
+
+#### Upload requests
+
+| Name                | Description                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ValidateDataSet                   |      Scans the folder uploaded by the user and checks if the standard structure is respected and if the metadata files are present (Index.yml + picture.yml). This will also check if the metadata files respect the structure explained in the documentation bellow. If the basic structure is not respected an error will be send.                                                                                        |
+| uploadDataSet          | This request happen once the data set receive the ok to all the validation checks. It serves as uploading all the folder to diverse endpoint depending on the file type.                                                                                                 |
+#### Validation Errors
+Here's a list of the errors that can be returned turing the validation of the upload
+| Name                | Description                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Wrong Structure                   |      This type if error indicate the folder uploaded by the user doesn't follow the required structure.                                                                                    |
+| Missing Index          | an Index is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole                                                                                               |
+|Missing picture yaml| Returns a set of picture which couldn't be processed. **TBD: This shouldn't stop the upload process** |
+|Index data error | This indicate that one of the index files has a issue with one of the data field. |
+| <picture.yml> data error | This error indicate there's an issue with one of the data field in the file called 'picture.yml' |
 ### Files Structure
 
 We aim to have a standard file structure to enable the use of a script to manage
@@ -242,7 +271,7 @@ scripts into the session folder and monitor each picture easily.
 
 *Note: 'picture' in this exemple is replacing the picture number or name of the .tiff file*
 ## Database
-
+We plan on storing the metadata of the user's files in a postgreSQL Database. The database should have the following structure: 
 ``` mermaid 
 ---
 title: Nachet DB Structure
@@ -250,7 +279,8 @@ title: Nachet DB Structure
 erDiagram
   users{
     uuid id PK
-    string email  
+    string email
+    string container  
   }
   indexes{
     int id PK
@@ -267,10 +297,29 @@ erDiagram
     json feedback
   }
 
-  Users ||--|{ Indexes: uploads
-  Indexes ||--o{Pictures: contains
-  Pictures ||--o{Pictures: cropped
+  users ||--|{ indexes: uploads
+  indexes ||--o{pictures: contains
+  pictures ||--o{pictures: cropped
 
+```
+## Blob Storage
+
+Finally the picture uploaded by the users will need to be stored in a blob storage. Therefore we are using a Azure blob Storage account which currently contains a list of containers either for the users upload or our Data scientists training sets. The current structure needs to be revised and a standarized structure needs to pe applied for the futur of Nachet. 
+
+```
+Storage account
+│     
+│
+└───container
+│   └───folder/
+│   |  │   1.tiff
+│   |  │   2.tiff
+│   |  |   ...
+│   |  └─────────────
+│   └───folder/
+│      |   ...
+│      └─────────────
+└──────────────────
 ```
 
 ## Consequences
