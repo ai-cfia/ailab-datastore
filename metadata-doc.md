@@ -35,28 +35,27 @@ the current workflow for our user to upload their images for the models.
 
 ## Workflow: Metadata upload to Azure cloud 
 ``` mermaid  
-sequenceDiagram
-    
-    actor User
-    actor DataScientist
-    participant Azure Portal
-    participant Azure Storage Explorer
-    
-    alt New User
-        User->>DataScientist: Storage subscription key request 
-        Note right of User: Email
-        DataScientist->>Azure Portal: Create Storage Blob
-        create participant Azure Storage
-        Azure Portal-)Azure Storage: Create()
-        DataScientist->>Azure Storage: Retrieve Key
-        DataScientist->>User: Send back subscription key
-        Note left of DataScientist: Email
-        User-)Azure Storage Explorer: SubscribeToStorage(key)
-    end
-    loop for each project Folder
-        User-)Azure Storage Explorer: Upload(Folder)
-        Azure Storage Explorer-) Azure Storage: Save(folder)
-    end
+sequenceDiagram;
+  actor User
+  actor DataScientist
+  participant Azure Portal
+  participant Azure Storage Explorer
+  
+  alt New User
+      User->>DataScientist: Storage subscription key request 
+      Note right of User: Email
+      DataScientist->>Azure Portal: Create Storage Blob
+      create participant Azure Storage
+      Azure Portal-)Azure Storage: Create()
+      DataScientist->>Azure Storage: Retrieve Key
+      DataScientist->>User: Send back subscription key
+      Note left of DataScientist: Email
+      User-)Azure Storage Explorer: SubscribeToStorage(key)
+  end
+  loop for each project Folder
+      User-)Azure Storage Explorer: Upload(Folder)
+      Azure Storage Explorer-) Azure Storage: Save(folder)
+  end
                 
 ``` 
 This workflow showcase the 2 options that a user will face to upload data. The
@@ -66,31 +65,29 @@ with a given subscription key.
 ## Sequence of processing metadata for model
 
 ``` mermaid  
-            sequenceDiagram
-
-                actor DataScientist
-                participant Azure Portal
-                participant Notebook
-                participant Azure Storage
-
-                DataScientist->>Azure Storage: Check files structure
-                alt Wrong structure
-                    DataScientist->>Azure Portal: Create Alt. Azure Storage
-                    Azure Portal-)Azure Storage: Create(Alt)
-                    create participant Azure Storage Alt
-                    DataScientist-)Azure Storage Alt: Copy files
-                    DataScientist-)Azure Storage Alt: Rework structure + Edit files/folders
-                    DataScientist-)Azure Storage Alt: Replace Storage content with Alt. Storage content
-                    destroy Azure Storage Alt 
-                    Azure Storage Alt -) Azure Storage: Export files
-                end
-                DataScientist->>Azure Storage: Retrieve extraction code
-                DataScientist->>Notebook: Edit parameters of extraction code commands
-                
-                DataScientist-) Notebook: Run extraction code
-                Note left of Notebook: output source needs to be specified
-                Notebook -) Azure Storage: Processing files into metadata
-                DataScientist->> Azure Storage: Use files to train the model
+sequenceDiagram;
+  actor DataScientist
+  participant Azure Portal
+  participant Notebook
+  participant Azure Storage
+  DataScientist->>Azure Storage: Check files structure
+  alt Wrong structure
+      DataScientist->>Azure Portal: Create Alt. Azure Storage
+      Azure Portal-)Azure Storage: Create(Alt)
+      create participant Azure Storage Alt
+      DataScientist-)Azure Storage Alt: Copy files
+      DataScientist-)Azure Storage Alt: Rework structure + Edit files/folders
+      DataScientist-)Azure Storage Alt: Replace Storage content with Alt. Storage content
+      destroy Azure Storage Alt 
+      Azure Storage Alt -) Azure Storage: Export files
+  end
+  DataScientist->>Azure Storage: Retrieve extraction code
+  DataScientist->>Notebook: Edit parameters of extraction code commands
+  
+  DataScientist-) Notebook: Run extraction code
+  Note left of Notebook: output source needs to be specified
+  Notebook -) Azure Storage: Processing files into metadata
+  DataScientist->> Azure Storage: Use files to train the model
 ``` 
 This sequence illustrate the manual task done by our team to maintain the storage of user's data. 
 ### Legend
@@ -144,45 +141,43 @@ flowchart LR;
 ## New Process
 
 ``` mermaid  
-            sequenceDiagram
-
-
-                participant System
-                participant Folder Controller
-                Box Pydantic Validation
-                participant Folder Structure Template
-                participant Yaml file template
-                end
-                System -) Folder Controller: Send(User data)
-                Activate Folder Controller
-                note left of Folder Controller: Validation process
-                alt User first upload
-                    Folder Controller ->> Folder Structure Template: Check Project structure
-                end
-                Folder Controller ->>Folder Structure Template: Check Session structure
-                Folder Controller ->> Yaml file template: Check index structure
-                Folder Controller ->> Yaml file template: Check picture metadata structure
-                break Error raised 
-                    Folder Controller -) System: Reply(Error)
-                end
-                deactivate Folder Controller
-                Folder Controller -) Folder Controller: Transform User Yaml file into Json
-                Activate Folder Controller
-                note left of Folder Controller: Upload process
-                Folder Controller -) Json file template: Copy system  file structure
-                Folder Controller -) Folder Controller: Append metadata files with system structure
-                Folder Controller -) Folder Controller: Fill system metadata
-                alt User first upload
-                    create participant Azure Blob Storage
-                    Folder Controller -) Azure Blob Storage: Create
-                end
-                loop each picture in session
-                    Folder Controller -) Azure Blob Storage: upload(picture) 
-                    Folder Controller ->> Folder Controller: add info to picture metadata
-                end
-                Folder Controller -) Database: Upload(Metadata)
-                deactivate Folder Controller
-                Folder Controller ->> System: Reply(Upload successfull)
+sequenceDiagram;
+  participant System
+  participant Folder Controller
+  Box Pydantic Validation
+  participant Folder Structure Template
+  participant Yaml file template
+  end
+  System -) Folder Controller: Send(User data)
+  Activate Folder Controller
+  note left of Folder Controller: Validation process
+  alt User first upload
+      Folder Controller ->> Folder Structure Template: Check Project structure
+  end
+  Folder Controller ->>Folder Structure Template: Check Session structure
+  Folder Controller ->> Yaml file template: Check index structure
+  Folder Controller ->> Yaml file template: Check picture metadata structure
+  break Error raised 
+      Folder Controller -) System: Reply(Error)
+  end
+  deactivate Folder Controller
+  Folder Controller -) Folder Controller: Transform User Yaml file into Json
+  Activate Folder Controller
+  note left of Folder Controller: Upload process
+  Folder Controller -) Json file template: Copy system  file structure
+  Folder Controller -) Folder Controller: Append metadata files with system structure
+  Folder Controller -) Folder Controller: Fill system metadata
+  alt User first upload
+      create participant Azure Blob Storage
+      Folder Controller -) Azure Blob Storage: Create
+  end
+  loop each picture in session
+      Folder Controller -) Azure Blob Storage: upload(picture) 
+      Folder Controller ->> Folder Controller: add info to picture metadata
+  end
+  Folder Controller -) Database: Upload(Metadata)
+  deactivate Folder Controller
+  Folder Controller ->> System: Reply(Upload successfull)
 
 
 ``` 
@@ -255,14 +250,6 @@ project/
 The index is an most important file. It will allow us to have all the knowledge
 about the user and the project/session.
 
-``` mermaid 
-erDiagram
-Index{
-  ClientData expertiseLevel
-}
-
-```
-
 
 ##### [picture.yaml](picture.yaml)
 
@@ -292,7 +279,7 @@ erDiagram
     json picture
     int indexID FK
   }
-  Feedbacks{
+  feedbacks{
     int ID PK
     json feedback
   }
@@ -310,7 +297,7 @@ Finally the picture uploaded by the users will need to be stored in a blob stora
 Storage account
 │     
 │
-└───container
+└───container 
 │   └───folder/
 │   |  │   1.tiff
 │   |  │   2.tiff
