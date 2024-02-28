@@ -200,17 +200,25 @@ Nachet backend will need the following requests to be able to handle the new pro
 
 | Name                | Description                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| ValidateDataSet                   |      Scans the folder uploaded by the user and checks if the standard structure is respected and if the metadata files are present (Index.yml + picture.yml). This will also check if the metadata files respect the structure explained in the documentation bellow. If the basic structure is not respected an error will be send.                                                                                        |
+| ValidateDataSet                   |      Scans the folder uploaded by the user and checks if the standard structure is respected.                                                                                        |
+| ValidateIndexes | Check if there is an index file for each sub folders with pictures, and if all the keys have a value associated to them (This does not verify the value)|
+| ValidateIndexContent | This validates that a single index has all his fields correctly filled out (input type check, input is valid, seed info is ok, ...) |
+| ValidateFileCount | This scans each subfolders and verify that the file count correspond to the expected amount of file, based on the number of images in the index metadata.  |
+|**CreateNewSeed** | This request will depend on either we receive a populated DB from our partners. If not, if the  see submitted by is a new one, we will have to create an instance of it in the DB.  |
+| ValidatePictureTandem | This validates that each picture have their corresponding YAML counterpart.<br>*(If the number of seeds and zoom field are not removed from picture.yaml)* |
+| ValidatePictureContent | This will not be a request related to the DB or metadata, but it will be necessary to check if the picture uploaded is related to Nachet's content and it's properties are ok (size, format, etc.)
+| MaliciousPictureCheck|This will not be a request related to the DB or metadata, but it is imperative to check the picture file and make sure it's a picture and not a malicious file with hidden code or content into it. |
 | uploadDataSet          | This request happen once the data set receive the ok to all the validation checks. It serves as uploading all the folder to diverse endpoint depending on the file type.                                                                                                 |
 #### Validation Errors
 Here's a list of the errors that can be returned turing the validation of the upload
 | Name                | Description                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Wrong Structure                   |      This type if error indicate the folder uploaded by the user doesn't follow the required structure.                                                                                    |
-| Missing Index          | an Index is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole                                                                                               |
-|Missing picture yaml| Returns a set of picture which couldn't be processed. **TBD: This shouldn't stop the upload process** |
-|Index data error | This indicate that one of the index files has a issue with one of the data field. |
-| <picture.yml> data error | This error indicate there's an issue with one of the data field in the file called 'picture.yml' |
+| Wrong structure                   |      This type if error indicate the folder uploaded by the user doesn't follow the required structure.                                                                                    |
+| Missing Index          | An Index is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole                                                                                               |
+|Index content | A specific Index either has missing fields or unexpected values |
+|Unexpected file | Based on the value given by the user within the index, there are more files present in the subfolder than expected  |
+|Missing file | Based on the value given by the user within the index, there are less picture files than expected|
+| <picture.yml> content | This error indicate there's an issue with one of the data field in the file called 'picture.yml' <br>*(If the number of seeds and zoom field are not removed from picture.yaml)* |
 ### Files Structure
 
 We aim to have a standard file structure to enable the use of a script to manage
@@ -282,6 +290,11 @@ erDiagram
   feedbacks{
     int ID PK
     json feedback
+  }
+  seeds{
+    uuid id PK
+    string name
+    json info
   }
 
   users ||--|{ indexes: uploads
