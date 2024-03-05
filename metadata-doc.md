@@ -294,7 +294,7 @@ erDiagram
   seeds{
     uuid id PK
     string name
-    json info
+    json information
   }
 
   users ||--|{ indexes: uploads
