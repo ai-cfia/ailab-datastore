@@ -2,7 +2,7 @@ import psycopg
 import os
 
 print(os.getenv("NACHET_DB_URL"))
-# Connect to your PostgreSQL database
+# Connect to your PostgreSQL database with the DB URL
 conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
 # Create a cursor object
 cur = conn.cursor()
@@ -18,33 +18,33 @@ cur = conn.cursor()
 #     )
 # """ % ("nachetdb_1.0.0"))
 
-# # Create Indexes table
-# cur.execute("""
-#     CREATE TABLE  \"%s\".indexes (
-#         id SERIAL PRIMARY KEY,
-#         index JSON,
-#         ownerID uuid REFERENCES "nachetdb_1.0.0".users(id)
-#     )
-# """ % ("nachetdb_1.0.0"))
+# Create Indexes table
+cur.execute("""
+    CREATE TABLE  \"%s\".indexes (
+        id uuid  PRIMARY KEY,
+        index JSON,
+        ownerID uuid REFERENCES "nachetdb_1.0.0".users(id)
+    )
+""" % ("nachetdb_1.0.0"))
 
-# # Create Pictures table
-# cur.execute("""
-#     CREATE TABLE  \"%s\".pictures (
-#         id SERIAL PRIMARY KEY,
-#         picture JSON,
-#         indexID INTEGER REFERENCES "nachetdb_1.0.0".indexes(id)
-#     )
-# """ % ("nachetdb_1.0.0"))
+# Create Pictures table
+cur.execute("""
+    CREATE TABLE  \"%s\".pictures (
+        id uuid  PRIMARY KEY,
+        picture JSON,
+        indexID uuid REFERENCES "nachetdb_1.0.0".indexes(id)
+    )
+""" % ("nachetdb_1.0.0"))
 
-# check if the table exists
+# check if the schema exists
 cur.execute("""
     SELECT EXISTS (
         SELECT 1
-        FROM information_schema.tables
-        WHERE table_schema = 'nachetdb_1.0.0'
-        AND table_name = 'users'
+        FROM information_schema.schemata
+        WHERE schema_name = 'nachetdb_1.0.0'
     )
 """)
+
 
 ## Commit the transaction
 conn.commit()

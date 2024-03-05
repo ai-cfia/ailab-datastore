@@ -42,7 +42,7 @@ class AuditTrail(BaseModel):
 class Info(BaseModel):
     userID: str
     uploadDate: date
-    indexID: int
+    indexID: str
 
 class ImageData(BaseModel):
     format: str
@@ -108,7 +108,7 @@ def manualMetaDataImport(picturefolder:str):
 
     # upload index to database
     indexID = uploadIndexDB(f'{picturefolder}/index.json',userID=userID)
-    indexID=1
+    #indexID=1
     print("indexID : " + str(indexID))
 
     # for each picture in field
@@ -462,14 +462,17 @@ def uploadIndexDB(path:str,userID:str):
     with open(path, 'r') as file:
         data = file.read()
 
+    #Build indexID
+    indexID = uuid.uuid4()
+
     # Execute the INSERT statement
     print(userID)
-    cur.execute("INSERT INTO \"nachetdb_1.0.0\".indexes (index, ownerID) VALUES (%s, %s)", (data, userID))
+    cur.execute("INSERT INTO \"nachetdb_1.0.0\".indexes (id,index, ownerID) VALUES (%s,%s, %s)", (indexID,data, userID))
     conn.commit()
 
     #Retrieve the index id
-    cur.execute("SELECT id FROM \"nachetdb_1.0.0\".indexes ORDER BY id DESC LIMIT 1")
-    indexID=cur.fetchone()[0]
+    #cur.execute("SELECT id FROM \"nachetdb_1.0.0\".indexes ORDER BY id DESC LIMIT 1")
+    
 
     cur.close()
     conn.close()
@@ -498,8 +501,11 @@ def uploadPictureDB(path:str,userID:str,indexID:int):
     with open(path, 'r') as file:
         data = file.read()
 
+    #Generate pictureID
+    pictureID = uuid.uuid4()
+
     # Execute the INSERT statement
-    cur.execute("INSERT INTO \"nachetdb_1.0.0\".pictures (picture, indexID) VALUES (%s, %s)", (data, indexID))
+    cur.execute("INSERT INTO \"nachetdb_1.0.0\".pictures (id,picture, indexID) VALUES (%s,%s, %s)", (pictureID,data, indexID))
     conn.commit()
 
     cur.close()
