@@ -278,12 +278,12 @@ erDiagram
     string container  
   }
   indexes{
-    int id PK
+    uuid id PK
     json index
     int ownerID FK
   }
   pictures{
-    int id PK
+    uuid id PK
     json picture
     int indexID FK
   }
@@ -292,7 +292,7 @@ erDiagram
     json feedback
   }
   seeds{
-    uuid id PK
+    int id PK
     string name
     json information
   }
@@ -300,6 +300,7 @@ erDiagram
   users ||--|{ indexes: uploads
   indexes ||--o{pictures: contains
   pictures ||--o{pictures: cropped
+  pictures ||--||seeds: has
 
 ```
 ## Blob Storage

@@ -8,7 +8,7 @@ conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
 cur = conn.cursor()
 
 # # Create Schema
-# cur.execute("CREATE SCHEMA \"%s\"" % ("nachetdb_1.0.0"))
+# cur.execute("CREATE SCHEMA \"%s\"") % ("nachetdb_0.0.1"))
 
 # #Create Users table
 # cur.execute("""
@@ -16,35 +16,34 @@ cur = conn.cursor()
 #         id uuid  PRIMARY KEY,
 #         email VARCHAR(255)
 #     )
-# """ % ("nachetdb_1.0.0"))
+# """ % ("nachetdb_0.0.1"))
 
-# Create Indexes table
-cur.execute("""
-    CREATE TABLE  \"%s\".indexes (
-        id uuid  PRIMARY KEY,
-        index JSON,
-        ownerID uuid REFERENCES "nachetdb_1.0.0".users(id)
-    )
-""" % ("nachetdb_1.0.0"))
+# # Create Indexes table
+# cur.execute("""
+#     CREATE TABLE  \"%s\".indexes (
+#         id uuid  PRIMARY KEY,
+#         index JSON,
+#         ownerID uuid REFERENCES "nachetdb_0.0.1".users(id)
+#     )
+# """ % ("nachetdb_0.0.1"))
 
-# Create Pictures table
-cur.execute("""
-    CREATE TABLE  \"%s\".pictures (
-        id uuid  PRIMARY KEY,
-        picture JSON,
-        indexID uuid REFERENCES "nachetdb_1.0.0".indexes(id)
-    )
-""" % ("nachetdb_1.0.0"))
+# # Create Pictures table
+# cur.execute("""
+#     CREATE TABLE  \"%s\".pictures (
+#         id uuid  PRIMARY KEY,
+#         picture JSON,
+#         indexID uuid REFERENCES "nachetdb_0.0.1".indexes(id)
+#     )
+# """ % ("nachetdb_0.0.1"))
 
-# check if the schema exists
-cur.execute("""
-    SELECT EXISTS (
-        SELECT 1
-        FROM information_schema.schemata
-        WHERE schema_name = 'nachetdb_1.0.0'
-    )
-""")
-
+# # check if the schema exists
+# cur.execute("""
+#     SELECT EXISTS (
+#         SELECT 1
+#         FROM information_schema.schemata
+#         WHERE schema_name = 'nachetdb_0.0.1'
+#     )
+# """)
 
 ## Commit the transaction
 conn.commit()
