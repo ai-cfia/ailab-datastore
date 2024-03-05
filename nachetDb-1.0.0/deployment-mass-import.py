@@ -191,12 +191,15 @@ def buildIndex(output:str,clientID):
     imageData = ImageDataindex(numberOfImages=nb)
     
     # ATM===> I dont have access to the seedID db
-    #seedID = input("SeedID: ")
-    seedID=0
+    seedID = input("SeedID: ")
+    
 
-    family = input("Family: ")
-    genus = input("Genus: ")
-    species = input("Species: ")
+    #family = input("Family: ")
+    #genus = input("Genus: ")
+    #species = input("Species: ")
+    family=""
+    genus=""
+    species=""
     seedData = SeedData(seedID=seedID,seedFamily=family,seedGenus=genus,seedSpecies=species)
     
     # Create the Index object
