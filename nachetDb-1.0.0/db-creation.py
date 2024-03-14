@@ -1,11 +1,10 @@
-import psycopg
-import os
+import db.queries.queries as queries
 
 print(os.getenv("NACHET_DB_URL"))
 # Connect to your PostgreSQL database with the DB URL
-conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+conn = queries.createConnection()
 # Create a cursor object
-cur = conn.cursor()
+cur = queries.createCursor(conn)
 
 # # Create Schema
 # cur.execute("CREATE SCHEMA \"%s\"") % ("nachetdb_0.0.1"))

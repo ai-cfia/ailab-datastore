@@ -1,18 +1,21 @@
 from datetime import date
-from pydantic import BaseModel
 import uuid
-import yaml
 import json
 import os
 import psycopg
-from azure.storage.blob import BlobServiceClient
 from PIL import Image
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
+=======
+import db.queries.queries as queries
+import validator as validator
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
 
 # File: nachetDb-1.0.0/mass-import.py
 # This script is used to import the missing metadata from an Azure container to the database
  
 
 # Constants
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
 container_URL=""
 
 
@@ -90,6 +93,35 @@ class ClientFeedback(BaseModel):
 
 
 def manualMetaDataImport(picturefolder:str):
+=======
+container_URL = ""
+seedID = ""
+path = ""
+
+
+def jsonDeletion(picturefolder):
+    """
+    Function to delete all the .json files in the specified folder in case of a bad importation.
+
+    Parameters:
+    - picturefolder (str): The path to the folder.
+    """
+    # Get a list of files in the directory
+    files = [
+        f
+        for f in os.listdir(picturefolder)
+        if os.path.isfile(os.path.join(picturefolder, f))
+    ]
+    # Iterate over the list of filepaths & remove each file.
+    for file in files:
+        try:
+            os.remove(file)
+        except OSError as e:
+            print("Error: %s : %s" % (file, e.strerror))
+
+
+def manualMetaDataImport(picturefolder: str):
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     """
     Template function to do the importation process of the metadata from the Azure container to the database.
     The user is prompted to input the client email, the zoom level and the number of seeds for the index.
@@ -97,10 +129,18 @@ def manualMetaDataImport(picturefolder:str):
     """
 
     # Manually define the picture folder
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     picturefolder = "" #manually inputted before each import sequence
 
     # Input the client email to identify the user or register him if needed
     clientEmail = input("clientEmail: ")
+=======
+    # picturefolder = ""  # manually inputted before each import sequence
+
+    # Input the client email to identify the user or register him if needed
+    # clientEmail = input("clientEmail: ")
+    clientEmail = "test@dev"
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     userID = getUserID(clientEmail)
 
     # #build index
@@ -112,7 +152,12 @@ def manualMetaDataImport(picturefolder:str):
     print("indexID : " + str(indexID))
 
     # for each picture in field
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     zoomlevel = input("Zoom level for this index: ")
+=======
+    # zoomlevel = input("Zoom level for this index: ")
+    zoomlevel = 0
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     seedNumber = input("Number of seed for this index: ")
    
     # Get a list of files in the directory
@@ -154,6 +199,7 @@ def getUserID(email:str):
     # Create a cursor object
     cur = conn.cursor()
     # Check if the email is already registered
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     cur.execute(f"SELECT Exists(SELECT 1 FROM \"nachetdb_1.0.0\".users WHERE email='{email}')")
     if cur.fetchone()[0]: #Already registered
         cur.execute(f"SELECT id FROM\"nachetdb_1.0.0\".users WHERE email='{email}'")
@@ -161,6 +207,15 @@ def getUserID(email:str):
     else: #Not registered -> Creates new user
         cur.execute(f"INSERT INTO \"nachetdb_1.0.0\".users (id,email) VALUES (,'{email}')")
         cur.execute(f"SELECT id FROM \"nachetdb_1.0.0\".users WHERE email='{email}'")
+=======
+    cur.execute(f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')")
+    if cur.fetchone()[0]:  # Already registered
+        cur.execute(f"SELECT id FROM users WHERE email='{email}'")
+        res = cur.fetchone()[0]
+    else:  # Not registered -> Creates new user
+        cur.execute(f"INSERT INTO users (id,email) VALUES (,'{email}')")
+        cur.execute(f"SELECT id FROM users WHERE email='{email}'")
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
         res = cur.fetchone()[0]
     cur.close()
     conn.close()
@@ -180,6 +235,7 @@ def buildIndex(output:str,clientID):
     - The number of pictures in the folder that are supposed to be processed.
     """
 
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     #clientEmail = input("clientEmail: ")
     clientEmail="test@email"
     print("clientEmail: " + clientEmail)
@@ -193,6 +249,32 @@ def buildIndex(output:str,clientID):
     # ATM===> I dont have access to the seedID db
     seedID = input("SeedID: ")
     
+=======
+    # clientEmail = input("clientEmail: ")
+    clientEmail = "test@email"
+
+    # clientExpertise = input("Expertise: ")
+    clientExpertise = "Developer"
+
+    # Create the index metadata (sub part) normally filled by the user
+    clientData = validator.ClientData(clientEmail=clientEmail, clientExpertise=clientExpertise)
+    print(output)
+    nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
+    imageData = validator.ImageDataindex(numberOfImages=nb)
+
+    # ATM===> I dont have access to the seedID db
+    # seedID = input("SeedID: ")
+
+    # family = input("Family: ")
+    # genus = input("Genus: ")
+    # species = input("Species: ")
+    family = ""
+    genus = ""
+    species = ""
+    seedData = validator.SeedData(
+        seedID=seedID, seedFamily=family, seedGenus=genus, seedSpecies=species
+    )
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
 
     #family = input("Family: ")
     #genus = input("Genus: ")
@@ -203,7 +285,12 @@ def buildIndex(output:str,clientID):
     seedData = SeedData(seedID=seedID,seedFamily=family,seedGenus=genus,seedSpecies=species)
     
     # Create the Index object
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     index = Index(clientData=clientData,imageData=imageData,seedData=seedData)
+=======
+    index = validator.Index(clientData=clientData, imageData=imageData, seedData=seedData)
+    
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     print("File created, name: " + output + "/index.json")
     indexJson=index.dict()
     
@@ -232,6 +319,7 @@ def buildPicture(output:str,number:int,level, indexID:int,name:str,userID:str):
     Returns:
     None
     """
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     
     desc= "This image was uploaded before the creation of the database and was apart of the first importation batch."
     nb=number
@@ -241,6 +329,16 @@ def buildPicture(output:str,number:int,level, indexID:int,name:str,userID:str):
     # Create the Picture object with the user data
     pic = Picture(userData=userData)
     picJson=pic.dict()
+=======
+
+    desc = "This image was uploaded before the creation of the database and was apart of the first importation batch."
+    nb = number
+    userData = validator.UserData(description=desc, numberOfSeeds=nb, zoom=zoom)
+
+    # Create the Picture object with the user data
+    pic = validator.Picture(userData=userData)
+    picJson = pic.dict()
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     print("File created, name: " + name)
     picturePath=f'{output}/{name}'
 
@@ -415,11 +513,18 @@ def createJsonIndex(index,name: str,output:str):
     Returns:
     None
     """
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     #data=index.dict()
     data = PIndex(**index)
     filePath = f'{output}/{name}.json'
     with open(filePath,'w') as json_file:
         json.dump(index,json_file,indent=2)
+=======
+    data = validator.PIndex(**index)
+    filePath = f"{output}/{name}.json"
+    with open(filePath, "w") as json_file:
+        json.dump(index, json_file, indent=2)
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
 
 #Create .json form Picture data model
 def createJsonPicture(pic,name:str,output:str):
@@ -434,12 +539,22 @@ def createJsonPicture(pic,name:str,output:str):
     Returns:
     None
     """
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     data = PPicture(**pic)
     extension=name.split(".")[-1]
     filename = name.removesuffix("."+extension)
     filePath = f'{output}/{filename}.json'
     with open(filePath,'w') as json_file:
         json.dump(pic,json_file,indent=2)
+=======
+    data = validator.PPicture(**pic)
+    extension = name.split(".")[-1]
+    filename = name.removesuffix("." + extension)
+    filePath = f"{output}/{filename}.json"
+    with open(filePath, "w") as json_file:
+        json.dump(pic, json_file, indent=2)
+
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
 
 # Function to upload the index file located @path to the database
 # RETURNS the indexID of the uploaded index
@@ -469,8 +584,16 @@ def uploadIndexDB(path:str,userID:str):
     indexID = uuid.uuid4()
 
     # Execute the INSERT statement
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     print(userID)
     cur.execute("INSERT INTO \"nachetdb_1.0.0\".indexes (id,index, ownerID) VALUES (%s,%s, %s)", (indexID,data, userID))
+=======
+    # print(userID)
+    cur.execute(
+        "INSERT INTO indexes (id,index, ownerID) VALUES (%s,%s, %s)",
+        (indexID, data, userID),
+    )
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     conn.commit()
 
     #Retrieve the index id
@@ -508,7 +631,14 @@ def uploadPictureDB(path:str,userID:str,indexID:int):
     pictureID = uuid.uuid4()
 
     # Execute the INSERT statement
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     cur.execute("INSERT INTO \"nachetdb_1.0.0\".pictures (id,picture, indexID) VALUES (%s,%s, %s)", (pictureID,data, indexID))
+=======
+    cur.execute(
+        "INSERT INTO pictures (id,picture, indexID) VALUES (%s,%s, %s)",
+        (pictureID, data, indexID),
+    )
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
     conn.commit()
 
     cur.close()
@@ -516,5 +646,9 @@ def uploadPictureDB(path:str,userID:str,indexID:int):
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD:nachetDb-1.0.0/deployment-mass-import.py
     manualMetaDataImport("")
    
+=======
+    manualMetaDataImport(path)
+>>>>>>> c4eb497 (Fixes #2: Formatting):db/setup/deployment-mass-import.py
