@@ -5,7 +5,7 @@ import os
 import psycopg
 from PIL import Image
 import db.queries.queries as queries
-import validator as validator
+import db.validator.validator as validator
 
 # File: nachetDb-1.0.0/mass-import.py
 # This script is used to import the missing metadata from an Azure container to the database
