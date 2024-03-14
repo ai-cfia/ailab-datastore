@@ -1,5 +1,5 @@
 import uuid
-from db.entities.tableEntity import TableEntity
+from tableEntity.tableEntity import TableEntity
 from db.queries import queries
 
 class Index(TableEntity):

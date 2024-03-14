@@ -1,6 +1,5 @@
 import psycopg
 import os
-from db.entities.index import Index
 
 NACHET_DB_URL = os.getenv("NACHET_DB_URL")
 
@@ -47,14 +46,3 @@ def getResults(cur):
 def getOneResult(cur):
     return cur.fetchone()
         
-if __name__ == "__main__":
-    conn = createConnection()
-    cur = createCursor(conn)
-    createSearchPath(conn,cur)
-    query = "SELECT * from indexes Limit 1"
-    params = ('6193f6c9-2ad7-460f-a320-799a48773889',)
-    cur = queryDB(conn,cur,query)
-    res = getResults(cur)
-    printResults(cur)
-    index = Index(res[0][0],res[0][1],res[0][2])
-    endQuery(conn,cur)
