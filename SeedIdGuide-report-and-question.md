@@ -15,7 +15,8 @@ seems the website has been intected and now randomly redirects you to a
 malicious website. ![malicious site screenshot](img/malicious-site.png)
 
 ### Plugins
-It seems the wordpress website is built with 44 plugins. However, 31 of them are not up to date **including multiple security plugins**.
+It seems the wordpress website is built with 44 plugins. However, 31 of them are
+not up to date **including multiple security plugins**.
 
 Neglecting to keep your WordPress plugins updated is like leaving the doors
 unlocked on your website. These plugins are designed to enhance functionality

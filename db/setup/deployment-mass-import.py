@@ -1,13 +1,11 @@
 from datetime import date
-from pydantic import BaseModel
 import uuid
-import yaml
 import json
 import os
 import psycopg
-from azure.storage.blob import BlobServiceClient
 from PIL import Image
-import nachetDb.queries.queries as queries
+import db.queries.queries as queries
+import validator as validator
 
 # File: nachetDb-1.0.0/mass-import.py
 # This script is used to import the missing metadata from an Azure container to the database
@@ -15,96 +13,17 @@ import nachetDb.queries.queries as queries
 
 # Constants
 container_URL = ""
-seedID=""
-path=""
-
-# Class to represent the files metadata
-
-
-class ClientData(BaseModel):
-    clientEmail: str
-    clientExpertise: str
-
-
-class SeedData(BaseModel):
-    seedID: str
-    seedFamily: str
-    seedGenus: str
-    seedSpecies: str
-
-
-class ImageDataindex(BaseModel):
-    numberOfImages: int
-
-
-class AuditTrail(BaseModel):
-    uploadDate: date
-    editedBy: str
-    editDate: date
-    changeLog: str
-    accessLog: str
-    privacyFlag: bool
-
-
-class Info(BaseModel):
-    userID: str
-    uploadDate: date
-    indexID: str
-
-
-class ImageData(BaseModel):
-    format: str
-    height: int
-    width: int
-    resolution: str
-    source: str
-    parent: str
-
-
-class QualityCheck(BaseModel):
-    imageChecksum: str
-    uploadCheck: bool
-    validData: bool
-    errorType: str
-    dataQualityScore: float
-
-
-class UserData(BaseModel):
-    description: str
-    numberOfSeeds: int
-    zoom: float
-
-
-class Index(BaseModel):
-    clientData: ClientData
-    imageData: ImageDataindex
-    seedData: SeedData
-
-
-class PIndex(BaseModel):
-    clientData: ClientData
-    imageData: ImageDataindex
-    seedData: SeedData
-    auditTrail: AuditTrail
-
-
-class Picture(BaseModel):
-    userData: UserData
-
-
-class PPicture(BaseModel):
-    userData: UserData
-    info: Info
-    imageData: ImageData
-    qualityCheck: QualityCheck
-
-
-class ClientFeedback(BaseModel):
-    correctIdentification: bool
-    historicalComparison: str
+seedID = ""
+path = ""
 
 
 def jsonDeletion(picturefolder):
+    """
+    Function to delete all the .json files in the specified folder in case of a bad importation.
+
+    Parameters:
+    - picturefolder (str): The path to the folder.
+    """
     # Get a list of files in the directory
     files = [
         f
@@ -118,6 +37,7 @@ def jsonDeletion(picturefolder):
         except OSError as e:
             print("Error: %s : %s" % (file, e.strerror))
 
+
 def manualMetaDataImport(picturefolder: str):
     """
     Template function to do the importation process of the metadata from the Azure container to the database.
@@ -129,11 +49,11 @@ def manualMetaDataImport(picturefolder: str):
     """
 
     # Manually define the picture folder
-    #picturefolder = ""  # manually inputted before each import sequence
+    # picturefolder = ""  # manually inputted before each import sequence
 
     # Input the client email to identify the user or register him if needed
     # clientEmail = input("clientEmail: ")
-    clientEmail="test@dev"
+    clientEmail = "test@dev"
     userID = getUserID(clientEmail)
 
     # #build index
@@ -145,8 +65,8 @@ def manualMetaDataImport(picturefolder: str):
     print("indexID : " + str(indexID))
 
     # for each picture in field
-    #zoomlevel = input("Zoom level for this index: ")
-    zoomlevel=0
+    # zoomlevel = input("Zoom level for this index: ")
+    zoomlevel = 0
     seedNumber = input("Number of seed for this index: ")
 
     # Get a list of files in the directory
@@ -195,16 +115,12 @@ def getUserID(email: str):
     cur = conn.cursor()
     queries.createSearchPath(conn, cur)
     # Check if the email is already registered
-    cur.execute(
-        f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')"
-    )
+    cur.execute(f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')")
     if cur.fetchone()[0]:  # Already registered
         cur.execute(f"SELECT id FROM users WHERE email='{email}'")
         res = cur.fetchone()[0]
     else:  # Not registered -> Creates new user
-        cur.execute(
-            f"INSERT INTO users (id,email) VALUES (,'{email}')"
-        )
+        cur.execute(f"INSERT INTO users (id,email) VALUES (,'{email}')")
         cur.execute(f"SELECT id FROM users WHERE email='{email}'")
         res = cur.fetchone()[0]
     cur.close()
@@ -228,19 +144,18 @@ def buildIndex(output: str, clientID):
 
     # clientEmail = input("clientEmail: ")
     clientEmail = "test@email"
-    
+
     # clientExpertise = input("Expertise: ")
     clientExpertise = "Developer"
 
     # Create the index metadata (sub part) normally filled by the user
-    clientData = ClientData(clientEmail=clientEmail, clientExpertise=clientExpertise)
+    clientData = validator.ClientData(clientEmail=clientEmail, clientExpertise=clientExpertise)
     print(output)
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
-    imageData = ImageDataindex(numberOfImages=nb)
+    imageData = validator.ImageDataindex(numberOfImages=nb)
 
     # ATM===> I dont have access to the seedID db
-    #seedID = input("SeedID: ")
-
+    # seedID = input("SeedID: ")
 
     # family = input("Family: ")
     # genus = input("Genus: ")
@@ -248,12 +163,13 @@ def buildIndex(output: str, clientID):
     family = ""
     genus = ""
     species = ""
-    seedData = SeedData(
+    seedData = validator.SeedData(
         seedID=seedID, seedFamily=family, seedGenus=genus, seedSpecies=species
     )
 
     # Create the Index object
-    index = Index(clientData=clientData, imageData=imageData, seedData=seedData)
+    index = validator.Index(clientData=clientData, imageData=imageData, seedData=seedData)
+    
     print("File created, name: " + output + "/index.json")
     indexJson = index.dict()
 
@@ -286,10 +202,10 @@ def buildPicture(output: str, number: int, zoom, indexID: int, name: str, userID
 
     desc = "This image was uploaded before the creation of the database and was apart of the first importation batch."
     nb = number
-    userData = UserData(description=desc, numberOfSeeds=nb, zoom=zoom)
+    userData = validator.UserData(description=desc, numberOfSeeds=nb, zoom=zoom)
 
     # Create the Picture object with the user data
-    pic = Picture(userData=userData)
+    pic = validator.Picture(userData=userData)
     picJson = pic.dict()
     print("File created, name: " + name)
     picturePath = f"{output}/{name}"
@@ -499,7 +415,7 @@ def createJsonIndex(index, name: str, output: str):
     Returns:
     None
     """
-    data = PIndex(**index)
+    data = validator.PIndex(**index)
     filePath = f"{output}/{name}.json"
     with open(filePath, "w") as json_file:
         json.dump(index, json_file, indent=2)
@@ -518,7 +434,7 @@ def createJsonPicture(pic, name: str, output: str):
     Returns:
     None
     """
-    data = PPicture(**pic)
+    data = validator.PPicture(**pic)
     extension = name.split(".")[-1]
     filename = name.removesuffix("." + extension)
     filePath = f"{output}/{filename}.json"
@@ -556,9 +472,9 @@ def uploadIndexDB(path: str, userID: str):
     indexID = uuid.uuid4()
 
     # Execute the INSERT statement
-    #print(userID)
+    # print(userID)
     cur.execute(
-        'INSERT INTO indexes (id,index, ownerID) VALUES (%s,%s, %s)',
+        "INSERT INTO indexes (id,index, ownerID) VALUES (%s,%s, %s)",
         (indexID, data, userID),
     )
     conn.commit()
@@ -599,7 +515,7 @@ def uploadPictureDB(path: str, userID: str, indexID: str):
 
     # Execute the INSERT statement
     cur.execute(
-        'INSERT INTO pictures (id,picture, indexID) VALUES (%s,%s, %s)',
+        "INSERT INTO pictures (id,picture, indexID) VALUES (%s,%s, %s)",
         (pictureID, data, indexID),
     )
     conn.commit()
