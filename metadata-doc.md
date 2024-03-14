@@ -89,7 +89,8 @@ sequenceDiagram;
   Notebook -) Azure Storage: Processing files into metadata
   DataScientist->> Azure Storage: Use files to train the model
 ``` 
-This sequence illustrate the manual task done by our team to maintain the storage of user's data. 
+This sequence illustrate the manual task done by our team to maintain the
+storage of user's data. 
 ### Legend
 | Element                | Description                                                                                                                |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -137,7 +138,8 @@ flowchart LR;
     linkStyle 3,4,5 stroke:#f00,stroke-width:4px,color:red;
     style dbProcess stroke:#f00,stroke-width:2px
 ``` 
-*Note that the bottom process wont be present on the deployed versions of Nachet*
+*Note that the bottom process wont be present on the deployed versions of
+Nachet*
 ## New Process
 
 ``` mermaid  
@@ -182,12 +184,79 @@ sequenceDiagram;
 
 ``` 
 This sequence encapsulate the expected tasks of the new feature. 
+### Queries
+To communicate with the database and perform the request, we will need to build
+a structure representing the schema.
 
+```mermaid
+  classDiagram
+      class User {
+          <<PK>> uuid id
+          string email
+          User(email) User
+          getUser(id) User
+          isUser(email) bool
+          registerUser() uuid
+          update()
+          getAllIndexes(id) List~Index~ 
+          getAllPictures(id) List~Pictures~
+      }
+
+      class Index {
+          <<PK>> uuid id
+          json index
+          <<FK>> uuid ownerID
+          getIndex(id) Index
+          update()
+          getSeed() Seed
+          getNbPicture int
+          getAllPictures(id) List~Pictures~       
+      }
+
+      class Picture {
+          <<PK>> uuid id
+          json picture
+          <<FK>> uuid indexID
+          <<FK>> uuid parentID
+          getPicture(id)
+          update()
+          getParent(id)
+          getUrlSource() string
+      }
+      class PictureSeed {
+        json pictureSeed
+        getSeed() Seed
+        getNbSeeds() int
+        getZoom() float
+        getUrlSas() string
+
+      }
+      class Seed{
+        <<PK>> uuid id
+        string name
+        getAllPictures() List~Pictures~
+        getAllIndexes() List~Index~
+      }
+
+      class Search{
+        uuid userID
+        uuid indexID
+        uuid pictureID
+        uuid seedID
+        float zoom
+        nbSeed int
+        date startDate
+        date endDate
+      }
+      Picture <|-- PictureSeed
+```
 ### Requests (Backend)
 
-Nachet backend will need the following requests to be able to handle the new process.
+Nachet backend will need the following requests to be able to handle the new
+process.
 
-*Note the name of the requests are subject to change and are currently meant to be explicit about the purpose of the call*
+*Note the name of the requests are subject to change and are currently meant to
+be explicit about the purpose of the call*
 
 #### User requests
 | Name                | Description                                                                                                                |
@@ -210,15 +279,22 @@ Nachet backend will need the following requests to be able to handle the new pro
 | MaliciousPictureCheck|This will not be a request related to the DB or metadata, but it is imperative to check the picture file and make sure it's a picture and not a malicious file with hidden code or content into it. |
 | uploadDataSet          | This request happen once the data set receive the ok to all the validation checks. It serves as uploading all the folder to diverse endpoint depending on the file type.                                                                                                 |
 #### Validation Errors
-Here's a list of the errors that can be returned turing the validation of the upload
-| Name                | Description                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Wrong structure                   |      This type if error indicate the folder uploaded by the user doesn't follow the required structure.                                                                                    |
-| Missing Index          | An Index is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole                                                                                               |
-|Index content | A specific Index either has missing fields or unexpected values |
-|Unexpected file | Based on the value given by the user within the index, there are more files present in the subfolder than expected  |
-|Missing file | Based on the value given by the user within the index, there are less picture files than expected|
-| <picture.yml> content | This error indicate there's an issue with one of the data field in the file called 'picture.yml' <br>*(If the number of seeds and zoom field are not removed from picture.yaml)* |
+Here's a list of the errors that can be returned turing the validation of the
+upload | Name                | Description
+| | ---------------------- |
+--------------------------------------------------------------------------------------------------------------------------
+| | Wrong structure                   |      This type if error indicate the
+folder uploaded by the user doesn't follow the required structure.
+| | Missing Index          | An Index is missing which means the whole folder of
+picture couldn't be processed. This might stop the upload process as a whole
+| |Index content | A specific Index either has missing fields or unexpected
+values | |Unexpected file | Based on the value given by the user within the
+index, there are more files present in the subfolder than expected  | |Missing
+file | Based on the value given by the user within the index, there are less
+picture files than expected| | <picture.yml> content | This error indicate
+there's an issue with one of the data field in the file called 'picture.yml'
+<br>*(If the number of seeds and zoom field are not removed from picture.yaml)*
+|
 ### Files Structure
 
 We aim to have a standard file structure to enable the use of a script to manage
@@ -264,9 +340,11 @@ about the user and the project/session.
 Each picture should have their .yaml conterpart. This will allow us to run
 scripts into the session folder and monitor each picture easily.
 
-*Note: 'picture' in this exemple is replacing the picture number or name of the .tiff file*
+*Note: 'picture' in this exemple is replacing the picture number or name of the
+.tiff file*
 ## Database
-We plan on storing the metadata of the user's files in a postgreSQL Database. The database should have the following structure: 
+We plan on storing the metadata of the user's files in a postgreSQL Database.
+The database should have the following structure: 
 ``` mermaid 
 ---
 title: Nachet DB Structure
@@ -280,19 +358,20 @@ erDiagram
   indexes{
     uuid id PK
     json index
-    int ownerID FK
+    uuid ownerID FK
   }
   pictures{
     uuid id PK
     json picture
-    int indexID FK
+    uuid indexID FK
+    uuid parent FK
   }
   feedbacks{
     int ID PK
     json feedback
   }
   seeds{
-    int id PK
+    uuid id PK
     string name
     json information
   }
@@ -305,7 +384,11 @@ erDiagram
 ```
 ## Blob Storage
 
-Finally the picture uploaded by the users will need to be stored in a blob storage. Therefore we are using a Azure blob Storage account which currently contains a list of containers either for the users upload or our Data scientists training sets. The current structure needs to be revised and a standarized structure needs to pe applied for the futur of Nachet. 
+Finally the picture uploaded by the users will need to be stored in a blob
+storage. Therefore we are using a Azure blob Storage account which currently
+contains a list of containers either for the users upload or our Data scientists
+training sets. The current structure needs to be revised and a standarized
+structure needs to pe applied for the futur of Nachet. 
 
 ```
 Storage account
