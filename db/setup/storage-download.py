@@ -35,16 +35,19 @@ def folderProcessing(storage_url,container_name):
     i = 0
     # Iterate through each blob
     for blob in blob_list:
+        # Create a blob client
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob.name)
         # Download the blob
         local_file_path = f"{local_dir}/{blob.name}"
         os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
         with open(local_file_path, "wb") as file:
-            blob_data = container_client.download_blob(blob=blob.name)
+            blob_data = blob_client.download_blob()
+            # blob_data = container_client.download_blob(blob=blob.name)
             blob_data.readinto(file)
             i= i + 1
+            
     print("downloaded files: " + str(i) )
 
 if __name__ == "__main__":
     folderProcessing("","")
-

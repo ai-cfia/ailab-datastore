@@ -182,7 +182,71 @@ sequenceDiagram;
 
 ``` 
 This sequence encapsulate the expected tasks of the new feature. 
+### Queries
+To communicate with the database and perform the request, we will need to build a structure representing the schema.
 
+```mermaid
+  classDiagram
+      class User {
+          <<PK>> uuid id
+          string email
+          User(email) User
+          getUser(id) User
+          isUser(email) bool
+          registerUser() uuid
+          update()
+          getAllIndexes(id) List~Index~ 
+          getAllPictures(id) List~Pictures~
+      }
+
+      class Index {
+          <<PK>> uuid id
+          json index
+          <<FK>> uuid ownerID
+          getIndex(id) Index
+          update()
+          getSeed() Seed
+          getNbPicture int
+          getAllPictures(id) List~Pictures~       
+      }
+
+      class Picture {
+          <<PK>> uuid id
+          json picture
+          <<FK>> uuid indexID
+          <<FK>> uuid parentID
+          getPicture(id)
+          update()
+          getParent(id)
+          getUrlSource() string
+      }
+      class PictureSeed {
+        json pictureSeed
+        getSeed() Seed
+        getNbSeeds() int
+        getZoom() float
+        getUrlSas() string
+
+      }
+      class Seed{
+        <<PK>> uuid id
+        string name
+        getAllPictures() List~Pictures~
+        getAllIndexes() List~Index~
+      }
+
+      class Search{
+        uuid userID
+        uuid indexID
+        uuid pictureID
+        uuid seedID
+        float zoom
+        nbSeed int
+        date startDate
+        date endDate
+      }
+      Picture <|-- PictureSeed
+```
 ### Requests (Backend)
 
 Nachet backend will need the following requests to be able to handle the new process.
@@ -280,19 +344,20 @@ erDiagram
   indexes{
     uuid id PK
     json index
-    int ownerID FK
+    uuid ownerID FK
   }
   pictures{
     uuid id PK
     json picture
-    int indexID FK
+    uuid indexID FK
+    uuid parent FK
   }
   feedbacks{
     int ID PK
     json feedback
   }
   seeds{
-    int id PK
+    uuid id PK
     string name
     json information
   }

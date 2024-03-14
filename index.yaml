@@ -5,7 +5,7 @@ clientData:
 imageData:
   numberOfImages: number of images 
 seedData: 
-  seedID: seed ID
+  seedID: seed ID (uuid)
   seedFamily: seed Family
   seedGenus: seed Genus
   seedSpecies: seed Species
