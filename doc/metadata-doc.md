@@ -138,6 +138,12 @@ flowchart LR;
 
     style dbProcess stroke:#f00,stroke-width:2px
 ``` 
+<<<<<<< HEAD:doc/metadata-doc.md
+=======
+*Note that the bottom process wont be present on the deployed versions of
+Nachet*
+## New Process
+>>>>>>> 3ec5d1c (Fixes #2: Formatting):metadata-doc.md
 
 ## [Deployment mass import](deployment-mass-import.md)
 
@@ -155,7 +161,8 @@ a structure representing the schema.
 ``` 
 This sequence encapsulate the expected tasks of the new feature. 
 ### Queries
-To communicate with the database and perform the request, we will need to build a structure representing the schema.
+To communicate with the database and perform the request, we will need to build
+a structure representing the schema.
 
 >>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
 ```mermaid
@@ -275,6 +282,7 @@ be explicit about the purpose of the call*
 | ------------------- | ----------- | ----------- |
 | New Session  | nbSeeds/Pic, Zoom, Seed info, PictureSet[(picture,link)] & User info | This request has the goal of inserting a session in the DB based on the User and the Session info. It also has the responsability of inserting all the pictures with their info into the DB. |
 #### Validation Errors
+<<<<<<< HEAD:doc/metadata-doc.md
 > :warning: This is deprecated
 
 Here's a list of the errors that can be returned turing the validation of the
@@ -288,6 +296,24 @@ upload
 | Unexpected file     | Based on the value given by the user within the session, there are more files present in the subfolder than expected. |
 | Missing file        | Based on the value given by the user within the session, there are less picture files than expected. |
 | `<picture.yml>` content | This error indicates there's an issue with one of the data fields in the file called 'picture.yml'. *(If the number of seeds and zoom field are not removed from picture.yaml)* |
+=======
+Here's a list of the errors that can be returned turing the validation of the
+upload | Name                | Description
+| | ---------------------- |
+--------------------------------------------------------------------------------------------------------------------------
+| | Wrong structure                   |      This type if error indicate the
+folder uploaded by the user doesn't follow the required structure.
+| | Missing Index          | An Index is missing which means the whole folder of
+picture couldn't be processed. This might stop the upload process as a whole
+| |Index content | A specific Index either has missing fields or unexpected
+values | |Unexpected file | Based on the value given by the user within the
+index, there are more files present in the subfolder than expected  | |Missing
+file | Based on the value given by the user within the index, there are less
+picture files than expected| | <picture.yml> content | This error indicate
+there's an issue with one of the data field in the file called 'picture.yml'
+<br>*(If the number of seeds and zoom field are not removed from picture.yaml)*
+|
+>>>>>>> 3ec5d1c (Fixes #2: Formatting):metadata-doc.md
 ### Files Structure
 
 We aim to have a standard file structure to enable the use of a script to manage
