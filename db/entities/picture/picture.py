@@ -1,6 +1,6 @@
 import uuid
 from datetime import date
-from db.entities.tableEntity import TableEntity
+from db.entities.tableEntity.tableEntity import TableEntity
 from db.queries import queries
 
 class Picture(TableEntity):
