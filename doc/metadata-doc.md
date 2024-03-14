@@ -143,6 +143,7 @@ flowchart LR;
 
 ## [Trusted User Upload](trusted-user-upload.md)
 
+<<<<<<< HEAD:doc/metadata-doc.md
 ### Queries 
 > :warning: This needs to be reworked. After discussions, we are not taking this
 > approach 
@@ -150,6 +151,13 @@ flowchart LR;
 To communicate with the database and perform the request, we will need to build
 a structure representing the schema.
 
+=======
+``` 
+This sequence encapsulate the expected tasks of the new feature. 
+### Queries
+To communicate with the database and perform the request, we will need to build a structure representing the schema.
+
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
 ```mermaid
   classDiagram
       class User {
@@ -160,6 +168,7 @@ a structure representing the schema.
           isUser(email) bool
           registerUser() uuid
           update()
+<<<<<<< HEAD:doc/metadata-doc.md
           getAllSessions(id) List~Session~ 
           getAllPictures(id) List~Pictures~
       }
@@ -169,6 +178,17 @@ a structure representing the schema.
           json session
           <<FK>> uuid ownerID
           getSession(id) Session
+=======
+          getAllIndexes(id) List~Index~ 
+          getAllPictures(id) List~Pictures~
+      }
+
+      class Index {
+          <<PK>> uuid id
+          json index
+          <<FK>> uuid ownerID
+          getIndex(id) Index
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
           update()
           getSeed() Seed
           getNbPicture int
@@ -178,8 +198,12 @@ a structure representing the schema.
       class Picture {
           <<PK>> uuid id
           json picture
+<<<<<<< HEAD:doc/metadata-doc.md
           <<FK>>
           <<FK>> uuid sessionID
+=======
+          <<FK>> uuid indexID
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
           <<FK>> uuid parentID
           getPicture(id)
           update()
@@ -198,12 +222,20 @@ a structure representing the schema.
         <<PK>> uuid id
         string name
         getAllPictures() List~Pictures~
+<<<<<<< HEAD:doc/metadata-doc.md
         getAllSessions() List~Session~
+=======
+        getAllIndexes() List~Index~
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
       }
 
       class Search{
         uuid userID
+<<<<<<< HEAD:doc/metadata-doc.md
         uuid sessionID
+=======
+        uuid indexID
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
         uuid pictureID
         uuid seedID
         float zoom
@@ -316,13 +348,21 @@ erDiagram
   }
   sessions{
     uuid id PK
+<<<<<<< HEAD:doc/metadata-doc.md
     json session
+=======
+    json index
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
     uuid ownerID FK
   }
   pictures{
     uuid id PK
     json picture
+<<<<<<< HEAD:doc/metadata-doc.md
     uuid sessionID FK
+=======
+    uuid indexID FK
+>>>>>>> 16e2b5d (Fixes #2: Queries module):metadata-doc.md
     uuid parent FK
   }
   feedbacks{
