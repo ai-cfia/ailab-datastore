@@ -1,14 +1,15 @@
-import psycopg
-import os
+import db.queries.queries as queries
 
-print(os.getenv("NACHET_DB_URL"))
 # Connect to your PostgreSQL database with the DB URL
-conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+conn = queries.createConnection()
 # Create a cursor object
-cur = conn.cursor()
+cur = queries.createCursor(conn)
 
 # # Create Schema
-# cur.execute("CREATE SCHEMA \"%s\"") % ("nachetdb_0.0.1"))
+# cur.execute("""CREATE SCHEMA "nachetdb_0.0.1";""") 
+
+# # Create Search Path
+# cur.execute("""SET search_path TO "nachetdb_0.0.1";""") 
 
 # #Create Users table
 # cur.execute("""
@@ -36,14 +37,27 @@ cur = conn.cursor()
 #     )
 # """ % ("nachetdb_0.0.1"))
 
+# Create seed DB
+cur.execute("""
+    CREATE TABLE  \"%s\".seeds (
+        id uuid  PRIMARY KEY,
+        info JSON,
+        name VARCHAR(255)
+    )
+""" % ("nachetdb_0.0.1"))
+
 # # check if the schema exists
-# cur.execute("""
-#     SELECT EXISTS (
-#         SELECT 1
-#         FROM information_schema.schemata
-#         WHERE schema_name = 'nachetdb_0.0.1'
-#     )
-# """)
+cur.execute("""
+    SELECT EXISTS (
+        SELECT *
+        FROM information_schema.schemata
+        WHERE schema_name = 'nachetdb_0.0.1'
+    )
+""")
+
+# # check if the search path exists
+# cur.execute("Show search_path")
+
 
 ## Commit the transaction
 conn.commit()
