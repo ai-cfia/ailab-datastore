@@ -9,8 +9,6 @@ UserData:
 # Section filled by system
 info: 
   uploadDate: timestamp
-  userID: ID of the user who uploaded the picture to facilitate search
-  indexID: ID of the index linked to this pîcture to facilitate search
 imageData:
   parent: boolean if the picture has child pictures
   source: url or path to the images
@@ -24,8 +22,6 @@ qualityCheck:
   validData: boolean indicating if the data is valid
   errorType: Type of error if the data is erroneous
   dataQualityScore: Overall score given to the data
-SeedData:
-  seedID: seed ID (uuid)
 # ------------------------------------------------------    
 #Section filled after Inference by User TBD
 clientData:

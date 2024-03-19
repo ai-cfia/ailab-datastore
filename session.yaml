@@ -4,15 +4,9 @@ clientData:
   clientExpertise:  level of expertise
 imageData:
   numberOfImages: number of images 
-seedData: 
-  seedID: seed ID (uuid)
-  seedFamily: seed Family
-  seedGenus: seed Genus
-  seedSpecies: seed Species
 # ------------------------------------------------------    
 # Section filled by system
 auditTrail:
-  ownerID: ID of the user who uploaded the picture, facilitate search
   uploadDate: date uploaded
   editedBy: last userID that modified the records
   editDate: date of the last modification
