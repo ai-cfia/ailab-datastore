@@ -159,7 +159,7 @@ a structure representing the schema.
           isUser(email) bool
           registerUser() uuid
           update()
-          getAllIndexes(id) List~Index~ 
+          getAllSessions(id) List~Session~ 
           getAllPictures(id) List~Pictures~
       }
 
@@ -167,7 +167,7 @@ a structure representing the schema.
           <<PK>> uuid id
           json session
           <<FK>> uuid ownerID
-          getIndex(id) Index
+          getSession(id) Session
           update()
           getSeed() Seed
           getNbPicture int
@@ -197,12 +197,12 @@ a structure representing the schema.
         <<PK>> uuid id
         string name
         getAllPictures() List~Pictures~
-        getAllIndexes() List~Index~
+        getAllSessions() List~Session~
       }
 
       class Search{
         uuid userID
-        uuid indexID
+        uuid sessionID
         uuid pictureID
         uuid seedID
         float zoom
@@ -250,10 +250,10 @@ upload
 | Name                | Description |
 | ------------------- | ----------- |
 | Wrong structure     | This type of error indicates the folder uploaded by the user doesn't follow the required structure. |
-| Missing Index       | An Index is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole. |
-| Index content       | A specific Index either has missing fields or unexpected values. |
-| Unexpected file     | Based on the value given by the user within the index, there are more files present in the subfolder than expected. |
-| Missing file        | Based on the value given by the user within the index, there are less picture files than expected. |
+| Missing Session       | An Session is missing which means the whole folder of picture couldn't be processed. This might stop the upload process as a whole. |
+| Session content       | A specific Session either has missing fields or unexpected values. |
+| Unexpected file     | Based on the value given by the user within the session, there are more files present in the subfolder than expected. |
+| Missing file        | Based on the value given by the user within the session, there are less picture files than expected. |
 | `<picture.yml>` content | This error indicates there's an issue with one of the data fields in the file called 'picture.yml'. *(If the number of seeds and zoom field are not removed from picture.yaml)* |
 ### Files Structure
 
@@ -287,10 +287,10 @@ project/
 └──────────────────
 ```
 #### Files (.yaml)
-##### [Index.yaml](index.yaml)
+##### [Session.yaml](session.yaml)
 
-The index is an most important file. It will allow us to have all the knowledge
-about the user and the project/session.
+The session is an most important file. It will allow us to have all the knowledge
+about the user and dataset uploaded.
 
 
 ##### [picture.yaml](picture.yaml)

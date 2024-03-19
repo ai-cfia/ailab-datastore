@@ -4,15 +4,17 @@ clientData:
   clientExpertise:  level of expertise
 imageData:
   numberOfImages: number of images 
+<<<<<<< HEAD:index.yaml
 seedData: 
   seedID: seed ID
   seedFamily: seed Family
   seedGenus: seed Genus
   seedSpecies: seed Species
+=======
+>>>>>>> bd13974 (Fixes #11: Adapted doc + import process + corrected SQL injection risk):session.yaml
 # ------------------------------------------------------    
 # Section filled by system
 auditTrail:
-  ownerID: ID of the user who uploaded the picture, facilitate search
   uploadDate: date uploaded
   editedBy: last userID that modified the records
   editDate: date of the last modification

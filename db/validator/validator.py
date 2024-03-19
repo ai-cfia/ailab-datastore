@@ -14,7 +14,7 @@ class SeedData(BaseModel):
     seedSpecies: str
 
 
-class ImageDataindex(BaseModel):
+class ImageDataSession(BaseModel):
     numberOfImages: int
 
 
@@ -28,9 +28,7 @@ class AuditTrail(BaseModel):
 
 
 class Info(BaseModel):
-    userID: int
     uploadDate: date
-    indexID: int
 
 
 class ImageData(BaseModel):
@@ -56,16 +54,14 @@ class UserData(BaseModel):
     zoom: float
 
 
-class Index(BaseModel):
+class Session(BaseModel):
     clientData: ClientData
-    imageData: ImageDataindex
-    seedData: SeedData
+    imageData: ImageDataSession
 
 
 class PIndex(BaseModel):
     clientData: ClientData
-    imageData: ImageDataindex
-    seedData: SeedData
+    imageData: ImageDataSession
     auditTrail: AuditTrail
 
 
