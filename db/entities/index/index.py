@@ -1,5 +1,5 @@
 import uuid
-from tableEntity.tableEntity import TableEntity
+from db.entities.tableEntity.tableEntity import TableEntity
 from db.queries import queries
 
 class Index(TableEntity):
@@ -28,3 +28,4 @@ class Index(TableEntity):
             query = "INSERT INTO indexes (id, index, ownerID) VALUES (%s, %s, %s);"
             cur = queries.queryParameterizedDB(con,cur,query,(self.index_id,self.index,self.owner_id))
         queries.endQuery(con,cur)
+        

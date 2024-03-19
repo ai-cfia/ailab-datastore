@@ -32,7 +32,7 @@ class Picture(TableEntity):
         cur = queries.queryParameterizedDB(con,cur,query,self.index_id)
         if queries.getOneResult(cur):
             query = "UPDATE pictures SET pictures = %s WHERE id = %s;"
-            cur = queries.queryParameterizedDB(con,cur,query,(self.index,self.index_id))
+            cur = queries.queryParameterizedDB(con,cur,query,())
         else:
             query = "INSERT INTO pictures (id,picture, indexID) VALUES (%s,%s, %s);"
             cur = queries.queryParameterizedDB(con,cur,query,(self.index_id,self.index,self.owner_id))

@@ -46,3 +46,11 @@ def getResults(cur):
 def getOneResult(cur):
     return cur.fetchone()
         
+if __name__ == "__main__":
+    con = createConnection()
+    cur = createCursor(con)
+    createSearchPath(con,cur)
+    query = "SELECT * FROM users;"
+    cur = queryDB(con,cur,query)
+    printResults(cur)
+    endQuery(con,cur)
