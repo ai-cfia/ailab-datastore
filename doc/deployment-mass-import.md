@@ -1,7 +1,8 @@
 # Deployment mass import
 
 ## Contexte
-We have a set of already existing picture in our Blob storage. We would like to save the metadata of our files into the DB.
+We have a set of already existing picture in our Blob storage. We would like to
+save the metadata of our files into the DB.
 
 ## Prerequisites
 - The folder path must be accessible

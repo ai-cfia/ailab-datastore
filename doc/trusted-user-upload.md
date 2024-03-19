@@ -1,7 +1,8 @@
 # Trusted user upload process
 
 ## Contexte
-We have a set of trusted user that needs to have an easy way of uploading large sets of data to both our picture storage and database.
+We have a set of trusted user that needs to have an easy way of uploading large
+sets of data to both our picture storage and database.
 
 ## Prerequisites
 - The user must be signed in

@@ -144,7 +144,8 @@ flowchart LR;
 ## [Trusted User Upload](trusted-user-upload.md)
 
 ### Queries 
-> :warning: This needs to be reworked. After discussions, we are not taking for this approach 
+> :warning: This needs to be reworked. After discussions, we are not taking for
+> this approach 
 
 To communicate with the database and perform the request, we will need to build
 a structure representing the schema.
@@ -289,8 +290,8 @@ project/
 #### Files (.yaml)
 ##### [Session.yaml](session.yaml)
 
-The session is an most important file. It will allow us to have all the knowledge
-about the user and dataset uploaded.
+The session is an most important file. It will allow us to have all the
+knowledge about the user and dataset uploaded.
 
 
 ##### [picture.yaml](picture.yaml)
