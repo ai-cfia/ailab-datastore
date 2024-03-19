@@ -24,7 +24,8 @@ qualityCheck:
   validData: boolean indicating if the data is valid
   errorType: Type of error if the data is erroneous
   dataQualityScore: Overall score given to the data
-
+SeedData:
+  seedID: seed ID (uuid)
 # ------------------------------------------------------    
 #Section filled after Inference by User TBD
 clientData:
