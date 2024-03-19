@@ -1,6 +1,6 @@
 import uuid
-from db.entities.tableEntity.tableEntity import TableEntity
-from db.queries import queries
+from entities.tableEntity.tableEntity import TableEntity
+from queries import queries
 
 class Index(TableEntity):
     index_id: uuid

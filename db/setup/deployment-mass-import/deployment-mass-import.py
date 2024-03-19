@@ -1,4 +1,5 @@
 from datetime import date
+import sys
 import uuid
 import json
 import os
@@ -7,7 +8,6 @@ from PIL import Image
 import db.queries.queries as queries
 import db.validator.validator as validator
 
-# File: nachetDb-1.0.0/mass-import.py
 # This script is used to import the missing metadata from an Azure container to the database
 
 
@@ -525,4 +525,4 @@ def uploadPictureDB(path: str, userID: str, indexID: str):
 
 
 if __name__ == "__main__":
-    manualMetaDataImport(path)
+    manualMetaDataImport(*sys.argv[1:])
