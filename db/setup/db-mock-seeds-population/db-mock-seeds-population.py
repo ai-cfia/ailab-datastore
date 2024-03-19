@@ -1,11 +1,15 @@
 import uuid
-import db.queries.queries as queries
+import psycopg
+import os
 
+NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+
+NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
 # Connect to your PostgreSQL database with the DB URL
-conn = queries.createConnection()
+conn = psycopg.connect(NACHET_DB_URL)
 # Create a cursor object
-cur = queries.createCursor(conn)
+cur = conn.cursor()
 
 brassicaNapus = (str(uuid.uuid4()), "Brassica napus")
 brassicaJunsea = (str(uuid.uuid4()), "Brassica juncea")
@@ -23,7 +27,8 @@ ambrosiaArtemisiifolia = (str(uuid.uuid4()), "Ambrosia artemisiifolia")
 ambrosiaTrifida = (str(uuid.uuid4()), "Ambrosia trifida")
 Ambrosiapsilostachya = (str(uuid.uuid4()), "Ambrosia psilostachya")
 
-queries.createSearchPath(conn, cur)
+cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
+conn.commit()
 
 # Query to insert a seed
 query = "INSERT INTO seeds (id,name) VALUES (%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s),(%s,%s)"
@@ -60,7 +65,9 @@ data = (
     Ambrosiapsilostachya[1],
 )
 
-# queries.queryParameterizedDB(conn,cur,query,data)
+cur.execute(query, data)
 
-queries.queryDB(conn, cur, "select id,name from seeds")
-queries.printResults(cur)
+conn.commit()
+
+cur.close()
+conn.close()

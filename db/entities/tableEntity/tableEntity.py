@@ -1,5 +1,5 @@
 import uuid
-import db.queries.queries as queries
+import queries.queries as queries
 class TableEntity:
     id : uuid
     def __init__(self, table_id: uuid):

@@ -139,6 +139,8 @@ flowchart LR;
     style dbProcess stroke:#f00,stroke-width:2px
 ``` 
 
+## [Deployment mass import](deployment-mass-import.md)
+
 ## [Trusted User Upload](trusted-user-upload.md)
 
 ### Queries 

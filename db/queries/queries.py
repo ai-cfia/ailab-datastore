@@ -12,7 +12,8 @@ def createCursor(conn):
     return conn.cursor()
 
 def createSearchPath(conn,cur):
-    cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""") 
+    cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
+    print(f'SET search_path TO {NACHET_SCHEMA}') 
     conn.commit()
 
 def closeConnection(conn):
@@ -36,8 +37,8 @@ def queryParameterizedDB(conn,cur,query, params):
     conn.commit()
     return cur
 
-def printResults(cur):
-    for record in cur:
+def printResults(res):
+    for record in res:
         print(record)
         
 def getResults(cur):
@@ -45,3 +46,13 @@ def getResults(cur):
 
 def getOneResult(cur):
     return cur.fetchone()
+
+if __name__ == "__main__":
+    conn = createConnection()
+    cur = createCursor(conn)
+    createSearchPath(conn,cur)
+    query = "SELECT * FROM seeds order by seeds.name"
+    cur = queryDB(conn,cur,query)
+    res = getResults(cur)
+    printResults(res)
+    endQuery(conn,cur)
