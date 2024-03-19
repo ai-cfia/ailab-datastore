@@ -55,7 +55,9 @@ def manualMetaDataImport(picturefolder: str):
     # clientEmail = input("clientEmail: ")
     clientEmail = "test@email"
     userID = getUserID(clientEmail)
-
+    if userID is None:
+        print("Error: could not retrieve the userID")
+        return
     # #build session
     nbPic = buildSession(picturefolder, userID)
 
@@ -78,12 +80,10 @@ def manualMetaDataImport(picturefolder: str):
     # Loop through each file in the folder
     for filename in files:
         if filename.endswith(".tiff") or filename.endswith(".tif"):
-            buildPicture(
-                picturefolder, seedNumber, zoomlevel, filename
-            )
+            buildPicture(picturefolder, seedNumber, zoomlevel, filename)
             picPath = f'{picturefolder}/{filename.removesuffix(".tiff")}.json'
             # upload picture to database
-            uploadPictureDB(picPath, sessionID,seedID=seedID)
+            uploadPictureDB(picPath, sessionID, seedID=seedID)
             i = i + 1
 
     if i != nbPic:
@@ -95,8 +95,6 @@ def manualMetaDataImport(picturefolder: str):
         print("Number of picture processed: " + str(i))
 
 
-# Function to retrieve the userID from the database based on the email
-# Returns the userID if the email is already registered, else it registers the email and returns the userID
 def getUserID(email: str):
     """
     Function to retrieve the userID from the database based on the email.
@@ -108,26 +106,30 @@ def getUserID(email: str):
     Returns:
     - The userID of the user.
     """
-    # Connect to your PostgreSQL database
-    conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
-    # Create a cursor object
-    cur = conn.cursor()
-    queries.createSearchPath(conn, cur)
-    # Check if the email is already registered
-    cur.execute(f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')")
-    if cur.fetchone()[0]:  # Already registered
-        cur.execute(f"SELECT id FROM users WHERE email='{email}'")
-        res = cur.fetchone()[0]
-    else:  # Not registered -> Creates new user
-        cur.execute(f"INSERT INTO users (id,email) VALUES (,'{email}')")
-        cur.execute(f"SELECT id FROM users WHERE email='{email}'")
-        res = cur.fetchone()[0]
-    cur.close()
-    conn.close()
+    try:
+        # Connect to your PostgreSQL database
+        conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+        # Create a cursor object
+        cur = conn.cursor()
+        queries.createSearchPath(conn, cur)
+        # Check if the email is already registered
+        cur.execute(f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')")
+        if cur.fetchone()[0]:  # Already registered
+            cur.execute(f"SELECT id FROM users WHERE email='{email}'")
+            res = cur.fetchone()[0]
+        else:  # Not registered -> Creates new user
+            cur.execute(f"INSERT INTO users (id,email) VALUES (,'{email}')")
+            cur.execute(f"SELECT id FROM users WHERE email='{email}'")
+            res = cur.fetchone()[0]
+    except (Exception, psycopg.DatabaseError) as error:
+        print(error)
+        res = None
+    finally:
+        cur.close()
+        conn.close()
     return res
 
 
-# Function to build the session metadata file
 def buildSession(output: str, clientID):
     """
     This function builds the session needed to represent each folder (with pictures in it) of a container.
@@ -148,7 +150,9 @@ def buildSession(output: str, clientID):
     clientExpertise = "Developer"
 
     # Create the session metadata (sub part) normally filled by the user
-    clientData = validator.ClientData(clientEmail=clientEmail, clientExpertise=clientExpertise)
+    clientData = validator.ClientData(
+        clientEmail=clientEmail, clientExpertise=clientExpertise
+    )
     print(output)
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
     imageData = validator.ImageDataSession(numberOfImages=nb)
@@ -168,7 +172,7 @@ def buildSession(output: str, clientID):
 
     # Create the Session object
     session = validator.Session(clientData=clientData, imageData=imageData)
-    
+
     print("File created, name: " + output + "/session.json")
     sessionJson = session.dict()
 
@@ -236,9 +240,7 @@ def SessionProcessing(jsonData: str):
     )
 
 
-# Function to create the system picture metadata
-# Returns the system picture object populated with the metadata
-def PictureProcessing(jsonData: str,picturePath: str):
+def PictureProcessing(jsonData: str, picturePath: str):
     """
     Function to create the system picture metadata.
 
@@ -256,7 +258,7 @@ def PictureProcessing(jsonData: str,picturePath: str):
     # sessionID
     info = getImageProperties(picturePath)
     parent = ""
-    #source = container_URL + picturePath.removesuffix("test")
+    # source = container_URL + picturePath.removesuffix("test")
     source = container_URL + picturePath
     format = info[2]
     height = info[1]
@@ -274,8 +276,6 @@ def PictureProcessing(jsonData: str,picturePath: str):
     )
 
 
-# Function to populate the session metadata file provided
-# Returns the session metadata object populated with the metadata
 def SessionSystemPopulating(
     data, date: date, editedBy, editDate: date, changes: str, access, privacy
 ):
@@ -303,8 +303,6 @@ def SessionSystemPopulating(
     return data
 
 
-# Function to populate the picture metadata file provided
-# Returns the picture metadata object populated with the metadata
 def PictureSystemPopulating(
     data,
     date: date,
@@ -381,8 +379,6 @@ def openSessionSystem():
     return sysData
 
 
-# Function to open the system picture metadata template file
-# Returns an empty system picture metadata object
 def openPictureSystem():
     """
     Function to open the system picture metadata template file.
@@ -396,7 +392,6 @@ def openPictureSystem():
     return sysData
 
 
-# Create .json from Session data model
 def createJsonSession(session, name: str, output: str):
     """
     Create .json from session data model to the specified output.
@@ -415,7 +410,6 @@ def createJsonSession(session, name: str, output: str):
         json.dump(session, json_file, indent=2)
 
 
-# Create .json form Picture data model
 def createJsonPicture(pic, name: str, output: str):
     """
     Create .json from picture data model to the specified output.
@@ -436,8 +430,6 @@ def createJsonPicture(pic, name: str, output: str):
         json.dump(pic, json_file, indent=2)
 
 
-# Function to upload the session file located @path to the database
-# RETURNS the sessionID of the uploaded session
 def uploadSessionDB(path: str, userID: str):
     """
     Upload the session.json file located at the specified path to the database.
@@ -449,34 +441,40 @@ def uploadSessionDB(path: str, userID: str):
     Returns:
     - The ID of the session.
     """
+    try:
+        # Connect to your PostgreSQL database
+        conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
 
-    # Connect to your PostgreSQL database
-    conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+        # Create a cursor object
+        cur = conn.cursor()
 
-    # Create a cursor object
-    cur = conn.cursor()
+        queries.createSearchPath(conn, cur)
 
-    queries.createSearchPath(conn, cur)
+        # Open the file
+        with open(path, "r") as file:
+            data = file.read()
 
-    # Open the file
-    with open(path, "r") as file:
-        data = file.read()
+        # Build sessionID
+        sessionID = uuid.uuid4()
 
-    # Build sessionID
-    sessionID = uuid.uuid4()
-
-    # Execute the INSERT statement
-    # print(userID)
-    query="INSERT INTO sessions (id,session, ownerID) VALUES (%s,%s, %s)"
-    params=(sessionID, data, userID,)
-    cur.execute(query,params)
-    conn.commit()
-
+        # Execute the INSERT statement
+        # print(userID)
+        query = "INSERT INTO sessions (id,session, ownerID) VALUES (%s,%s, %s)"
+        params = (
+            sessionID,
+            data,
+            userID,
+        )
+        cur.execute(query, params)
+        conn.commit()
+    except:
+        print("Error: could not upload the session to the database")
+        sessionID = None
     # Retrieve the session id
-    #cur.execute("SELECT id FROM sessions ORDER BY id DESC LIMIT 1")
-
-    cur.close()
-    conn.close()
+    # cur.execute("SELECT id FROM sessions ORDER BY id DESC LIMIT 1")
+    finally:
+        cur.close()
+        conn.close()
     return sessionID
 
 
@@ -492,35 +490,47 @@ def uploadPictureDB(path: str, sessionID: str, seedID: str):
     Returns:
     None
     """
-    # Connect to your PostgreSQL howatabase
-    conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+    try:
+        # Connect to your PostgreSQL howatabase
+        conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
 
-    # Create a cursor object
-    cur = conn.cursor()
+        # Create a cursor object
+        cur = conn.cursor()
 
-    queries.createSearchPath(conn, cur)
-    # Open the file
-    with open(path, "r") as file:
-        data = file.read()
+        queries.createSearchPath(conn, cur)
+        # Open the file
+        with open(path, "r") as file:
+            data = file.read()
 
-    # Generate pictureID
-    pictureID = uuid.uuid4()
+        # Generate pictureID
+        pictureID = uuid.uuid4()
 
-    # Execute the INSERT statement
-    params = (pictureID, data, sessionID,)
-    query = "INSERT INTO pictures (id,picture, sessionID) VALUES (%s,%s, %s)"
-    cur.execute(query,params)
-    conn.commit()
-    
-    id = uuid.uuid4()
-    
-    # Create a Picture - Seed relationship
-    param=(id,seedID, pictureID,)
-    query="INSERT INTO seedpicture (id,seedID,pictureID) VALUES (%s,%s,%s)"
-    cur.execute(query,param)
-    conn.commit()
-    cur.close()
-    conn.close()
+        # Execute the INSERT statement
+        params = (
+            pictureID,
+            data,
+            sessionID,
+        )
+        query = "INSERT INTO pictures (id,picture, sessionID) VALUES (%s,%s, %s)"
+        cur.execute(query, params)
+        conn.commit()
+
+        id = uuid.uuid4()
+
+        # Create a Picture - Seed relationship
+        param = (
+            id,
+            seedID,
+            pictureID,
+        )
+        query = "INSERT INTO seedpicture (id,seedID,pictureID) VALUES (%s,%s,%s)"
+        cur.execute(query, param)
+        conn.commit()
+    except:
+        print("Error: could not upload the picture to the database")
+    finally:
+        cur.close()
+        conn.close()
 
 
 if __name__ == "__main__":
