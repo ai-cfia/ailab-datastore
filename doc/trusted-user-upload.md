@@ -20,7 +20,7 @@ sequenceDiagram;
   participant MetaData
   end
   box grey Storage services
-  participant PostreSQL Database
+  participant PostgreSQL Database
   participant Azure Storage
   end
 
