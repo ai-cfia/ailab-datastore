@@ -5,30 +5,29 @@ import json
 import os
 import psycopg
 from PIL import Image
-import db.queries.queries as queries
-import db.validator.validator as validator
+import db as db
 
 # This script is used to import the missing metadata from an Azure container to the database
 
 
 # Constants
 container_URL = ""
-seedID = ""
+seed_id = ""
 path = ""
 
 
-def jsonDeletion(picturefolder):
+def json_deletion(picture_folder):
     """
     Function to delete all the .json files in the specified folder in case of a bad importation.
 
     Parameters:
-    - picturefolder (str): The path to the folder.
+    - picture_folder (str): The path to the folder.
     """
     # Get a list of files in the directory
     files = [
         f
-        for f in os.listdir(picturefolder)
-        if os.path.isfile(os.path.join(picturefolder, f))
+        for f in os.listdir(picture_folder)
+        if os.path.isfile(os.path.join(picture_folder, f))
     ]
     # Iterate over the list of filepaths & remove each file.
     for file in files:
@@ -38,80 +37,80 @@ def jsonDeletion(picturefolder):
             print("Error: %s : %s" % (file, e.strerror))
 
 
-def manualMetaDataImport(picturefolder: str):
+def manual_metadata_import(picture_folder: str):
     """
     Template function to do the importation process of the metadata from the Azure container to the database.
-    The user is prompted to input the client email, the zoom level and the number of seeds for the session.
+    The user is prompted to input the client email, the zoom level and the number of seeds for the picture_set.
     The container needs to be downloaded locally before running this function.
 
     Parameters:
-    - picturefolder (str): Relative path to the folder we want to import.
+    - picture_folder (str): Relative path to the folder we want to import.
     """
 
     # Manually define the picture folder
-    # picturefolder = ""  # manually inputted before each import sequence
+    # picture_folder = ""  # manually inputted before each import sequence
 
     # Input the client email to identify the user or register him if needed
-    # clientEmail = input("clientEmail: ")
-    clientEmail = "test@email"
-    userID = getUserID(clientEmail)
-    if userID is None:
-        print("Error: could not retrieve the userID")
+    # client_email = input("client_email: ")
+    client_email = "test@email"
+    user_id = get_user_id(client_email)
+    if user_id is None:
+        print("Error: could not retrieve the user_id")
         return
-    # #build session
-    nbPic = buildSession(picturefolder, userID)
+    # #build picture_set
+    nb_pic = build_picture_set(picture_folder, user_id)
 
-    # upload session to database
-    sessionID = uploadSessionDB(f"{picturefolder}/session.json", userID=userID)
-    # sessionID=1
-    print("sessionID : " + str(sessionID))
+    # upload picture_set to database
+    picture_set_id = upload_picture_set_db(f"{picture_folder}/picture_set.json", user_id=user_id)
+    # picture_set_id=1
+    print("picture_set_id : " + str(picture_set_id))
 
     # for each picture in field
-    zoomlevel = input("Zoom level for this session: ")
-    seedNumber = input("Number of seed for this session: ")
+    zoom_level = input("Zoom level for this picture_set: ")
+    seed_number = input("Number of seed for this picture_set: ")
 
     # Get a list of files in the directory
     files = [
         f
-        for f in os.listdir(picturefolder)
-        if os.path.isfile(os.path.join(picturefolder, f))
+        for f in os.listdir(picture_folder)
+        if os.path.isfile(os.path.join(picture_folder, f))
     ]
     i = 0
     # Loop through each file in the folder
     for filename in files:
         if filename.endswith(".tiff") or filename.endswith(".tif"):
-            buildPicture(picturefolder, seedNumber, zoomlevel, filename)
-            picPath = f'{picturefolder}/{filename.removesuffix(".tiff")}.json'
+            build_picture(picture_folder, seed_number, zoom_level, filename)
+            pic_path = f'{picture_folder}/{filename.removesuffix(".tiff")}.json'
             # upload picture to database
-            uploadPictureDB(picPath, sessionID, seedID=seedID)
+            uploadPictureDB(pic_path, picture_set_id, seed_id=seed_id)
             i = i + 1
 
-    if i != nbPic:
-        print("Error: number of pictures processed does not match the session")
+    if i != nb_pic:
+        print("Error: number of pictures processed does not match the picture_set")
         print("Number of picture processed: " + str(i))
-        print("Number of picture in session: " + str(nbPic))
+        print("Number of picture in picture_set: " + str(nb_pic))
     else:
-        print("importation of " + picturefolder + "/ complete")
+        print("importation of " + picture_folder + "/ complete")
         print("Number of picture processed: " + str(i))
 
 
-def getUserID(email: str):
+def get_user_id(email: str):
     """
-    Function to retrieve the userID from the database based on the email.
-    If the email is not already registered, it registers the email and returns the userID.
+    Function to retrieve the user_id from the database based on the email.
+    If the email is not already registered, it registers the email and returns the user_id.
 
     Parameters:
     - email (str): The email of the user.
 
     Returns:
-    - The userID of the user.
+    - The user_id of the user.
     """
     try:
         # Connect to your PostgreSQL database
         conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
         # Create a cursor object
         cur = conn.cursor()
-        queries.createSearchPath(conn, cur)
+        db.create_search_path(conn, cur)
         # Check if the email is already registered
         cur.execute(f"SELECT Exists(SELECT 1 FROM users WHERE email='{email}')")
         if cur.fetchone()[0]:  # Already registered
@@ -130,35 +129,35 @@ def getUserID(email: str):
     return res
 
 
-def buildSession(output: str, clientID):
+def build_picture_set(output: str, client_id):
     """
-    This function builds the session needed to represent each folder (with pictures in it) of a container.
+    This function builds the picture_set needed to represent each folder (with pictures in it) of a container.
     It prompts the user to input the expertise of the client and the number of images in the folder.
 
     Parameters:
     - output (str): The path to the folder.
-    - clientID (str): The UUID of the client.
+    - client_id (str): The UUID of the client.
 
     Returns:
     - The number of pictures in the folder that are supposed to be processed.
     """
 
-    # clientEmail = input("clientEmail: ")
-    clientEmail = "test@email"
+    # client_email = input("client_email: ")
+    client_email = "test@email"
 
-    # clientExpertise = input("Expertise: ")
-    clientExpertise = "Developer"
+    # client_expertise = input("Expertise: ")
+    client_expertise = "Developer"
 
-    # Create the session metadata (sub part) normally filled by the user
-    clientData = validator.ClientData(
-        clientEmail=clientEmail, clientExpertise=clientExpertise
+    # Create the picture_set metadata (sub part) normally filled by the user
+    client_data = validator.client_data(
+        client_email=client_email, client_expertise=client_expertise
     )
     print(output)
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
-    imageData = validator.ImageDataSession(numberOfImages=nb)
+    image_data = validator.image_data_picture_set(numberOfImages=nb)
 
-    # ATM===> I dont have access to the seedID db
-    # seedID = input("SeedID: ")
+    # ATM===> I dont have access to the seed_id db
+    # seed_id = input("seed_id: ")
 
     # family = input("Family: ")
     # genus = input("Genus: ")
@@ -166,28 +165,28 @@ def buildSession(output: str, clientID):
     family = ""
     genus = ""
     species = ""
-    seedData = validator.SeedData(
-        seedID=seedID, seedFamily=family, seedGenus=genus, seedSpecies=species
+    seed_data = validator.seed_data(
+        seed_id=seed_id, seed_family=family, seed_genus=genus, seed_species=species
     )
 
-    # Create the Session object
-    session = validator.Session(clientData=clientData, imageData=imageData)
+    # Create the picture_set object
+    picture_set = validator.picture_set(client_data=client_data, image_data=image_data)
 
-    print("File created, name: " + output + "/session.json")
-    sessionJson = session.dict()
+    print("File created, name: " + output + "/picture_set.json")
+    picture_set_jsons = picture_set.dict()
 
-    # Creating session metadata collected from the system
-    sysData = SessionProcessing(openSessionSystem())
+    # Creating picture_set metadata collected from the system
+    sysData = picture_set_processing(open_picture_set_system())
 
-    # Append the system data to the session
-    sessionJson.update(sysData)
+    # Append the system data to the picture_set
+    picture_set_jsons.update(sysData)
 
-    # Create the session file
-    createJsonSession(session=sessionJson, name="session", output=output)
+    # Create the picture_set file
+    create_json_picture_set(picture_set=picture_set_jsons, name="picture_set", output=output)
     return nb
 
 
-def buildPicture(output: str, number: int, zoom, name: str):
+def build_picture(output: str, number: int, zoom, name: str):
     """
     This function builds the picture metadata file (.json) for each picture in the folder.
 
@@ -195,9 +194,7 @@ def buildPicture(output: str, number: int, zoom, name: str):
     - output (str): The path to the folder.
     - number (int): The number of seeds in the picture.
     - zoom (float): The zoom level of the picture.
-    - sessionID (uuid): The ID of the session.
     - name (str): The name of the picture.
-    - userID (str): The UUID of the user.
 
     Returns:
     None
@@ -205,67 +202,67 @@ def buildPicture(output: str, number: int, zoom, name: str):
 
     desc = "This image was uploaded before the creation of the database and was apart of the first importation batch."
     nb = number
-    userData = validator.UserData(description=desc, numberOfSeeds=nb, zoom=zoom)
+    user_data = validator.user_data(description=desc, number_of_seeds=nb, zoom=zoom)
 
     # Create the Picture object with the user data
-    pic = validator.Picture(userData=userData)
-    picJson = pic.dict()
+    pic = validator.Picture(user_data=user_data)
+    pic_json = pic.dict()
     print("File created, name: " + name)
-    picturePath = f"{output}/{name}"
+    picture_path = f"{output}/{name}"
 
     # Creating picture metadata collected from the system
-    picData = PictureProcessing(openPictureSystem(), picturePath)
-    picJson.update(picData)
-    createJsonPicture(pic=picJson, name=name, output=output)
+    picData = picture_processing(open_picture_system(), picture_path)
+    pic_json.update(picData)
+    create_json_picture(pic=pic_json, name=name, output=output)
 
 
-def SessionProcessing(jsonData: str):
+def picture_set_processing(json_data: str):
     """
-    Function to create the system session metadata.
+    Function to create the system picture_set metadata.
 
     Parameters:
-    - jsonData (str): The JSON data of the session.
+    - json_data (str): The JSON data of the picture_set.
 
     Returns:
-    - The system session object populated with the metadata.
+    - The system picture_set object populated with the metadata.
     """
     today = date.today()
-    editedBy = "Francois Werbrouck"  # not permanent, will be changed once the mass import is over
-    editDate = date.today()
+    edited_by = "Francois Werbrouck"  # not permanent, will be changed once the mass import is over
+    edited_date = date.today()
     change = ""
     access = ""
     privacy = False
-    return SessionSystemPopulating(
-        jsonData, today, editedBy, editDate, change, access, privacy
+    return picture_set_system_populating(
+        json_data, today, edited_by, edited_date, change, access, privacy
     )
 
 
-def PictureProcessing(jsonData: str, picturePath: str):
+def picture_processing(json_data: str, picture_path: str):
     """
     Function to create the system picture metadata.
 
     Parameters:
-    - jsonData (str): The JSON data of the picture.
-    - userID (str): The UUID of the user.
-    - sessionID (str): The ID of the session.
-    - picturePath (str): The path to the picture.
+    - json_data (str): The JSON data of the picture.
+    - user_id (str): The UUID of the user.
+    - picture_set_id (str): The ID of the picture_set.
+    - picture_path (str): The path to the picture.
 
     Returns:
     - The system picture object populated with the metadata.
     """
     today = date.today()
-    # userID
-    # sessionID
-    info = getImageProperties(picturePath)
+    # user_id
+    # picture_set_id
+    info = get_image_properties(picture_path)
     parent = ""
-    # source = container_URL + picturePath.removesuffix("test")
-    source = container_URL + picturePath
+    # source = container_URL + picture_path.removesuffix("test")
+    source = container_URL + picture_path
     format = info[2]
     height = info[1]
     width = info[0]
     resolution = ""
-    return PictureSystemPopulating(
-        jsonData,
+    return picture_system_populating(
+        json_data,
         today,
         format,
         height,
@@ -276,34 +273,34 @@ def PictureProcessing(jsonData: str, picturePath: str):
     )
 
 
-def SessionSystemPopulating(
-    data, date: date, editedBy, editDate: date, changes: str, access, privacy
+def picture_set_system_populating(
+    data, date: date, edited_by, edited_date: date, changes: str, access, privacy
 ):
     """
-    Function to populate the session metadata file provided.
+    Function to populate the picture_set metadata file provided.
 
     Parameters:
-    - data (str): The JSON data template of the session.
+    - data (str): The JSON data template of the picture_set.
     - date (date): The date of the upload
-    - editedBy (str): The name of the person who edited the file
-    - editDate (date): The date of the last edit
+    - edited_by (str): The name of the person who edited the file
+    - edited_date (date): The date of the last edit
     - changes (str): The changes made to the file
     - access (str): The access log
 
     Returns:
-    - The session metadata object populated with the metadata.
+    - The picture_set metadata object populated with the metadata.
     """
     # print(data)
     data["auditTrail"]["uploadDate"] = date.strftime("%Y-%m-%d")
-    data["auditTrail"]["editedBy"] = editedBy
-    data["auditTrail"]["editDate"] = editDate.strftime("%Y-%m-%d")
+    data["auditTrail"]["edited_by"] = edited_by
+    data["auditTrail"]["edited_date"] = edited_date.strftime("%Y-%m-%d")
     data["auditTrail"]["changeLog"] = changes
     data["auditTrail"]["accessLog"] = access
     data["auditTrail"]["privacyFlag"] = privacy
     return data
 
 
-def PictureSystemPopulating(
+def picture_system_populating(
     data,
     date: date,
     format: str,
@@ -319,8 +316,8 @@ def PictureSystemPopulating(
     Parameters:
     - data (str): The JSON data template of the Picture.
     - date (date): The date of the upload
-    - userID (str): The UUID of the user
-    - sessionID (str): The ID of the session
+    - user_id (str): The UUID of the user
+    - picture_set_id (str): The ID of the picture_set
     - format (str): The format of the picture
     - height (int): The height of the picture
     - width (int): The width of the picture
@@ -332,12 +329,12 @@ def PictureSystemPopulating(
     - The Picture metadata object populated with the metadata.
     """
     data["info"]["uploadDate"] = date.strftime("%Y-%m-%d")
-    data["imageData"]["height"] = height
-    data["imageData"]["width"] = width
-    data["imageData"]["format"] = format
-    data["imageData"]["source"] = source
-    data["imageData"]["parent"] = parent
-    data["imageData"]["resolution"] = resolution
+    data["image_data"]["height"] = height
+    data["image_data"]["width"] = width
+    data["image_data"]["format"] = format
+    data["image_data"]["source"] = source
+    data["image_data"]["parent"] = parent
+    data["image_data"]["resolution"] = resolution
 
     data["qualityCheck"]["imageChecksum"] = ""
     data["qualityCheck"]["uploadCheck"] = True
@@ -348,7 +345,7 @@ def PictureSystemPopulating(
     return data
 
 
-def getImageProperties(path: str):
+def get_image_properties(path: str):
     """
     Function to retrieve an image's properties.
 
@@ -364,22 +361,22 @@ def getImageProperties(path: str):
     return width, height, img_format
 
 
-# Function to open the system session metadata template file
-# Returns an empty system session metadata object
-def openSessionSystem():
+# Function to open the system picture_set metadata template file
+# Returns an empty system picture_set metadata object
+def open_picture_set_system():
     """
-    Function to open the system session metadata template file.
+    Function to open the system picture_set metadata template file.
 
     Returns:
-    - An empty system session metadata object.
+    - An empty system picture_set metadata object.
     """
-    with open("session-template-system.json", "r") as file:
+    with open("picture_set-template-system.json", "r") as file:
         sysData = json.load(file)
         # print(sysData)
     return sysData
 
 
-def openPictureSystem():
+def open_picture_system():
     """
     Function to open the system picture metadata template file.
 
@@ -392,25 +389,25 @@ def openPictureSystem():
     return sysData
 
 
-def createJsonSession(session, name: str, output: str):
+def create_json_picture_set(picture_set, name: str, output: str):
     """
-    Create .json from session data model to the specified output.
+    Create .json from picture_set data model to the specified output.
 
     Parameters:
-    - session (dict): The session data model.
+    - picture_set (dict): The picture_set data model.
     - name (str): The name of the file.
     - output (str): The path to the folder.
 
     Returns:
     None
     """
-    data = validator.PSession(**session)
+    data = validator.Ppicture_set(**picture_set)
     filePath = f"{output}/{name}.json"
     with open(filePath, "w") as json_file:
-        json.dump(session, json_file, indent=2)
+        json.dump(picture_set, json_file, indent=2)
 
 
-def createJsonPicture(pic, name: str, output: str):
+def create_json_picture(pic, name: str, output: str):
     """
     Create .json from picture data model to the specified output.
 
@@ -430,16 +427,16 @@ def createJsonPicture(pic, name: str, output: str):
         json.dump(pic, json_file, indent=2)
 
 
-def uploadSessionDB(path: str, userID: str):
+def upload_picture_set_db(path: str, user_id: str):
     """
-    Upload the session.json file located at the specified path to the database.
+    Upload the picture_set.json file located at the specified path to the database.
 
     Parameters:
-    - path (str): The path to the session file.
-    - userID (str): The ID of the user.
+    - path (str): The path to the picture_set file.
+    - user_id (str): The ID of the user.
 
     Returns:
-    - The ID of the session.
+    - The ID of the picture_set.
     """
     try:
         # Connect to your PostgreSQL database
@@ -448,44 +445,44 @@ def uploadSessionDB(path: str, userID: str):
         # Create a cursor object
         cur = conn.cursor()
 
-        queries.createSearchPath(conn, cur)
+        db.create_search_path(conn, cur)
 
         # Open the file
         with open(path, "r") as file:
             data = file.read()
 
-        # Build sessionID
-        sessionID = uuid.uuid4()
+        # Build picture_set_id
+        picture_set_id = uuid.uuid4()
 
         # Execute the INSERT statement
-        # print(userID)
-        query = "INSERT INTO sessions (id,session, ownerID) VALUES (%s,%s, %s)"
+        # print(user_id)
+        query = "INSERT INTO picture_sets (id,picture_set, owner_id) VALUES (%s,%s, %s)"
         params = (
-            sessionID,
+            picture_set_id,
             data,
-            userID,
+            user_id,
         )
         cur.execute(query, params)
         conn.commit()
     except:
-        print("Error: could not upload the session to the database")
-        sessionID = None
-    # Retrieve the session id
-    # cur.execute("SELECT id FROM sessions ORDER BY id DESC LIMIT 1")
+        print("Error: could not upload the picture_set to the database")
+        picture_set_id = None
+    # Retrieve the picture_set id
+    # cur.execute("SELECT id FROM picture_sets ORDER BY id DESC LIMIT 1")
     finally:
         cur.close()
         conn.close()
-    return sessionID
+    return picture_set_id
 
 
-def uploadPictureDB(path: str, sessionID: str, seedID: str):
+def uploadPictureDB(path: str, picture_set_id: str, seed_id: str):
     """
     Uploads the picture file located at the specified path to the database.
 
     Parameters:
     - path (str): The path to the picture file.
-    - userID (str): The ID of the user.
-    - sessionID (str): The ID of the session.
+    - user_id (str): The ID of the user.
+    - picture_set_id (str): The ID of the picture_set.
 
     Returns:
     None
@@ -497,21 +494,21 @@ def uploadPictureDB(path: str, sessionID: str, seedID: str):
         # Create a cursor object
         cur = conn.cursor()
 
-        queries.createSearchPath(conn, cur)
+        db.create_search_path(conn, cur)
         # Open the file
         with open(path, "r") as file:
             data = file.read()
 
-        # Generate pictureID
-        pictureID = uuid.uuid4()
+        # Generate picture_id
+        picture_id = uuid.uuid4()
 
         # Execute the INSERT statement
         params = (
-            pictureID,
+            picture_id,
             data,
-            sessionID,
+            picture_set_id,
         )
-        query = "INSERT INTO pictures (id,picture, sessionID) VALUES (%s,%s, %s)"
+        query = "INSERT INTO pictures (id,picture, picture_set_id) VALUES (%s,%s, %s)"
         cur.execute(query, params)
         conn.commit()
 
@@ -520,10 +517,10 @@ def uploadPictureDB(path: str, sessionID: str, seedID: str):
         # Create a Picture - Seed relationship
         param = (
             id,
-            seedID,
-            pictureID,
+            seed_id,
+            picture_id,
         )
-        query = "INSERT INTO seedpicture (id,seedID,pictureID) VALUES (%s,%s,%s)"
+        query = "INSERT INTO seedpicture (id,seed_id,picture_id) VALUES (%s,%s,%s)"
         cur.execute(query, param)
         conn.commit()
     except:
@@ -534,4 +531,4 @@ def uploadPictureDB(path: str, sessionID: str, seedID: str):
 
 
 if __name__ == "__main__":
-    manualMetaDataImport(*sys.argv[1:])
+    manual_metadata_import(*sys.argv[1:])

@@ -2,7 +2,7 @@ import os
 from azure.storage.blob import BlobServiceClient
 
 
-def folderProcessing(storage_url, container_name):
+def folder_processing(storage_url, container_name):
     """
     This function downloads all the files from a container in a storage account
     to the local directory "test"
