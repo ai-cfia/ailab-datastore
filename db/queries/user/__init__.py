@@ -12,7 +12,8 @@ def is_user_registered(cursor,email: str) -> bool:
         )
             """
     cursor.execute(query, (email,))
-    return cursor.fetchone() is not None
+    res =cursor.fetchone()[0]
+    return res
 
 def get_user_id(cursor,email: str) -> str:
     query = """
@@ -24,13 +25,16 @@ def get_user_id(cursor,email: str) -> str:
             email = %s
             """
     cursor.execute(query, (email,))
-    return cursor.fetchone()[0]
+    res = cursor.fetchone()[0]
+    return res
 
 def register_user(cursor, email:str)->None:
+    #TODO : remove ID creation from here
+    user_id = uuid.uuid4()
     query = """
         INSERT INTO 
-            users(email)
+            users(id,email)
         VALUES
-            (%s)
+            (%s,%s)
             """
-    cursor.execute(query, (email,))
+    cursor.execute(query, (user_id,email,))

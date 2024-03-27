@@ -9,6 +9,17 @@ NACHET_SCHEMA=os.environ.get('NACHET_SCHEMA')
 if NACHET_SCHEMA is None:
     raise ValueError('NACHET_SCHEMA is not set')
 
+# def connect_db():
+#     """Connect to the postgresql database and return the connection."""
+#     connection = psycopg.connect(
+#         conninfo=NACHET_DB_URL,
+#         autocommit=False,
+#         options=f"-c search_path={NACHET_SCHEMA},public")
+#     assert connection.info.encoding == 'utf-8', (
+#         'Encoding is not UTF8: ' + connection.info.encoding)
+#     # psycopg.extras.register_uuid()
+#     return connection
+
 def connect_db():
     """Connect to the postgresql database and return the connection."""
     connection = psycopg.connect(
@@ -33,5 +44,4 @@ def end_query(connection, cursor):
     
 def create_search_path(connection,cur):
     cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
-    print(f'SET search_path TO {NACHET_SCHEMA}') 
     connection.commit()

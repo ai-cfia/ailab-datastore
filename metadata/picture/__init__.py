@@ -43,19 +43,19 @@ def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
     - zoom (float): The zoom level of the picture.
     """
     
-    user_data = user_data(
+    user_metadata = user_data(
         description=description,
         number_of_seeds=nb_seeds,
         zoom=zoom
         )
     
-    metadata = metadata(upload_date=date.today())
+    meta_data = metadata(upload_date=date.today())
     
     #This will cause an error.
     # TODO : Create a function to rebuild the picture.tiff from a string
     pic_properties = get_image_properties(pic)
     
-    image_data = image_data(
+    image_metadata = image_data(
         format=pic_properties[2],
         height=pic_properties[1],
         width=pic_properties[0],
@@ -64,7 +64,7 @@ def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
         parent=""
         )
     
-    quality_check = quality_check(
+    quality_check_metadata = quality_check(
         image_checksum="",
         uploadCheck=True,
         validData=True,
@@ -72,16 +72,16 @@ def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
         dataQualityScore=0.0
         )
     
-    picture = Picture(user_data=user_data,
-                      metadata=metadata,
-                      image_data=image_data,
-                      quality_check=quality_check)
+    picture = Picture(user_data=user_metadata,
+                      metadata=meta_data,
+                      image_data=image_metadata,
+                      quality_check=quality_check_metadata)
     try:
-        Picture(**picture.dict())
+        Picture(**picture.model_dump())
     except:
         print("Error: Picture not created")
         return None
-    return picture
+    return picture.model_dump_json()
         
 def get_image_properties(path: str):
     """

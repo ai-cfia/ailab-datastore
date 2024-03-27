@@ -3673,3 +3673,12 @@ test/6-seed/Training/9 Solanum carolinense/14.tiff
 test/6-seed/Training/9 Solanum carolinense/15.tiff
 test/6-seed/Training/9 Solanum carolinense/16.tiff
 test/6-seed/Training/9 Solanum carolinense/17.tiff
+db/__pycache__/__init__.cpython-310.pyc
+db/queries/__pycache__/__init__.cpython-310.pyc
+db/queries/picture/__pycache__/__init__.cpython-310.pyc
+db/queries/seed/__pycache__/__init__.cpython-310.pyc
+metadata/picture_set/__pycache__/__init__.cpython-310.pyc
+metadata/picture/__pycache__/__init__.cpython-310.pyc
+metadata/__pycache__/__init__.cpython-310.pyc
+db/queries/user/__pycache__/__init__.cpython-310.pyc
+__pycache__/test.cpython-310.pyc

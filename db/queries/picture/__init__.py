@@ -1,3 +1,5 @@
+import json
+import uuid
 def new_picture_set(cursor,picture_set,user_id:str):
     """
     This function uploads a new PictureSet to the database.
@@ -14,14 +16,15 @@ def new_picture_set(cursor,picture_set,user_id:str):
         query = """
             INSERT INTO 
                 picture_set(
+                    id,
                     picture_set,
                     owner_id
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id    
             """
-        cursor.execute(query, (picture_set,user_id,))
+        cursor.execute(query, (uuid.uuid4(),picture_set,user_id,))
         return cursor.fetchone()[0]
     except:
         raise Exception("Error: picture_set not uploaded")
@@ -43,26 +46,28 @@ def new_picture(cursor,picture,picture_set_id:str,seed_id:str):
     try:
         query = """
             INSERT INTO 
-                picture(
+                pictures(
+                    id,
                     picture,
                     picture_set_id
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id
                 """
-        cursor.execute(query, (picture,pictureSetID,))
+        cursor.execute(query, (uuid.uuid4(),picture,picture_set_id,))
         id=cursor.fetchone()[0]
         query = """
             INSERT INTO 
-                seedpicture(
-                    seedID,
-                    pictureID
+                picture_seed(
+                    id,
+                    seed_id,
+                    picture_id
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
                 """
-        cursor.execute(query, (id,seedID,))
+        cursor.execute(query, (uuid.uuid4(),seed_id,id,))
         return id
     except:
         raise Exception("Error: Picture not uploaded")
