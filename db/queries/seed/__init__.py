@@ -1,3 +1,4 @@
+import uuid 
 def get_all_seeds_names(cursor):
     """
     This function returns all the seed name from the database.
@@ -17,7 +18,7 @@ def get_all_seeds_names(cursor):
     cursor.execute(query)
     return cursor.fetchall()
 
-def getSeedID(cursor,seed_name: str) -> str:
+def get_seed_id(cursor,seed_name: str) -> str:
     """
     This function retrieve the UUUID of a seed.
     
@@ -39,7 +40,8 @@ def getSeedID(cursor,seed_name: str) -> str:
     cursor.execute(query, (seed_name,))
     return cursor.fetchone()[0]
 
-def newSeed(cursor, seed_name: str):
+def new_seed(cursor, seed_name: str):
+    # TODO: remove id from the table
     """
     This function inserts a new seed into the database.
     
@@ -48,10 +50,11 @@ def newSeed(cursor, seed_name: str):
     - seed_name (str): Name of the seed
     
     """
+    seed_id = uuid.uuid4()
     query = """
         INSERT INTO 
-            seeds(name)
+            seeds(id,name)
         VALUES
-            (%s)
+            (%s,%s)
             """
-    cursor.execute(query, (seed_name,))
+    cursor.execute(query, (seed_id,seed_name,))

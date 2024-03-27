@@ -29,23 +29,22 @@ def build_picture_set(userID:str,nbPicture:int):
     - The picture_set in .
     """
     
-    image_data=image_data(numberOfImages=nbPicture)
+    image_metadata=image_data(numberOfImages=nbPicture)
     
     sysData=audit_trail(
         upload_date=date.today(),
-        edited_by=userID,
+        edited_by=str(userID),
         edit_date=date.today(),
         change_log="picture_set created",
         access_log="picture_set accessed",
         privacy_flag=False
         )
     
-    picture_set = picture_set(image_data=image_data,audit_trail=sysData)
+    picture_set_data = picture_set(image_data=image_metadata,audit_trail=sysData)
     try:
-        picture_set(**picture_set.dict())
+        picture_set(**picture_set_data.model_dump())
     except:
         print("Error: picture_set not created")
         return None
-    return picture_set
-    
+    return picture_set_data.model_dump_json()   
     
