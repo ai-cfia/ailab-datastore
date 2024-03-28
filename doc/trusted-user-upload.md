@@ -18,7 +18,8 @@ sequenceDiagram;
   box grey Ai-Lab services
   participant Frontend
   participant Backend
-  participant MetaData
+  participant AI-Lab-db
+  participant Nachet-MetaData
   end
   box grey Storage services
   participant PostgreSQL Database
@@ -36,12 +37,20 @@ sequenceDiagram;
       Backend -) Azure Storage: Upload: picture
       Backend -) Azure Storage: Retrieve picture link
     end
+    Backend ->> Nachet-MetaData: build_picture_set( user_id: str, nb_picture:int)
+    Nachet-MetaData-->> Backend: picture_set: str    
 
-    Backend ->> MetaData: New Session request: <br> nbSeeds/Pic, Zoom, Seed info<br> PictureSet[picture,link] & User
-    MetaData ->>PostreSQL Database: Inserts Session
-    MetaData ->>PostreSQL Database: Insert Pictures
+    Backend ->> Nachet-MetaData: build_picture( pic_encoded: str, link: str,<br> nb_seeds: int, zoom: float, description: str)
+    Nachet-MetaData-->> Backend: picture: str
+
+    Backend ->>AI-Lab-db: new_picture_set(cursor,picture_set,user_id: str)
+    AI-Lab-db ->>PostreSQL Database: Inserts picture_set
+    AI-Lab-db --> Backend: picture_set_id: str
+
+    Backend->>AI-Lab-db: new_picture(cursor,picture,<br>picture_set_id: str, seed_id: str)
+    AI-Lab-db ->>PostreSQL Database: Insert picture
+    AI-Lab-db --> Backend: picture_id: str
     alt no error
-    MetaData -->> Backend: Return upload successful
     Backend -->> Frontend: Return upload successful
     Frontend -->> User: Upload successful
     end

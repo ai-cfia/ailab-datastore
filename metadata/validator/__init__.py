@@ -22,9 +22,9 @@ class audit_trail(BaseModel):
     upload_date: date
     edited_by: str
     edit_date: date
-    changeLog: str
-    accessLog: str
-    privacyFlag: bool
+    change_log: str
+    access_log: str
+    privacy_flag: bool
 
 
 class metadata(BaseModel):
@@ -41,11 +41,11 @@ class image_data(BaseModel):
 
 
 class quality_check(BaseModel):
-    imageChecksum: str
-    uploadCheck: bool
-    validData: bool
-    errorType: str
-    dataQualityScore: float
+    image_checksum: str
+    upload_check: bool
+    valid_data: bool
+    error_type: str
+    quality_score: float
 
 
 class user_data(BaseModel):
@@ -56,12 +56,11 @@ class user_data(BaseModel):
 
 class picture_set(BaseModel):
     client_data: client_data
-    imade_data: image_data_picture_set
+    image_data: image_data
 
 
 class Ppicture_set(BaseModel):
-    client_data: client_data
-    imade_data: image_data_picture_set
+    image_data_picture_set: image_data_picture_set
     audit_trail: audit_trail
 
 
@@ -71,9 +70,9 @@ class Picture(BaseModel):
 
 class PPicture(BaseModel):
     user_data: user_data
-    info: metadata
-    imade_data: image_data
-    qualityCheck: quality_check
+    metadata: metadata
+    image_data: image_data
+    quality_check: quality_check
 
 
 class ClientFeedback(BaseModel):

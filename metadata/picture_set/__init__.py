@@ -1,48 +1,33 @@
 from pydantic import BaseModel
 from datetime import date
+from metadata import validator
 
-
-class image_data(BaseModel):
-    numberOfImages: int
-
-class audit_trail(BaseModel):
-    upload_date: date
-    edited_by: str
-    edit_date: date
-    change_log: str
-    access_log: str
-    privacy_flag: bool
-
-class picture_set(BaseModel):
-    image_data: image_data
-    audit_trail: audit_trail
-
-def build_picture_set(userID:str,nbPicture:int):
+def build_picture_set(user_id:str,nb_picture:int):
     """
     This function builds the picture_set needed to represent each folder (with pictures in it) of a container.
     
     Parameters:
-    - userID (str): The UUID of the user uploading.
-    - nbPicture (int): The amount of picture present in the folder.
+    - user_id (str): The UUID of the user uploading.
+    - nb_picture (int): The amount of picture present in the folder.
 
     Returns:
     - The picture_set in .
     """
     
-    image_metadata=image_data(numberOfImages=nbPicture)
+    image_metadata=validator.image_data_picture_set(number_of_images=nb_picture)
     
-    sysData=audit_trail(
+    sysData=validator.audit_trail(
         upload_date=date.today(),
-        edited_by=str(userID),
+        edited_by=str(user_id),
         edit_date=date.today(),
         change_log="picture_set created",
         access_log="picture_set accessed",
         privacy_flag=False
         )
     
-    picture_set_data = picture_set(image_data=image_metadata,audit_trail=sysData)
+    picture_set_data = validator.Ppicture_set(image_data_picture_set=image_metadata,audit_trail=sysData)
     try:
-        picture_set(**picture_set_data.model_dump())
+        validator.Ppicture_set(**picture_set_data.model_dump())
     except:
         print("Error: picture_set not created")
         return None

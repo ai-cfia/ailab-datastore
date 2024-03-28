@@ -3688,3 +3688,10 @@ db/queries/user/__pycache__/__init__.cpython-310.pyc
 __pycache__/test.cpython-310.pyc
 >>>>>>> 3e1d597 (Issue #13: All db tests passes)
 metadata/validator/__pycache__/__init__.cpython-310.pyc
+__pycache__/test_db.cpython-310.pyc
+__pycache__/test_metadata.cpython-310.pyc
+db/setup/__pycache__/__init__.cpython-310.pyc
+db/setup/db-creation/__pycache__/__init__.cpython-310.pyc
+db/setup/db-mock-seeds-population/__pycache__/__init__.cpython-310.pyc
+db/setup/deployment-mass-import/__pycache__/__init__.cpython-310.pyc
+db/setup/storage-download/__pycache__/__init__.cpython-310.pyc
