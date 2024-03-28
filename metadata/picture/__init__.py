@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import date
 from PIL import Image
+import io
+import base64
 
 class metadata(BaseModel):
     upload_date: date
@@ -32,12 +34,12 @@ class Picture(BaseModel):
     quality_check: quality_check
 
 
-def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
+def build_picture(pic_encoded,link:str,nb_seeds:int,zoom:float,description:str=""):
     """
     This function builds the Picture metadata needed for the database.
     
     Parameters:
-    - pic (str): The picture in a string format.
+    - pic_encoded (str): The picture in a string format.
     - link (str): The link to the picture blob.
     - nb_seeds (int): The number of seeds in the picture.
     - zoom (float): The zoom level of the picture.
@@ -51,9 +53,7 @@ def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
     
     meta_data = metadata(upload_date=date.today())
     
-    #This will cause an error.
-    # TODO : Create a function to rebuild the picture.tiff from a string
-    pic_properties = get_image_properties(pic)
+    pic_properties = get_image_properties(pic_encoded)
     
     image_metadata = image_data(
         format=pic_properties[2],
@@ -83,17 +83,17 @@ def build_picture(pic,link:str,nb_seeds:int,zoom:float,description:str=""):
         return None
     return picture.model_dump_json()
         
-def get_image_properties(path: str):
+def get_image_properties(pic_encoded: str):
     """
     Function to retrieve an image's properties.
 
     Parameters:
-    - path (str): The path to the image.
+    - pic_encoded (str): The image in a string format.
 
     Returns:
     - The image's width, height and format as a tuple.
     """
-    with Image.open(path) as img:
+    with Image.open(io.BytesIO(base64.b64decode(pic_encoded))) as img:
         width, height = img.size
         img_format = img.format
     return width, height, img_format

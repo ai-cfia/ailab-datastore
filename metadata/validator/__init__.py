@@ -27,7 +27,7 @@ class audit_trail(BaseModel):
     privacyFlag: bool
 
 
-class info(BaseModel):
+class metadata(BaseModel):
     upload_date: date
 
 
@@ -59,7 +59,7 @@ class picture_set(BaseModel):
     imade_data: image_data_picture_set
 
 
-class PIndex(BaseModel):
+class Ppicture_set(BaseModel):
     client_data: client_data
     imade_data: image_data_picture_set
     audit_trail: audit_trail
@@ -71,9 +71,9 @@ class Picture(BaseModel):
 
 class PPicture(BaseModel):
     user_data: user_data
-    info: Info
-    imade_data: imade_data
-    qualityCheck: QualityCheck
+    info: metadata
+    imade_data: image_data
+    qualityCheck: quality_check
 
 
 class ClientFeedback(BaseModel):
