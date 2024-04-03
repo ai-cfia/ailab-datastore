@@ -7,13 +7,15 @@ import psycopg
 from PIL import Image
 import db as db
 
-# This script is used to import the missing metadata from an Azure container to the database
+""" This script is used to import the missing metadata from an Azure container to the database """
 
-
+NACHET_DB_URL=os.getenv("NACHET_DB_URL")
 # Constants
-container_URL = ""
-seed_id = ""
-path = ""
+CONTAINER_URL = ""
+SEED_ID = ""
+
+class UserIDError(Exception):
+    pass
 
 
 def json_deletion(picture_folder):
@@ -24,11 +26,11 @@ def json_deletion(picture_folder):
     - picture_folder (str): The path to the folder.
     """
     # Get a list of files in the directory
-    files = [
-        f
-        for f in os.listdir(picture_folder)
-        if os.path.isfile(os.path.join(picture_folder, f))
-    ]
+# Get a list of files in the directory
+    files = []
+    for f in os.listdir(picture_folder):
+        if os.path.isfile(os.path.join(picture_folder, f)):
+            files.append(f)
     # Iterate over the list of filepaths & remove each file.
     for file in files:
         try:
@@ -55,8 +57,7 @@ def manual_metadata_import(picture_folder: str):
     client_email = "test@email"
     user_id = get_user_id(client_email)
     if user_id is None:
-        print("Error: could not retrieve the user_id")
-        return
+        raise UserIDError(f"Error: could not retrieve the user_id, provided id: {user_id}")  
     # #build picture_set
     nb_pic = build_picture_set(picture_folder, user_id)
 
@@ -70,28 +71,28 @@ def manual_metadata_import(picture_folder: str):
     seed_number = input("Number of seed for this picture_set: ")
 
     # Get a list of files in the directory
-    files = [
-        f
-        for f in os.listdir(picture_folder)
-        if os.path.isfile(os.path.join(picture_folder, f))
-    ]
-    i = 0
+    files = []
+    for f in os.listdir(picture_folder):
+        if os.path.isfile(os.path.join(picture_folder, f)):
+            files.append(f)
+
+    actual_nb_pic = 0
     # Loop through each file in the folder
-    for filename in files:
+    for i,filename in enumerate(files):
         if filename.endswith(".tiff") or filename.endswith(".tif"):
             build_picture(picture_folder, seed_number, zoom_level, filename)
             pic_path = f'{picture_folder}/{filename.removesuffix(".tiff")}.json'
             # upload picture to database
-            uploadPictureDB(pic_path, picture_set_id, seed_id=seed_id)
-            i = i + 1
+            uploadPictureDB(pic_path, picture_set_id, seed_id=SEED_ID)
+            actual_nb_pic = i
 
-    if i != nb_pic:
-        print("Error: number of pictures processed does not match the picture_set")
-        print("Number of picture processed: " + str(i))
+    if actual_nb_pic != nb_pic:
+        print("Number of picture processed: " + str(actual_nb_pic))
         print("Number of picture in picture_set: " + str(nb_pic))
+        raise Exception("Error: number of pictures processed does not match the picture_set")
     else:
         print("importation of " + picture_folder + "/ complete")
-        print("Number of picture processed: " + str(i))
+        print("Number of picture processed: " + str(actual_nb_pic))
 
 
 def get_user_id(email: str):
@@ -120,7 +121,7 @@ def get_user_id(email: str):
             cur.execute(f"INSERT INTO users (id,email) VALUES (,'{email}')")
             cur.execute(f"SELECT id FROM users WHERE email='{email}'")
             res = cur.fetchone()[0]
-    except (Exception, psycopg.DatabaseError) as error:
+    except (psycopg.DatabaseError) as error:
         print(error)
         res = None
     finally:
@@ -156,8 +157,7 @@ def build_picture_set(output: str, client_id):
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
     image_data = validator.image_data_picture_set(numberOfImages=nb)
 
-    # ATM===> I dont have access to the seed_id db
-    # seed_id = input("seed_id: ")
+    # SEED_ID = input("SEED_ID: ")
 
     # family = input("Family: ")
     # genus = input("Genus: ")
@@ -166,7 +166,7 @@ def build_picture_set(output: str, client_id):
     genus = ""
     species = ""
     seed_data = validator.seed_data(
-        seed_id=seed_id, seed_family=family, seed_genus=genus, seed_species=species
+        seed_id=SEED_ID, seed_family=family, seed_genus=genus, seed_species=species
     )
 
     # Create the picture_set object
@@ -255,8 +255,8 @@ def picture_processing(json_data: str, picture_path: str):
     # picture_set_id
     info = get_image_properties(picture_path)
     parent = ""
-    # source = container_URL + picture_path.removesuffix("test")
-    source = container_URL + picture_path
+    # source = CONTAINER_URL + picture_path.removesuffix("test")
+    source = CONTAINER_URL + picture_path
     format = info[2]
     height = info[1]
     width = info[0]
@@ -274,14 +274,14 @@ def picture_processing(json_data: str, picture_path: str):
 
 
 def picture_set_system_populating(
-    data, date: date, edited_by, edited_date: date, changes: str, access, privacy
+    data, upload_date: date, edited_by, edited_date: date, changes: str, access, privacy
 ):
     """
     Function to populate the picture_set metadata file provided.
 
     Parameters:
     - data (str): The JSON data template of the picture_set.
-    - date (date): The date of the upload
+    - upload_date (date): The date of the upload
     - edited_by (str): The name of the person who edited the file
     - edited_date (date): The date of the last edit
     - changes (str): The changes made to the file
@@ -291,7 +291,7 @@ def picture_set_system_populating(
     - The picture_set metadata object populated with the metadata.
     """
     # print(data)
-    data["auditTrail"]["uploadDate"] = date.strftime("%Y-%m-%d")
+    data["auditTrail"]["uploadDate"] = upload_date.strftime("%Y-%m-%d")
     data["auditTrail"]["edited_by"] = edited_by
     data["auditTrail"]["edited_date"] = edited_date.strftime("%Y-%m-%d")
     data["auditTrail"]["changeLog"] = changes
@@ -302,7 +302,7 @@ def picture_set_system_populating(
 
 def picture_system_populating(
     data,
-    date: date,
+    upload_date: date,
     format: str,
     height: int,
     width: int,
@@ -315,7 +315,7 @@ def picture_system_populating(
 
     Parameters:
     - data (str): The JSON data template of the Picture.
-    - date (date): The date of the upload
+    - upload_date (date): The date of the upload
     - user_id (str): The UUID of the user
     - picture_set_id (str): The ID of the picture_set
     - format (str): The format of the picture
@@ -328,7 +328,7 @@ def picture_system_populating(
     Returns:
     - The Picture metadata object populated with the metadata.
     """
-    data["info"]["uploadDate"] = date.strftime("%Y-%m-%d")
+    data["info"]["uploadDate"] = upload_date.strftime("%Y-%m-%d")
     data["image_data"]["height"] = height
     data["image_data"]["width"] = width
     data["image_data"]["format"] = format
@@ -401,7 +401,7 @@ def create_json_picture_set(picture_set, name: str, output: str):
     Returns:
     None
     """
-    data = validator.Ppicture_set(**picture_set)
+    data = validator.PPicture_set(**picture_set)
     filePath = f"{output}/{name}.json"
     with open(filePath, "w") as json_file:
         json.dump(picture_set, json_file, indent=2)
@@ -440,7 +440,7 @@ def upload_picture_set_db(path: str, user_id: str):
     """
     try:
         # Connect to your PostgreSQL database
-        conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
+        conn = psycopg.connect(NACHET_DB_URL)
 
         # Create a cursor object
         cur = conn.cursor()
@@ -465,8 +465,8 @@ def upload_picture_set_db(path: str, user_id: str):
         cur.execute(query, params)
         conn.commit()
     except:
-        print("Error: could not upload the picture_set to the database")
         picture_set_id = None
+        raise Exception("Error: could not upload the picture_set to the database")
     # Retrieve the picture_set id
     # cur.execute("SELECT id FROM picture_sets ORDER BY id DESC LIMIT 1")
     finally:
@@ -524,7 +524,7 @@ def uploadPictureDB(path: str, picture_set_id: str, seed_id: str):
         cur.execute(query, param)
         conn.commit()
     except:
-        print("Error: could not upload the picture to the database")
+        raise Exception("Error: could not upload the picture to the database")
     finally:
         cur.close()
         conn.close()

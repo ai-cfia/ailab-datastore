@@ -1,4 +1,10 @@
-import uuid
+"""
+This module contains the queries related to the user table.
+"""
+class UserCreationError(Exception):
+    pass
+class UserNotFoundError(Exception):
+    pass
 
 
 def is_user_registered(cursor, email: str) -> bool:
@@ -27,7 +33,7 @@ def is_user_registered(cursor, email: str) -> bool:
         res = cursor.fetchone()[0]
         return res
     except:
-        raise Exception("Error: user not registered")
+        raise Exception("Error: could not check if user is registered")
 
 
 def get_user_id(cursor, email: str) -> str:
@@ -52,9 +58,12 @@ def get_user_id(cursor, email: str) -> str:
                 """
         cursor.execute(query, (email,))
         res = cursor.fetchone()[0]
-        return res
+        if res:
+            return res
+        else:
+            raise UserNotFoundError(f"Error: user not found, email: {email}")
     except:
-        raise Exception("Error: user not found")
+        raise Exception("Error: user could not be retrieved")
 
 
 def register_user(cursor, email: str) -> None:
@@ -68,23 +77,18 @@ def register_user(cursor, email: str) -> None:
     Returns:
     - The UUID of the user.
     """
-    # TODO : remove ID creation from here
-    user_id = uuid.uuid4()
     try:
         query = """
             INSERT INTO 
-                users(id,email)
+                users(email)
             VALUES
-                (%s,%s)
+                (%s)
             RETURNING id
             """
         cursor.execute(
             query,
-            (
-                user_id,
-                email,
-            ),
+            (email,),
         )
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: user not registered")
+        raise UserCreationError("Error: user not registered")

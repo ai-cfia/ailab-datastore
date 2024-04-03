@@ -59,7 +59,7 @@ sequenceDiagram;
   end
                 
 ``` 
-This workflow showcase the 2 options that a user will face to upload data. The
+This workflow showcase the two options that a user will face to upload data. The
 first one being he's a first time user. Therefore, the current process for a
 first time user is to contact the AI-Lab team and subscribe to the Blob storage
 with a given subscription key.
@@ -144,8 +144,8 @@ flowchart LR;
 ## [Trusted User Upload](trusted-user-upload.md)
 
 ### Queries 
-> :warning: This needs to be reworked. After discussions, we are not taking for
-> this approach 
+> :warning: This needs to be reworked. After discussions, we are not taking this
+> approach 
 
 To communicate with the database and perform the request, we will need to build
 a structure representing the schema.

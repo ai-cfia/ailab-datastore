@@ -1,24 +1,24 @@
 from datetime import date
 from pydantic import BaseModel
+import uuid
 
-
-class client_data(BaseModel):
+class ClientData(BaseModel):
     client_email: str
     client_expertise: str
 
 
-class seed_data(BaseModel):
+class SeedData(BaseModel):
     seed_id: int
     seed_family: str
     seed_genus: str
     seed_species: str
 
 
-class image_data_picture_set(BaseModel):
+class ImageDataPictureSet(BaseModel):
     number_of_images: int
 
 
-class audit_trail(BaseModel):
+class AuditTrail(BaseModel):
     upload_date: date
     edited_by: str
     edit_date: date
@@ -27,11 +27,11 @@ class audit_trail(BaseModel):
     privacy_flag: bool
 
 
-class metadata(BaseModel):
+class Metadata(BaseModel):
     upload_date: date
 
 
-class image_data(BaseModel):
+class ImageData(BaseModel):
     format: str
     height: int
     width: int
@@ -40,7 +40,7 @@ class image_data(BaseModel):
     parent: str
 
 
-class quality_check(BaseModel):
+class QualityCheck(BaseModel):
     image_checksum: str
     upload_check: bool
     valid_data: bool
@@ -48,33 +48,43 @@ class quality_check(BaseModel):
     quality_score: float
 
 
-class user_data(BaseModel):
+class UserData(BaseModel):
     description: str
     number_of_seeds: int
     zoom: float
 
 
-class picture_set(BaseModel):
-    client_data: client_data
-    image_data: image_data
+class PictureSet(BaseModel):
+    client_data: ClientData
+    image_data: ImageData
 
 
-class Ppicture_set(BaseModel):
-    image_data_picture_set: image_data_picture_set
-    audit_trail: audit_trail
+class ProcessedPictureSet(BaseModel):
+    image_data_picture_set: ImageDataPictureSet
+    audit_trail: AuditTrail
 
 
 class Picture(BaseModel):
-    user_data: user_data
+    user_data: UserData
 
 
-class PPicture(BaseModel):
-    user_data: user_data
-    metadata: metadata
-    image_data: image_data
-    quality_check: quality_check
+class ProcessedPicture(BaseModel):
+    user_data: UserData
+    metadata: Metadata
+    image_data: ImageData
+    quality_check: QualityCheck
 
 
 class ClientFeedback(BaseModel):
     correctIdentification: bool
     historicalComparison: str
+
+def is_valid_uuid(val):
+    """
+    This validates if a given string is a UUID
+    """
+    try:
+        uuid.UUID(str(val))
+        return True
+    except ValueError:
+        return False

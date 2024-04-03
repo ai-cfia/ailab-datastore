@@ -30,30 +30,42 @@ class test_picture_functions(unittest.TestCase):
         picture = picture_data.build_picture(self.pic_encoded, self.link, self.nb_seeds, self.zoom)
         properties = picture_data.get_image_properties(self.pic_encoded)
         data = json.loads(picture)
-        
-        self.assertEqual(data["user_data"]["description"], "", "Description should be empty")
-        self.assertEqual(data["user_data"]["number_of_seeds"], 1, "Number of seeds should be 1")
-        self.assertEqual(data["user_data"]["zoom"], 1.0, "Zoom should be 1.0")
-        self.assertEqual(data["metadata"]["upload_date"], str(date.today()), "Upload date should be today's date")
-        self.assertEqual(data["image_data"]["format"], properties[2], "Format should be 'TIFF'")
-        self.assertEqual(data["image_data"]["height"], properties[1], "Height should be 1080 as an integer")
-        self.assertEqual(data["image_data"]["width"], properties[0],"Width should be 1980 as an integer")
-        self.assertEqual(data["image_data"]["resolution"], "", "Resolution should be empty")
-        self.assertEqual(data["image_data"]["source"], PIC_LINK,f"Source should be {PIC_LINK}")
-        self.assertEqual(data["quality_check"]["image_checksum"], "", "Checksum should be empty")
-        self.assertEqual(data["quality_check"]["upload_check"], True, "Upload check should be True")
-        self.assertEqual(data["quality_check"]["valid_data"], True, "Valid data should be True")
-        self.assertEqual(data["quality_check"]["error_type"], "", "Error type should be empty")
-        self.assertEqual(data["quality_check"]["quality_score"], 0.0, "Quality score should be 0.0")
+        mock_picture = {
+            "user_data": {
+                "description": "",
+                "number_of_seeds": 1,
+                "zoom": 1.0,
+            },
+            "metadata": {
+                "upload_date": str(date.today()),
+            },
+            "image_data": {
+                "format": properties[2],
+                "height": properties[1],
+                "width": properties[0],
+                "resolution": "",
+                "source": PIC_LINK,
+            },
+            "quality_check": {
+                "image_checksum": "",
+                "upload_check": True,
+                "valid_data": True,
+                "error_type": "",
+                "quality_score": 0.0,
+            },
+        }
+        for key, value in mock_picture.items():
+            if isinstance(value, dict):
+                for sub_key,sub_value in value.items():
+                    self.assertEqual(data[key][sub_key], sub_value, f"{sub_key} should be {sub_value}")
         
     def test_get_image_properties(self):
         """
         This test checks if the get_image_properties function returns the correct image properties
         """
         properties = picture_data.get_image_properties(self.pic_encoded)
-        self.assertEqual(properties[0], 1980, "Width should be 1980")
-        self.assertEqual(properties[1], 1080, "Height should be 1080")
-        self.assertEqual(properties[2], "TIFF", "Format should be 'TIFF'")
+        mock_properties = [1980, 1080, "TIFF"]
+        self.assertEqual(properties, mock_properties, "Image properties should be 1980x1080, TIFF")
 
 class test_picture_set_functions(unittest.TestCase):
     def setUp(self):   

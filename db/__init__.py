@@ -2,11 +2,11 @@ import os
 import psycopg
 
 NACHET_DB_URL=os.environ.get('NACHET_DB_URL')
-if NACHET_DB_URL is None:
+if NACHET_DB_URL is None or NACHET_DB_URL == "":
     raise ValueError('NACHET_DB_URL is not set')
 
 NACHET_SCHEMA=os.environ.get('NACHET_SCHEMA')
-if NACHET_SCHEMA is None:
+if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
     raise ValueError('NACHET_SCHEMA is not set')
 
 # def connect_db():

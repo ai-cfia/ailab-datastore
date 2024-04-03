@@ -2,6 +2,9 @@ from pydantic import BaseModel
 from datetime import date
 from metadata import validator
 
+class PictureSetCreationError(Exception):
+    pass
+
 def build_picture_set(user_id:str,nb_picture:int):
     """
     This function builds the picture_set needed to represent each folder (with pictures in it) of a container.
@@ -11,12 +14,12 @@ def build_picture_set(user_id:str,nb_picture:int):
     - nb_picture (int): The amount of picture present in the folder.
 
     Returns:
-    - The picture_set in .
+    - The picture_set in a string dict format.
     """
     
-    image_metadata=validator.image_data_picture_set(number_of_images=nb_picture)
+    image_metadata=validator.ImageDataPictureSet(number_of_images=nb_picture)
     
-    sysData=validator.audit_trail(
+    sysData=validator.AuditTrail(
         upload_date=date.today(),
         edited_by=str(user_id),
         edit_date=date.today(),
@@ -25,11 +28,10 @@ def build_picture_set(user_id:str,nb_picture:int):
         privacy_flag=False
         )
     
-    picture_set_data = validator.Ppicture_set(image_data_picture_set=image_metadata,audit_trail=sysData)
+    picture_set_data = validator.ProcessedPictureSet(image_data_picture_set=image_metadata,audit_trail=sysData)
     try:
-        validator.Ppicture_set(**picture_set_data.model_dump())
+        validator.ProcessedPictureSet(**picture_set_data.model_dump())
     except:
-        print("Error: picture_set not created")
-        return None
+        raise PictureSetCreationError("Error: picture_set not created") from None
     return picture_set_data.model_dump_json()   
     

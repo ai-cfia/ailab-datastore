@@ -45,11 +45,11 @@ sequenceDiagram;
 
     Backend ->>AI-Lab-db: new_picture_set(cursor,picture_set,user_id: str)
     AI-Lab-db ->>PostreSQL Database: Inserts picture_set
-    AI-Lab-db --> Backend: picture_set_id: str
+    AI-Lab-db -->> Backend: picture_set_id: str
 
     Backend->>AI-Lab-db: new_picture(cursor,picture,<br>picture_set_id: str, seed_id: str)
     AI-Lab-db ->>PostreSQL Database: Insert picture
-    AI-Lab-db --> Backend: picture_id: str
+    AI-Lab-db -->> Backend: picture_id: str
     alt no error
     Backend -->> Frontend: Return upload successful
     Frontend -->> User: Upload successful

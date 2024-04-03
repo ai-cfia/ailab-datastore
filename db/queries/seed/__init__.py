@@ -1,5 +1,6 @@
-import uuid
-
+"""
+This file contains the queries for the seed table.
+"""
 
 def get_all_seeds_names(cursor):
     """
@@ -51,7 +52,6 @@ def get_seed_id(cursor, seed_name: str) -> str:
 
 
 def new_seed(cursor, seed_name: str):
-    # TODO: remove id from the table
     """
     This function inserts a new seed into the database.
 
@@ -60,19 +60,17 @@ def new_seed(cursor, seed_name: str):
     - seed_name (str): Name of the seed
 
     """
-    seed_id = uuid.uuid4()
     try:
         query = """
             INSERT INTO 
-                seeds(id,name)
+                seeds(name)
             VALUES
-                (%s,%s)
+                (%s)
             RETURNING id
             """
         cursor.execute(
             query,
             (
-                seed_id,
                 seed_name,
             ),
         )

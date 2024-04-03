@@ -1,4 +1,22 @@
-import uuid
+class PictureUploadError(Exception):
+    pass
+
+
+class PictureNotFoundError(Exception):
+    pass
+
+
+class PictureSetUploadError(Exception):
+    pass
+
+
+class PictureSetNotFoundError(Exception):
+    pass
+
+
+"""
+This module contains all the queries related to the Picture and PictureSet tables.
+"""
 
 
 def new_picture_set(cursor, picture_set, user_id: str):
@@ -17,25 +35,23 @@ def new_picture_set(cursor, picture_set, user_id: str):
         query = """
             INSERT INTO 
                 picture_set(
-                    id,
                     picture_set,
                     owner_id
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s)
             RETURNING id    
             """
         cursor.execute(
             query,
             (
-                uuid.uuid4(),
                 picture_set,
                 user_id,
             ),
         )
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: picture_set not uploaded")
+        raise PictureSetUploadError("Error: picture_set not uploaded")
 
 
 def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
@@ -55,44 +71,40 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
         query = """
             INSERT INTO 
                 pictures(
-                    id,
                     picture,
                     picture_set_id
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s)
             RETURNING id
                 """
         cursor.execute(
             query,
             (
-                uuid.uuid4(),
                 picture,
                 picture_set_id,
             ),
         )
-        id = cursor.fetchone()[0]
+        picture_id = cursor.fetchone()[0]
         query = """
             INSERT INTO 
                 picture_seed(
-                    id,
                     seed_id,
                     picture_id
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s)
                 """
         cursor.execute(
             query,
             (
-                uuid.uuid4(),
                 seed_id,
-                id,
+                picture_id,
             ),
         )
-        return id
+        return picture_id
     except:
-        raise Exception("Error: Picture not uploaded")
+        raise PictureUploadError(f"Error: Picture not uploaded:{picture_id}")
 
 
 def get_picture_set(cursor, picture_set_id: str):
@@ -118,7 +130,7 @@ def get_picture_set(cursor, picture_set_id: str):
         cursor.execute(query, (picture_set_id,))
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: PictureSet not found")
+        raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
 
 
 def get_picture(cursor, picture_id: str):
@@ -144,7 +156,7 @@ def get_picture(cursor, picture_id: str):
         cursor.execute(query, (picture_id,))
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: Picture not found")
+        raise PictureNotFoundError(f"Error: Picture not found: {picture_id}")
 
 
 def get_user_latest_picture_set(cursor, user_id: str):
@@ -174,4 +186,6 @@ def get_user_latest_picture_set(cursor, user_id: str):
         cursor.execute(query, (user_id,))
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: picture_set not found")
+        raise PictureSetNotFoundError(
+            f"Error: picture_set not found for user:{user_id} "
+        )

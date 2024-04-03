@@ -1,3 +1,8 @@
+"""
+Module for database queries
+This module is seperated into the objects that are being queried
+"""
+
 def query_db(conn,cur,query):
     cur.execute(query)
     conn.commit()

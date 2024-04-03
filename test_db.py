@@ -1,3 +1,8 @@
+"""
+This is a test script for the database packages. 
+It tests the functions in the user, seed and picture modules.
+"""
+
 import unittest
 import uuid
 from PIL import Image
@@ -8,23 +13,10 @@ import db.queries.seed as seed
 import db.queries.picture as picture
 import metadata.picture_set as picture_set_data
 import metadata.picture as picture_data
+import metadata.validator as validator
 import db.__init__ as db
 
-"""
-This is a test script for the database packages. 
-It tests the functions in the user, seed and picture modules.
-"""
 
-
-def is_valid_uuid(val):
-    """
-    This validates if a given string is a UUID
-    """
-    try:
-        uuid.UUID(str(val))
-        return True
-    except ValueError:
-        return False
 
 
 # --------------------  USER FUNCTIONS --------------------
@@ -36,6 +28,7 @@ class test_user_functions(unittest.TestCase):
 
     def tearDown(self):
         db.end_query(self.con, self.cursor)
+        self.con.rollback()
 
     def test_is_user_registered(self):
         """
@@ -50,8 +43,7 @@ class test_user_functions(unittest.TestCase):
 
         user_id = user.register_user(self.cursor, self.email)
 
-        self.assertTrue(is_valid_uuid(user_id), "The user_id is not a valid UUID")
-        self.con.rollback()
+        self.assertTrue(validator.validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
 
     def test_get_user_id(self):
         """
@@ -60,13 +52,18 @@ class test_user_functions(unittest.TestCase):
         user_id = user.register_user(self.cursor, self.email)
         uuid = user.get_user_id(self.cursor, self.email)
 
-        self.assertTrue(is_valid_uuid(user_id), "The user_id is not a valid UUID")
-        self.assertTrue(is_valid_uuid(uuid), "The returned UUID is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(uuid), "The returned UUID is not a valid UUID")
         self.assertEqual(
             user_id, uuid, "The returned UUID is not the same as the registered UUID"
         )
 
-        self.con.rollback()
+    def test_get_user_id_not_registered(self):
+        """
+        This test checks if the get_user_id function raises an exception when the user is not registered
+        """
+        with self.assertRaises(user.UserNotFoundError):
+            user.get_user_id(self.cursor, self.email)
 
     def test_register_user(self):
         """
@@ -74,9 +71,8 @@ class test_user_functions(unittest.TestCase):
         """
         user_id = user.register_user(self.cursor, self.email)
 
-        self.assertTrue(is_valid_uuid(user_id), "The user_id is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
 
-        self.con.rollback()
 
 
 # --------------------  SEED FUNCTIONS --------------------
@@ -89,6 +85,7 @@ class test_seed_functions(unittest.TestCase):
         self.seed_name = "test"
 
     def tearDown(self):
+        self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_get_all_seeds_names(self):
@@ -102,7 +99,6 @@ class test_seed_functions(unittest.TestCase):
         self.assertNotEqual(len(seeds), 0)
         self.assertIn((self.seed_name,), seeds)
 
-        self.con.rollback()
 
     def test_get_seed_id(self):
         """
@@ -111,9 +107,9 @@ class test_seed_functions(unittest.TestCase):
         seed_uuid = seed.new_seed(self.cursor, self.seed_name)
         fetch_id = seed.get_seed_id(self.cursor, self.seed_name)
 
+        self.assertTrue(validator.is_valid_uuid(fetch_id))
         self.assertEqual(seed_uuid, fetch_id)
 
-        self.con.rollback()
 
     def test_new_seed(self):
         """
@@ -121,9 +117,8 @@ class test_seed_functions(unittest.TestCase):
         """
         seed_id = seed.new_seed(self.cursor, self.seed_name)
 
-        self.assertTrue(is_valid_uuid(seed_id))
+        self.assertTrue(validator.is_valid_uuid(seed_id))
 
-        self.con.rollback()
 
 
 # --------------------  PICTURE FUNCTIONS --------------------
@@ -154,6 +149,7 @@ class test_pictures_functions(unittest.TestCase):
         )
 
     def tearDown(self):
+        self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_picture_set(self):
@@ -165,10 +161,9 @@ class test_pictures_functions(unittest.TestCase):
         )
 
         self.assertTrue(
-            is_valid_uuid(picture_set_id), "The picture_set_id is not a valid UUID"
+            validator.is_valid_uuid(picture_set_id), "The picture_set_id is not a valid UUID"
         )
 
-        self.con.rollback()
 
     def test_new_picture(self):
         """
@@ -184,9 +179,14 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture, picture_set_id, self.seed_id
         )
 
-        self.assertTrue(is_valid_uuid(picture_id), "The picture_id is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(picture_id), "The picture_id is not a valid UUID")
 
-        self.con.rollback()
+    def test_get_inexisting_picture_set(self):
+        """
+        This test checks if the get_picture_set function raises an exception when the picture_set does not exist
+        """
+        with self.assertRaises(picture.PictureSetNotFoundError):
+            picture.get_picture_set(self.cursor, str(uuid.uuid4()))
 
     def test_get_picture_set(self):
         """
@@ -202,7 +202,12 @@ class test_pictures_functions(unittest.TestCase):
         self.assertIsNotNone(picture_set, "The picture_set is None")
         self.assertNotEqual(len(picture_set), 0, "The picture_set is empty")
 
-        self.con.rollback()
+    def test_get_inexisting_picture(self):
+        """
+        This test checks if the get_picture function raises an exception when the picture does not exist
+        """
+        with self.assertRaises(picture.PictureNotFoundError):
+            picture.get_picture(self.cursor, str(uuid.uuid4()))
 
     def test_get_picture(self):
         """
@@ -224,7 +229,6 @@ class test_pictures_functions(unittest.TestCase):
         self.assertIsNotNone(picture_data, "The picture_data is None")
         self.assertNotEqual(len(picture_data), 0, "The picture_data is empty")
 
-        self.con.rollback()
 
 
 if __name__ == "__main__":
