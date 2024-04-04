@@ -6,6 +6,7 @@ import os
 import psycopg
 from PIL import Image
 import db as db
+import metadata.validator as validator
 
 """ This script is used to import the missing metadata from an Azure container to the database """
 
@@ -150,12 +151,12 @@ def build_picture_set(output: str, client_id):
     client_expertise = "Developer"
 
     # Create the picture_set metadata (sub part) normally filled by the user
-    client_data = validator.client_data(
+    client_data = validator.ClientData(
         client_email=client_email, client_expertise=client_expertise
     )
     print(output)
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
-    image_data = validator.image_data_picture_set(numberOfImages=nb)
+    image_data = validator.ImageDataPictureSet(numberOfImages=nb)
 
     # SEED_ID = input("SEED_ID: ")
 
@@ -165,15 +166,15 @@ def build_picture_set(output: str, client_id):
     family = ""
     genus = ""
     species = ""
-    seed_data = validator.seed_data(
+    seed_data = validator.SeedData(
         seed_id=SEED_ID, seed_family=family, seed_genus=genus, seed_species=species
     )
 
     # Create the picture_set object
-    picture_set = validator.picture_set(client_data=client_data, image_data=image_data)
+    picture_set = validator.PictureSet(client_data=client_data, image_data=image_data)
 
     print("File created, name: " + output + "/picture_set.json")
-    picture_set_jsons = picture_set.dict()
+    picture_set_jsons = picture_set.model_dump()
 
     # Creating picture_set metadata collected from the system
     sysData = picture_set_processing(open_picture_set_system())
@@ -202,11 +203,11 @@ def build_picture(output: str, number: int, zoom, name: str):
 
     desc = "This image was uploaded before the creation of the database and was apart of the first importation batch."
     nb = number
-    user_data = validator.user_data(description=desc, number_of_seeds=nb, zoom=zoom)
+    user_data = validator.UserData(description=desc, number_of_seeds=nb, zoom=zoom)
 
     # Create the Picture object with the user data
     pic = validator.Picture(user_data=user_data)
-    pic_json = pic.dict()
+    pic_json = pic.model_dump()
     print("File created, name: " + name)
     picture_path = f"{output}/{name}"
 
@@ -401,7 +402,7 @@ def create_json_picture_set(picture_set, name: str, output: str):
     Returns:
     None
     """
-    data = validator.PPicture_set(**picture_set)
+    data = validator.ProcessedPictureSet(**picture_set)
     filePath = f"{output}/{name}.json"
     with open(filePath, "w") as json_file:
         json.dump(picture_set, json_file, indent=2)
@@ -419,7 +420,7 @@ def create_json_picture(pic, name: str, output: str):
     Returns:
     None
     """
-    data = validator.PPicture(**pic)
+    data = validator.ProcessedPicture(**pic)
     extension = name.split(".")[-1]
     filename = name.removesuffix("." + extension)
     filePath = f"{output}/{filename}.json"
