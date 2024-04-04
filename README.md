@@ -2,9 +2,11 @@
 
 ## Overview
 
-We want to define a human editable metadata format associated to captured images of seeds for model training and analysis.
+We want to define a human editable metadata format associated to captured images
+of seeds for model training and analysis.
 
-Capturing attributes associated to the images is essential for proper model training.
+Capturing attributes associated to the images is essential for proper model
+training.
 
 ## image format
 
@@ -17,15 +19,20 @@ We define metadata related to the file.
 
 These are machine readable file formats that are popular:
 
-* [csv](https://en.wikipedia.org/wiki/Comma-separated_values): often as an export of spreadsheet, each row is a single piece of data with columnar
-* [json](https://www.json.org/): json is a standard for modern API dataformat, it defines a dictionary of keys and values with datatypes matching Javascript datatypes but now supported in most languages
-* [yaml](https://yaml.org/): YAML is a human-friendly data serialization language for all programming languages 
+* [csv](https://en.wikipedia.org/wiki/Comma-separated_values): often as an
+  export of spreadsheet, each row is a single piece of data with columnar
+* [json](https://www.json.org/): json is a standard for modern API dataformat,
+  it defines a dictionary of keys and values with datatypes matching Javascript
+  datatypes but now supported in most languages
+* [yaml](https://yaml.org/): YAML is a human-friendly data serialization
+  language for all programming languages 
 
-Although originally proposing JSON, we will use YAML instead as it is easier to edit for users.
+Although originally proposing JSON, we will use YAML instead as it is easier to
+edit for users.
 
 ## on-disk directory/file structure
 
-* <project name>/
+* name/
   * index.yaml
     * projectName:
     * submitterName:
@@ -40,7 +47,8 @@ Although originally proposing JSON, we will use YAML instead as it is easier to 
 
 ## import utility 
 
-Python script that reads from on-disk directory structure and converts it to database
+Python script that reads from on-disk directory structure and converts it to
+database
 
 * yaml metadata is inherited recursively and properties are inherited
 * some of the properties can be directly read from the source image
@@ -51,7 +59,8 @@ Python script that reads from on-disk directory structure and converts it to dat
 
 (TODO: ERD (Entity-Relationship Diagram) here)
 
-attributes are both from the yaml metadata and the images themselves metadata and file (timestamps)
+attributes are both from the yaml metadata and the images themselves metadata
+and file (timestamps)
 
 entities
 
