@@ -1,4 +1,0 @@
-numpy
-azure-storage-blob
-azure-identity
-os

@@ -19,12 +19,12 @@ We define metadata related to the file.
 
 These are machine readable file formats that are popular:
 
-* [csv](https://en.wikipedia.org/wiki/Comma-separated_values): often as an
+* [csv](en.wikipedia.org/wiki/Comma-separated_values): often as an
   export of spreadsheet, each row is a single piece of data with columnar
-* [json](https://www.json.org/): json is a standard for modern API dataformat,
+* [json](www.json.org/): json is a standard for modern API dataformat,
   it defines a dictionary of keys and values with datatypes matching Javascript
   datatypes but now supported in most languages
-* [yaml](https://yaml.org/): YAML is a human-friendly data serialization
+* [yaml](yaml.org/): YAML is a human-friendly data serialization
   language for all programming languages 
 
 Although originally proposing JSON, we will use YAML instead as it is easier to
