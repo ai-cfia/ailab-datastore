@@ -1,16 +1,17 @@
-import psycopg
+import db.queries
 import os
-
-NACHET_DB_URL = os.getenv("NACHET_DB_URL")
+import db as db
 
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
 
 def populate_seeds():
     # Connect to your PostgreSQL database with the DB URL
-    conn = psycopg.connect(NACHET_DB_URL)
+    conn = db.connect_db()
     # Create a cursor object
-    cur = conn.cursor()
+    cur = db.cursor(connection=conn)
+    db.create_search_path(connection=conn, cur=cur)
+    
     seeds = (
         "Brassica napus",
         "Brassica juncea",
@@ -29,18 +30,12 @@ def populate_seeds():
         "Ambrosia psilostachya",
     )
 
-    cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
-    conn.commit()
-
     # Query to insert a seed
     query = "INSERT INTO seeds (name) VALUES (%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s,(%s),(%s),(%s),(%s),(%s),(%s)"
 
-    cur.execute(query, seeds)
+    db.queries.query_parameterized_db(cur, query, seeds)
 
-    conn.commit()
-
-    cur.close()
-    conn.close()
+    db.end_query(connection=conn, cursor=cur)
 
 
 if __name__ == "main":

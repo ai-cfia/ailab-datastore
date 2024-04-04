@@ -12,35 +12,7 @@ Parameters:
 
 import os
 import sys
-from azure.storage.blob import BlobServiceClient
-
-def create_BlobServiceClient(storage_url):
-    """
-    This function creates a BlobServiceClient object
-
-    Parameters:
-    - storage_url: the url of the storage account
-
-    Returns: BlobServiceClient object
-    """
-    # Create a blob service client
-    blob_service_client = BlobServiceClient.from_connection_string(conn_str=storage_url)
-    return blob_service_client
-
-def create_container_client(blob_service_client,container_name):
-    """
-    This function creates a container client object
-
-    Parameters:
-    - blob_service_client: the BlobServiceClient object
-    - container_name: the name of the container
-
-    Returns: ContainerClient object
-    """
-    # Get the container client
-    container_client = blob_service_client.get_container_client(container_name)
-    return container_client
-
+import blob as blob
 def download_container(container_client,container_name,local_dir):
     """
     This function downloads all the files from a container in a storage account
@@ -80,8 +52,8 @@ if __name__ == "__main__":
     local_dir = sys.argv[3]
 
     # Create a blob service client
-    blob_service_client = create_BlobServiceClient(storage_url)
+    blob_service_client = blob.create_BlobServiceClient(storage_url)
     # Create a container client
-    container_client = create_container_client(blob_service_client,container_name)
+    container_client = blob.create_container_client(blob_service_client,container_name)
     # Download the container
     download_container(container_client,container_name,local_dir)

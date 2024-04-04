@@ -1,12 +1,12 @@
 from datetime import date
 import sys
-import uuid
 import json
 import os
-import psycopg
 from PIL import Image
 import db as db
-import metadata.validator as validator
+import db.queries.seed as seed
+import db.queries.user as user
+import db.metadata.validator as validator
 
 """ This script is used to import the missing metadata from an Azure container to the database """
 
@@ -16,6 +16,8 @@ CONTAINER_URL = ""
 SEED_ID = ""
 
 class UserIDError(Exception):
+    pass
+class UnProcessedFilesException(Exception):
     pass
 
 
@@ -40,7 +42,7 @@ def json_deletion(picture_folder):
             print("Error: %s : %s" % (file, e.strerror))
 
 
-def manual_metadata_import(picture_folder: str):
+def manual_metadata_import(picture_folder: str,client_email:str,seed_name:str,zoom_level:float,seed_number:int):
     """
     Template function to do the importation process of the metadata from the Azure container to the database.
     The user is prompted to input the client email, the zoom level and the number of seeds for the picture_set.
@@ -48,28 +50,32 @@ def manual_metadata_import(picture_folder: str):
 
     Parameters:
     - picture_folder (str): Relative path to the folder we want to import.
+    - client_email (str): The email of the client.
+    - zoom_level (float): The zoom level of the picture.
+    - seed_number (int): The number of seeds in the picture.
     """
-
-    # Manually define the picture folder
-    # picture_folder = ""  # manually inputted before each import sequence
-
-    # Input the client email to identify the user or register him if needed
-    # client_email = input("client_email: ")
-    client_email = "test@email"
-    user_id = get_user_id(client_email)
-    if user_id is None:
+    # Build connection with db
+    conn = db.connect_db()
+    cur = db.cursor(conn)
+    db.create_search_path(conn, cur)
+    
+    seed_id = seed.get_seed_id(cursor=cur,seed_name=seed_name)
+    if seed_id is None or validator.is_valid_uuid(seed_id) is False:
+        seed_list = seed.get_all_seeds_names(cursor=cur)
+        print("List of seeds in the database: ")
+        for seed_db in seed_list:
+            print(seed_db[0])
+        raise Exception(f"Error: could not retrieve the seed_id based on provided name: {seed_name}")
+    
+    user_id = user.get_user_id(cursor=cur,email=client_email)
+    if user_id is None or validator.is_valid_uuid(user_id) is False:
         raise UserIDError(f"Error: could not retrieve the user_id, provided id: {user_id}")  
-    # #build picture_set
+    
+    #build picture_set
     nb_pic = build_picture_set(picture_folder, user_id)
 
     # upload picture_set to database
     picture_set_id = upload_picture_set_db(f"{picture_folder}/picture_set.json", user_id=user_id)
-    # picture_set_id=1
-    print("picture_set_id : " + str(picture_set_id))
-
-    # for each picture in field
-    zoom_level = input("Zoom level for this picture_set: ")
-    seed_number = input("Number of seed for this picture_set: ")
 
     # Get a list of files in the directory
     files = []
@@ -84,13 +90,13 @@ def manual_metadata_import(picture_folder: str):
             build_picture(picture_folder, seed_number, zoom_level, filename)
             pic_path = f'{picture_folder}/{filename.removesuffix(".tiff")}.json'
             # upload picture to database
-            uploadPictureDB(pic_path, picture_set_id, seed_id=SEED_ID)
+            upload_picture_db(pic_path, picture_set_id, seed_id=seed_id,cur=cur,conn=conn)
             actual_nb_pic = i
 
     if actual_nb_pic != nb_pic:
         print("Number of picture processed: " + str(actual_nb_pic))
         print("Number of picture in picture_set: " + str(nb_pic))
-        raise Exception("Error: number of pictures processed does not match the picture_set")
+        raise UnProcessedFilesException("Error: number of pictures processed does not match the picture_set")
     else:
         print("importation of " + picture_folder + "/ complete")
         print("Number of picture processed: " + str(actual_nb_pic))
@@ -131,7 +137,7 @@ def get_user_id(email: str):
     return res
 
 
-def build_picture_set(output: str, client_id):
+def build_picture_set(output: str, client_email: str):
     """
     This function builds the picture_set needed to represent each folder (with pictures in it) of a container.
     It prompts the user to input the expertise of the client and the number of images in the folder.
@@ -144,36 +150,28 @@ def build_picture_set(output: str, client_id):
     - The number of pictures in the folder that are supposed to be processed.
     """
 
-    # client_email = input("client_email: ")
-    client_email = "test@email"
 
     # client_expertise = input("Expertise: ")
-    client_expertise = "Developer"
+    client_expertise = "Trusted user"
 
     # Create the picture_set metadata (sub part) normally filled by the user
     client_data = validator.ClientData(
         client_email=client_email, client_expertise=client_expertise
     )
-    print(output)
     nb = len([f for f in os.listdir(output) if os.path.isfile(os.path.join(output, f))])
     image_data = validator.ImageDataPictureSet(numberOfImages=nb)
 
-    # SEED_ID = input("SEED_ID: ")
-
-    # family = input("Family: ")
-    # genus = input("Genus: ")
-    # species = input("Species: ")
-    family = ""
-    genus = ""
-    species = ""
-    seed_data = validator.SeedData(
-        seed_id=SEED_ID, seed_family=family, seed_genus=genus, seed_species=species
-    )
+    # Create the seed_data object (Deprecated, kept for compatibility with the validator)
+    # family = ""
+    # genus = ""
+    # species = ""
+    # seed_data = validator.SeedData(
+    #     seed_id=SEED_ID, seed_family=family, seed_genus=genus, seed_species=species
+    # )
 
     # Create the picture_set object
     picture_set = validator.PictureSet(client_data=client_data, image_data=image_data)
 
-    print("File created, name: " + output + "/picture_set.json")
     picture_set_jsons = picture_set.model_dump()
 
     # Creating picture_set metadata collected from the system
@@ -184,6 +182,7 @@ def build_picture_set(output: str, client_id):
 
     # Create the picture_set file
     create_json_picture_set(picture_set=picture_set_jsons, name="picture_set", output=output)
+    
     return nb
 
 
@@ -428,7 +427,7 @@ def create_json_picture(pic, name: str, output: str):
         json.dump(pic, json_file, indent=2)
 
 
-def upload_picture_set_db(path: str, user_id: str):
+def upload_picture_set_db(path: str, user_id: str,cur,conn):
     """
     Upload the picture_set.json file located at the specified path to the database.
 
@@ -440,43 +439,26 @@ def upload_picture_set_db(path: str, user_id: str):
     - The ID of the picture_set.
     """
     try:
-        # Connect to your PostgreSQL database
-        conn = psycopg.connect(NACHET_DB_URL)
-
-        # Create a cursor object
-        cur = conn.cursor()
-
-        db.create_search_path(conn, cur)
-
         # Open the file
         with open(path, "r") as file:
             data = file.read()
-
-        # Build picture_set_id
-        picture_set_id = uuid.uuid4()
-
+            
         # Execute the INSERT statement
-        # print(user_id)
-        query = "INSERT INTO picture_sets (id,picture_set, owner_id) VALUES (%s,%s, %s)"
+        query = "INSERT INTO picture_sets (picture_set, owner_id) VALUES (%s, %s)"
         params = (
-            picture_set_id,
             data,
             user_id,
         )
         cur.execute(query, params)
         conn.commit()
+        picture_set_id = cur.fetchone()[0]
     except:
         picture_set_id = None
         raise Exception("Error: could not upload the picture_set to the database")
-    # Retrieve the picture_set id
-    # cur.execute("SELECT id FROM picture_sets ORDER BY id DESC LIMIT 1")
-    finally:
-        cur.close()
-        conn.close()
     return picture_set_id
 
 
-def uploadPictureDB(path: str, picture_set_id: str, seed_id: str):
+def upload_picture_db(path: str, picture_set_id: str, seed_id: str,cur,conn):
     """
     Uploads the picture file located at the specified path to the database.
 
@@ -489,46 +471,32 @@ def uploadPictureDB(path: str, picture_set_id: str, seed_id: str):
     None
     """
     try:
-        # Connect to your PostgreSQL howatabase
-        conn = psycopg.connect(os.getenv("NACHET_DB_URL"))
-
-        # Create a cursor object
-        cur = conn.cursor()
-
-        db.create_search_path(conn, cur)
         # Open the file
         with open(path, "r") as file:
             data = file.read()
-
-        # Generate picture_id
-        picture_id = uuid.uuid4()
-
+            
         # Execute the INSERT statement
+        query = "INSERT INTO pictures (picture, picture_set_id) VALUES (%s, %s)"
         params = (
-            picture_id,
             data,
             picture_set_id,
         )
-        query = "INSERT INTO pictures (id,picture, picture_set_id) VALUES (%s,%s, %s)"
+        
         cur.execute(query, params)
         conn.commit()
-
-        id = uuid.uuid4()
-
+        
+        picture_id = cur.fetchone()[0]
+        
         # Create a Picture - Seed relationship
+        query = "INSERT INTO seedpicture (seed_id,picture_id) VALUES (%s,%s)"
         param = (
-            id,
             seed_id,
             picture_id,
         )
-        query = "INSERT INTO seedpicture (id,seed_id,picture_id) VALUES (%s,%s,%s)"
         cur.execute(query, param)
         conn.commit()
     except:
         raise Exception("Error: could not upload the picture to the database")
-    finally:
-        cur.close()
-        conn.close()
 
 
 if __name__ == "__main__":
