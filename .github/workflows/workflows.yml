@@ -12,6 +12,9 @@ jobs:
     name: workflow-lint-test-python
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
     secrets: inherit
+  bytebase-sql-review:
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-bytebase-sql-review.yml@main
+    secrets: inherit
   mkd-check:
     name: workflow-markdown-check
     uses: ai-cfia/github-workflows/.github/workflows/workflow-markdown-check.yml@main
