@@ -1,8 +1,8 @@
 import unittest
 import uuid
-import metadata.picture_set as picture_set_data
-import metadata.picture as picture_data
-import metadata.validator as validator
+import datastore.db.metadata.picture_set as picture_set_data
+import datastore.db.metadata.picture as picture_data
+import datastore.db.metadata.validator as validator
 import io
 from PIL import Image
 from datetime import date
@@ -11,7 +11,7 @@ import json
 
 PIC_LINK = 'test.com'
 
-PIC_PATH = 'test_image.tiff'
+PIC_PATH = 'img/test_image.tiff'
 
 class test_picture_functions(unittest.TestCase):
     def setUp(self):
@@ -64,7 +64,7 @@ class test_picture_functions(unittest.TestCase):
         This test checks if the get_image_properties function returns the correct image properties
         """
         properties = picture_data.get_image_properties(self.pic_encoded)
-        mock_properties = [1980, 1080, "TIFF"]
+        mock_properties = (1980, 1080, "TIFF")
         self.assertEqual(properties, mock_properties, "Image properties should be 1980x1080, TIFF")
 
 class test_picture_set_functions(unittest.TestCase):

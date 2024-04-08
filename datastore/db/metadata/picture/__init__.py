@@ -1,6 +1,6 @@
 
 from datetime import date
-from metadata import validator
+from datastore.db.metadata import validator
 from PIL import Image
 import io
 import base64
@@ -17,6 +17,9 @@ def build_picture(pic_encoded,link:str,nb_seeds:int,zoom:float,description:str="
     - link (str): The link to the picture blob.
     - nb_seeds (int): The number of seeds in the picture.
     - zoom (float): The zoom level of the picture.
+    
+    Returns:
+    - The picture metadata in a string dict format.
     """
     
     user_data = validator.UserData(

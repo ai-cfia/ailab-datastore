@@ -58,12 +58,11 @@ def get_user_id(cursor, email: str) -> str:
                 """
         cursor.execute(query, (email,))
         res = cursor.fetchone()[0]
-        if res:
-            return res
-        else:
-            raise UserNotFoundError(f"Error: user not found, email: {email}")
+        return res
+    except(TypeError) :
+        raise UserNotFoundError("Error: user could not be retrieved")
     except:
-        raise Exception("Error: user could not be retrieved")
+        raise Exception("Unhandled Error")
 
 
 def register_user(cursor, email: str) -> None:

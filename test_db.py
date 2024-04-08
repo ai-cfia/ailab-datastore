@@ -8,13 +8,13 @@ import uuid
 from PIL import Image
 import io
 import base64
-import db.queries.user as user
-import db.queries.seed as seed
-import db.queries.picture as picture
-import metadata.picture_set as picture_set_data
-import metadata.picture as picture_data
-import metadata.validator as validator
-import db.__init__ as db
+import datastore.db.queries.user as user
+import datastore.db.queries.seed as seed
+import datastore.db.queries.picture as picture
+import datastore.db.metadata.picture_set as picture_set_data
+import datastore.db.metadata.picture as picture_data
+import datastore.db.metadata.validator as validator
+import datastore.db.__init__ as db
 
 
 
@@ -27,8 +27,8 @@ class test_user_functions(unittest.TestCase):
         self.email = "test@email.gouv.ca"
 
     def tearDown(self):
-        db.end_query(self.con, self.cursor)
         self.con.rollback()
+        db.end_query(self.con, self.cursor)
 
     def test_is_user_registered(self):
         """
@@ -43,7 +43,7 @@ class test_user_functions(unittest.TestCase):
 
         user_id = user.register_user(self.cursor, self.email)
 
-        self.assertTrue(validator.validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
 
     def test_get_user_id(self):
         """
@@ -52,8 +52,8 @@ class test_user_functions(unittest.TestCase):
         user_id = user.register_user(self.cursor, self.email)
         uuid = user.get_user_id(self.cursor, self.email)
 
-        self.assertTrue(validator.is_valid_uuid(user_id), "The user_id is not a valid UUID")
-        self.assertTrue(validator.is_valid_uuid(uuid), "The returned UUID is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(user_id), f"The user_id={user_id} is not a valid UUID")
+        self.assertTrue(validator.is_valid_uuid(uuid), f"The returned UUID={uuid} is not a valid UUID")
         self.assertEqual(
             user_id, uuid, "The returned UUID is not the same as the registered UUID"
         )
@@ -81,7 +81,7 @@ class test_user_functions(unittest.TestCase):
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db()
-        self.cursor = self.con.cursor()
+        self.cursor = db.cursor(self.con)
         self.seed_name = "test"
 
     def tearDown(self):
@@ -109,6 +109,13 @@ class test_seed_functions(unittest.TestCase):
 
         self.assertTrue(validator.is_valid_uuid(fetch_id))
         self.assertEqual(seed_uuid, fetch_id)
+        
+    def test_get_nonexistant_seed_id(self):
+        """
+        This test checks if the get_seed_id function raises an exception when the seed does not exist
+        """
+        with self.assertRaises(seed.SeedNotFoundError):
+            seed.get_seed_id(self.cursor, "nonexistant_seed")
 
 
     def test_new_seed(self):
@@ -126,15 +133,14 @@ class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
         self.con = db.connect_db()
-        self.cursor = self.con.cursor()
+        self.cursor = db.cursor(self.con)
 
         # prepare the seed
         self.seed_name = "test seed"
         self.seed_id = seed.new_seed(self.cursor, self.seed_name)
 
         # prepare the user
-        user.register_user(self.cursor, "test@email")
-        self.user_id = user.get_user_id(self.cursor, "test@email")
+        self.user_id =user.register_user(self.cursor, "test@email")
 
         # prepare the picture_set and picture
         self.image = Image.new("RGB", (1980, 1080), "blue")

@@ -56,7 +56,7 @@ class UserData(BaseModel):
 
 class PictureSet(BaseModel):
     client_data: ClientData
-    image_data: ImageData
+    image_data: ImageDataPictureSet
 
 
 class ProcessedPictureSet(BaseModel):

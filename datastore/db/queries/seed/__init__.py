@@ -2,6 +2,9 @@
 This file contains the queries for the seed table.
 """
 
+class SeedNotFoundError(Exception):
+    pass
+
 def get_all_seeds_names(cursor):
     """
     This function returns all the seed name from the database.
@@ -46,9 +49,12 @@ def get_seed_id(cursor, seed_name: str) -> str:
                 name = %s
                 """
         cursor.execute(query, (seed_name,))
-        return cursor.fetchone()[0]
+        result=cursor.fetchone()[0]
+        return result
+    except(TypeError):
+        raise SeedNotFoundError("Error: seed not found")
     except:
-        raise Exception("Error: seed not found")
+        raise Exception("unhandled error")
 
 
 def new_seed(cursor, seed_name: str):

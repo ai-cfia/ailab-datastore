@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import date
-from metadata import validator
+from datastore.db.metadata import validator
 
 class PictureSetCreationError(Exception):
     pass
