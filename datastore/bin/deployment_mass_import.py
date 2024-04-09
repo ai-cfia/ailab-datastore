@@ -32,6 +32,8 @@ class UnProcessedFilesException(Exception):
 class NonExistingSeedName(Exception):
     pass
 
+class MissingArguments(Exception):
+    pass
 
 def json_deletion(picture_folder):
     """
@@ -54,13 +56,12 @@ def json_deletion(picture_folder):
             print("Error: %s : %s" % (file, e.strerror))
 
 
-def manual_metadata_import(
+def local_import(
     picture_folder: str,
     client_email: str,
     seed_name: str,
     zoom_level: float,
     seed_number: int,
-    conn,
     cur,
 ):
     """
@@ -74,8 +75,9 @@ def manual_metadata_import(
     - seed_name (str): The name of the seed
     - zoom_level (float): The zoom level of the picture.
     - seed_number (int): The number of seeds in the picture.
+    - cur: The cursor object to interact with the database.
     """
-
+    
     seed_id = seed.get_seed_id(cursor=cur, seed_name=seed_name)
     if seed_id is None or validator.is_valid_uuid(seed_id) is False:
         seed_list = seed.get_all_seeds_names(cursor=cur)
@@ -85,6 +87,7 @@ def manual_metadata_import(
         raise NonExistingSeedName(
             f"Error: could not retrieve the seed_id based on provided name: {seed_name}"
         )
+
 
     user_id = user.get_user_id(cursor=cur, email=client_email)
     if user_id is None or validator.is_valid_uuid(user_id) is False:
@@ -153,4 +156,4 @@ def manual_metadata_import(
 
 
 if __name__ == "__main__":
-    manual_metadata_import(*sys.argv[1:])
+    local_import(*sys.argv[1:])

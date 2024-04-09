@@ -189,3 +189,54 @@ def get_user_latest_picture_set(cursor, user_id: str):
         raise PictureSetNotFoundError(
             f"Error: picture_set not found for user:{user_id} "
         )
+
+def update_picture_metadata(cursor, picture_id: str, metadata: dict):
+    """
+    This function updates the metadata of a picture in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_id (str): The UUID of the picture to update.
+    - metadata (dict): The metadata to update. Must be formatted as a json.
+
+    Returns:
+    - None
+    """
+    try:
+        query = """
+            UPDATE
+                pictures
+            SET
+                picture = %s
+            WHERE
+                id = %s
+            """
+        cursor.execute(query, (metadata, picture_id))
+    except:
+        raise PictureUploadError(f"Error: Picture metadata not updated:{picture_id}")
+    
+def is_a_picture_set_id(cursor,picture_set_id):
+    """
+    This function checks if a picture_set_id exists in the database.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_set_id (str): The UUID of the picture_set to check.
+    """
+    try:
+        query = """
+            SELECT EXISTS(
+                SELECT 
+                    1 
+                FROM 
+                    picture_set
+                WHERE 
+                    id = %s
+            )
+                """
+        cursor.execute(query, (picture_set_id,))
+        res = cursor.fetchone()[0]
+        return res
+    except:
+        raise Exception("unhandled error")
+    

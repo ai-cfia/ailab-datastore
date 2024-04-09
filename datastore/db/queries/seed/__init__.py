@@ -83,3 +83,31 @@ def new_seed(cursor, seed_name: str):
         return cursor.fetchone()[0]
     except:
         raise Exception("Error: picture_set not uploaded")
+
+def is_seed_registered(cursor, seed_name: str) -> bool:
+    """
+    This function checks if a seed is registered in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - seed_name (str): Name of the seed
+
+    Returns:
+    - True if the seed is registered in the database, False otherwise.
+    """
+    try:
+        query = """
+            SELECT EXISTS(
+                SELECT 
+                    1 
+                FROM 
+                    seeds
+                WHERE 
+                    name = %s
+            )
+                """
+        cursor.execute(query, (seed_name,))
+        res = cursor.fetchone()
+        return res is not None
+    except:
+        raise Exception("Error: could not check if seed name is a seed")

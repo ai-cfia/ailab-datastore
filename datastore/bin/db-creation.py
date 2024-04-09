@@ -24,6 +24,7 @@ def create_db():
         CREATE TABLE users (
             id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
             email VARCHAR(255),
+            container_url VARCHAR(255),
             registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """

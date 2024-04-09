@@ -29,7 +29,7 @@ class test_mass_import(unittest.TestCase):
         """
         This test checks if the mass_import function runs without issue
         """
-        mass_import.manual_metadata_import(self.pic_path, self.email, self.seed_name, self.zoom, self.nb_seeds,self.con,self.cursor)
+        mass_import.local_import(self.pic_path, self.email, self.seed_name, self.zoom, self.nb_seeds,self.cursor)
         self.assertTrue(True)
         
     def test_non_existing_seed(self):
@@ -37,21 +37,21 @@ class test_mass_import(unittest.TestCase):
         This test checks if the mass_import function raises an exception when the seed does not exist
         """
         with self.assertRaises(seed.SeedNotFoundError):
-            mass_import.manual_metadata_import(self.pic_path, self.email, "non_existing_seed", self.zoom, self.nb_seeds,self.con,self.cursor)
+            mass_import.local_import(self.pic_path, self.email, "non_existing_seed", self.zoom, self.nb_seeds,self.cursor)
             
     def test_non_existing_user(self):
         """
         This test checks if the mass_import function raises an exception when the user does not exist
         """
         with self.assertRaises(user.UserNotFoundError):
-            mass_import.manual_metadata_import(self.pic_path, "non_existing_email", self.seed_name, self.zoom, self.nb_seeds,self.con,self.cursor)
+            mass_import.local_import(self.pic_path, "non_existing_email", self.seed_name, self.zoom, self.nb_seeds,self.cursor)
             
     def test_non_processed_file(self):
         """
         This test checks if the mass_import function raises an exception when the file is not processed
         """
         with self.assertRaises(mass_import.UnProcessedFilesException):
-            mass_import.manual_metadata_import("datastore/tests/UnProcessedFilesException_test", self.email, self.seed_name, self.zoom, self.nb_seeds,self.con,self.cursor)
+            mass_import.local_import("datastore/tests/UnProcessedFilesException_test", self.email, self.seed_name, self.zoom, self.nb_seeds,self.cursor)
 
 if __name__ == "__main__":
     unittest.main()
