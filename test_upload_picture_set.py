@@ -35,6 +35,8 @@ class test_upload_picture_set(unittest.TestCase):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
         
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
+    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
     def test_upload_picture_set(self):
         """
         This test checks if the upload_picture_set function runs without issue
