@@ -4,7 +4,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "nachet_0.0.5";
 
 SET search_path TO "nachet_0.0.5";
 
-CREATE TABLE user (
+CREATE TABLE users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -17,7 +17,7 @@ CREATE TABLE picture_set (
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE picture (
+CREATE TABLE pictures (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     picture_set_id uuid REFERENCES picture_set(id),
     picture JSON,
