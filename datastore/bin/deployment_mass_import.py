@@ -43,10 +43,9 @@ def json_deletion(picture_folder):
     - picture_folder (str): The path to the folder.
     """
     # Get a list of files in the directory
-    # Get a list of files in the directory
     files = []
     for f in os.listdir(picture_folder):
-        if os.path.isfile(os.path.join(picture_folder, f)):
+        if os.path.isfile(os.path.join(picture_folder, f) and f.endswith('.json')):
             files.append(f)
     # Iterate over the list of filepaths & remove each file.
     for file in files:
@@ -123,9 +122,9 @@ def local_import(
     for i, filename in enumerate(files):
         if filename.endswith(".tiff") or filename.endswith(".tif"):
             img = Image.open(f"{picture_folder}/{filename}")
-            img_byte_arary = io.BytesIO()
-            img.save(img_byte_arary, format="TIFF")
-            img_encoded = base64.b64encode(img_byte_arary.getvalue()).decode("utf8")
+            img_byte_array = io.BytesIO()
+            img.save(img_byte_array, format="TIFF")
+            img_encoded = base64.b64encode(img_byte_array.getvalue()).decode("utf8")
 
             image_metadata = picture_metadata.build_picture(
                 pic_encoded=img_encoded,

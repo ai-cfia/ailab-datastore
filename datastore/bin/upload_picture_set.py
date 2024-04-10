@@ -4,11 +4,13 @@ import datastore.db.metadata.picture_set as picture_set_metadata
 import datastore.db.metadata.picture as picture_metadata
 import datastore.db.queries.picture as picture_query
 from datastore.blob import azure_storage_api as blob
+import asyncio
+import json
 
 class AlreadyExistingFolderError(Exception):  
     pass
 
-def upload_picture_set(cursor, pictures, user_id:str, seed_name:str, zoom_level:float, nb_seeds:int):
+def upload_picture_set(cursor, container_client, pictures, user_id:str, seed_name:str, zoom_level:float, nb_seeds:int):
     """
     Upload a set of pictures to the Azure storage account and the database.
 
@@ -21,37 +23,43 @@ def upload_picture_set(cursor, pictures, user_id:str, seed_name:str, zoom_level:
         zoom_level (float): zoom level of the picture
         nb_seeds (int): number of seeds in the picture
     """
-    
-    if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
-        raise seed.SeedNotFoundError(f"Seed not found based on the given name: {seed_name}")
-    seed_id=seed.get_seed_id(cursor=cursor, seed_name=seed_name)
-    
-    if not user.is_a_user_id(cursor=cursor, user_id=user_id):
-        raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
-    connection_string = user.get_container_url(cursor=cursor, user_id=user_id)
-    
-    container_client = blob.mount_container(connection_string,user_id,False,"user")
-    
-    picture_set = picture_set_metadata.build_picture_set(user_id, len(pictures))
-    picture_set_id= picture_query.new_picture_set(cursor=cursor, picture_set=picture_set, user_id=user_id)
-    
-    if not blob.create_folder(container_client, picture_set_id):
-        raise AlreadyExistingFolderError(f"Folder already exists: {picture_set_id}")
-    folder_url= connection_string + "/" + str(picture_set_id)
-    
-    for picture_encoded in pictures:
+    try:
+        if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
+            raise seed.SeedNotFoundError(f"Seed not found based on the given name: {seed_name}")
+        seed_id=seed.get_seed_id(cursor=cursor, seed_name=seed_name)
         
-        # Create picture instance in DB
-        picture_id=picture_query.new_picture(cursor=cursor, picture="", picture_set_id=picture_set_id, seed_id=seed_id)
-        # Upload picture to Azure and retrieve link
-        blob.upload_image(container_client, picture_set_id, picture_encoded, picture_id)
-        picture_link = folder_url +  "/" + str(picture_id)
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
         
-        # Create picture metadata and update DB instance (with link to Azure blob)
-        picture = picture_metadata.build_picture(pic_encoded=picture_encoded,link= picture_link,nb_seeds=nb_seeds,zoom=zoom_level, description="upload_picture_set script")
-        picture_query.update_picture_metadata(cursor=cursor, picture_id=picture_id, picture=picture)
+        picture_set = picture_set_metadata.build_picture_set(user_id, len(pictures))
+        picture_set_id= picture_query.new_picture_set(cursor=cursor, picture_set=picture_set, user_id=user_id)
         
-    return picture_set_id
+        folder_created = asyncio.run(blob.create_folder(container_client, str(picture_set_id)))
+        if not folder_created:
+            raise AlreadyExistingFolderError(f"Folder already exists: {picture_set_id}")
+        folder_url= container_client.url + "/" + str(picture_set_id)
+        picture_uploaded =[]
+        for picture_encoded in pictures:
+            
+            # Create picture instance in DB
+            empty_picture = json.dumps([])
+            picture_id=picture_query.new_picture(cursor=cursor, picture=empty_picture, picture_set_id=picture_set_id, seed_id=seed_id)
+            # Upload picture to Azure and retrieve link
+            asyncio.run(blob.upload_image(container_client, picture_set_id, picture_encoded, picture_id))
+            picture_link = folder_url +  "/" + str(picture_id)
+            picture_uploaded.append(picture_link)
+            # Create picture metadata and update DB instance (with link to Azure blob)
+            picture = picture_metadata.build_picture(pic_encoded=picture_encoded,link= picture_link,nb_seeds=nb_seeds,zoom=zoom_level, description="upload_picture_set script")
+            picture_query.update_picture_metadata(cursor=cursor, picture_id=picture_id, metadata=picture)
+            
+        return picture_set_id
+    except:
+        cursor.rollback()
+        if folder_url is not None:
+            arg= f""""picture_set_uuid":'{picture_set_id}'"""
+            blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))
+            container_client.delete_blobs(blobs)
+        raise Exception("An error occured during the upload of the picture set")
 
 if __name__ == "__main__":
     upload_picture_set()

@@ -70,7 +70,7 @@ async def mount_container(connection_string, container_uuid, create_container=Tr
                 if response:
                     return container_client
                 else:
-                    return False
+                    raise MountContainerError("Error creating general directory")
         else:
             raise ConnectionStringError("Invalid connection string")
 
@@ -90,8 +90,7 @@ async def get_blob(container_client, blob_name):
         return blob_content
 
     except GetBlobError as error:
-        print(error)
-        return False
+        raise GetBlobError("Error getting blob")
 
 
 async def upload_image(container_client, folder_uuid, image, image_uuid):
@@ -100,17 +99,41 @@ async def upload_image(container_client, folder_uuid, image, image_uuid):
     if the specified folder doesnt exist, it creates it with a uuid
     """
     try:
-        directories = await get_directories(container_client)
-        if folder_uuid not in directories:
+        if not await is_a_folder(container_client,folder_uuid):
             raise CreateDirectoryError("Folder does not exist")
         else:
             blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
-            container_client.upload_blob(blob_name, image, overwrite=True)
+            metadata = {
+                "picture_uuid":"{}".format(image_uuid),
+                "picture_set_uuid":"{}".format(folder_uuid)
+            }
+            container_client.upload_blob(blob_name, image, overwrite=True, metadata=metadata)
             return blob_name
 
     except UploadImageError as error:
         print(error)
         return False
+    
+    
+async def is_a_folder(container_client,folder_name):
+    """
+    This function checks if a folder exists in the container
+    
+    Parameters:
+    - container_client: the Azure container client 
+    - folder_name: the name of the folder to check
+    
+    Returns: True if the folder exists, False otherwise
+    """
+    try:
+        directories = await get_directories(container_client)
+        if folder_name in directories:
+            return True
+        else:
+            return False
+    except:
+        raise Exception("Error checking if folder exists")
+
 
 
 async def create_folder(container_client, folder_name):
@@ -122,8 +145,7 @@ async def create_folder(container_client, folder_name):
     - folder_name: the name of the folder to be created (usually it's uuid)
     """
     try:
-        directories = await get_directories(container_client)
-        if folder_name not in directories:
+        if not await is_a_folder(container_client,folder_name):
             folder_data = {
                 "folder_name": folder_name,
                 "date_created": str(
@@ -136,7 +158,7 @@ async def create_folder(container_client, folder_name):
             )
             return True
         else:
-            return False
+            raise CreateDirectoryError("Folder already exists")
 
     except CreateDirectoryError as error:
         print(error)
@@ -264,3 +286,22 @@ async def download_container(container_client,container_name,local_dir):
                 nb_downloaded_files=i
     except:
         raise Exception("Error downloading container")
+    
+async def get_blobs_from_tag(container_client, tag:str):
+    """
+    This function gets the list of blobs in a picture set folder
+
+    Parameters:
+    - container_client: the Azure container client 
+    - tag: the tag to search for in the blobs ex: ""yourtagname"='firsttag' and "yourtagname2"='secondtag'"
+
+    Returns: the list of blobs
+    """
+    try:
+        blob_list = container_client.find_blobs_by_tags(tag)
+        if len(blob_list) > 0:
+            return blob_list
+        else:
+            raise Exception("No blobs found with the given tag")
+    except:
+        raise Exception("Error getting blobs")
