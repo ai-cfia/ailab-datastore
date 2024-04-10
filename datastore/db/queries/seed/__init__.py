@@ -4,6 +4,8 @@ This file contains the queries for the seed table.
 
 class SeedNotFoundError(Exception):
     pass
+class SeedCreationError(Exception):
+    pass
 
 def get_all_seeds_names(cursor):
     """
@@ -82,7 +84,7 @@ def new_seed(cursor, seed_name: str):
         )
         return cursor.fetchone()[0]
     except:
-        raise Exception("Error: picture_set not uploaded")
+        raise SeedCreationError("Error: picture_set not uploaded")
 
 def is_seed_registered(cursor, seed_name: str) -> bool:
     """
@@ -107,7 +109,7 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
             )
                 """
         cursor.execute(query, (seed_name,))
-        res = cursor.fetchone()
-        return res is not None
+        res = cursor.fetchone()[0]
+        return res
     except:
         raise Exception("Error: could not check if seed name is a seed")

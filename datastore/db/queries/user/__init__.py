@@ -133,6 +133,8 @@ def link_container(cursor,user_id:str,container_url:str):
     - None
     """
     try:
+        if not is_a_user_id(cursor=cursor,user_id=user_id):
+            raise UserNotFoundError(f"User not found for the given id: {user_id}")
         query = """
             UPDATE 
                 users
@@ -145,6 +147,8 @@ def link_container(cursor,user_id:str,container_url:str):
             query,
             (user_id,container_url,),
         )
+    except(UserNotFoundError):
+        raise
     except:
         raise Exception("Error: could not link container to user")
     
@@ -175,5 +179,7 @@ def get_container_url(cursor,user_id:str):
         return res
     except(TypeError) :
         raise ContainerNotSetError("Error: user does not have a container URL under its name")
+    except(UserNotFoundError):
+        raise
     except:
         raise Exception("Error: could not retrieve container url")

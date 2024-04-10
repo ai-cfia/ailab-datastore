@@ -6,13 +6,15 @@ class PictureNotFoundError(Exception):
     pass
 
 
-class PictureSetUploadError(Exception):
+class PictureSetCreationError(Exception):
     pass
 
 
 class PictureSetNotFoundError(Exception):
     pass
 
+class PictureUpdateError(Exception):
+    pass
 
 """
 This module contains all the queries related to the Picture and PictureSet tables.
@@ -51,7 +53,7 @@ def new_picture_set(cursor, picture_set, user_id: str):
         )
         return cursor.fetchone()[0]
     except:
-        raise PictureSetUploadError("Error: picture_set not uploaded")
+        raise PictureSetCreationError("Error: picture_set not uploaded")
 
 
 def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
@@ -104,7 +106,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
         )
         return picture_id
     except:
-        raise PictureUploadError(f"Error: Picture not uploaded:{picture_id}")
+        raise PictureUploadError(f"Error: Picture not uploaded")
 
 
 def get_picture_set(cursor, picture_set_id: str):
@@ -213,7 +215,7 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
             """
         cursor.execute(query, (metadata, picture_id))
     except:
-        raise PictureUploadError(f"Error: Picture metadata not updated:{picture_id}")
+        raise PictureUpdateError(f"Error: Picture metadata not updated:{picture_id}")
     
 def is_a_picture_set_id(cursor,picture_set_id):
     """
