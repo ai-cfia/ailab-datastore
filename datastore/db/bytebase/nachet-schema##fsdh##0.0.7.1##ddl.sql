@@ -15,13 +15,13 @@ BEGIN
     CREATE TABLE "nachet_0.0.7".picture_set (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
         picture_set JSON,
-        owner_id uuid REFERENCES users(id),
+        owner_id uuid REFERENCES "nachet_0.0.7".users(id),
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE "nachet_0.0.7".pictures (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
-        picture_set_id uuid REFERENCES picture_set(id),
+        picture_set_id uuid REFERENCES "nachet_0.0.7".picture_set(id),
         picture JSON,
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -35,8 +35,8 @@ BEGIN
 
     CREATE TABLE "nachet_0.0.7".picture_seed (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
-        picture_id uuid REFERENCES picture(id),
-        seed_id uuid REFERENCES seeds(id),
+        picture_id uuid REFERENCES "nachet_0.0.7".picture(id),
+        seed_id uuid REFERENCES "nachet_0.0.7".seeds(id),
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ); 
   END IF;
