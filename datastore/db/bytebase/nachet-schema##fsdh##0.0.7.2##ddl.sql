@@ -35,7 +35,7 @@ BEGIN
 
     CREATE TABLE "nachet_0.0.7".picture_seed (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
-        picture_id uuid REFERENCES "nachet_0.0.7".picture(id),
+        picture_id uuid REFERENCES "nachet_0.0.7".pictures(id),
         seed_id uuid REFERENCES "nachet_0.0.7".seeds(id),
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ); 
