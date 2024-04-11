@@ -78,5 +78,26 @@ class test_upload_picture_set(unittest.TestCase):
         with self.assertRaises(user.UserNotFoundError):
             asyncio.run(upload_picture_set.upload_picture_set(self.cursor, self.mock_container_client, self.pictures, uuid.uuid4(), self.seed_name, 1.0, 1))
 
+    @patch("datastore.bin.upload_picture_set.blob.create_folder")
+    @patch("azure.storage.blob.ContainerClient.upload_blob")
+    def test_already_existing_folder(self,MockCreateFolder,MockUploadBlob):
+        """
+        This test checks if the upload_picture_set function raises an exception when the folder already exists
+        """
+        with self.assertRaises(upload_picture_set.AlreadyExistingFolderError):
+            MockCreateFolder.retun_value = False
+            zoom_level = 1.0
+            nb_seeds = 1
+            asyncio.run(upload_picture_set.upload_picture_set(self.cursor, self.mock_container_client, self.pictures, self.user_id, self.seed_name, zoom_level, nb_seeds))
+
+    @patch("datastore.bin.upload_picture_set.picture_query.new_picture")
+    @patch("azure.storage.blob.ContainerClient.upload_blob")
+    def test_upload_picture_set_exception(self,MockNewPicture,MockUploadBlob):
+        """
+        This test checks if the upload_picture_set function raises an exception when an error occurs
+        """
+        MockNewPicture.side_effect = Exception("Connection Error")
+        with self.assertRaises(upload_picture_set.UploadError):
+            upload_picture_set.upload_picture_set(self.cursor, self.mock_container_client, self.pictures, self.user_id, self.seed_name, 1.0, 1)
 if __name__ == "__main__":
     unittest.main()

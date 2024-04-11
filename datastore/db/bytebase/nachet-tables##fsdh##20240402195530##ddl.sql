@@ -3,6 +3,7 @@ CREATE TABLE "nachet_0.0.5".users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "nachet_0.0.5".picture_set (

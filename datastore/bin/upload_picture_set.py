@@ -9,6 +9,8 @@ import json
 
 class AlreadyExistingFolderError(Exception):  
     pass
+class UploadError(Exception):  
+    pass
 
 def upload_picture_set(cursor, container_client, pictures, user_id:str, seed_name:str, zoom_level:float, nb_seeds:int):
     """
@@ -59,7 +61,7 @@ def upload_picture_set(cursor, container_client, pictures, user_id:str, seed_nam
             arg= f""""picture_set_uuid":'{picture_set_id}'"""
             blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))
             container_client.delete_blobs(blobs)
-        raise Exception("An error occured during the upload of the picture set")
+        raise UploadError("An error occured during the upload of the picture set")
 
 if __name__ == "__main__":
     upload_picture_set()
