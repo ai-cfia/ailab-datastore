@@ -1,4 +1,4 @@
---Schema creation file
+--Schema creation file test
 DO
 $do$
 BEGIN
