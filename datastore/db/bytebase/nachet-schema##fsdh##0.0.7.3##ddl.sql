@@ -15,15 +15,22 @@ BEGIN
     CREATE TABLE "nachet_0.0.7".picture_set (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
         picture_set JSON,
-        owner_id uuid REFERENCES "nachet_0.0.7".users(id),
+        owner_id uuid ,
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        CONSTRAINT fk_owner
+            FOREIGN KEY(owner_id) 
+                REFERENCES "nachet_0.0.7".users(id)
     );
 
     CREATE TABLE "nachet_0.0.7".pictures (
         id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
-        picture_set_id uuid REFERENCES "nachet_0.0.7".picture_set(id),
+        picture_set_id uuid,
         picture JSON,
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        CONSTRAINT fk_picture_set
+            FOREIGN KEY(picture_set_id) 
+                REFERENCES "nachet_0.0.7".picture_set(id)
+                ON DELETE CASCADE
     );
 
     CREATE TABLE "nachet_0.0.7".seeds (
@@ -38,6 +45,14 @@ BEGIN
         picture_id uuid REFERENCES "nachet_0.0.7".pictures(id),
         seed_id uuid REFERENCES "nachet_0.0.7".seeds(id),
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        CONSTRAINT fk_picture
+            FOREIGN KEY(picture_id) 
+                REFERENCES "nachet_0.0.7".pictures(id)
+                ON DELETE CASCADE,
+        CONSTRAINT fk_seed
+            FOREIGN KEY(seed_id) 
+                REFERENCES "nachet_0.0.7".seeds(id)
+                ON DELETE CASCADE
     ); 
   END IF;
 END
