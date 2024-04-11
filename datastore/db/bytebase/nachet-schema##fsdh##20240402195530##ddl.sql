@@ -1,3 +1,4 @@
+--Schema creation file
 DO
 $do$
 BEGIN
