@@ -2,7 +2,7 @@
 DO
 $do$
 BEGIN
-  IF ( EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nachet_0.0.5')) THEN
+  IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nachet_0.0.5')) THEN
     --Table creation file 
     CREATE TABLE "nachet_0.0.5".users (
         id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
