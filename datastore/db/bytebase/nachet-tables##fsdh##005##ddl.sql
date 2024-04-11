@@ -1,5 +1,4 @@
 --Table creation file 
---Schema creation file
 DO
 $do$
 BEGIN
