@@ -1,4 +1,4 @@
---Table creation file
+--Table creation file test
 CREATE TABLE "nachet_0.0.5".users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
