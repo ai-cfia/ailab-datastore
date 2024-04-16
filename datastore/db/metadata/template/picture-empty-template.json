@@ -2,19 +2,19 @@
   "user_data":{
     "description": "",
     "numbre_of_seeds": "",
-    "zoom": "",
-  }
+    "zoom": ""
+  },
   "metadata":{
     "upload_date": ""
-  }
+  },
   "image_data":{
     "format": "",
     "height": "",
     "width": "",
     "resolution": "",
     "source": "",
-    "parent": "",
-  }
+    "parent": ""
+  },
   "quality_check": {
     "uploadDate":"",
     "editedBy": "",
@@ -24,4 +24,3 @@
     "privacyFlag": "" 
   }
 }
-      
