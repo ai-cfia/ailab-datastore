@@ -5,7 +5,6 @@ from azure.storage.blob import (
     AccountSasPermissions,
 )
 from datetime import timedelta, datetime
-import os
 
 
 def create_BlobServiceClient(storage_url):

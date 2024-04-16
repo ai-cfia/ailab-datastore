@@ -4,7 +4,7 @@ It tests the functions in the user, seed and picture modules.
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 import uuid
 import json
 from PIL import Image
@@ -113,7 +113,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the get_user_id function raises an exception when the connection fails
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user.register_user(self.cursor, self.email)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
@@ -257,7 +257,7 @@ class test_seed_functions(unittest.TestCase):
         """
         This test checks if the get_seed_id function raises an exception when the connection fails
         """
-        seed_uuid = seed.new_seed(self.cursor, self.seed_name)
+        seed.new_seed(self.cursor, self.seed_name)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):

@@ -2,7 +2,6 @@ import unittest
 import uuid
 import datastore.db.metadata.picture_set as picture_set_data
 import datastore.db.metadata.picture as picture_data
-import datastore.db.metadata.validator as validator
 import io
 from PIL import Image
 from datetime import date

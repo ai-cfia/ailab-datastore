@@ -93,7 +93,7 @@ async def get_blob(container_client, blob_name):
         blob_content = blob.readall()
         return blob_content
 
-    except GetBlobError as error:
+    except GetBlobError:
         raise GetBlobError("Error getting blob")
 
 
@@ -136,7 +136,7 @@ async def is_a_folder(container_client, folder_name):
             return True
         else:
             return False
-    except:
+    except Exception:
         raise Exception("Error checking if folder exists")
 
 
@@ -290,8 +290,8 @@ async def download_container(container_client, container_name, local_dir):
             with open(local_file_path, "wb") as file:
                 blob_data = blob_client.download_blob(blob=blob.name)
                 blob_data.readinto(file)
-                nb_downloaded_files = i
-    except:
+                #  nb_downloaded_files = i
+    except Exception:
         raise Exception("Error downloading container")
 
 
@@ -311,5 +311,5 @@ async def get_blobs_from_tag(container_client, tag: str):
             return blob_list
         else:
             raise Exception("No blobs found with the given tag")
-    except:
+    except Exception:
         raise Exception("Error getting blobs")

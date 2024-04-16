@@ -5,16 +5,12 @@ import datastore.db as db
 import datastore.db.queries.user as user
 import datastore.db.queries.seed as seed
 import datastore.db.queries.picture as picture_query
-from datastore.blob import azure_storage_api
-import datastore.blob.__init__ as blob_storage
 import datastore as datastore
 import asyncio
-import json
 from PIL import Image
 import base64
 import uuid
 import io
-from azure.storage.blob import ContainerClient, BlobServiceClient
 
 
 class test_upload_picture_set(unittest.TestCase):

@@ -12,7 +12,7 @@ Parameters:
 
 import os
 import sys
-import datastore.blob as blob
+import datastore.blob as blob_api
 
 
 def download_container(container_client, container_name, local_dir):
@@ -42,8 +42,8 @@ def download_container(container_client, container_name, local_dir):
             with open(local_file_path, "wb") as file:
                 blob_data = blob_client.download_blob(blob=blob.name)
                 blob_data.readinto(file)
-                nb_downloaded_files = i
-    except:
+                #  nb_downloaded_files = i
+    except Exception:
         raise Exception("Error downloading container")
 
 
@@ -53,8 +53,8 @@ if __name__ == "__main__":
     local_dir = sys.argv[3]
 
     # Create a blob service client
-    blob_service_client = blob.create_BlobServiceClient(storage_url)
+    blob_service_client = blob_api.create_BlobServiceClient(storage_url)
     # Create a container client
-    container_client = blob.create_container_client(blob_service_client, container_name)
+    container_client = blob_api.create_container_client(blob_service_client, container_name)
     # Download the container
     download_container(container_client, container_name, local_dir)

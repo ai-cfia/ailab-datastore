@@ -54,7 +54,7 @@ def new_picture_set(cursor, picture_set, user_id: str):
             ),
         )
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise PictureSetCreationError("Error: picture_set not uploaded")
 
 
@@ -107,8 +107,8 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
             ),
         )
         return picture_id
-    except:
-        raise PictureUploadError(f"Error: Picture not uploaded")
+    except Exception:
+        raise PictureUploadError("Error: Picture not uploaded")
 
 
 def get_picture_set(cursor, picture_set_id: str):
@@ -133,7 +133,7 @@ def get_picture_set(cursor, picture_set_id: str):
                 """
         cursor.execute(query, (picture_set_id,))
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
 
 
@@ -159,7 +159,7 @@ def get_picture(cursor, picture_id: str):
                 """
         cursor.execute(query, (picture_id,))
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise PictureNotFoundError(f"Error: Picture not found: {picture_id}")
 
 
@@ -189,7 +189,7 @@ def get_user_latest_picture_set(cursor, user_id: str):
                 """
         cursor.execute(query, (user_id,))
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise PictureSetNotFoundError(
             f"Error: picture_set not found for user:{user_id} "
         )
@@ -217,7 +217,7 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
                 id = %s
             """
         cursor.execute(query, (metadata, picture_id))
-    except:
+    except Exception:
         raise PictureUpdateError(f"Error: Picture metadata not updated:{picture_id}")
 
 
@@ -243,5 +243,5 @@ def is_a_picture_set_id(cursor, picture_set_id):
         cursor.execute(query, (picture_set_id,))
         res = cursor.fetchone()[0]
         return res
-    except:
+    except Exception:
         raise Exception("unhandled error")

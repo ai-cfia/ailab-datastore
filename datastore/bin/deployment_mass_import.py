@@ -1,11 +1,8 @@
-from datetime import date
 import sys
-import json
 import os
 import io
 import base64
 from PIL import Image
-import datastore.db as db
 import datastore.db.queries.seed as seed
 import datastore.db.queries.user as user
 import datastore.db.queries.picture as picture_query

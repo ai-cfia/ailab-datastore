@@ -40,7 +40,7 @@ def is_user_registered(cursor, email: str) -> bool:
         cursor.execute(query, (email,))
         res = cursor.fetchone()[0]
         return res
-    except:
+    except Exception:
         raise Exception("Error: could not check if user is registered")
 
 
@@ -69,7 +69,7 @@ def is_a_user_id(cursor, user_id: str) -> bool:
         cursor.execute(query, (user_id,))
         res = cursor.fetchone()[0]
         return res
-    except:
+    except Exception:
         raise Exception("Error: could not check if uuid given is a user id")
 
 
@@ -98,7 +98,7 @@ def get_user_id(cursor, email: str) -> str:
         return res
     except TypeError:
         raise UserNotFoundError("Error: user could not be retrieved")
-    except:
+    except Exception:
         raise Exception("Unhandled Error")
 
 
@@ -126,7 +126,7 @@ def register_user(cursor, email: str) -> None:
             (email,),
         )
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise UserCreationError("Error: user not registered")
 
 
@@ -161,7 +161,7 @@ def link_container(cursor, user_id: str, container_url: str):
         )
     except UserNotFoundError:
         raise
-    except:
+    except Exception:
         raise Exception("Error: could not link container to user")
 
 
@@ -194,7 +194,7 @@ def get_container_url(cursor, user_id: str):
         raise ContainerNotSetError(
             "Error: user does not have a container URL under its name"
         )
-    except UserNotFoundError:
-        raise
-    except:
+    except UserNotFoundError as e:
+        raise e
+    except Exception:
         raise Exception("Error: could not retrieve container url")

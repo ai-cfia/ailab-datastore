@@ -1,3 +1,6 @@
+""" 
+This module contains the function to build the picture metadata needed for the database.
+"""
 from datetime import date
 from datastore.db.metadata import validator
 from PIL import Image
@@ -58,7 +61,7 @@ def build_picture(
     )
     try:
         validator.ProcessedPicture(**picture.model_dump())
-    except:
+    except Exception:
         raise PictureCreationError("Error: Picture not created") from None
     return picture.model_dump_json()
 

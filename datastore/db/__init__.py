@@ -1,3 +1,6 @@
+""" 
+This module contains the function interacting with the database directly.
+"""
 import os
 import psycopg
 

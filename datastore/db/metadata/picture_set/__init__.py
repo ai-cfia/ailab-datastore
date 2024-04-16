@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+""" 
+This module contains the function to build the picture_set metadata needed for the database.
+"""
 from datetime import date
 from datastore.db.metadata import validator
 

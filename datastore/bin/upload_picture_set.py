@@ -93,7 +93,7 @@ def upload_picture_set(
             )
 
         return picture_set_id
-    except:
+    except Exception:
         if folder_url is not None:
             arg = f""""picture_set_uuid":'{picture_set_id}'"""
             blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))

@@ -30,7 +30,7 @@ def get_all_seeds_names(cursor):
             """
         cursor.execute(query)
         return cursor.fetchall()
-    except:
+    except Exception:
         raise Exception("Error: seeds could not be retrieved")
 
 
@@ -59,7 +59,7 @@ def get_seed_id(cursor, seed_name: str) -> str:
         return result
     except TypeError:
         raise SeedNotFoundError("Error: seed not found")
-    except:
+    except Exception:
         raise Exception("unhandled error")
 
 
@@ -85,7 +85,7 @@ def new_seed(cursor, seed_name: str):
             (seed_name,),
         )
         return cursor.fetchone()[0]
-    except:
+    except Exception:
         raise SeedCreationError("Error: picture_set not uploaded")
 
 
@@ -114,5 +114,5 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
         cursor.execute(query, (seed_name,))
         res = cursor.fetchone()[0]
         return res
-    except:
+    except Exception:
         raise Exception("Error: could not check if seed name is a seed")
