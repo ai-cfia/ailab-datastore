@@ -43,7 +43,7 @@ edit for users.
       * index.yaml  
       * 1.tiff
       * 1.yaml
-         * microscope metadata
+        * microscope metadata
 
 ## import utility
 

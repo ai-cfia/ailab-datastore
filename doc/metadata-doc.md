@@ -216,7 +216,7 @@ contains a list of containers used either for the users upload or our Data
 scientists training sets. The current structure uses a tier in the container's
 name.
 
-```
+```Structure
 
 Storage account:
 │     
