@@ -30,7 +30,15 @@ sequenceDiagram;
     User -) Frontend: Fill form :<br> Seed selection, nb Seeds/Pic, Zoom
     User -) Frontend: Upload: session folder
     Frontend ->> Backend: Upload from trusted user request: <br> Seed info, nbSeeds/Pic, Zoom ,<br> Session Folder & User
-    Backend -) Datastore: upload_picture_set (cursor, pictures, user_id, seed_name, zoom_level, nb_seeds)
+    Backend -) Datastore: db.connect_db()
+    Datastore --> Backend : connection
+    Backend -) Datastore: cursor(connection)
+    Datastore --> Backend : cursor
+    Backend -) Datastore: get_User(email,cursor)
+    Datastore --> Backend : User
+    Backend -) Datastore: get_user_container_client(user_uuid)
+    Datastore --> Backend : container_client
+    Backend -) Datastore: upload_picture_set (cursor, container_client, pictures, user_id, seed_name, zoom_level, nb_seeds)
     Datastore --> PostgreSQL Database: is_seed_registered(seed_name)
     Datastore --> PostgreSQL Database: is_a_user_id(user_id)
     Datastore -) PostgreSQL Database: get_container_url()

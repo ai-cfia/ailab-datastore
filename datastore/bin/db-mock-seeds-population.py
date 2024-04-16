@@ -1,6 +1,7 @@
 import db.queries
 import os
-import db as db
+import datastore.db as db
+import datastore.db.queries as queries
 
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
@@ -11,7 +12,7 @@ def populate_seeds():
     # Create a cursor object
     cur = db.cursor(connection=conn)
     db.create_search_path(connection=conn, cur=cur)
-    
+
     seeds = (
         "Brassica napus",
         "Brassica juncea",
@@ -33,7 +34,7 @@ def populate_seeds():
     # Query to insert a seed
     query = "INSERT INTO seeds (name) VALUES (%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s),(%s,(%s),(%s),(%s),(%s),(%s),(%s)"
 
-    db.queries.query_parameterized_db(cur, query, seeds)
+    queries.query_parameterized_db(cur, query, seeds)
 
     db.end_query(connection=conn, cursor=cur)
 

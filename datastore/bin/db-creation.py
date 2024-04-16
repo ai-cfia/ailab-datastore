@@ -1,6 +1,6 @@
 import os
-import db as db
-import db.queries as queries
+import datastore.db as db
+import datastore.db.queries as queries
 
 NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
 
@@ -12,9 +12,8 @@ def create_db():
     # Create a cursor object
     cur = db.cursor(connection=conn)
 
-    
     # Create Schema
-    cur.execute("""CREATE SCHEMA "%s";""",(NACHET_SCHEMA,))
+    cur.execute("""CREATE SCHEMA "%s";""", (NACHET_SCHEMA,))
 
     # # Create Search Path
     cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
@@ -28,11 +27,11 @@ def create_db():
             registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """
-    queries.query_db(conn,cur,query)
-    
+    queries.query_db(conn, cur, query)
+
     # Create PictureSet table
-    
-    query= """
+
+    query = """
         CREATE TABLE  picture_set (
             id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
             picture_set JSON,
@@ -40,11 +39,11 @@ def create_db():
             upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """
-    queries.query_db(conn,cur,query)
-    
+    queries.query_db(conn, cur, query)
+
     # Create Pictures table
 
-    query="""
+    query = """
         CREATE TABLE  pictures (
             id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
             picture JSON,
@@ -54,15 +53,15 @@ def create_db():
     """
 
     # Create seed DB
-    query ="""
+    query = """
         CREATE TABLE seeds (
             id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
             metadata JSON,
             name VARCHAR(255)
         )
     """
-    queries.query_db(conn,cur,query)
-    
+    queries.query_db(conn, cur, query)
+
     # Create SeedPicture table
     query = """
         CREATE TABLE picture_seed (
@@ -71,7 +70,7 @@ def create_db():
             picture_id uuid REFERENCES pictures(id)
         )
     """
-    queries.query_db(conn,cur,query)
+    queries.query_db(conn, cur, query)
 
     # # check if the search path exists
     # cur.execute("Show search_path")

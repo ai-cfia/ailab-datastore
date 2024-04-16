@@ -1,3 +1,7 @@
+"""
+This module is responsible for handling the user data in the database 
+and the user container in the blob storage.
+"""
 import datastore.db.queries.user as user
 import datastore.blob.azure_storage_api as azure_storage_api
 import datastore.blob.__init__ as blob
@@ -22,6 +26,22 @@ class ContainerCreationError(Exception):
     pass
 class FolderCreationError(Exception):
     pass
+
+class User():
+    def __init__(self, email: str ,id:str=None):
+        self.id = id
+        self.email = email
+        
+def get_User(email, cursor):
+    """
+    Get a user from the database
+
+    Parameters:
+    - email (str): The email of the user.
+    - cursor: The cursor object to interact with the database.
+    """
+    user_id = user.get_user_id(email, cursor)
+    return User(email, user_id)
 
 async def new_user(email, cursor,connection_string):
     """
@@ -54,7 +74,7 @@ async def new_user(email, cursor,connection_string):
         response = await azure_storage_api.create_folder(container_client, "General")
         if not response:
             raise FolderCreationError("Error creating the user folder")
-        
+        return User(email, user_uuid)
         
     except:
         raise Exception("Unhandled Error")

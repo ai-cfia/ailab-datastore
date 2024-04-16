@@ -9,25 +9,30 @@ from datetime import date
 import base64
 import json
 
-PIC_LINK = 'test.com'
+PIC_LINK = "test.com"
 
-PIC_PATH = 'img/test_image.tiff'
+PIC_PATH = "img/test_image.tiff"
+
 
 class test_picture_functions(unittest.TestCase):
     def setUp(self):
-        self.image = Image.new('RGB', (1980, 1080),'blue')
+        self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
-        self.image.save(self.image_byte_array, format='TIFF')
-        self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode("utf8")
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode(
+            "utf8"
+        )
         self.link = PIC_LINK
         self.nb_seeds = 1
         self.zoom = 1.0
-    
+
     def test_build_picture(self):
         """
         This test checks if the build_picture function returns a valid JSON object
         """
-        picture = picture_data.build_picture(self.pic_encoded, self.link, self.nb_seeds, self.zoom)
+        picture = picture_data.build_picture(
+            self.pic_encoded, self.link, self.nb_seeds, self.zoom
+        )
         properties = picture_data.get_image_properties(self.pic_encoded)
         data = json.loads(picture)
         mock_picture = {
@@ -56,22 +61,29 @@ class test_picture_functions(unittest.TestCase):
         }
         for key, value in mock_picture.items():
             if isinstance(value, dict):
-                for sub_key,sub_value in value.items():
-                    self.assertEqual(data[key][sub_key], sub_value, f"{sub_key} should be {sub_value}")
-        
+                for sub_key, sub_value in value.items():
+                    self.assertEqual(
+                        data[key][sub_key],
+                        sub_value,
+                        f"{sub_key} should be {sub_value}",
+                    )
+
     def test_get_image_properties(self):
         """
         This test checks if the get_image_properties function returns the correct image properties
         """
         properties = picture_data.get_image_properties(self.pic_encoded)
         mock_properties = (1980, 1080, "TIFF")
-        self.assertEqual(properties, mock_properties, "Image properties should be 1980x1080, TIFF")
+        self.assertEqual(
+            properties, mock_properties, "Image properties should be 1980x1080, TIFF"
+        )
+
 
 class test_picture_set_functions(unittest.TestCase):
-    def setUp(self):   
+    def setUp(self):
         self.nb_pictures = 1
         self.user_id = uuid.uuid4()
-        
+
     def test_build_picture_set(self):
         """
         This test checks if the build_picture_set function returns a valid JSON object
@@ -85,6 +97,7 @@ class test_picture_set_functions(unittest.TestCase):
         self.assertEqual(data["audit_trail"]["change_log"], "picture_set created")
         self.assertEqual(data["audit_trail"]["access_log"], "picture_set accessed")
         self.assertEqual(data["audit_trail"]["privacy_flag"], False)
-        
+
+
 if __name__ == "__main__":
     unittest.main()

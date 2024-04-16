@@ -12,8 +12,10 @@ Parameters:
 
 import os
 import sys
-import blob as blob
-def download_container(container_client,container_name,local_dir):
+import datastore.blob as blob
+
+
+def download_container(container_client, container_name, local_dir):
     """
     This function downloads all the files from a container in a storage account
     to the local directory "test"
@@ -21,7 +23,7 @@ def download_container(container_client,container_name,local_dir):
     This serves as a way to locally download the container files for processing and importing within the db
 
     Parameters:
-    - container_client: the Azure container client 
+    - container_client: the Azure container client
     - local_dir: the local directory to download the files to
 
     Returns: None
@@ -30,11 +32,9 @@ def download_container(container_client,container_name,local_dir):
         # List blobs in the container
         blob_list = container_client.list_blobs()
         # Iterate through each blob
-        for i,blob in enumerate(blob_list):
+        for i, blob in enumerate(blob_list):
             # Create a blob client
-            blob_client = container_client.get_blob_client(
-                blob=blob
-            )
+            blob_client = container_client.get_blob_client(blob=blob)
             # Download the blob
             local_file_path = f"{local_dir}/{blob.name}"
             os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
@@ -42,9 +42,10 @@ def download_container(container_client,container_name,local_dir):
             with open(local_file_path, "wb") as file:
                 blob_data = blob_client.download_blob(blob=blob.name)
                 blob_data.readinto(file)
-                nb_downloaded_files=i
+                nb_downloaded_files = i
     except:
         raise Exception("Error downloading container")
+
 
 if __name__ == "__main__":
     storage_url = sys.argv[1]
@@ -54,6 +55,6 @@ if __name__ == "__main__":
     # Create a blob service client
     blob_service_client = blob.create_BlobServiceClient(storage_url)
     # Create a container client
-    container_client = blob.create_container_client(blob_service_client,container_name)
+    container_client = blob.create_container_client(blob_service_client, container_name)
     # Download the container
-    download_container(container_client,container_name,local_dir)
+    download_container(container_client, container_name, local_dir)

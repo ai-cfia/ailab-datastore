@@ -13,8 +13,10 @@ class PictureSetCreationError(Exception):
 class PictureSetNotFoundError(Exception):
     pass
 
+
 class PictureUpdateError(Exception):
     pass
+
 
 """
 This module contains all the queries related to the Picture and PictureSet tables.
@@ -192,6 +194,7 @@ def get_user_latest_picture_set(cursor, user_id: str):
             f"Error: picture_set not found for user:{user_id} "
         )
 
+
 def update_picture_metadata(cursor, picture_id: str, metadata: dict):
     """
     This function updates the metadata of a picture in the database.
@@ -216,11 +219,12 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
         cursor.execute(query, (metadata, picture_id))
     except:
         raise PictureUpdateError(f"Error: Picture metadata not updated:{picture_id}")
-    
-def is_a_picture_set_id(cursor,picture_set_id):
+
+
+def is_a_picture_set_id(cursor, picture_set_id):
     """
     This function checks if a picture_set_id exists in the database.
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
     - picture_set_id (str): The UUID of the picture_set to check.
@@ -241,4 +245,3 @@ def is_a_picture_set_id(cursor,picture_set_id):
         return res
     except:
         raise Exception("unhandled error")
-    

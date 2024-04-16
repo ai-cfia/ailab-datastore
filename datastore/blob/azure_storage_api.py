@@ -39,26 +39,31 @@ async def generate_hash(image):
         print(error)
 
 
-async def mount_container(connection_string, container_uuid, create_container=True,tier="user",credentials=""):
+async def mount_container(
+    connection_string,
+    container_uuid,
+    create_container=True,
+    tier="user",
+    credentials="",
+):
     """
     Creates a container_client as an object that can be used in other functions.
-    
+
     Parameters:
     - connection_string: the connection string to the azure storage account
     - container_uuid: the uuid of the container (usually the user uuid)
     - create_container: a boolean value to specify if the container should be created if it doesnt exist (default is True)
     - tier: the tier of the container (default is user, should be changed if the structure changes to accomodate other type of containers)
-    
+
     Returns:
     - container_client: the container client object
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
-            conn_str=connection_string,
-            credential=credentials
+            conn_str=connection_string, credential=credentials
         )
         if blob_service_client:
-            container_name = "{}-{}".format(tier,container_uuid)
+            container_name = "{}-{}".format(tier, container_uuid)
             container_client = blob_service_client.get_container_client(container_name)
             if container_client.exists():
                 return container_client
@@ -98,31 +103,31 @@ async def upload_image(container_client, folder_uuid, image, image_uuid):
     if the specified folder doesnt exist, it creates it with a uuid
     """
     try:
-        if not await is_a_folder(container_client,folder_uuid):
+        if not await is_a_folder(container_client, folder_uuid):
             raise CreateDirectoryError(f"Folder:{folder_uuid} does not exist")
         else:
             blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
             metadata = {
-                "picture_uuid":f"{str(image_uuid)}",
-                "picture_set_uuid":f"{str(folder_uuid)}"
+                "picture_uuid": f"{str(image_uuid)}",
+                "picture_set_uuid": f"{str(folder_uuid)}",
             }
-            blob_client=container_client.upload_blob(blob_name, image, overwrite=True)
+            blob_client = container_client.upload_blob(blob_name, image, overwrite=True)
             blob_client.set_blob_tags(metadata)
             return blob_name
 
     except UploadImageError as error:
         print(error)
         return False
-    
-    
-async def is_a_folder(container_client,folder_name):
+
+
+async def is_a_folder(container_client, folder_name):
     """
     This function checks if a folder exists in the container
-    
+
     Parameters:
-    - container_client: the Azure container client 
+    - container_client: the Azure container client
     - folder_name: the name of the folder to check
-    
+
     Returns: True if the folder exists, False otherwise
     """
     try:
@@ -135,17 +140,16 @@ async def is_a_folder(container_client,folder_name):
         raise Exception("Error checking if folder exists")
 
 
-
 async def create_folder(container_client, folder_name):
     """
     creates a folder in the user's container
-    
+
     Parameters:
     - container_client: the container client object to interact with the Azure storage account
     - folder_name: the name of the folder to be created (usually it's uuid)
     """
     try:
-        if not await is_a_folder(container_client,folder_name):
+        if not await is_a_folder(container_client, folder_name):
             folder_data = {
                 "folder_name": folder_name,
                 "date_created": str(
@@ -153,12 +157,10 @@ async def create_folder(container_client, folder_name):
                 ),
             }
             file_name = "{}/{}.json".format(folder_name, folder_name)
-            blob_client=container_client.upload_blob(
+            blob_client = container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
-            metadata = {
-                "picture_set_uuid":f"{str(folder_name)}"
-            }
+            metadata = {"picture_set_uuid": f"{str(folder_name)}"}
             blob_client.set_blob_tags(metadata)
             return True
         else:
@@ -258,7 +260,8 @@ async def get_directories(container_client):
         print(error)
         return []
 
-async def download_container(container_client,container_name,local_dir):
+
+async def download_container(container_client, container_name, local_dir):
     """
     This function downloads all the files from a container in a storage account
     to the local directory "test"
@@ -266,7 +269,7 @@ async def download_container(container_client,container_name,local_dir):
     This serves as a way to locally download the container files for processing and importing within the db
 
     Parameters:
-    - container_client: the Azure container client 
+    - container_client: the Azure container client
     - local_dir: the local directory to download the files to
 
     Returns: None
@@ -275,7 +278,7 @@ async def download_container(container_client,container_name,local_dir):
         # List blobs in the container
         blob_list = container_client.list_blobs()
         # Iterate through each blob
-        for i,blob in enumerate(blob_list):
+        for i, blob in enumerate(blob_list):
             # Create a blob client
             blob_client = container_client.get_blob_client(
                 container=container_name, blob=blob
@@ -287,16 +290,17 @@ async def download_container(container_client,container_name,local_dir):
             with open(local_file_path, "wb") as file:
                 blob_data = blob_client.download_blob(blob=blob.name)
                 blob_data.readinto(file)
-                nb_downloaded_files=i
+                nb_downloaded_files = i
     except:
         raise Exception("Error downloading container")
-    
-async def get_blobs_from_tag(container_client, tag:str):
+
+
+async def get_blobs_from_tag(container_client, tag: str):
     """
     This function gets the list of blobs in a picture set folder
 
     Parameters:
-    - container_client: the Azure container client 
+    - container_client: the Azure container client
     - tag: the tag to search for in the blobs ex: ""yourtagname"='firsttag' and "yourtagname2"='secondtag'"
 
     Returns: the list of blobs
@@ -309,4 +313,3 @@ async def get_blobs_from_tag(container_client, tag:str):
             raise Exception("No blobs found with the given tag")
     except:
         raise Exception("Error getting blobs")
-    

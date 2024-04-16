@@ -2,6 +2,7 @@ from datetime import date
 from pydantic import BaseModel
 import uuid
 
+
 class ClientData(BaseModel):
     client_email: str
     client_expertise: str
@@ -78,6 +79,7 @@ class ProcessedPicture(BaseModel):
 class ClientFeedback(BaseModel):
     correctIdentification: bool
     historicalComparison: str
+
 
 def is_valid_uuid(val):
     """

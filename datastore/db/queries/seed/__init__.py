@@ -2,10 +2,14 @@
 This file contains the queries for the seed table.
 """
 
+
 class SeedNotFoundError(Exception):
     pass
+
+
 class SeedCreationError(Exception):
     pass
+
 
 def get_all_seeds_names(cursor):
     """
@@ -51,9 +55,9 @@ def get_seed_id(cursor, seed_name: str) -> str:
                 name = %s
                 """
         cursor.execute(query, (seed_name,))
-        result=cursor.fetchone()[0]
+        result = cursor.fetchone()[0]
         return result
-    except(TypeError):
+    except TypeError:
         raise SeedNotFoundError("Error: seed not found")
     except:
         raise Exception("unhandled error")
@@ -78,13 +82,12 @@ def new_seed(cursor, seed_name: str):
             """
         cursor.execute(
             query,
-            (
-                seed_name,
-            ),
+            (seed_name,),
         )
         return cursor.fetchone()[0]
     except:
         raise SeedCreationError("Error: picture_set not uploaded")
+
 
 def is_seed_registered(cursor, seed_name: str) -> bool:
     """
