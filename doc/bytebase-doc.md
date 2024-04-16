@@ -1,4 +1,3 @@
-
 # Workflow
 
 ``` mermaid  
@@ -9,4 +8,4 @@ flowchart LR;
 
     Project --> Database
     Project --> GitOps
-``` 
+```

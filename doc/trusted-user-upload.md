@@ -1,18 +1,24 @@
 # Trusted user upload process
 
 ## Contexte
+
 We have a set of trusted user that needs to have an easy way of uploading large
 sets of data to both our picture storage and database.
 
 ## Prerequisites
+
 - The user must be signed in
+
 - The user Azure Storage Container's have been created
+
 - The user the pictures validity passes all checks
+
 - The Seed is already registered in the Database
 
 ## Sequence of the uploading process
 
-``` mermaid  
+``` mermaid
+
 sequenceDiagram;
   actor User
   box grey Ai-Lab services
@@ -52,4 +58,4 @@ sequenceDiagram;
       Datastore -) PostgreSQL: update_picture_metadata(picture_id,picture)
     end
 
-``` 
+```

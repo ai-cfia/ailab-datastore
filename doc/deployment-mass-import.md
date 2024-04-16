@@ -1,12 +1,16 @@
 # Deployment mass import
 
 ## Contexte
+
 We have a set of already existing picture in our Blob storage. We would like to
 save the metadata of our files into the DB.
 
 ## Prerequisites
+
 - The folder path must be accessible
+
 - The Azure Storage container must be specified in the file
+
 - The SeedId must be specified in the file
 
 ## Sequence of the uploading process
@@ -41,4 +45,4 @@ sequenceDiagram;
      manualMetaDataImport -) Database: uploadPicture(picName.Json path, userID, indexID)
   end
   manualMetaDataImport -->> dev: Importation completed
-``` 
+```
