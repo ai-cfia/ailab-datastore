@@ -56,7 +56,6 @@ def upload_picture_set(cursor, container_client, pictures, user_id:str, seed_nam
             
         return picture_set_id
     except:
-        cursor.rollback()
         if folder_url is not None:
             arg= f""""picture_set_uuid":'{picture_set_id}'"""
             blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))

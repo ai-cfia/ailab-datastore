@@ -1,10 +1,8 @@
 import json
-import uuid
 import hashlib
 import os
 import datetime
 from azure.storage.blob import BlobServiceClient
-
 from custom_exceptions import (
     ConnectionStringError,
     MountContainerError,
@@ -41,7 +39,7 @@ async def generate_hash(image):
         print(error)
 
 
-async def mount_container(connection_string, container_uuid, create_container=True,tier="user"):
+async def mount_container(connection_string, container_uuid, create_container=True,tier="user",credentials=""):
     """
     Creates a container_client as an object that can be used in other functions.
     
@@ -56,7 +54,8 @@ async def mount_container(connection_string, container_uuid, create_container=Tr
     """
     try:
         blob_service_client = BlobServiceClient.from_connection_string(
-            connection_string
+            conn_str=connection_string,
+            credential=credentials
         )
         if blob_service_client:
             container_name = "{}-{}".format(tier,container_uuid)
@@ -100,14 +99,15 @@ async def upload_image(container_client, folder_uuid, image, image_uuid):
     """
     try:
         if not await is_a_folder(container_client,folder_uuid):
-            raise CreateDirectoryError("Folder does not exist")
+            raise CreateDirectoryError(f"Folder:{folder_uuid} does not exist")
         else:
             blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
             metadata = {
-                "picture_uuid":"{}".format(image_uuid),
-                "picture_set_uuid":"{}".format(folder_uuid)
+                "picture_uuid":f"{str(image_uuid)}",
+                "picture_set_uuid":f"{str(folder_uuid)}"
             }
-            container_client.upload_blob(blob_name, image, overwrite=True, metadata=metadata)
+            blob_client=container_client.upload_blob(blob_name, image, overwrite=True)
+            blob_client.set_blob_tags(metadata)
             return blob_name
 
     except UploadImageError as error:
@@ -127,7 +127,7 @@ async def is_a_folder(container_client,folder_name):
     """
     try:
         directories = await get_directories(container_client)
-        if folder_name in directories:
+        if str(folder_name) in directories:
             return True
         else:
             return False
@@ -153,9 +153,13 @@ async def create_folder(container_client, folder_name):
                 ),
             }
             file_name = "{}/{}.json".format(folder_name, folder_name)
-            container_client.upload_blob(
+            blob_client=container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
+            metadata = {
+                "picture_set_uuid":f"{str(folder_name)}"
+            }
+            blob_client.set_blob_tags(metadata)
             return True
         else:
             raise CreateDirectoryError("Folder already exists")
@@ -305,3 +309,4 @@ async def get_blobs_from_tag(container_client, tag:str):
             raise Exception("No blobs found with the given tag")
     except:
         raise Exception("Error getting blobs")
+    
