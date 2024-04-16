@@ -3701,3 +3701,4 @@ test/**
 >>>>>>> 2c67f5b (Issue #13: Refactoring as Datastore)
 **/__pycache__/**
 .vscode/settings.
+.env

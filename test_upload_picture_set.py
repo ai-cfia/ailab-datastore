@@ -35,7 +35,6 @@ class test_upload_picture_set(unittest.TestCase):
         self.pictures = [self.pic_encoded, self.pic_encoded, self.pic_encoded]
 
         self.connection_string = "www.test.com"
-        self.working_connection_string = """BlobEndpoint=https://seedgroup.blob.core.windows.net/;QueueEndpoint=https://seedgroup.queue.core.windows.net/;FileEndpoint=https://seedgroup.file.core.windows.net/;TableEndpoint=https://seedgroup.table.core.windows.net/;SharedAccessSignature=sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2024-04-13T02:51:07Z&st=2024-04-12T18:51:07Z&spr=https&sig=wH%2BreD0drV0aShKgykPo4i%2F9Ex0AgHJXmmP3yHQVA6s%3D"""
         self.container_name = "test-import"
         self.blob_list = ""
         # user.link_container(self.cursor, self.user_id, self.connection_string)
