@@ -6,7 +6,7 @@ The following documentation provide an overview of the metadata importation
 process for the Nachet pipeline. We outline each steps of the workflow,
 illustrating how data progresses until it becomes usable by our models.
 Additionally, the upcoming process are showcased with the expected files
-structure. 
+structure.
 
 ``` mermaid
 
@@ -121,7 +121,7 @@ uploads. This approach would allow to us add a data structure validator using
 [Pydantic](https://docs.pydantic.dev/latest/). By implementing a validator, we
 will be able to remove all manual metadata maintenance. Once the validation
 process is complete, the upload process will come into play, enabling the
-distribution of the files between the BLOB storage and a PostgreSQL database. 
+distribution of the files between the BLOB storage and a PostgreSQL database.
 
  We are currently working on such process, which will be handled by the  backend
  part of nachet once it is finished.
@@ -152,7 +152,7 @@ flowchart LR;
 
 ```
 
-## Finished processes:
+## Finished processes
 
 ### [Deployment mass import](deployment-mass-import.md)
 
@@ -161,7 +161,7 @@ flowchart LR;
 ## Database
 
 We plan on storing the metadata of the user's files in a postgreSQL Database.
-The database should have the following structure: 
+The database should have the following structure:
 
 ``` mermaid
 
@@ -213,9 +213,11 @@ erDiagram
 Finally the picture uploaded by the users will need to be stored in a blob
 storage. Therefore we are using a Azure blob Storage account which currently
 contains a list of containers used either for the users upload or our Data
-scientists training sets. The current structure uses a tier in the container's name. 
+scientists training sets. The current structure uses a tier in the container's
+name.
 
 ```
+
 Storage account:
 │     
 │  Container:
@@ -234,17 +236,21 @@ Storage account:
 └───user-...
 |   └── ...
 └──────────────────
+
 ```
 
 ## Consequences
 
   Implementing this structure and introducing the new backend features in Nachet
   will result in the following impact:
+
 - **Automation of file structure maintenance:** This process will autonomously
+
   manage the file structure, eliminating the need for manual maintenance and
   reducing workload for the AI-Lab team.
 
 - **Streamlined subscription key management:** The new feature will eliminate
+
   the need for email communication between users and the AI-Lab team for
   subscription keys. The system may automatically create and connect to the
   appropriate BLOB storage without user intervention. Consequently, manual
@@ -252,13 +258,16 @@ Storage account:
   be securely stored in the database.
 
 - **Enhanced security:** The removal of email exchanges between users and the
+
   development team represents a substantial improvement in security protocols.
 
 - **Improved model tracking and training:** Storing user metadata will enable
+
   more effective tracking of model performance and facilitate better training
   strategies.
 
 - **Automated metadata enrichment:** The process will enable the automatic
+
   addition of additional information to metadata, enhancing the depth of
   insights available.
   

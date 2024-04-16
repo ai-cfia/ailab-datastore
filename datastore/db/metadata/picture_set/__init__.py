@@ -37,6 +37,6 @@ def build_picture_set(user_id: str, nb_picture: int):
     )
     try:
         validator.ProcessedPictureSet(**picture_set_data.model_dump())
-    except:
+    except Exception:
         raise PictureSetCreationError("Error: picture_set not created") from None
     return picture_set_data.model_dump_json()

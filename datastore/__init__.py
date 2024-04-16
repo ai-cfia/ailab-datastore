@@ -76,7 +76,7 @@ async def new_user(email, cursor,connection_string):
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
         
-    except:
+    except Exception:
         raise Exception("Unhandled Error")
     
 async def get_user_container_client(user_id,tier="user"):
