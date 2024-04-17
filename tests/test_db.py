@@ -10,12 +10,8 @@ import json
 from PIL import Image
 import io
 import base64
-import datastore.db.queries.user as user
-import datastore.db.queries.seed as seed
-import datastore.db.queries.picture as picture
-import datastore.db.metadata.picture_set as picture_set_data
-import datastore.db.metadata.picture as picture_data
-import datastore.db.metadata.validator as validator
+from datastore.db.queries import user,seed,picture
+from datastore.db.metadata import picture_set as picture_set_data,picture as picture_data,validator
 import datastore.db.__init__ as db
 
 

@@ -58,6 +58,7 @@ def upload_picture_set(
         folder_created = asyncio.run(
             blob.create_folder(container_client, str(picture_set_id))
         )
+        print(folder_created)
         if not folder_created:
             raise AlreadyExistingFolderError(f"Folder already exists: {picture_set_id}")
         folder_url = container_client.url + "/" + str(picture_set_id)
@@ -93,13 +94,19 @@ def upload_picture_set(
             )
 
         return picture_set_id
+    except (seed.SeedNotFoundError) as e:
+        raise e
+    except user.UserNotFoundError as e:
+        raise e
+    except AlreadyExistingFolderError as e:
+        raise e
     except Exception:
         if folder_url is not None:
-            arg = f""""picture_set_uuid":'{picture_set_id}'"""
-            blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))
+            #arg = f""""picture_set_uuid":'{picture_set_id}'"""
+            #blobs = asyncio.run(blob.get_blobs_from_tag(container_client, arg))
+            blobs = container_client.list_blobs()
             container_client.delete_blobs(blobs)
         raise UploadError("An error occured during the upload of the picture set")
-
 
 if __name__ == "__main__":
     upload_picture_set()

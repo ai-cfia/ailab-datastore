@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 import datastore.bin.upload_picture_set as upload_picture_set
 import datastore.db as db
 import datastore.db.queries.user as user
@@ -142,14 +142,14 @@ class test_upload_picture_set(unittest.TestCase):
                 )
             )
 
-    @patch("datastore.bin.upload_picture_set.blob.create_folder")
+    @patch("datastore.bin.upload_picture_set.blob.create_folder",return_value=False)
     @patch("azure.storage.blob.ContainerClient.upload_blob")
-    def test_already_existing_folder(self, MockCreateFolder, MockUploadBlob):
+    def test_already_existing_folder(self, MockCreateFolder,MockUploadBlob):
         """
         This test checks if the upload_picture_set function raises an exception when the folder already exists
         """
+        
         with self.assertRaises(upload_picture_set.AlreadyExistingFolderError):
-            MockCreateFolder.retun_value = False
             zoom_level = 1.0
             nb_seeds = 1
             asyncio.run(
