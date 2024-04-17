@@ -25,7 +25,7 @@ These are machine readable file formats that are popular:
   it defines a dictionary of keys and values with datatypes matching Javascript
   datatypes but now supported in most languages
 * [yaml](https://yaml.org/): YAML is a human-friendly data serialization
-  language for all programming languages 
+  language for all programming languages
 
 Although originally proposing JSON, we will use YAML instead as it is easier to
 edit for users.
@@ -37,15 +37,15 @@ edit for users.
     * projectName:
     * submitterName:
     * acquisition setup information
-      * categorization of the images 
+      * categorization of the images
   * pictures/
     * session1/
       * index.yaml  
       * 1.tiff
       * 1.yaml
-         * microscope metadata 
+        * microscope metadata 
 
-## import utility 
+## import utility
 
 Python script that reads from on-disk directory structure and converts it to
 database
