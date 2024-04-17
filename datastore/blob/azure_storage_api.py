@@ -3,17 +3,25 @@ import hashlib
 import os
 import datetime
 from azure.storage.blob import BlobServiceClient
-from custom_exceptions import (
-    ConnectionStringError,
-    MountContainerError,
-    GetBlobError,
-    UploadImageError,
-    UploadInferenceResultError,
-    GetFolderUUIDError,
-    FolderListError,
-    GenerateHashError,
-    CreateDirectoryError,
-)
+
+class GenerateHashError(Exception):
+    pass
+class MountContainerError(Exception):
+    pass
+class GetBlobError(Exception):
+    pass
+class UploadImageError(Exception):
+    pass
+class UploadInferenceResultError(Exception):
+    pass
+class GetFolderUUIDError(Exception):
+    pass
+class FolderListError(Exception):
+    pass
+class CreateDirectoryError(Exception):
+    pass
+class ConnectionStringError(Exception):
+    pass
 
 """
 ---- user-container based structure -----
@@ -25,8 +33,6 @@ date, in the container
 - inside the project folder, there is an image file and a json file with
 the image inference results
 """
-
-
 async def generate_hash(image):
     """
     generates a hash value for the image to be used as the image name in the container
