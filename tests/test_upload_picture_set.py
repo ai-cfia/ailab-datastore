@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, MagicMock
 import datastore.bin.upload_picture_set as upload_picture_set
 import datastore.db as db
 import datastore.db.queries.user as user
