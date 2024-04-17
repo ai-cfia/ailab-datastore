@@ -2,4 +2,5 @@ numpy
 azure-storage-blob
 azure-identity
 psycopg
-PIL
+Pillow
+pydantic
