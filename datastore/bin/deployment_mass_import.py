@@ -145,7 +145,7 @@ def local_import(
             actual_nb_pic = actual_nb_pic + 1
 
     if actual_nb_pic != nb_file:
-        warnings.warn(f" invallid file extension found, only the .TIFF files have been processed", UnProcessedFilesWarning)
+        warnings.warn(" invallid file extension found, only the .TIFF files have been processed", UnProcessedFilesWarning)
     else:
         print("importation of " + picture_folder + " complete")
 
