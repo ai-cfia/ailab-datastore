@@ -1,0 +1,26 @@
+{
+  "user_data":{
+    "description": "",
+    "numbre_of_seeds": "",
+    "zoom": ""
+  },
+  "metadata":{
+    "upload_date": ""
+  },
+  "image_data":{
+    "format": "",
+    "height": "",
+    "width": "",
+    "resolution": "",
+    "source": "",
+    "parent": ""
+  },
+  "quality_check": {
+    "uploadDate":"",
+    "editedBy": "",
+    "editDate": "",
+    "changeLog": "",
+    "accessLog": "",
+    "privacyFlag": "" 
+  }
+}

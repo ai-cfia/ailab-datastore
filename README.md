@@ -1,4 +1,4 @@
-# nachet-metadata-format
+# nachet-datastore
 
 ## Overview
 

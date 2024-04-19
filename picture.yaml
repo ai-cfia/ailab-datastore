@@ -1,0 +1,48 @@
+---
+# This is a Section filled by user
+UserData:
+  description:
+  numberOfSeeds:
+  zoom:
+
+# ------------------------------------------------------
+# Section filled by system
+info:
+  uploadDate: timestamp
+imageData:
+  parent: boolean if the picture has child pictures
+  source: url or path to the images
+  format: extension (.tiff, .jpg, .png, ...)
+  height: image height
+  width: image width
+  resolution: resolution of the images
+qualityCheck:
+  imageChecksum: checksum for image data integrity
+  uploadCheck: boolean to verify sucessfull upload
+  validData: boolean indicating if the data is valid
+  errorType: Type of error if the data is erroneous
+  dataQualityScore: Overall score given to the data
+# ------------------------------------------------------
+# Section filled after Inference by User TBD
+clientData:
+  clientEmail: email
+clientFeedback:
+  levelOfExpertise: level
+  correctIdentification: True/False
+  comparison: link to historical data
+# ------------------------------------------------------
+# Section filled after Inference by System TBD
+classificationData:
+  model: modelID
+  prediction: inference
+  confidenceScore: score
+auditTrail:
+  editedBy: editorID
+  editDate: date
+  changeLog: changes
+  accessLog: log
+  privacyFlag: boolean
+errorHandling:
+  feedback:
+  correctionApplied:
+  errorDetails:
