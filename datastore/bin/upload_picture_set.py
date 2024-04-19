@@ -24,7 +24,7 @@ def upload_picture_set(
     seed_name: str,
     zoom_level: float,
     nb_seeds: int,
-    **kargs,
+    **kwargs,
 ):
     """
     Upload a set of pictures to the Azure storage account and the database.
@@ -37,6 +37,7 @@ def upload_picture_set(
         seed_name (str): name of the seed
         zoom_level (float): zoom level of the picture
         nb_seeds (int): number of seeds in the picture
+        kwargs: additional arguments
     """
     try:
         if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):

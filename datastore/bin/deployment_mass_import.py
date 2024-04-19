@@ -2,6 +2,7 @@ import sys
 import os
 import io
 import base64
+import warnings
 from PIL import Image
 import datastore.db.queries.seed as seed
 import datastore.db.queries.user as user
@@ -22,7 +23,7 @@ class NonExistingEmail(Exception):
     pass
 
 
-class UnProcessedFilesException(Exception):
+class UnProcessedFilesWarning(UserWarning):
     pass
 
 
@@ -89,7 +90,7 @@ def local_import(
     user_id = user.get_user_id(cursor=cur, email=client_email)
     if user_id is None or validator.is_valid_uuid(user_id) is False:
         raise NonExistingEmail(
-            f"Error: could not retrieve the user_id, provided id: {user_id}"
+            f"Error: could not retrieve the user_id with the provided email: {client_email}"
         )
 
     nb_file = len(
@@ -144,9 +145,7 @@ def local_import(
             actual_nb_pic = actual_nb_pic + 1
 
     if actual_nb_pic != nb_file:
-        raise UnProcessedFilesException(
-            f"Error: number of pictures processed ({actual_nb_pic}) does not match the amount of file present in the folder ({nb_file})"
-        )
+        warnings.warn(f" invallid file extension found, only the .TIFF files have been processed", UnProcessedFilesWarning)
     else:
         print("importation of " + picture_folder + " complete")
 

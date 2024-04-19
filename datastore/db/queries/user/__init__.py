@@ -41,7 +41,7 @@ def is_user_registered(cursor, email: str) -> bool:
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception("Error: could not check if user is registered")
+        raise Exception(f"Error: could not check if the email {email} is a registered user")
 
 
 def is_a_user_id(cursor, user_id: str) -> bool:
@@ -70,7 +70,7 @@ def is_a_user_id(cursor, user_id: str) -> bool:
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception("Error: could not check if uuid given is a user id")
+        raise Exception(f"Error: could not check if {user_id} given is a user id")
 
 
 def get_user_id(cursor, email: str) -> str:
@@ -97,7 +97,7 @@ def get_user_id(cursor, email: str) -> str:
         res = cursor.fetchone()[0]
         return res
     except TypeError:
-        raise UserNotFoundError("Error: user could not be retrieved")
+        raise UserNotFoundError(f"Error: user {email} could not be retrieved")
     except Exception:
         raise Exception("Unhandled Error")
 
@@ -127,7 +127,7 @@ def register_user(cursor, email: str) -> None:
         )
         return cursor.fetchone()[0]
     except Exception:
-        raise UserCreationError("Error: user not registered")
+        raise UserCreationError(f"Error: user {email} not registered")
 
 
 def link_container(cursor, user_id: str, container_url: str):
