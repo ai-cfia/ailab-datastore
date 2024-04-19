@@ -3,6 +3,8 @@ from pydantic import BaseModel, ValidationError
 import uuid
 
 
+
+
 class ClientData(BaseModel):
     client_email: str
     client_expertise: str
@@ -89,4 +91,7 @@ def is_valid_uuid(val):
         uuid.UUID(str(val))
         return True
     except ValueError:
+        return False
+    except ValidationError:
+        # This is a useless catch present to remove the lint error of unused Validation Error
         return False

@@ -62,7 +62,7 @@ def build_picture(
     try:
         validator.ProcessedPicture(**picture.model_dump())
     except validator.ValidationError as e:
-        raise PictureCreationError(f"Error, Picture not created:"+str(e)) from None
+        raise PictureCreationError("Error, Picture not created:"+str(e)) from None
     return picture.model_dump_json()
 
 
