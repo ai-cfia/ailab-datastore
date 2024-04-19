@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nachet_datastore"
+version = "0.0.1"
+authors = [
+  { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" },
+]
+description = "Data management python layer"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools]
+packages = ["tests"]
+
+license = { file = "LICENSE" }  
+repository = "https://github.com/ai-cfia/nachet-datastore"  
+
+keywords = ["Nachet","ailab"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
+# [tool.setuptools.packages.find]
+# where = ["ailab"]
+
+[project.urls]
+"Homepage" = "https://github.com/ai-cfia/nachet-datastore"
+"Bug Tracker" = "https://github.com/ai-cfia/nachet-datastore/issues"
