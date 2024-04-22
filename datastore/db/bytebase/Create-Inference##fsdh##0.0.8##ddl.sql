@@ -4,17 +4,17 @@ $do$
 BEGIN
 IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nachet_0.0.8')) THEN
 
-    CREATE TABLE "nachet_0.0.8".users (
-        id uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
-        email VARCHAR(255) NOT NULL,
-        registration_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    CREATE TABLE "nachet_0.0.8"."user" (
+        "id" uuid DEFAULT "uuid_".uuid_generate_v4() PRIMARY KEY,
+        "email" VARCHAR(255) NOT NULL,
+        "registration_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE "nachet_0.0.8"."picture_set" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "picture_set" json NOT NULL,
-        "owner_id" uuid NOT NULL REFERENCES "nachet_0.0.8".users(id),
+        "owner_id" uuid NOT NULL REFERENCES "nachet_0.0.8".user(id),
         "upload_date" date NOT NULL DEFAULT current_timestamp
     );
     
@@ -34,14 +34,14 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
     
     CREATE TABLE "nachet_0.0.8"."seed" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
-        "name" text NOT NULL
+        "name" text NOT NULL,
         "object_type_id" integer GENERATED ALWAYS AS (1) STORED
     );
 
     CREATE TABLE "nachet_0.0.8"."inference" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "inference" json NOT NULL,
-        "picture_id" uuid NOT NULL REFERENCES "nachet_0.0.8".pictures(id)
+        "picture_id" uuid NOT NULL REFERENCES "nachet_0.0.8".picture(id)
     );
  
     CREATE TABLE "nachet_0.0.8"."model" (
