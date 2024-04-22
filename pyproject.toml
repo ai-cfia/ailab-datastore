@@ -21,10 +21,7 @@ dynamic = ["dependencies"]
 [tool.setuptools]
 packages = ["tests"]
 
-license = { file = "LICENSE" }  
-repository = "https://github.com/ai-cfia/nachet-datastore"  
-
-keywords = ["Nachet","ailab"]
+# keywords = ["Nachet","ailab"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
