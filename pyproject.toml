@@ -19,7 +19,7 @@ classifiers = [
 dynamic = ["dependencies"]
 
 [tool.setuptools]
-packages = ["datastore", "datastore.db.queries.seed", "datastore.db.queries.user", "datastore.bin"]
+packages = ["datastore", "datastore.db.queries.seed", "datastore.db.queries.user", "datastore.bin", "datastore.blob"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
