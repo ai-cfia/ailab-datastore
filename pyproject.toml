@@ -19,7 +19,7 @@ classifiers = [
 dynamic = ["dependencies"]
 
 [tool.setuptools]
-packages = ["tests"]
+packages = ["datastore"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
