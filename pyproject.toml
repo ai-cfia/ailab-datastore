@@ -21,8 +21,6 @@ dynamic = ["dependencies"]
 [tool.setuptools]
 packages = ["tests"]
 
-# keywords = ["Nachet","ailab"]
-
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
 
