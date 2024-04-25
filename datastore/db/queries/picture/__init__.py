@@ -74,7 +74,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
     try:
         query = """
             INSERT INTO 
-                pictures(
+                picture(
                     picture,
                     picture_set_id
                     )
@@ -153,7 +153,7 @@ def get_picture(cursor, picture_id: str):
             SELECT
                 picture
             FROM
-                pictures
+                picture
             WHERE
                 id = %s
                 """
@@ -210,7 +210,7 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
     try:
         query = """
             UPDATE
-                pictures
+                picture
             SET
                 picture = %s
             WHERE

@@ -1,0 +1,77 @@
+{
+    "filename": "test",
+    "boxes": [
+        {"box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+        "label": "top_label_name",
+        "score": 0.912,
+        "color": "#ff0",
+        "topN": [
+            {
+                "score": 0.912,
+                "label": "top_label_name"
+            },
+            {
+                "score": 0.053,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.0029,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.005,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.001,
+                "label": "seed_name"
+            }
+        ],
+        "overlapping": false,
+        "overlappingIndices": 0
+        },
+        {"box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+        "label": "top_label_name",
+        "score": 0.912,
+        "color": "#ff0",
+        "topN": [
+            {
+                "score": 0.912,
+                "label": "top_label_name"
+            },
+            {
+                "score": 0.053,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.0029,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.005,
+                "label": "seed_name"
+            },
+            {
+                "score": 0.001,
+                "label": "seed_name"
+            }
+        ],
+        "overlapping": false,
+        "overlappingIndices": 0
+        }
+    ],
+    "labelOccurrence": {
+        "seed_name": 1
+    },
+    "totalBoxes": 1
+}

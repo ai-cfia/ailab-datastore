@@ -198,10 +198,7 @@ class test_user_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             user.get_container_url(mock_cursor, user_id)
 
-
 # --------------------  SEED FUNCTIONS --------------------
-
-
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db()
@@ -301,7 +298,6 @@ class test_seed_functions(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             seed.is_seed_registered(mock_cursor, self.seed_name)
-
 
 # --------------------  PICTURE FUNCTIONS --------------------
 class test_pictures_functions(unittest.TestCase):
@@ -524,6 +520,53 @@ class test_pictures_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             picture.is_a_picture_set_id(mock_cursor, uuid.uuid4())
 
+# --------------------  INFERENCE FUNCTIONS --------------------
+class test_inference_functions(unittest.TestCase):
+    def setUp(self):
+        # prepare the connection and cursor
+        self.con = db.connect_db()
+        self.cursor = db.cursor(self.con)
 
-if __name__ == "__main__":
+        # prepare the seed
+        self.seed_name = "test seed"
+        self.seed_id = seed.new_seed(self.cursor, self.seed_name)
+
+        # prepare the user
+        self.user_id = user.register_user(self.cursor, "test@email")
+
+        # prepare the picture_set and picture
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode(
+            "utf8"
+        )
+        self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
+        self.picture = picture_data.build_picture(
+            self.pic_encoded, "www.link.com", 1, 1.0, ""
+        )
+
+        self.picture_set_id=picture.new_picture_set(self.cursor, self.picture_set, self.user_id)
+        self.picture_id=picture.new_picture(self.cursor, self.picture, self.picture_set["id"], self.seed_id)
+        self.inference= json.loads()
+
+    def tearDown(self):
+        self.con.rollback()
+        db.end_query(self.con, self.cursor)
+
+    def test_new_inference(self):
+        """
+        This test checks if the new_inference function returns a valid UUID
+        """
+        inference = '{"totalBoxes": 1, "boxes": [{"topN": [{"label": "test", "score": 0.99}]}]}'
+        inference_id = inference.new_inference(self.cursor, inference, self.user_id, self.picture_id, 1)
+
+        self.assertTrue(
+            validator.is_valid_uuid(inference_id), "The inference_id is not a valid UUID"
+        )
+        
+
+
+
+if __name__ == "__main__":.
     unittest.main()
