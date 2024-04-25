@@ -55,7 +55,7 @@ sequenceDiagram;
       Datastore -) PostgreSQL Database: new_picture(seed_id,picture_set_id)
       Datastore -) Azure Storage: upload_image(picture_encoded)
       Datastore ->> Datastore: build_picture(picture_encoded,blob_url)
-      Datastore -) PostgreSQL: update_picture_metadata(picture_id,picture)
+      Datastore -) PostgreSQL Database: update_picture_metadata(picture_id,picture)
     end
 
 ```

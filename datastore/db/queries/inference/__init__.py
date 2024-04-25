@@ -1,5 +1,6 @@
 """
-This module contains the queries related to the inference table.
+This module contains the queries related to the inference related tables.
+
 """
 import json
 import datastore.db.queries.seed as seed

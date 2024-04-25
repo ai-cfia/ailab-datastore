@@ -4,8 +4,11 @@ and the user container in the blob storage.
 """
 import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
+import datastore.db.queries.machine_learning as machine_learning
+import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.blob.azure_storage_api as azure_storage_api
 import datastore.db.metadata.inference as inference_metadata
+import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed
 import datastore.blob.__init__ as blob
 import json
@@ -114,7 +117,7 @@ async def register_inference_result(cursor,user_id:str,inference_dict,picture_id
         trimmed_inference = inference_metadata.build_inference_import(inference)
         inference_id=inference.new_inference(cursor,trimmed_inference,user_id,picture_id,type)
         nb_object = int(inference_dict["totalBoxes"])
-        inference_dict[inference_id]=str(inference_id)
+        inference_dict["inference_id"]=str(inference_id)
         # loop through the boxes
         for box_index in range(nb_object):
             #TODO: adapt for multiple types of objects
@@ -139,8 +142,63 @@ async def register_inference_result(cursor,user_id:str,inference_dict,picture_id
             inference.set_inference_object_top_id(cursor,object_inference_id,top_id)
             inference_dict["boxes"][box_index]["top_id"]=str(top_id)
         
-        return inference.new_inference(cursor,trimmed_inference,user_id,picture_id)
+        return inference_dict
     except ValueError:
         raise ValueError("The value of 'totalBoxes' is not an integer.")
     except Exception:
         raise Exception("Unhandled Error")
+
+async def import_ml_structure_from_json_version(cursor,ml_version:dict):
+    """
+    summary
+    """
+    pipelines = ml_version["pipelines"]
+    models = ml_version["models"]
+    for model in models:
+        model_db = ml_metadata.build_model_import(model)
+        task_id = machine_learning.get_task_id(cursor,model["task"])
+        model_name=model["model_name"]
+        endpoint_name=model["endpoint_name"]
+        machine_learning.new_model(cursor,model_db,model_name,endpoint_name,task_id)
+    for pipeline in pipelines:
+        pipeline_db = inference_metadata.ml_metadata(pipeline)
+        pipeline_name=pipeline["pipeline_name"]
+        model_ids=[]
+        for name_model in pipeline["models"]:
+            model_id=0
+            model_id = machine_learning.get_model_id_from_name(cursor,name_model)
+            if validator.is_valid_uuid(model_id):
+                model_ids.append(model_id)
+            else:
+                raise ValueError(f"Model {name_model} not found")
+        machine_learning.new_pipeline(cursor,pipeline_db,pipeline_name,model_ids)
+    
+async def get_ml_structure(cursor):
+    """
+    This function retrieves the machine learning structure from the database.
+    
+    Returns a usable json object with the machine learning structure for the FE and BE
+    """
+    ml_structure = {"pipelines":[],"models":[]}
+    pipelines = machine_learning.get_active_pipeline(cursor)
+    model_list=[]
+    for pipeline in pipelines:
+        # (id, name, active:bool, is_default: bool, data, model_ids: array)
+        pipeline_name = pipeline[1]
+        pipeline_id = pipeline[0]
+        default = pipeline[3]
+        model_ids = pipeline[5]
+        pipeline_dict=ml_metadata.build_pipeline_export(pipeline[4],pipeline_name,pipeline_id,default,model_ids)
+        ml_structure["pipelines"].append(pipeline_dict)
+        for model_id in model_ids:
+            if model_id not in model_list:
+                model_list.append(model_id)
+            model_db = machine_learning.get_model(cursor,model_id)
+            #(id, name, endpoint_name, task_name, data,version: str)
+            model_name = model_db[1]
+            model_endpoint = model_db[2]
+            model_task = model_db[3]
+            model_version = model_db[5]
+            model_dict = ml_metadata.build_model_export(model_db[4],model_name,model_endpoint,model_task,model_version)
+            ml_structure["models"].append(model_dict)
+    return ml_structure

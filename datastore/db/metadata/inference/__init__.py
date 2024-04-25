@@ -1,3 +1,10 @@
+"""
+This module contains the function to generate the metadata necessary to interact with the database and the other layers of Nachet for all the inference related objects. 
+The metadata is generated in a json format and is used to store the metadata in the database.
+
+"""
+
+
 import json
 
 def build_inference_import(model_inference:dict)->str:
