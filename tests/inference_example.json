@@ -47,23 +47,23 @@
         "topN": [
             {
                 "score": 0.912,
-                "label": "top_label_name"
+                "label": "test seed"
             },
             {
                 "score": 0.053,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.0029,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.005,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.001,
-                "label": "seed_name"
+                "label": "test seed"
             }
         ],
         "overlapping": false,

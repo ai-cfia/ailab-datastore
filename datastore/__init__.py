@@ -104,7 +104,7 @@ async def get_user_container_client(user_id,tier="user"):
 
 async def register_inference_result(cursor,user_id:str,inference_dict,picture_id:str,pipeline_id:str,type:int=1):
     """
-    Register an inference in the database
+    Register an inference result in the database
 
     Parameters:
     - cursor: The cursor object to interact with the database.

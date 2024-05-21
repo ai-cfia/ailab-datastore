@@ -12,6 +12,10 @@ class InferenceCreationError(Exception):
 class SeedObjectCreationError(Exception):  
     pass
 
+class InferenceNotFoundError(Exception):
+    pass
+
+
 def new_inference(cursor, inference, user_id: str, picture_id:str,type):
     """
     This function uploads a new inference to the database.
@@ -65,7 +69,7 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
     try:
         query = """
             INSERT INTO 
-                inference(
+                object(
                     inference_id,
                     box_metadata,
                     type_id
@@ -98,7 +102,7 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
     try:
         query = """
             UPDATE 
-                inference
+                object
             SET
                 top_id = %s
             WHERE 
@@ -110,7 +114,7 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
     
 def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
     """
-    This function uploads a new seed object to the database.
+    This function uploads a new seed object (seed prediction) to the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
@@ -167,4 +171,4 @@ def get_inference(cursor, inference_id: str):
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception(f"Error: could not get inference {inference_id}")
+        raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")

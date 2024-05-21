@@ -77,7 +77,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "type_id" integer NOT NULL REFERENCES "nachet_0.0.10".object_type(id),
         "verified_id" uuid NOT NULL,
         "valid" boolean NOT NULL DEFAULT true,
-        "top_inference_id" uuid,
+        "top_id" uuid,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );

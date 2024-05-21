@@ -3,6 +3,9 @@ This module contains all the functions and classes that are used to store and re
 """
 import json
 
+class MissingKeyError(Exception):
+    pass
+
 def build_pipeline_import(pipeline:dict)->str:
     """
     This function builds the model metadata for the database.
@@ -13,18 +16,26 @@ def build_pipeline_import(pipeline:dict)->str:
     Returns:
     - The model db object in a string format.
     """
-    pipeline_db = {
-        "models": pipeline["models"],
-        "created_by": pipeline["created_by"],
-        "creation_date": pipeline["creation_date"],
-        "description": pipeline["description"],
-        "job_name": pipeline["job_name"],
-        "architecture_version": pipeline[""],
-        "dataset": pipeline["dataset"],
-        "metrics": pipeline["metrics"],
-        "identifiable": pipeline["identifiable"]
-    }
-    return json.dumps(pipeline_db)
+    try:
+        keys = ["models","created_by","creation_date","description","job_name","version","dataset_description","Accuracy"]
+        
+        for key in keys:
+            if not key in pipeline:
+                raise MissingKeyError(key)
+        
+        pipeline_db = {
+            "models": pipeline["models"],
+            "created_by": pipeline["created_by"],
+            "creation_date": pipeline["creation_date"],
+            "description": pipeline["description"],
+            "job_name": pipeline["job_name"],
+            "version": pipeline["version"],
+            "dataset_description": pipeline["dataset_description"],
+            "Accuracy": pipeline["Accuracy"]
+        }
+        return json.dumps(pipeline_db)
+    except MissingKeyError as e:
+        raise MissingKeyError(f"Missing key: {e}")
 
 def build_pipeline_export(data:dict,name:str,id:str,default:bool,model_ids)->dict:
     """
@@ -56,22 +67,29 @@ def build_model_import(model:dict)->str:
     Returns:
     - The model db object in a string format.
     """
-    model_db = {
-        "api_call_function":model["api_call_function"],
-        "endpoint":model["endpoint"],
-        "api_key": model["api_key"],
-        "inference_function": model["inference_function"],
-        "content_type": model["content_type"],
-        "deployment_platform": model["deployment_platform"],
-        "created_by": model["created_by"],
-        "creation_date":model["creation_date"],
-        "description": model["description"],
-        "job_name": model["job_name"],
-        "dataset": model["dataset"],
-        "metrics": model["metrics"],
-        "identifiable": model["identifiable"]
-    }
-    return json.dumps(model_db)
+    try:
+        keys=["endpoint","api_key","content_type","deployment_platform","created_by","creation_date","description","version","job_name","dataset_description","Accuracy"]
+        
+        for key in keys:
+            if not key in model:
+                raise MissingKeyError(key)
+        
+        model_db = {
+            "endpoint":model["endpoint"],
+            "api_key": model["api_key"],
+            "content_type": model["content_type"],
+            "deployment_platform": model["deployment_platform"],
+            "created_by": model["created_by"],
+            "creation_date":model["creation_date"],
+            "description": model["description"],
+            "version": model["version"],
+            "job_name": model["job_name"],
+            "dataset_description": model["dataset_description"],
+            "Accuracy": model["Accuracy"]
+        }
+        return json.dumps(model_db)
+    except MissingKeyError as e:
+        raise MissingKeyError(f"Missing key: {e}")
 
 def build_model_export(data:dict,id,name:str,endpoint:str,task_name:str,version:str)->dict:
     """
