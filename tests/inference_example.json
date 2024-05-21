@@ -1,5 +1,5 @@
 {
-    "filename": "test",
+    "filename": "inference_example",
     "boxes": [
         {"box": {
                 "topX": 0.0,
@@ -17,19 +17,19 @@
             },
             {
                 "score": 0.053,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.0029,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.005,
-                "label": "seed_name"
+                "label": "test seed"
             },
             {
                 "score": 0.001,
-                "label": "seed_name"
+                "label": "test seed"
             }
         ],
         "overlapping": false,

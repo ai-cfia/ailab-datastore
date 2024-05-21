@@ -20,6 +20,7 @@ class test_user_functions(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db()
         self.cursor = self.con.cursor()
+        db.create_search_path(self.con, self.cursor)
         self.email = "test@email.gouv.ca"
 
     def tearDown(self):
@@ -320,9 +321,10 @@ class test_pictures_functions(unittest.TestCase):
         self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode(
             "utf8"
         )
+        self.nb_seed=1
         self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
         self.picture = picture_data.build_picture(
-            self.pic_encoded, "www.link.com", 1, 1.0, ""
+            self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
         )
 
     def tearDown(self):
@@ -362,7 +364,7 @@ class test_pictures_functions(unittest.TestCase):
 
         # create the new picture in the db
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
         )
 
         self.assertTrue(
@@ -377,7 +379,7 @@ class test_pictures_functions(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(picture.PictureUploadError):
             picture.new_picture(
-                mock_cursor, self.picture, str(uuid.uuid4()), self.seed_id
+                mock_cursor, self.picture, str(uuid.uuid4()), self.seed_id,self.nb_seed
             )
 
     def test_get_inexisting_picture_set(self):
@@ -419,7 +421,7 @@ class test_pictures_functions(unittest.TestCase):
 
         # prepare picture
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
         )
 
         # test the function
@@ -439,14 +441,14 @@ class test_pictures_functions(unittest.TestCase):
 
         # prepare picture
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
         )
         new_picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", 6, 1.0, ""
         )
         picture_metadata = picture.get_picture(self.cursor, picture_id)
         # update the metadata
-        picture.update_picture_metadata(self.cursor, picture_id, new_picture)
+        picture.update_picture_metadata(self.cursor, picture_id, new_picture,6)
         new_picture = json.loads(new_picture)
         # get the updated metadata
         new_picture_metadata = picture.get_picture(self.cursor, picture_id)
@@ -490,7 +492,7 @@ class test_pictures_functions(unittest.TestCase):
         mock_cursor.execute.side_effect = Exception("Connection error")
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(picture.PictureUpdateError):
-            picture.update_picture_metadata(mock_cursor, uuid.uuid4(), self.picture)
+            picture.update_picture_metadata(mock_cursor, uuid.uuid4(), self.picture,self.nb_seed)
 
     def test_is_a_picture_set_id(self):
         """
@@ -542,15 +544,15 @@ class test_inference_functions(unittest.TestCase):
             "utf8"
         )
         self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
+        self.nb_seed=1
         self.picture = picture_data.build_picture(
-            self.pic_encoded, "www.link.com", 1, 1.0, ""
+            self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
         )
-
         self.picture_set_id=picture.new_picture_set(self.cursor, self.picture_set, self.user_id)
-        self.picture_id=picture.new_picture(self.cursor, self.picture, self.picture_set["id"], self.seed_id)
-        with open("tests/inference_exemple.json", "r") as f:
+        self.picture_id=picture.new_picture(self.cursor, self.picture, self.picture_set_id, self.seed_id,self.nb_seed)
+        with open("tests/inference_example.json", "r") as f:
             self.inference= json.loads(f.read())
-        self.inference_trim= '{"filename": test, "totalBoxes": 1, "totalBoxes": 1'
+        self.inference_trim= '{"filename": "inference_example", "totalBoxes": 1, "totalBoxes": 1}'
         self.type=1
 
     def tearDown(self):
@@ -582,7 +584,7 @@ class test_inference_functions(unittest.TestCase):
         """
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
         for box in self.inference["boxes"]:
-            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,box,self.type)
+            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
             self.assertTrue(
                 validator.is_valid_uuid(inference_obj_id), "The inference_obj_id is not a valid UUID"
             )
@@ -604,33 +606,33 @@ class test_inference_functions(unittest.TestCase):
         """
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
         for box in self.inference["boxes"]:
-            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,box,self.type)
-            seed_obj_id=inference.new_seed_object(self.cursor,inference_obj_id,self.seed_id)
+            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
+            seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,box["score"])
             self.assertTrue(
                 validator.is_valid_uuid(seed_obj_id), "The seed_obj_id is not a valid UUID"
             )
       
     def test_new_seed_object_error(self):
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,self.inference["boxes"][0],self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(inference.SeedObjectCreationError):
-            inference.new_seed_object(mock_cursor,inference_obj_id,self.seed_id)
+            inference.new_seed_object(mock_cursor,self.seed_id,inference_obj_id,32.1)
       
     def test_get_inference(self):
         """
         This test checks if the get_inference function returns a correctly build inference
         TODO : Add test for not existing inference
         """
-        inference_trim=json.load(self.inference_trim)
+        inference_trim=json.loads(self.inference_trim)
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
         inference_data=inference.get_inference(self.cursor,str(inference_id))
-        inference_json=json.loads(inference_data)
-        self.assertGreaterEqual(len(inference_trim),len(inference_json), "The inference is not correctly build and has more keys than expected")
+        #inference_json=json.loads(inference_data)
+        self.assertGreaterEqual(len(inference_trim),len(inference_data), "The inference is not correctly build and has more keys than expected")
         for key in inference_trim:
-            self.assertTrue(key in inference_json, f"The key: {key} is not in the inference")
-            self.assertEqual(inference_trim[key],inference_json[key],f"The value ({inference_json[key]}) of the key: {key} is not the same as the expected one: {inference_trim[key]}")
+            self.assertTrue(key in inference_data, f"The key: {key} is not in the inference")
+            self.assertEqual(inference_trim[key],inference_data[key],f"The value ({inference_data[key]}) of the key: {key} is not the same as the expected one: {inference_trim[key]}")
         
         
 if __name__ == "__main__":

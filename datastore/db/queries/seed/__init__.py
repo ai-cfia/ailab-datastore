@@ -26,7 +26,7 @@ def get_all_seeds_names(cursor):
             SELECT 
                 name 
             FROM 
-                seeds
+                seed
             """
         cursor.execute(query)
         return cursor.fetchall()
@@ -50,7 +50,7 @@ def get_seed_id(cursor, seed_name: str) -> str:
             SELECT 
                 id 
             FROM 
-                seeds
+                seed
             WHERE 
                 name = %s
                 """
@@ -75,7 +75,7 @@ def new_seed(cursor, seed_name: str):
     try:
         query = """
             INSERT INTO 
-                seeds(name)
+                seed(name)
             VALUES
                 (%s)
             RETURNING id
@@ -106,7 +106,7 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
                 SELECT 
                     1 
                 FROM 
-                    seeds
+                    seed
                 WHERE 
                     name = %s
             )

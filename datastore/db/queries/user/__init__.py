@@ -115,8 +115,8 @@ def register_user(cursor, email: str) -> None:
     """
     try:
         query = """
-            INSERT INTO 
-                users(email)
+            INSERT INTO  
+                users (email)
             VALUES
                 (%s)
             RETURNING id
