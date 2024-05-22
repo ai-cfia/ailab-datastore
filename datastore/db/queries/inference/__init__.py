@@ -35,7 +35,7 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type):
                 inference(
                     inference,
                     picture_id,
-                    owner_id
+                    user_id
                     )
             VALUES
                 (%s,%s,%s)
@@ -75,7 +75,7 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
                     type_id
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -120,6 +120,7 @@ def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
     - cursor (cursor): The cursor of the database.
     - seed_id (str): The UUID of the seed.
     - object_id (str): The UUID of the object.
+    - score (float): The score of the prediction.
 
     Returns:
     - The UUID of the seed object.
@@ -127,7 +128,7 @@ def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
     try:
         query = """
             INSERT INTO 
-                seed_object(
+                seed_obj(
                     seed_id,
                     object_id,
                     score

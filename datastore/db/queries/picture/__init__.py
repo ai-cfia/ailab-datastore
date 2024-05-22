@@ -58,7 +58,7 @@ def new_picture_set(cursor, picture_set, user_id: str):
         raise PictureSetCreationError("Error: picture_set not uploaded")
 
 
-def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
+def new_picture(cursor, picture, picture_set_id: str, seed_id: str, nb_objects=0 ):
     """
     This function uploads a NEW PICTURE to the database.
 
@@ -67,6 +67,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
     - picture (str): The Picture to upload. Must be formatted as a json
     - picture_set_id (str): The UUID of the Picture_set the picture is in.
     - seedID (str): The UUID of the seed the picture is linked to.
+    - nb_objects (int): The number of objects in the picture.
 
     Returns:
     - The UUID of the picture.
@@ -76,10 +77,11 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
             INSERT INTO 
                 picture(
                     picture,
-                    picture_set_id
+                    picture_set_id,
+                    nb_obj
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id
                 """
         cursor.execute(
@@ -87,6 +89,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
             (
                 picture,
                 picture_set_id,
+                nb_objects,
             ),
         )
         picture_id = cursor.fetchone()[0]
@@ -195,7 +198,7 @@ def get_user_latest_picture_set(cursor, user_id: str):
         )
 
 
-def update_picture_metadata(cursor, picture_id: str, metadata: dict):
+def update_picture_metadata(cursor, picture_id: str, metadata: dict, nb_objects: int):
     """
     This function updates the metadata of a picture in the database.
 
@@ -212,11 +215,12 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
             UPDATE
                 picture
             SET
-                picture = %s
+                picture = %s,
+                nb_obj = %s
             WHERE
                 id = %s
             """
-        cursor.execute(query, (metadata, picture_id))
+        cursor.execute(query, (metadata,nb_objects, picture_id))
     except Exception:
         raise PictureUpdateError(f"Error: Picture metadata not updated:{picture_id}")
 
