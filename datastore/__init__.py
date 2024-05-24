@@ -199,6 +199,6 @@ async def get_ml_structure(cursor):
             model_endpoint = model_db[2]
             model_task = model_db[3]
             model_version = model_db[5]
-            model_dict = ml_metadata.build_model_export(model_db[4],model_name,model_endpoint,model_task,model_version)
+            model_dict = ml_metadata.build_model_export(model_db[4],model_id,model_name,model_endpoint,model_task,model_version)
             ml_structure["models"].append(model_dict)
     return ml_structure
