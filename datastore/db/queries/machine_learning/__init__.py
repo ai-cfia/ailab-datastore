@@ -435,7 +435,7 @@ def get_model(cursor,model_id:str):
                 "nachet_0.0.10".model_version as v
             ON
                 m.active_version=v.id
-            WHERE m.id = '%s'
+            WHERE m.id = %s
             """
         cursor.execute(
             query,
