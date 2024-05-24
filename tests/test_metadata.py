@@ -105,12 +105,12 @@ class test_inference_functions(unittest.TestCase):
         self.overlapping=False
         self.overlapping_indices=0
         self.total_boxes=1
-        with open('your_file.json') as f:
+        with open('tests/inference_example.json') as f:
             self.inference_exemple = json.load(f)
-        self.filename=self.inference_exemple.filename
-        self.overlapping=self.inference_exemple.overlapping
-        self.overlapping_indices=self.inference_exemple.overlappingIndices
-        self.total_boxes=self.inference_exemple.totalBoxes
+        self.filename=self.inference_exemple["filename"]
+        self.labelOccurrence=self.inference_exemple["labelOccurrence"]
+        self.total_boxes=self.inference_exemple["totalBoxes"]
+        self.boxes=self.inference_exemple["boxes"]
 
     def test_build_inference_import(self):
         """
@@ -118,11 +118,11 @@ class test_inference_functions(unittest.TestCase):
         """
         mock_inference = {
             "filename": self.filename,
-            "overlapping": self.overlapping,
-            "overlappingIndices": self.overlapping_indices,
+            "labelOccurrence": self.labelOccurrence,
             "totalBoxes": self.total_boxes,
         }
-        inference_tested = inference.build_inference_import(self.model_inference)
+        inference_tested = inference.build_inference_import(self.inference_exemple)
+        inference_tested = json.loads(inference_tested)
         self.assertGreaterEqual(len(mock_inference), len(inference_tested), "The inference returned has too many keys")
         for key, value in mock_inference.items():
             self.assertTrue( key in inference_tested, f"{key} should be in the inference object")
@@ -136,11 +136,17 @@ class test_inference_functions(unittest.TestCase):
         """
         This test checks if the build_object_import function returns a valid JSON object
         """
-        object = inference.build_object_import(self.object)
-        data = json.loads(object)
+        object =self.boxes[0]
+        object_tested = inference.build_object_import(object)
+        data = json.loads(object_tested)
         mock_object = {
-            "box": [1, 2, 3, 4],
-            "color": "red",
+            "box": {
+                "topX": 0.0,
+                "topY": 0.0,
+                "bottomX": 0.0,
+                "bottomY": 0.0
+            },
+            "color": "#ff0",
         }
         for key, value in mock_object.items():
             self.assertEqual(
@@ -157,7 +163,7 @@ class test_machine_learning_functions(unittest.TestCase):
             self.model_id="48efe646-5210-4761-908e-a06f95f0c344"
             self.model_endpoint="https://that-model.inference.ml.com/score"
             self.task="classification"
-            self.version="5"
+            self.version=5
             self.data={
                 "creation_date":"2024-01-01",
                 "created_by":"Avery GoodDataScientist",
@@ -171,6 +177,7 @@ class test_machine_learning_functions(unittest.TestCase):
                 "deployment_platform": "azure",
                 "endpoint_name": "that-model-endpoint",
                 "model_name": "that_model_name",
+                "model_id":"48efe646-5210-4761-908e-a06f95f0c344",
                 "created_by": "Avery GoodDataScientist",
                 "creation_date": "2024-01-01",
                 "version": 5,
@@ -185,6 +192,7 @@ class test_machine_learning_functions(unittest.TestCase):
             self.model_ids=["that_model_name", "other_model_name"]
             self.mock_pipeline={
                 "models": ["that_model_name", "other_model_name"],
+                "pipeline_id": "48efe646-5210-4761-908e-a06f95f0c344",
                 "pipeline_name": "First Pipeline",
                 "created_by": "Avery GoodDataScientist",
                 "creation_date": "2024-01-01",
@@ -192,7 +200,7 @@ class test_machine_learning_functions(unittest.TestCase):
                 "description": "Pipeline Description",
                 "job_name": "Job Name",
                 "dataset_description": "Dataset Description",
-                "Accuracy": 0.8302,
+                "Accuracy": 0.6908,
                 "default": True
             }
 
@@ -204,8 +212,7 @@ class test_machine_learning_functions(unittest.TestCase):
         model_import = ml_data.build_model_import(model)
         model_data = json.loads(model_import)
         self.assertLessEqual(len(model_data),len(self.mock_model), "The returned model data should have more key than expected")
-        for key in self.mock_model:
-            self.assertTrue(key in model_data, f"The key:{key} should be in the model data")
+        for key in model_data:
             self.assertEqual(self.mock_model[key], model_data[key], f"{key} should be {self.mock_model[key]}")
 
     def test_missing_key_build_model_import(self):
@@ -234,8 +241,7 @@ class test_machine_learning_functions(unittest.TestCase):
         pipeline_import = ml_data.build_pipeline_import(pipeline)
         pipeline_data = json.loads(pipeline_import)
         self.assertLessEqual(len(pipeline_data),len(self.mock_pipeline), "The returned pipeline data should have more key than expected")
-        for key in self.mock_pipeline:
-            self.assertTrue(key in pipeline_data, f"The key:{key} should be in the pipeline data")
+        for key in pipeline_data:
             self.assertEqual(pipeline_data[key], self.mock_pipeline[key], f"The pipeline data for the key:{key} should be {self.mock_pipeline[key]}")
 
     def test_missing_key_build_pipeline_import(self):

@@ -104,10 +104,11 @@ def build_model_export(data:dict,id,name:str,endpoint:str,task_name:str,version:
     model_db = {
         "model_id": str(id),
         "model_name": name,
-        "endpoint_name": endpoint,
+        "endpoint": endpoint,
         "task": task_name,
         "version": version
     }
-    for key in data:
-        model_db[key] = data[key]
+    if data is not None:
+        for key in data.keys():
+            model_db[key] = data[key]
     return model_db

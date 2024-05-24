@@ -23,17 +23,14 @@ def build_inference_import(model_inference:dict)->str:
     try:
         if "filename" not in model_inference:
             raise MissingKeyError("filename")
-        if "overlapping" not in model_inference:
-            raise MissingKeyError("overlapping")
-        if "overlappingIndices" not in model_inference:
-            raise MissingKeyError("overlappingIndices")
+        if "labelOccurrence" not in model_inference:
+            raise MissingKeyError("labelOccurrence")
         if "totalBoxes" not in model_inference:
             raise MissingKeyError("totalBoxes")
         inference = {
-            "filename": model_inference.filename,
-            "overlapping": model_inference.overlapping,
-            "overlappingIndices": model_inference.overlappingIndices,
-            "totalBoxes": model_inference.totalBoxes,
+            "filename": model_inference["filename"],
+            "labelOccurrence": model_inference["labelOccurrence"],
+            "totalBoxes": model_inference["totalBoxes"],
         }
         return json.dumps(inference)
     except MissingKeyError as e:
@@ -51,7 +48,9 @@ def build_object_import(object:dict)->str:
     - The object db object in a string format.
     """
     data={
-        "box":object.box,
-        "color":object.color,
+        "box":object["box"],
+        "color":object["color"],
+        "overlapping":object["overlapping"],
+        "overlappingIndices":object["overlappingIndices"],
     }
     return json.dumps(data)

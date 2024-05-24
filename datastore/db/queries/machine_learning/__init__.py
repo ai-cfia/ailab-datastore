@@ -241,7 +241,7 @@ def new_pipeline_model(cursor,pipeline_id,model_id):
     except(Exception):
         raise PipelineCreationError("Error: pipeline model not uploaded")
     
-def new_model(cursor, model,name,endpoint_name,task_id):
+def new_model(cursor, model,name,endpoint_name,task_id:int):
     """
     This function creates a new model in the database.
 
@@ -258,7 +258,6 @@ def new_model(cursor, model,name,endpoint_name,task_id):
             INSERT INTO 
                 model(
                     name,
-                    data,
                     endpoint_name,
                     task_id
                     )
@@ -270,15 +269,14 @@ def new_model(cursor, model,name,endpoint_name,task_id):
             query,
             (
                 name,
-                model,
                 endpoint_name,
                 task_id,
             ),
         )
         model_id=cursor.fetchone()[0]
         version = '0.0.1'
-        model_version_id=new_model_version(cursor,model_id,version)
-        set_active_model(cursor,model_id,model_version_id)
+        model_version_id=new_model_version(cursor,model_id,version,model)
+        set_active_model(cursor,model_id,str(model_version_id))
         return model_id
     except(Exception):
         raise PipelineCreationError("Error: model not uploaded")
@@ -299,7 +297,7 @@ def set_active_model(cursor,model_id,version_id):
             raise PipelineCreationError("Error: model version not found")
         query = """
             UPDATE model
-            SET active_version_id = %s
+            SET active_version = %s
             WHERE id = %s
             """
         cursor.execute(
@@ -435,20 +433,20 @@ def get_model(cursor,model_id:str):
                 "nachet_0.0.10".model_version as v
             ON
                 m.active_version=v.id
-            WHERE m.id = '%s'
+            WHERE m.id = %s
             """
         cursor.execute(
             query,
             (
                 model_id,
-            ),
+            )
         )
         model=cursor.fetchone()
         return model
     except(Exception):
         raise PipelineCreationError("Error: model not found")
     
-def new_model_version(cursor, model_id, version):
+def new_model_version(cursor, model_id, version,data):
     """
     This function creates a new model version in the database.
 
@@ -469,7 +467,7 @@ def new_model_version(cursor, model_id, version):
                     data
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -477,10 +475,11 @@ def new_model_version(cursor, model_id, version):
             (
                 model_id,
                 version,
+                data,
             ),
         )
-        model_version_id=cursor.fetchone()[0]
-        return model_version_id
+        model_version_id=cursor.fetchone()
+        return model_version_id[0]
     except(Exception):
         raise PipelineCreationError("Error: model version not uploaded")
     
@@ -509,7 +508,7 @@ def is_a_model_version(cursor,model_version_id:str):
         cursor.execute(
             query,
             (
-                model_version_id,
+                str(model_version_id),
             ),
         )
         return cursor.fetchone()[0]
@@ -527,25 +526,25 @@ def get_task_id(cursor,task_name):
     - task_name (str): The name of the task.
 
     Returns:
-    - The UUID of the task.
+    - The id (int) of the task.
     """
     try:
         query = """
             SELECT id
             FROM task
-            WHERE name = %s
+            WHERE name ILIKE %s
             """
         cursor.execute(
             query,
             (
                 task_name,
-            ),
+            )
         )
         task_id=cursor.fetchone()[0]
         return task_id
     except(ValueError):
         raise NonExistingTaskEWarning(f"Warning: the given task '{task_name}' was not found")
-    except(Exception):
+    except(Exception) as e:
         raise PipelineCreationError("Error: task not found")
     
 def new_task(cursor,task_name):
