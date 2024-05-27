@@ -46,3 +46,54 @@ sequenceDiagram;
   end
   manualMetaDataImport -->> dev: Importation completed
 ```
+
+``` mermaid
+
+---
+title: Nachet DB Structure
+---
+erDiagram
+  picture_set{
+    uuid id PK
+    json picture_set
+    uuid owner_id FK
+    timestamp upload_date
+  }
+  picture{
+    uuid id PK
+    json picture
+    uuid picture_set_id FK
+    uuid parent FK
+    int nb_object
+    boolean verified
+    timestamp upload_date 
+  }
+  picture_seed{
+    uuid id PK
+    uuid picture_id FK
+    uuid seed_id FK
+    timestamp upload_date
+  }
+  seed{
+    uuid id PK
+    string name
+    json information
+    uuid object_type_id
+    timestamp upload_date
+  }
+  container{
+    uuid id PK
+    uuid owner_id FK
+    boolean public
+    timestamp creation_date
+    timestamp updated_at
+  }
+
+  picture_set ||--o{picture: contains
+  picture ||--o{picture: cropped
+  picture |o--o{picture_seed: has
+  picture_seed }o--o| seed: has
+
+  container ||--o{picture_set: contains
+
+```
