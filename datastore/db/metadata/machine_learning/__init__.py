@@ -17,7 +17,7 @@ def build_pipeline_import(pipeline:dict)->str:
     - The model db object in a string format.
     """
     try:
-        keys = ["models","created_by","creation_date","description","job_name","version","dataset_description","Accuracy"]
+        keys = ["models","created_by","creation_date","description","job_name","version","dataset"]
         
         for key in keys:
             if not key in pipeline:
@@ -30,8 +30,8 @@ def build_pipeline_import(pipeline:dict)->str:
             "description": pipeline["description"],
             "job_name": pipeline["job_name"],
             "version": pipeline["version"],
-            "dataset_description": pipeline["dataset_description"],
-            "Accuracy": pipeline["Accuracy"]
+            "dataset": pipeline["dataset"],
+            #"Accuracy": pipeline["Accuracy"]
         }
         return json.dumps(pipeline_db)
     except MissingKeyError as e:
@@ -68,7 +68,7 @@ def build_model_import(model:dict)->str:
     - The model db object in a string format.
     """
     try:
-        keys=["endpoint","api_key","content_type","deployment_platform","created_by","creation_date","description","version","job_name","dataset_description","Accuracy"]
+        keys=["endpoint","api_key","content_type","deployment_platform","created_by","creation_date","description","version","job_name","dataset"]
         
         for key in keys:
             if not key in model:
@@ -84,8 +84,8 @@ def build_model_import(model:dict)->str:
             "description": model["description"],
             "version": model["version"],
             "job_name": model["job_name"],
-            "dataset_description": model["dataset_description"],
-            "Accuracy": model["Accuracy"]
+            #"Accuracy": model["Accuracy"],
+            "dataset": model["dataset"]
         }
         return json.dumps(model_db)
     except MissingKeyError as e:
