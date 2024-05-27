@@ -51,6 +51,7 @@ def build_pipeline_export(data:dict,name:str,id:str,default:bool,model_ids)->dic
         "models": model_ids,
         "pipeline_id": str(id),
         "pipeline_name": name,
+        "model_name":name,
         "default": default,
     }
     for key in data:
