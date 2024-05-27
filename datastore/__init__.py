@@ -130,6 +130,7 @@ async def register_inference_result(cursor,user_id:str,inference_dict,picture_id
             object_inference_id = inference.new_inference_object(cursor,inference_id,box,type)
             inference_dict["boxes"][box_index]["box_id"]=str(object_inference_id)
             # loop through the topN Prediction
+            top_score=-1
             for topN in inference_dict["boxes"][box_index]["topN"]:
                 
                 # Retrieve the right seed_id
@@ -219,5 +220,3 @@ async def get_seed_info(cursor):
         seed_name = seed_db[1]
         seed_dict["seeds"].append({"seed_id":seed_id,"seed_name":seed_name})
     return seed_dict
-
-

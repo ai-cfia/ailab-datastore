@@ -3,14 +3,14 @@
 Welcome to the Nachet Datastore - the integral data management layer of the
 Nachet solution serving a dual function role. As a central repository, it
 efficiently manages multimedia storage in the blob storage server while
-concurrently ensuring accurate metadata registration into a database server. 
+concurrently ensuring accurate metadata registration into a database server.
 
-## Robust Multimedia Storage 
+## Robust Multimedia Storage
 
 The essential function of our Datastore is to manage the multimedia storage
 effectively within the blob storage server. With support for a variety of media
 formats and efficient indexing techniques, the smooth retrieval and access of
-data are assured. 
+data are assured.
 
 ```Structure
 
@@ -38,11 +38,54 @@ Storage account:
 
 ## Efficient Metadata Registration
 
-Coupled with managing multimedia storage, the Nachet Datastore also seamlessly registers metadata into a database server. This double-edged approach ensures not just efficient storage, but also the organization and easy accessibility of your valuable data. 
+Coupled with managing multimedia storage, the Nachet Datastore also seamlessly
+registers metadata into a database server. This double-edged approach ensures
+not just efficient storage, but also the organization and easy accessibility of
+your valuable data.
 
+``` mermaid
 
+---
+title: Nachet Layers
+---
+flowchart LR;
+    FE(Frontend)
+    BE(Backend)
+    file[/Client/]
+    classDef foo stroke:#f00
 
-##
+    file ==> FE
+    FE-->BE
+    MD(Datastore)
+    DB[(Database)] 
+    blob[(Blob Storage)]
+    ML[(Models)]
+    BE --> MD
+    BE -- pipeline --->ML
+    MD --> DB
+    MD --> blob
+
+```
+
+## Database Architecture
+  
+  #### Needs:
+
+  - A User must be able to take a picture on the app and it must be saved in the
+    blob Storage.
+
+  - A User can upload a batch on pictures.
+
+  - A User can classify a picture with a selected pipeline which returns an
+    inference that needs to be saved.
+    
+  - A User can verify an inference by confirming the positive result, select the
+    right seed from the topN result set (technically it shouldn't be the first
+    one) or select a seed that isn't part of the topN.
+
+  - The application needs to save a list of known seeds.
+
+  - The application needs to save a list of all the Machine Learning versions.
 
 ``` mermaid
 
