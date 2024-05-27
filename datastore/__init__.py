@@ -6,11 +6,11 @@ import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
 import datastore.db.metadata.machine_learning as ml_metadata
-import datastore.blob.azure_storage_api as azure_storage_api
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed
-import datastore.blob.__init__ as blob
+import datastore.blob as blob
+import datastore.blob.azure_storage_api as azure_storage
 import json
 from azure.storage.blob import BlobServiceClient
 import os
@@ -80,7 +80,7 @@ async def new_user(email, cursor,connection_string):
         user.link_container(cursor=cursor,user_id=user_uuid,container_url=container_client.url)
         
         # Basic user container structure
-        response = await azure_storage_api.create_folder(container_client, "General")
+        response = await azure_storage.create_folder(container_client, "General")
         if not response:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
@@ -99,7 +99,7 @@ async def get_user_container_client(user_id,tier="user"):
     """
     sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT,NACHET_BLOB_KEY)
     # Get the container client
-    container_client = await azure_storage_api.mount_container(NACHET_STORAGE_URL,user_id,True,tier,sas)
+    container_client = await azure_storage.mount_container(NACHET_STORAGE_URL,user_id,True,tier,sas)
     return container_client
 
 async def register_inference_result(cursor,user_id:str,inference_dict,picture_id:str,pipeline_id:str,type:int=1):
@@ -150,20 +150,23 @@ async def register_inference_result(cursor,user_id:str,inference_dict,picture_id
 
 async def import_ml_structure_from_json_version(cursor,ml_version:dict):
     """
-    summary
+    TODO: build tests
     """
     pipelines = ml_version["pipelines"]
     models = ml_version["models"]
+    # Create the models
     for model in models:
         model_db = ml_metadata.build_model_import(model)
         task_id = machine_learning.get_task_id(cursor,model["task"])
         model_name=model["model_name"]
         endpoint_name=model["endpoint_name"]
         machine_learning.new_model(cursor,model_db,model_name,endpoint_name,task_id)
+    # Create the pipelines
     for pipeline in pipelines:
-        pipeline_db = inference_metadata.ml_metadata(pipeline)
+        pipeline_db = ml_metadata.build_pipeline_import(pipeline)
         pipeline_name=pipeline["pipeline_name"]
         model_ids=[]
+        # Establish the relationship between the pipelines and its models
         for name_model in pipeline["models"]:
             model_id=0
             model_id = machine_learning.get_model_id_from_name(cursor,name_model)
@@ -202,3 +205,17 @@ async def get_ml_structure(cursor):
             model_dict = ml_metadata.build_model_export(model_db[4],model_id,model_name,model_endpoint,model_task,model_version)
             ml_structure["models"].append(model_dict)
     return ml_structure
+
+async def get_seed_info(cursor):
+    """
+    This function retrieves the seed information from the database.
+    
+    Returns a usable json object with the seed information for the FE and BE
+    """
+    seeds = seed.get_all_seeds(cursor)
+    seed_dict = {"seeds":[]}
+    for seed_db in seeds:
+        seed_id = seed_db[0]
+        seed_name = seed_db[1]
+        seed_dict["seeds"].append({"seed_id":seed_id,"seed_name":seed_name})
+    return seed_dict

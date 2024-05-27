@@ -7,7 +7,9 @@
                 "bottomX": 0.0,
                 "bottomY": 0.0
             },
-        "label": "top_label_name",
+        "verified" : false,
+        "feedback_comment" : "This is a test comment",
+        "label": "Actual_seed",
         "score": 0.912,
         "color": "#ff0",
         "topN": [
