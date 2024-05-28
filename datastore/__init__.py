@@ -135,7 +135,7 @@ async def upload_picture(cursor, user_id, picture, container_client):
     - container_client: The container client of the user.
     """
     # Create picture instance in DB
-    empty_picture = json.dumps()
+    empty_picture = json.dumps([])
     picture_set_id = user.get_default_picture_set(cursor, user_id)
     picture_id = picture.new_picture_unknown(
         cursor=cursor,
