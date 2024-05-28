@@ -4,7 +4,8 @@ import json
 import sys
 import asyncio
 
-def getFile(path:str):
+
+def getFile(path: str):
     """
     This function reads a file and returns the content of the file.
 
@@ -21,9 +22,10 @@ def getFile(path:str):
             data = json.load(f)
             return data
     except FileNotFoundError:
-        raise FileNotFoundError(f"File not found: {path}")  
-    
-def writeJsonFile(data:dict, path:str):
+        raise FileNotFoundError(f"File not found: {path}")
+
+
+def writeJsonFile(data: dict, path: str):
     """
     This function writes a dictionary to a JSON file.
 
@@ -36,16 +38,15 @@ def writeJsonFile(data:dict, path:str):
     """
     try:
         # Open the JSON file
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             # Write JSON data to file
-            json.dump(data, f,indent=4)
+            json.dump(data, f, indent=4)
     except FileNotFoundError:
-        raise FileNotFoundError(f"File not found: {path}") 
-
+        raise FileNotFoundError(f"File not found: {path}")
 
 
 if __name__ == "__main__":
-    
+
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
     else:
@@ -55,10 +56,10 @@ if __name__ == "__main__":
     db.create_search_path(connection, cur)
     file = getFile(file_path)
     print("Importing ML structure from JSON file...")
-    #for key in file.keys():
+    # for key in file.keys():
     #    print("key: "+key+" value: "+str(file[key]))
     asyncio.run(datastore.import_ml_structure_from_json_version(cur, file))
-    structure=asyncio.run(datastore.get_ml_structure(cur))
+    structure = asyncio.run(datastore.get_ml_structure(cur))
     # for key in structure.keys():
     #     for element in structure[key]:
     #         print("\n"+key+": "+str(element))
