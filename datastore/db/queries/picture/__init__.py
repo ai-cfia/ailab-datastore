@@ -64,7 +64,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str, nb_objects=0
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - picture (str): The Picture to upload. Must be formatted as a json
+    - picture (str): The Picture METADATA to upload. Must be formatted as a json
     - picture_set_id (str): The UUID of the Picture_set the picture is in.
     - seedID (str): The UUID of the seed the picture is linked to.
     - nb_objects (int): The number of objects in the picture.
@@ -110,6 +110,43 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str, nb_objects=0
             ),
         )
         return picture_id
+    except Exception:
+        raise PictureUploadError("Error: Picture not uploaded")
+
+def new_picture_unknown(cursor, picture, picture_set_id:str, nb_objects=0):
+    """
+    This function uploads a NEW PICTURE to the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture (str): The Picture METADATA to upload. Must be formatted as a json
+    - picture_set_id (str): The UUID of the Picture_set the picture is in.
+    - nb_objects (int): The number of objects in the picture.
+
+    Returns:
+    - The UUID of the picture.
+    """
+    try:
+        query = """
+            INSERT INTO 
+                picture(
+                    picture,
+                    picture_set_id,
+                    nb_obj
+                    )
+            VALUES
+                (%s,%s,%s)
+            RETURNING id
+                """
+        cursor.execute(
+            query,
+            (
+                picture,
+                picture_set_id,
+                nb_objects,
+            ),
+        )
+        return cursor.fetchone()[0]
     except Exception:
         raise PictureUploadError("Error: Picture not uploaded")
 

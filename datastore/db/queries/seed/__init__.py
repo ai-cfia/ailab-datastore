@@ -19,7 +19,7 @@ def get_all_seeds(cursor):
     - cursor (cursor): The cursor of the database.
 
     Returns:
-    - list of all the seeds ids, and names.
+    - list of all the seeds id, and names.
     """
     try:
         query = """
@@ -55,6 +55,28 @@ def get_all_seeds_names(cursor):
         return cursor.fetchall()
     except Exception:
         raise Exception("Error: seeds could not be retrieved")
+    
+def get_all_seeds(cursor):
+    """
+    This function returns all the seed from the database.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    
+    Returns:
+    - list of tuple (id,seed_name)
+    """
+    try:
+        query = """
+            SELECT 
+                id,name 
+            FROM 
+                seed
+            """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception:
+        raise Exception("Error: seeds could not be retrieved")    
 
 
 def get_seed_id(cursor, seed_name: str) -> str:

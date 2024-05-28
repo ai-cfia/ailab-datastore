@@ -57,7 +57,6 @@ class test_upload_picture_set(unittest.TestCase):
         """
         This test checks if the upload_picture_set function runs without issue (not checking the return value)
         """
-        # TODO: check if the pictures are uploaded in the blob storage
         MockCreateFolder.retun_value = True
         zoom_level = 1.0
         nb_seeds = 1
