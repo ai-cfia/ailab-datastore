@@ -237,7 +237,7 @@ async def get_folder_uuid(container_client, folder_name):
                 if folder_json:
                     folder_json = json.loads(folder_json)
                     if folder_json["folder_name"] == folder_name:
-                        return blob.name.split(".")[0].split("/")[-1]
+                        return folder_json["folder_uuid"]
         return False
     except GetFolderUUIDError as error:
         print(error)

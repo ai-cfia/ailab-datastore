@@ -4,6 +4,10 @@ import asyncio
 from unittest.mock import patch, Mock, MagicMock
 from azure.storage.blob import BlobServiceClient
 import datastore.blob.__init__ as blob
+from datastore.blob.azure_storage_api import (
+    ConnectionStringError,
+    get_blob_client
+)
 from azure.core.exceptions import ResourceNotFoundError
 
 class TestGetBlobServiceClient(unittest.TestCase):

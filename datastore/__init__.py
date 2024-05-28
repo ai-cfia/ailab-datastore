@@ -6,10 +6,12 @@ and the user container in the blob storage.
 import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
+import datastore.db.queries.picture as picture
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed
+import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
 import json
@@ -88,12 +90,15 @@ async def new_user(email, cursor, connection_string):
             raise ContainerCreationError("Error creating the user container")
 
         # Link the container to the user in the database
-        user.link_container(
-            cursor=cursor, user_id=user_uuid, container_url=container_client.url
+        pic_set_metadata = data_picture_set.build_picture_set(
+            user_id=user_uuid, nb_picture=0
         )
-
+        pic_set_id = picture.new_picture_set(cursor, pic_set_metadata, user_uuid)
+        user.set_default_picture_set(cursor, user_uuid, pic_set_id)
         # Basic user container structure
-        response = await azure_storage.create_folder(container_client, "General")
+        response = await azure_storage.create_folder(
+            container_client, str(pic_set_id), "General"
+        )
         if not response:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
@@ -117,6 +122,40 @@ async def get_user_container_client(user_id, tier="user"):
         NACHET_STORAGE_URL, user_id, True, tier, sas
     )
     return container_client
+
+
+async def upload_picture(cursor, user_id, picture, container_client):
+    """
+    Upload a picture to the user container
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - user_id (str): The UUID of the user.
+    - picture (str): The image to upload.
+    - container_client: The container client of the user.
+    """
+    # Create picture instance in DB
+    empty_picture = json.dumps()
+    picture_set_id = user.get_default_picture_set(cursor, user_id)
+    picture_id = picture.new_picture_unknown(
+        cursor=cursor,
+        picture=empty_picture,
+        picture_set_id=picture_set_id,
+    )
+    # Upload the picture to the Blob Storage
+    response = await azure_storage.upload_image(
+        container_client, "General", picture, picture_id
+    )
+    if not response:
+        raise ContainerCreationError("Error uploading the picture")
+    # Update the picture metadata in the DB
+    data = {
+        "link": "General/" + str(picture_id),
+        "description": "Uploaded through the API",
+    }
+    picture.update_picture_metadata(cursor, picture_id, data)
+
+    return picture_id
 
 
 async def register_inference_result(
