@@ -135,7 +135,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
         raise e
     except Exception as error:
         print(error)
-        raise Exception("Datastore unHandled Error")
+        raise Exception("Datastore.azure_storage unHandled Error")
 
 
 async def is_a_folder(container_client, folder_name):
