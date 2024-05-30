@@ -35,9 +35,11 @@ class UserAlreadyExistsError(Exception):
     pass
 
 
-class ContainerCreationError(Exception):
+class BlobUploadError(Exception):
     pass
 
+class ContainerCreationError(Exception):
+    pass
 
 class FolderCreationError(Exception):
     pass
@@ -51,9 +53,13 @@ class User:
     def __init__(self, email: str, id: str = None):
         self.id = id
         self.email = email
+    def get_email(self):
+        return self.email
+    def get_id(self):
+        return self.id
 
 
-def get_User(email, cursor):
+def get_User(cursor, email):
     """
     Get a user from the database
 
@@ -76,9 +82,9 @@ async def new_user(cursor,email, connection_string):
     """
     try:
         # Register the user in the database
-        if user.is_user_registered(email, cursor):
+        if user.is_user_registered(cursor, email):
             raise UserAlreadyExistsError("User already exists")
-        user_uuid = user.register_user(email, cursor)
+        user_uuid = user.register_user(cursor, email)
 
         # Create the user container in the blob storage
         blob_service_client = BlobServiceClient.from_connection_string(
@@ -102,9 +108,11 @@ async def new_user(cursor,email, connection_string):
         if not response:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
-
-    except Exception:
-        raise Exception("Unhandled Error")
+    except azure_storage.CreateDirectoryError:
+        raise FolderCreationError("Error creating the user folder")
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
 
 
 async def get_user_container_client(user_id, tier="user"):
@@ -124,7 +132,7 @@ async def get_user_container_client(user_id, tier="user"):
     return container_client
 
 
-async def upload_picture(cursor, user_id, picture, container_client):
+async def upload_picture(cursor, user_id, picture_hash, container_client):
     """
     Upload a picture to the user container
 
@@ -134,29 +142,34 @@ async def upload_picture(cursor, user_id, picture, container_client):
     - picture (str): The image to upload.
     - container_client: The container client of the user.
     """
-    # Create picture instance in DB
-    empty_picture = json.dumps([])
-    picture_set_id = user.get_default_picture_set(cursor, user_id)
-    picture_id = picture.new_picture_unknown(
-        cursor=cursor,
-        picture=empty_picture,
-        picture_set_id=picture_set_id,
-    )
-    # Upload the picture to the Blob Storage
-    response = await azure_storage.upload_image(
-        container_client, "General", picture, picture_id
-    )
-    if not response:
-        raise ContainerCreationError("Error uploading the picture")
-    # Update the picture metadata in the DB
-    data = {
-        "link": "General/" + str(picture_id),
-        "description": "Uploaded through the API",
-    }
-    picture.update_picture_metadata(cursor, picture_id, data)
+    try:
+        # Create picture instance in DB
+        empty_picture = json.dumps([])
+        picture_set_id = user.get_default_picture_set(cursor, user_id)
+        picture_id = picture.new_picture_unknown(
+            cursor=cursor,
+            picture=empty_picture,
+            picture_set_id=picture_set_id,
+        )
+        # Upload the picture to the Blob Storage
+        response = await azure_storage.upload_image(
+            container_client, "General", picture_hash, picture_id
+        )
+        if not response:
+            raise BlobUploadError("Error uploading the picture")
+        # Update the picture metadata in the DB
+        data = {
+            "link": "General/" + str(picture_id),
+            "description": "Uploaded through the API",
+        }
+        picture.update_picture_metadata(cursor, picture_id, data)
 
-    return picture_id
-
+        return picture_id
+    except BlobUploadError or azure_storage.UploadImageError:
+        raise BlobUploadError("Error uploading the picture")
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
 
 async def register_inference_result(
     cursor,
