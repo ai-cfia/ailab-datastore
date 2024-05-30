@@ -190,7 +190,7 @@ async def register_inference_result(
     - pipeline_id (str): The UUID of the pipeline.
     """
     try:
-        trimmed_inference = inference_metadata.build_inference_import(inference)
+        trimmed_inference = inference_metadata.build_inference_import(inference_dict)
         inference_id = inference.new_inference(
             cursor, trimmed_inference, user_id, picture_id, type
         )
