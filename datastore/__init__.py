@@ -203,7 +203,7 @@ async def register_inference_result(
                 top_id = seed.get_seed_id(
                     cursor, inference_dict["boxes"][box_index]["label"]
                 )
-                inference["boxes"][box_index]["object_type_id"] = 1
+                inference_dict["boxes"][box_index]["object_type_id"] = 1
             else:
                 raise inference.InferenceCreationError("Error: type not recognized")
             box = inference_metadata.build_object_import(
