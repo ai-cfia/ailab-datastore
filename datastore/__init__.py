@@ -71,7 +71,7 @@ def get_User(cursor, email):
     return User(email, user_id)
 
 
-async def new_user(cursor,email, connection_string):
+async def new_user(cursor,email, connection_string,tier='user'):
     """
     Create a new user in the database and blob storage.
 
@@ -90,7 +90,7 @@ async def new_user(cursor,email, connection_string):
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        container_client = blob_service_client.create_container(f"user-{user_uuid}")
+        container_client = blob_service_client.create_container(f"{tier}-{user_uuid}")
 
         if not container_client.exists():
             raise ContainerCreationError("Error creating the user container")
@@ -162,7 +162,7 @@ async def upload_picture(cursor, user_id, picture_hash, container_client):
             "link": "General/" + str(picture_id),
             "description": "Uploaded through the API",
         }
-        picture.update_picture_metadata(cursor, picture_id, data)
+        picture.update_picture_metadata(cursor, picture_id, data,0)
 
         return picture_id
     except BlobUploadError or azure_storage.UploadImageError:

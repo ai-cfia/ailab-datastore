@@ -118,9 +118,9 @@ def register_user(cursor, email: str) -> None:
     try:
         query = """
             INSERT INTO  
-                users (email)
+                users (email,default_set_id)
             VALUES
-                (%s)
+                (%s,NULL)
             RETURNING id
             """
         cursor.execute(
