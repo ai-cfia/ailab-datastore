@@ -104,13 +104,13 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
             UPDATE 
                 object
             SET
-                top_id = %s
+                top_inference_id = %s
             WHERE 
                 id = %s
             """
         cursor.execute(query, (top_id,inference_object_id))
     except Exception:
-        raise Exception(f"Error: could not set top_id {top_id} for inference {inference_object_id}")
+        raise Exception(f"Error: could not set top_inference_id {top_id} for inference {inference_object_id}")
     
 def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
     """

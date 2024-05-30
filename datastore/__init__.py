@@ -50,13 +50,16 @@ class InferenceCreationError(Exception):
 
 
 class User:
-    def __init__(self, email: str, id: str = None):
+    def __init__(self, email: str, id: str = None,tier:str='user'):
         self.id = id
         self.email = email
+        self.tier = tier
     def get_email(self):
         return self.email
     def get_id(self):
         return self.id
+    def get_container_client(self):
+        return get_user_container_client(self.id,self.tier)
 
 
 def get_User(cursor, email):
@@ -71,7 +74,7 @@ def get_User(cursor, email):
     return User(email, user_id)
 
 
-async def new_user(cursor,email, connection_string,tier='user'):
+async def new_user(cursor,email, connection_string,tier='user')->User:
     """
     Create a new user in the database and blob storage.
 

@@ -74,8 +74,9 @@ def get_seed_id(cursor, seed_name: str) -> str:
             FROM 
                 seed
             WHERE 
-                name = %s
+                name ILIKE '%s'
                 """
+        seed_name= "%"+seed_name
         cursor.execute(query, (seed_name,))
         result = cursor.fetchone()[0]
         return result
