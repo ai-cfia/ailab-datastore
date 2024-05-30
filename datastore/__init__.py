@@ -50,13 +50,16 @@ class InferenceCreationError(Exception):
 
 
 class User:
-    def __init__(self, email: str, id: str = None):
+    def __init__(self, email: str, id: str = None,tier:str='user'):
         self.id = id
         self.email = email
+        self.tier = tier
     def get_email(self):
         return self.email
     def get_id(self):
         return self.id
+    def get_container_client(self):
+        return get_user_container_client(self.id,self.tier)
 
 
 def get_User(cursor, email):
@@ -71,7 +74,7 @@ def get_User(cursor, email):
     return User(email, user_id)
 
 
-async def new_user(cursor,email, connection_string,tier='user'):
+async def new_user(cursor,email, connection_string,tier='user')->User:
     """
     Create a new user in the database and blob storage.
 
@@ -190,7 +193,7 @@ async def register_inference_result(
     - pipeline_id (str): The UUID of the pipeline.
     """
     try:
-        trimmed_inference = inference_metadata.build_inference_import(inference)
+        trimmed_inference = inference_metadata.build_inference_import(inference_dict)
         inference_id = inference.new_inference(
             cursor, trimmed_inference, user_id, picture_id, type
         )
@@ -203,7 +206,7 @@ async def register_inference_result(
                 top_id = seed.get_seed_id(
                     cursor, inference_dict["boxes"][box_index]["label"]
                 )
-                inference["boxes"][box_index]["object_type_id"] = 1
+                inference_dict["boxes"][box_index]["object_type_id"] = 1
             else:
                 raise inference.InferenceCreationError("Error: type not recognized")
             box = inference_metadata.build_object_import(
