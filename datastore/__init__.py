@@ -65,7 +65,7 @@ def get_User(email, cursor):
     return User(email, user_id)
 
 
-async def new_user(email, cursor, connection_string):
+async def new_user(cursor,email, connection_string):
     """
     Create a new user in the database and blob storage.
 
