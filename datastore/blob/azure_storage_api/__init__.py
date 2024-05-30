@@ -236,7 +236,7 @@ async def get_folder_uuid(container_client, folder_name):
                 folder_json = await get_blob(container_client, blob.name)
                 if folder_json:
                     folder_json = json.loads(folder_json)
-                    if folder_json["folder_name"] == folder_name and folder_json["forlder_uuid"] is not None:
+                    if "folder_uuid" in folder_json and folder_json["folder_name"] == folder_name :
                         return folder_json["folder_uuid"]
         return False
     except GetFolderUUIDError as error:
