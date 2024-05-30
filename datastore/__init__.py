@@ -162,7 +162,7 @@ async def upload_picture(cursor, user_id, picture_hash, container_client):
             "link": "General/" + str(picture_id),
             "description": "Uploaded through the API",
         }
-        picture.update_picture_metadata(cursor, picture_id, data,0)
+        picture.update_picture_metadata(cursor, picture_id, json.dumps(data),0)
 
         return picture_id
     except BlobUploadError or azure_storage.UploadImageError:
