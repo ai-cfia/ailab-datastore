@@ -1,5 +1,6 @@
 import io
 import json
+import uuid
 import unittest
 import asyncio
 from unittest.mock import patch, Mock, MagicMock
@@ -72,10 +73,10 @@ class TestGetBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
         self.tier="testuser"
-        self.container_uuid="uuid"
+        self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
         self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
-        self.container_client = blob.create_container_client(self.blob_service_client, self.container_name)
+        self.container_client = self.blob_service_client.create_container(self.container_name)
         self.blob_name = "test_blob"
         self.blob= "test_blob_content"
         self.container_client.upload_blob(name=self.blob_name, data=self.blob)
@@ -84,17 +85,17 @@ class TestGetBlob(unittest.TestCase):
         self.container_client.delete_container()
     
     def test_get_blob(self):
-
+        self.assertTrue(self.container_client.exists())
         result = asyncio.run(
             get_blob(self.container_client, self.blob_name)
         )
 
-        self.assertEqual(result, self.blob)
+        self.assertEqual(str(result.decode()), self.blob)
 
     def test_get_blob_error(self):
         blob = "nonexisting_blob"
         mock_blob_client = Mock()
-        mock_blob_client.download_blob.side_effect = ResourceNotFoundError("Resource not found")
+        mock_blob_client.download_blob.side_effect = GetBlobError("Resource not found")
 
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
