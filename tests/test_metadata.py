@@ -183,7 +183,7 @@ class test_machine_learning_functions(unittest.TestCase):
                 "version": 5,
                 "description": "Model Description",
                 "job_name": "Job Name",
-                "dataset_description": "Dataset Description",
+                "dataset": "Dataset Description",
                 "Accuracy": 0.6908
             }
             self.pipeline_name="First Pipeline"
@@ -194,12 +194,13 @@ class test_machine_learning_functions(unittest.TestCase):
                 "models": ["that_model_name", "other_model_name"],
                 "pipeline_id": "48efe646-5210-4761-908e-a06f95f0c344",
                 "pipeline_name": "First Pipeline",
+                "model_name": "First Pipeline",
                 "created_by": "Avery GoodDataScientist",
                 "creation_date": "2024-01-01",
                 "version": 1,
                 "description": "Pipeline Description",
                 "job_name": "Job Name",
-                "dataset_description": "Dataset Description",
+                "dataset": "Dataset Description",
                 "Accuracy": 0.6908,
                 "default": True
             }

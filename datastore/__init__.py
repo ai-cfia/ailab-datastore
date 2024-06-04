@@ -15,7 +15,7 @@ import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
 import json
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient,ContainerClient
 import os
 
 NACHET_BLOB_ACCOUNT = os.environ.get("NACHET_BLOB_ACCOUNT")
@@ -62,7 +62,7 @@ class User:
         return get_user_container_client(self.id,self.tier)
 
 
-def get_User(cursor, email):
+async def get_user(cursor, email)->User:
     """
     Get a user from the database
 
@@ -70,7 +70,7 @@ def get_User(cursor, email):
     - email (str): The email of the user.
     - cursor: The cursor object to interact with the database.
     """
-    user_id = user.get_user_id(email, cursor)
+    user_id = user.get_user_id(cursor, email)
     return User(email, user_id)
 
 
@@ -113,6 +113,10 @@ async def new_user(cursor,email, connection_string,tier='user')->User:
         return User(email, user_uuid)
     except azure_storage.CreateDirectoryError:
         raise FolderCreationError("Error creating the user folder")
+    except UserAlreadyExistsError:
+        raise
+    except ContainerCreationError:
+        raise 
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
@@ -132,7 +136,8 @@ async def get_user_container_client(user_id, tier="user"):
     container_client = await azure_storage.mount_container(
         NACHET_STORAGE_URL, user_id, True, tier, sas
     )
-    return container_client
+    if isinstance(container_client,ContainerClient):
+        return container_client
 
 
 async def upload_picture(cursor, user_id, picture_hash, container_client):

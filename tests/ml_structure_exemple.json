@@ -11,7 +11,7 @@
             "version": 1,
             "description": "Pipeline Description",
             "job_name": "Job Name",
-            "dataset_description": "Dataset Description",
+            "dataset": "Dataset Description",
             "Accuracy": 0.6908,
             "default": true
         },
@@ -23,7 +23,7 @@
             "version": 2,
             "description": "Pipeline Description",
             "job_name": "Job Name",
-            "dataset_description": "Dataset Description",
+            "dataset": "Dataset Description",
             "Accuracy": 0.7989,
             "default": true
         }
@@ -43,7 +43,7 @@
             "version": 5,
             "description": "Model Description",
             "job_name": "Job Name",
-            "dataset_description": "Dataset Description",
+            "dataset": "Dataset Description",
             "Accuracy": 0.6908
         },
         {
@@ -59,7 +59,7 @@
             "version": 3,
             "description": "Model Description",
             "job_name": "Job Name",
-            "dataset_description": "Dataset Description",
+            "dataset": "Dataset Description",
             "Accuracy": 0.9205
         }
     ]

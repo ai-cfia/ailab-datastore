@@ -91,8 +91,7 @@ async def mount_container(
     except ConnectionStringError as error:
         raise error
     except Exception as error:
-        print(error)
-        raise Exception("Datastore Unhandled exception")
+        raise Exception("Unhandeled error:" +error.__str__()) 
 
 
 async def get_blob(container_client, blob_name):
@@ -117,7 +116,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
     Parameters:
     - container_client: the Azure container client
     - folder_uuid: the name of the destination folder
-    - image: str the image to be uploaded
+    - image:
     """
     try:
         if not await is_a_folder(container_client, folder_uuid):
@@ -125,7 +124,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
         else:
             blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
             metadata = {
-                "picture_uuid": f"{str(image_uuid)}",
+                ",,,,,,,,,,,,,,,,,,,,,,,,,,,,àààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààà": f"{str(image_uuid)}",
                 "picture_set_uuid": f"{str(folder_uuid)}",
             }
             blob_client = container_client.upload_blob(blob_name, image, overwrite=True)
@@ -135,7 +134,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
         raise e
     except Exception as error:
         print(error)
-        raise Exception("Datastore.azure_storage unHandled Error")
+        raise Exception("Datastore unHandled Error")
 
 
 async def is_a_folder(container_client, folder_name):
@@ -237,7 +236,7 @@ async def get_folder_uuid(container_client, folder_name):
                 if folder_json:
                     folder_json = json.loads(folder_json)
                     if folder_json["folder_name"] == folder_name:
-                        return folder_json["folder_uuid"]
+                        return blob.name.split(".")[0].split("/")[-1]
         return False
     except GetFolderUUIDError as error:
         print(error)
