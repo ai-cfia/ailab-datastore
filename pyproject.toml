@@ -19,7 +19,6 @@ classifiers = [
 dynamic = ["dependencies"]
 
 license = { file = "LICENSE" }  
-Repository = "https://github.com/ai-cfia/nachet-datastore"  
 
 keywords = ["Nachet","ailab"]
 
@@ -43,3 +42,4 @@ dependencies = {file = ["requirements.txt"]}
 [project.urls]
 "Homepage" = "https://github.com/ai-cfia/nachet-datastore"
 "Bug Tracker" = "https://github.com/ai-cfia/nachet-datastore/issues"
+Repository = "https://github.com/ai-cfia/nachet-datastore"  
