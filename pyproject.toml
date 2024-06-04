@@ -18,6 +18,11 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
+license = { file = "LICENSE" }  
+repository = "https://github.com/ai-cfia/nachet-datastore"  
+
+keywords = ["Nachet","ailab"]
+
 [tool.setuptools]
 packages = ["datastore", "datastore.db", "datastore.bin",
 "datastore.db.queries", "datastore.db.queries.picture",
@@ -27,11 +32,6 @@ packages = ["datastore", "datastore.db", "datastore.bin",
 "datastore.db.metadata.validator",
 "datastore.db.metadata.machine_learning","datastore.db.metadata.inference",
 "datastore.blob","datastore.blob.azure_storage_api"]
-
-license = { file = "LICENSE" }  
-repository = "https://github.com/ai-cfia/nachet-datastore"  
-
-keywords = ["Nachet","ailab"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
