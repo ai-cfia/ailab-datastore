@@ -1,4 +1,6 @@
+import io
 import json
+import uuid
 import unittest
 import asyncio
 from unittest.mock import patch, Mock, MagicMock
@@ -24,43 +26,45 @@ from azure.core.exceptions import ResourceNotFoundError
 class TestMountContainerFunction(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.account_name = os.environ.get("NACHET_BLOB_ACCOUNT")
+        self.account_key = os.environ.get("NACHET_BLOB_KEY")
+        self.credential= blob.get_account_sas(self.account_name, self.account_key)
         self.tier="testuser"
         self.container_uuid="uuid"
-
-    def tearDown(self):
-        self.container_client.delete_container()
     
     def test_mount_existing_container(self):
 
-        result = asyncio.run(
-            mount_container(self.storage_url, self.container_uuid,False,self.tier)
+        container_client = asyncio.run(
+            mount_container(self.storage_url, self.container_uuid,True,self.tier)
         )
 
-        self.assertTrue(result.exists())
+        self.assertTrue(container_client.exists())
+        asyncio.run(container_client.delete_container())
 
     def test_mount_nonexisting_container_create(self):
         """
         tests when a container does not exists and create_container flag is set to True,
         should create a new container and return the container client
         """
-        not_uuid="not_uuid"
-        result = asyncio.run(
-            mount_container(self.storage_url, not_uuid,True,self.tier)
+        not_uuid="notuuid"
+        container_client = asyncio.run(
+            mount_container(self.storage_url, not_uuid,True,self.tier,self.credential)
         )
 
-        self.assertTrue(result.exists())
+        self.assertTrue(container_client.exists())
+        container_client.delete_container()
 
     def test_mount_nonexisting_container_no_create(self):
-        not_uuid="not_uuid"
+        not_uuid="notuuid"
         with self.assertRaises(MountContainerError):
             asyncio.run(
-                mount_container(self.storage_url, not_uuid,False,self.tier)
+                mount_container(self.storage_url, not_uuid,False,self.tier,self.credential)
             )
         
     def test_mount_container_connection_string_error(self):
         with self.assertRaises(ConnectionStringError):
             asyncio.run(
-                mount_container("invalid_url", self.container_uuid,True,self.tier)
+                mount_container("invalid-url", self.container_uuid,True,self.tier)
             )
     
 
@@ -69,10 +73,10 @@ class TestGetBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
         self.tier="testuser"
-        self.container_uuid="uuid"
+        self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
-        self.container_client = blob.create_container_client(self.blob_service_client, self.container_name)
         self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.container_client = self.blob_service_client.create_container(self.container_name)
         self.blob_name = "test_blob"
         self.blob= "test_blob_content"
         self.container_client.upload_blob(name=self.blob_name, data=self.blob)
@@ -81,17 +85,17 @@ class TestGetBlob(unittest.TestCase):
         self.container_client.delete_container()
     
     def test_get_blob(self):
-
+        self.assertTrue(self.container_client.exists())
         result = asyncio.run(
             get_blob(self.container_client, self.blob_name)
         )
 
-        self.assertEqual(result, self.blob)
+        self.assertEqual(str(result.decode()), self.blob)
 
     def test_get_blob_error(self):
         blob = "nonexisting_blob"
         mock_blob_client = Mock()
-        mock_blob_client.download_blob.side_effect = ResourceNotFoundError("Resource not found")
+        mock_blob_client.download_blob.side_effect = GetBlobError("Resource not found")
 
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
@@ -194,14 +198,16 @@ class TestCreateFolder(unittest.TestCase):
 class TestGenerateHash(unittest.TestCase):
     def setUp(self):
         self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
     
     def test_generate_hash(self):
-        result = generate_hash(self.image)
+        result = asyncio.run(generate_hash(self.image))
         self.assertEqual(len(result), 64)
 
     def test_generate_hash_error(self):
         with self.assertRaises(TypeError):
-            generate_hash("not an image")
+            asyncio.run(generate_hash("not an image"))
             
 class TestGetFolderUUID(unittest.TestCase):
     def setUp(self):
@@ -209,8 +215,8 @@ class TestGetFolderUUID(unittest.TestCase):
         self.tier="testuser"
         self.container_uuid="uuid"
         self.container_name=f"{self.tier}-{self.container_uuid}"
-        self.container_client = blob.create_container_client(self.blob_service_client, self.container_name)
         self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.container_client = blob.create_container_client(self.blob_service_client, self.container_name)
         self.folder_name="test_folder"
         create_folder(self.container_client, self.folder_name)
     
