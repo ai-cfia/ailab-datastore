@@ -223,17 +223,21 @@ async def register_inference_result(
             inference_dict["boxes"][box_index]["box_id"] = str(object_inference_id)
             # loop through the topN Prediction
             top_score = -1
-            for topN in inference_dict["boxes"][box_index]["topN"]:
+            if "topN" in inference_dict["boxes"][box_index]:
+                for topN in inference_dict["boxes"][box_index]["topN"]:
 
-                # Retrieve the right seed_id
-                seed_id = seed.get_seed_id(cursor, topN["label"])
-                id = inference.new_seed_object(
-                    cursor, seed_id, object_inference_id, topN["score"]
-                )
-                topN["object_id"] = str(id)
-                if topN["score"] > top_score:
-                    top_score = topN["score"]
-                    top_id = id
+                    # Retrieve the right seed_id
+                    seed_id = seed.get_seed_id(cursor, topN["label"])
+                    id = inference.new_seed_object(
+                        cursor, seed_id, object_inference_id, topN["score"]
+                    )
+                    topN["object_id"] = str(id)
+                    if topN["score"] > top_score:
+                        top_score = topN["score"]
+                        top_id = id
+            else:
+                seed_id = seed.get_seed_id(cursor, inference_dict["boxes"][box_index]["label"])
+                top_id = inference.new_seed_object(cursor, seed_id, object_inference_id, inference_dict["boxes"][box_index]["score"])
             inference.set_inference_object_top_id(cursor, object_inference_id, top_id)
             inference_dict["boxes"][box_index]["top_id"] = str(top_id)
 
