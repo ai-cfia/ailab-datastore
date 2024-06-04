@@ -55,7 +55,80 @@ sequenceDiagram;
       Datastore -) PostgreSQL Database: new_picture(seed_id,picture_set_id)
       Datastore -) Azure Storage: upload_image(picture_encoded)
       Datastore ->> Datastore: build_picture(picture_encoded,blob_url)
-      Datastore -) PostgreSQL: update_picture_metadata(picture_id,picture)
+      Datastore -) PostgreSQL Database: update_picture_metadata(picture_id,picture)
     end
+
+```
+
+``` mermaid
+
+---
+title: Nachet DB Structure
+---
+erDiagram
+  user{
+    uuid id PK
+    string email
+    timestamp registration_date
+    timestamp updated_at
+    integer permission_id
+  }
+  picture_set{
+    uuid id PK
+    json picture_set
+    uuid owner_id FK
+    timestamp upload_date
+  }
+  picture{
+    uuid id PK
+    json picture
+    uuid picture_set_id FK
+    uuid parent FK
+    int nb_object
+    boolean verified
+    timestamp upload_date 
+  }
+  group{
+    uuid id PK
+    text name
+    int permission_id FK
+    uuid owner_id FK
+    timestamp upload_date
+  }
+  permission{
+    int id
+    text name
+  }
+  user_group{
+    uuid id
+    uuid user_id
+    uuid group_id
+    timestamp upload_date
+
+  }
+  group_container{
+    uuid id
+    uuid group_id
+    uuid container_id
+    timestamp upload_date
+  }
+  container{
+    uuid id PK
+    uuid owner_id FK
+    boolean public
+    timestamp creation_date
+    timestamp updated_at
+  }
+
+  user ||--|{ picture_set: uploads
+  picture_set ||--o{picture: contains
+  picture ||--o{picture: cropped
+  user }o--o{ user_group: apart
+  user_group }o--o{group: represent
+  permission ||--|| user: has
+  permission ||--|| group: has
+  group }o--o{group_container: has
+  container }o--o{group_container: represent
+  container ||--o{picture_set: contains
 
 ```
