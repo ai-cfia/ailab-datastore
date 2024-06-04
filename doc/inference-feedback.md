@@ -1,4 +1,4 @@
-# Inference 
+# Inference
 
 ## Contexte
 
@@ -10,7 +10,8 @@ we would need a process to register the user's feedback of said inference
 
 - The user must be signed in
 
-- The user has picture uploaded in the blob storage and with its metadata saved within the DB.
+- The user has picture uploaded in the blob storage and with its metadata saved
+  within the DB.
 
 - The inference result has been saved into the DB.
 

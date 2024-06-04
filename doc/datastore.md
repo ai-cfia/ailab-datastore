@@ -69,23 +69,23 @@ flowchart LR;
 
 ## Database Architecture
   
-  #### Needs:
+### Needs
 
-  - A User must be able to take a picture on the app and it must be saved in the
-    blob Storage.
+- A User must be able to take a picture on the app and it must be saved in the
+  blob Storage.
 
-  - A User can upload a batch on pictures.
+- A User can upload a batch on pictures.
 
-  - A User can classify a picture with a selected pipeline which returns an
-    inference that needs to be saved.
-    
-  - A User can verify an inference by confirming the positive result, select the
-    right seed from the topN result set (technically it shouldn't be the first
-    one) or select a seed that isn't part of the topN.
+- A User can classify a picture with a selected pipeline which returns an
+  inference that needs to be saved.
+  
+- A User can verify an inference by confirming the positive result, select the
+  right seed from the topN result set (technically it shouldn't be the first
+  one) or select a seed that isn't part of the topN.
 
-  - The application needs to save a list of known seeds.
+- The application needs to save a list of known seeds.
 
-  - The application needs to save a list of all the Machine Learning versions.
+- The application needs to save a list of all the Machine Learning versions.
 
 ``` mermaid
 
