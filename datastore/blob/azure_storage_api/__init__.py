@@ -124,7 +124,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
         else:
             blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
             metadata = {
-                ",,,,,,,,,,,,,,,,,,,,,,,,,,,,àààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààààà": f"{str(image_uuid)}",
+                "picture_uuid": f"{str(image_uuid)}",
                 "picture_set_uuid": f"{str(folder_uuid)}",
             }
             blob_client = container_client.upload_blob(blob_name, image, overwrite=True)
