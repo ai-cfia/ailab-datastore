@@ -19,7 +19,7 @@ classifiers = [
 dynamic = ["dependencies"]
 
 license = { file = "LICENSE" }  
-repository = "https://github.com/ai-cfia/nachet-datastore"  
+Repository = "https://github.com/ai-cfia/nachet-datastore"  
 
 keywords = ["Nachet","ailab"]
 
