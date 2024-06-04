@@ -26,7 +26,7 @@ packages = ["datastore", "datastore.db", "datastore.bin",
 "datastore.db.metadata","datastore.db.metadata.picture", "datastore.db.metadata.picture_set",
 "datastore.db.metadata.validator",
 "datastore.db.metadata.machine_learning","datastore.db.metadata.inference",
-"datastore.blob","datastore.blob.azure_storage_api","datastore.blob.storage-download"]
+"datastore.blob","datastore.blob.azure_storage_api"]
 
 license = { file = "LICENSE" }  
 repository = "https://github.com/ai-cfia/nachet-datastore"  
