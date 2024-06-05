@@ -1,0 +1,66 @@
+{
+    "version": "0.1.0",
+    "date": "2024-02-26",
+    "pipelines":
+    [
+        {
+            "models": ["that_model_name", "other_model_name"],
+            "pipeline_name": "First Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 1,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset": "Dataset Description",
+            "Accuracy": 0.6908,
+            "default": true
+        },
+        {
+            "models": ["that_model_name"],
+            "pipeline_name": "Second Pipeline",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 2,
+            "description": "Pipeline Description",
+            "job_name": "Job Name",
+            "dataset": "Dataset Description",
+            "Accuracy": 0.7989,
+            "default": true
+        }
+    ],
+    "models":
+    [
+        {
+            "task": "classification",
+            "endpoint": "https://that-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "azure",
+            "endpoint_name": "that-model-endpoint",
+            "model_name": "that_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2024-01-01",
+            "version": 5,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset": "Dataset Description",
+            "Accuracy": 0.6908
+        },
+        {
+            "task": "object-detection",
+            "endpoint": "https://other-model.inference.ml.com/score",
+            "api_key": "SeCRetKeys",
+            "content_type": "application/json",
+            "deployment_platform": "aws",
+            "endpoint_name": "other-model-endpoint",
+            "model_name": "other_model_name",
+            "created_by": "Avery GoodDataScientist",
+            "creation_date": "2023-11-25",
+            "version": 3,
+            "description": "Model Description",
+            "job_name": "Job Name",
+            "dataset": "Dataset Description",
+            "Accuracy": 0.9205
+        }
+    ]
+}

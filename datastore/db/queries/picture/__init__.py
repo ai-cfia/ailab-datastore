@@ -58,15 +58,16 @@ def new_picture_set(cursor, picture_set, user_id: str):
         raise PictureSetCreationError("Error: picture_set not uploaded")
 
 
-def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
+def new_picture(cursor, picture, picture_set_id: str, seed_id: str, nb_objects=0 ):
     """
     This function uploads a NEW PICTURE to the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - picture (str): The Picture to upload. Must be formatted as a json
+    - picture (str): The Picture METADATA to upload. Must be formatted as a json
     - picture_set_id (str): The UUID of the Picture_set the picture is in.
     - seedID (str): The UUID of the seed the picture is linked to.
+    - nb_objects (int): The number of objects in the picture.
 
     Returns:
     - The UUID of the picture.
@@ -74,12 +75,13 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
     try:
         query = """
             INSERT INTO 
-                pictures(
+                picture(
                     picture,
-                    picture_set_id
+                    picture_set_id,
+                    nb_obj
                     )
             VALUES
-                (%s,%s)
+                (%s,%s,%s)
             RETURNING id
                 """
         cursor.execute(
@@ -87,6 +89,7 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
             (
                 picture,
                 picture_set_id,
+                nb_objects,
             ),
         )
         picture_id = cursor.fetchone()[0]
@@ -107,6 +110,43 @@ def new_picture(cursor, picture, picture_set_id: str, seed_id: str):
             ),
         )
         return picture_id
+    except Exception:
+        raise PictureUploadError("Error: Picture not uploaded")
+
+def new_picture_unknown(cursor, picture, picture_set_id:str, nb_objects=0):
+    """
+    This function uploads a NEW PICTURE to the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture (str): The Picture METADATA to upload. Must be formatted as a json
+    - picture_set_id (str): The UUID of the Picture_set the picture is in.
+    - nb_objects (int): The number of objects in the picture.
+
+    Returns:
+    - The UUID of the picture.
+    """
+    try:
+        query = """
+            INSERT INTO 
+                picture(
+                    picture,
+                    picture_set_id,
+                    nb_obj
+                    )
+            VALUES
+                (%s,%s,%s)
+            RETURNING id
+                """
+        cursor.execute(
+            query,
+            (
+                picture,
+                picture_set_id,
+                nb_objects,
+            ),
+        )
+        return cursor.fetchone()[0]
     except Exception:
         raise PictureUploadError("Error: Picture not uploaded")
 
@@ -153,7 +193,7 @@ def get_picture(cursor, picture_id: str):
             SELECT
                 picture
             FROM
-                pictures
+                picture
             WHERE
                 id = %s
                 """
@@ -195,7 +235,7 @@ def get_user_latest_picture_set(cursor, user_id: str):
         )
 
 
-def update_picture_metadata(cursor, picture_id: str, metadata: dict):
+def update_picture_metadata(cursor, picture_id: str, metadata: dict, nb_objects: int):
     """
     This function updates the metadata of a picture in the database.
 
@@ -210,13 +250,14 @@ def update_picture_metadata(cursor, picture_id: str, metadata: dict):
     try:
         query = """
             UPDATE
-                pictures
+                picture
             SET
-                picture = %s
+                picture = %s,
+                nb_obj = %s
             WHERE
                 id = %s
             """
-        cursor.execute(query, (metadata, picture_id))
+        cursor.execute(query, (metadata,nb_objects, picture_id))
     except Exception:
         raise PictureUpdateError(f"Error: Picture metadata not updated:{picture_id}")
 
