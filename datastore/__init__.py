@@ -248,6 +248,23 @@ async def register_inference_result(
         raise Exception("Unhandled Error")
 
 
+async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id) :
+    """
+    Args:
+        cursor: The cursor object to interact with the database.
+        inference_id (str): id of the inference on which feedback is given
+        user_id (str): id of the user giving a feedback
+        boxes_id (str array): array of id of the objects that are correctly identified
+    """
+    try:
+        for object_id in boxes_id:
+            top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
+            inference.set_inference_object_verified_id(cursor, object_id, top_inference_id )
+            inference.set_inference_object_valid(cursor, object_id, True)
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
+    
 async def import_ml_structure_from_json_version(cursor, ml_version: dict):
     """
     TODO: build tests

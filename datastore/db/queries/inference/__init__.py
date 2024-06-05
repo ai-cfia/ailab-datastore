@@ -112,6 +112,31 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
     except Exception:
         raise Exception(f"Error: could not set top_inference_id {top_id} for inference {inference_object_id}")
     
+def get_inference_object_top_id(cursor, inference_object_id: str):
+    """
+    This function gets the top_id of an inference.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_id (str): The UUID of the inference.
+
+    Returns:
+    - The UUID of the top.
+    """
+    try:
+        query = """
+            SELECT 
+                top_inference_id
+            FROM 
+                object
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inference_object_id,))
+        res = cursor.fetchone()[0]
+        return res
+    except Exception:
+        raise Exception(f"Error: could not get top_inference_id for inference {inference_object_id}")
 def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
     """
     This function uploads a new seed object (seed prediction) to the database.
@@ -173,3 +198,48 @@ def get_inference(cursor, inference_id: str):
         return res
     except Exception:
         raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")
+
+
+def set_inference_object_verified_id(cursor, inference_object_id: str, verified_id:str):
+    """
+    This function sets the verified_id of an object.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_object_id (str): The UUID of the object.
+    - verified_id (str): The UUID of the verified.
+    """
+    try:
+        query = """
+            UPDATE 
+                object
+            SET
+                verified_id = %s
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (verified_id,inference_object_id))
+    except Exception:
+        raise Exception(f"Error: could not update verified_id for object {inference_object_id}")
+    
+def set_inference_object_valid(cursor, inference_object_id: str, is_valid:bool):
+    """
+    This function sets the is_valid of an object.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_object_id (str): The UUID of the object.
+    - is_valid (bool): if the inference object is valid
+    """
+    try:
+        query = """
+            UPDATE 
+                object
+            SET
+                valid = %s
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (is_valid,inference_object_id))
+    except Exception:
+        raise Exception(f"Error: could not update valid for object {inference_object_id}")
