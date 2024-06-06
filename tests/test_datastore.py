@@ -165,5 +165,15 @@ class test_picture(unittest.TestCase):
         self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
         self.assertEqual(self.cur.fetchone()[0],result)
 
+    def test_new_perfect_inference_feeback(self):
+        """
+        This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given
+        """
+        #upload picture : picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.connection_str))
+        #define model_id : model_id = "test_model_id"
+        #define result : result = "test_result"
+        #register inference : inference_id = asyncio.run(datastore.register_inference_result(self.cur, picture_id, model_id, result))
+        #define boxes_id : boxes_id = ...
+        #register feedback : asyncio.run(datastore.new_perfect_inference_feeback(self.cur, inference_id, self.user_id, boxes_id))
 if __name__ == "__main__":
     unittest.main()

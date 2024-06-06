@@ -10,6 +10,7 @@ import json
 from PIL import Image
 import io
 import base64
+from time import sleep
 from datastore.db.queries import user,seed,picture,inference
 from datastore.db.metadata import picture_set as picture_set_data,picture as picture_data,validator
 import datastore.db.__init__ as db
@@ -633,7 +634,92 @@ class test_inference_functions(unittest.TestCase):
         for key in inference_trim:
             self.assertTrue(key in inference_data, f"The key: {key} is not in the inference")
             self.assertEqual(inference_trim[key],inference_data[key],f"The value ({inference_data[key]}) of the key: {key} is not the same as the expected one: {inference_trim[key]}")
+              
+    def test_get_inference_object(self):
+        """
+        This test checks if the get_inference_object function returns a correctly build object
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+            
+        inference_obj=inference.get_inference_object(self.cursor,str(inference_obj_id))
         
+        self.assertEqual(len(inference_obj),9, "The inference object hasn't the number of keys expected")
+        self.assertEqual(inference_obj[0],inference_obj_id, "The inference object id is not the same as the expected one")
+                      
+    def test_get_inference_object_error(self):
+        """
+        This test checks if the get_inference_object function raise an error if the inference oject does not exist
+        """
+        inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id="00000000-0000-0000-0000-000000000000"
+            
+        with self.assertRaises(Exception):
+            inference.get_inference_object(self.cursor,str(inference_obj_id))
+        
+    def test_get_objects_by_inference(self):
+        """
+        This test checks if the get_objects_by_inference function returns the corrects objects for an inference
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        total_boxes = len(self.inference["boxes"])
+        objects_id=[]
+        for box in self.inference["boxes"]:
+            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
+            objects_id.append(inference_obj_id)
+        
+        objects = inference.get_objects_by_inference(self.cursor, inference_id)
+        self.assertEqual(len(objects),total_boxes, "The number of objects is not the same as the expected one")
+        for object in objects :
+            self.assertEqual(object[2],inference_id, "The inference id is not the same as the expected one")
+            self.assertTrue(object[0] in objects_id, "The object id is not in the list of expected objects")
+
+    def test_get_inference_object_top_id(self):
+        """
+        This test checks if the get_inference_object_top_id function returns the correct top_id of an inference object
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        
+        inference.set_inference_object_top_id(self.cursor,inference_obj_id,seed_obj_id)
+        top_id=inference.get_inference_object_top_id(self.cursor,inference_obj_id)
+        
+        self.assertEqual(seed_obj_id,top_id,f"The verified_id is not the same as the expected one")
+        
+    def test_set_inference_object_verified_id(self):
+        """
+        This test checks if the set_inference_object_verified_id function returns a correctly update inference object
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        sleep(10)
+
+        inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
+        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        self.assertEqual(str(inference_obj[4]),str(seed_obj_id),f"The verified_id is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
+        
+    def test_set_inference_object_valid(self):
+        """
+        This test checks if the set_inference_object_verified_id function returns a correctly update inference object
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        sleep(10)
+
+        inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
+        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        self.assertTrue(str(inference_obj[5]),f"The object validity is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
+        
+        inference.set_inference_object_valid(self.cursor,inference_obj_id,False)
+        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        self.assertFalse(str(inference_obj[5]),f"The object validity is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
         
 if __name__ == "__main__":
     unittest.main()

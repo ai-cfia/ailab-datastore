@@ -261,6 +261,13 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
             top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
             inference.set_inference_object_verified_id(cursor, object_id, top_inference_id )
             inference.set_inference_object_valid(cursor, object_id, True)
+        
+        # Check if inference is fully verified
+        objects = inference.get_objects_by_inference(cursor, inference_id)
+        if all(obj[4] is not None for obj in objects) :
+            inference.set_inference_feedback_user_id(cursor, inference_id, user_id)
+            inference.set_inference_verified(cursor, inference_id, True)
+        
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
