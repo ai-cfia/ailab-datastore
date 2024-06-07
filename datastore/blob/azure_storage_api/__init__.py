@@ -159,7 +159,7 @@ async def is_a_folder(container_client, folder_name):
     except FolderListError as e:
         raise FolderListError("Error getting folder list, could not check if its a folder") 
     except Exception:
-        raise Exception("Error checking if folder exists")
+        raise Exception("Datastore.blob.azure_storage : Unhandled Error")
 
 
 async def create_folder(container_client, folder_uuid=None, folder_name=None):
