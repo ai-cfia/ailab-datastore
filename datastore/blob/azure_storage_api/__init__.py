@@ -41,9 +41,11 @@ async def generate_hash(image):
         hash = hashlib.sha256(image).hexdigest()
         return hash
 
-    except GenerateHashError as error:
-        print(error)
-
+    except TypeError as error:
+        raise GenerateHashError("The image is not in the correct format")
+    except Exception as error:
+        print(error.__str__())
+        raise Exception("Unhandeled Datastore.blob.azure_storage Error")
 
 async def mount_container(
     connection_string,
@@ -85,7 +87,8 @@ async def mount_container(
                 raise MountContainerError("Container does not exist")
         else:
             raise ConnectionStringError("Invalid connection string")
-
+    except ValueError as error:
+        raise ConnectionStringError("The given connection string is invalid: " + error.__str__())
     except MountContainerError as error:
         raise error
     except ConnectionStringError as error:
@@ -134,7 +137,7 @@ async def upload_image(container_client, folder_uuid, image:str, image_uuid):
         raise e
     except Exception as error:
         print(error)
-        raise Exception("Datastore unHandled Error")
+        raise Exception("Datastore.blob.azure_storage unHandled Error")
 
 
 async def is_a_folder(container_client, folder_name):
@@ -153,8 +156,10 @@ async def is_a_folder(container_client, folder_name):
             return True
         else:
             return False
+    except FolderListError as e:
+        raise FolderListError("Error getting folder list, could not check if its a folder") 
     except Exception:
-        raise Exception("Error checking if folder exists")
+        raise Exception("Datastore.blob.azure_storage : Unhandled Error")
 
 
 async def create_folder(container_client, folder_uuid=None, folder_name=None):
@@ -170,6 +175,8 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
         # We want to enable 2 types of folder creation
         if folder_uuid is None and folder_name is None:
             raise CreateDirectoryError("Folder name and uuid not provided")
+        elif folder_uuid is None:
+            raise CreateDirectoryError("Folder uuid not provided")
         # Until we allow user to manually create folder and name them
         if folder_name is None:
             folder_name = folder_uuid
@@ -196,6 +203,8 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
 
     except CreateDirectoryError as error:
         raise error
+    except FolderListError as error:
+        raise CreateDirectoryError("Error getting folder list, could not create folder")
     except Exception as error:
         print(error)
         raise Exception("Datastore unHandled Error")
@@ -236,11 +245,16 @@ async def get_folder_uuid(container_client, folder_name):
                 if folder_json:
                     folder_json = json.loads(folder_json)
                     if folder_json["folder_name"] == folder_name:
-                        return blob.name.split(".")[0].split("/")[-1]
-        return False
+                        if "folder_uuid" not in folder_json:
+                            raise GetFolderUUIDError("Folder UUID not found in folder metadata")
+                        return folder_json["folder_uuid"]
+        raise GetFolderUUIDError(f"Folder '{folder_name}' not found")
     except GetFolderUUIDError as error:
+        raise error
+    except Exception as error:
         print(error)
-        return False
+        raise Exception("Datastore.blob.azure_storage unHandled Error")
+    
 
 
 async def get_image_count(container_client, folder_name):
@@ -287,8 +301,10 @@ async def get_directories(container_client):
                     directories[folder_json["folder_name"]] = image_count
         return directories
     except FolderListError as error:
+        raise error
+    except Exception as error:
         print(error)
-        return []
+        raise Exception("Datastore.blob.azure_storage unHandled Error")
 
 
 async def download_container(container_client, container_name, local_dir):
@@ -325,7 +341,7 @@ async def download_container(container_client, container_name, local_dir):
         raise Exception("Error downloading container")
 
 
-async def get_blobs_from_tag(container_client, tag: str):
+async def get_blobs_from_tag(container_client, ta: str):
     """
     This function gets the list of blobs in a picture set folder
 
@@ -338,7 +354,7 @@ async def get_blobs_from_tag(container_client, tag: str):
     try:
         blob_list = container_client.find_blobs_by_tags(tag)
         if len(blob_list) > 0:
-            return blob_list
+            return blob_listg
         else:
             raise Exception("No blobs found with the given tag")
     except Exception:

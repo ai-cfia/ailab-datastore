@@ -61,16 +61,5 @@ if __name__ == "__main__":
     connection = connect_db()
     cur = cursor(connection)
     create_search_path(connection, cur)
-    query = """
-        select * from information_schema.columns where table_name = 'pipeline_default' ;
-    """
-    cur.execute(query)
-    for row in cur.fetchall():
-        print(row)
-    query = """
-        ALTER TABLE seed_obj add column score float;
-    """
-
-    cur.execute(query)
     end_query(connection, cur)
     print("Connection to the database successful")

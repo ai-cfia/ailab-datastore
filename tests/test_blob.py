@@ -1,32 +1,36 @@
 import os
 import unittest
 import asyncio
-from unittest.mock import patch, Mock, MagicMock
+import uuid
 from azure.storage.blob import BlobServiceClient
 import datastore.blob.__init__ as blob
-from datastore.blob.azure_storage_api import (
-    ConnectionStringError,
-    get_blob_client
-)
 from azure.core.exceptions import ResourceNotFoundError
+from datastore.blob.__init__ import ConnectionStringError
 
 class TestGetBlobServiceClient(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
         
-    def test_create_BlobServiceClient(self, MockFromConnectionString):
+    def test_create_BlobServiceClient(self):
 
-        result = asyncio.run(
-            blob.create_BlobServiceClient(self.storage_url)
-        )
+        result = blob.create_BlobServiceClient(self.storage_url)
   
         self.assertGreater(len(result.api_version), 0)
 
-    @patch("azure.storage.blob.BlobServiceClient.from_connection_string")
-    def test_get_blob_service_unsuccessful(self, MockFromConnectionString):
-        MockFromConnectionString.return_value = None
+    def test_get_blob_service_unsuccessful(self):
 
-        with self.assertRaises(ConnectionStringError) as context:
-            asyncio.run(get_blob_client("invalid_connection_string"))
+        with self.assertRaises(ConnectionStringError):
+            asyncio.run(blob.create_BlobServiceClient("invalid_connection_string"))
 
-        print(context.exception == "the given connection string is invalid: invalid_connection_string")
+
+class TestCreateContainerClient(unittest.TestCase):
+    def setUp(self):
+        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.container_name = str(uuid.uuid4())
+        self.blob_service_client = BlobServiceClient.from_connection_string(self.storage_url)
+        
+    def test_create_container_client(self):
+
+        result = blob.create_container_client(self.blob_service_client, self.container_name)
+        self.assertTrue(result.exists())
+        self.assertGreater(len(result.container_name), 0)

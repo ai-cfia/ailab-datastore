@@ -6,6 +6,9 @@ from azure.storage.blob import (
 )
 from datetime import timedelta, datetime
 
+class ConnectionStringError(Exception):
+    pass
+
 
 def create_BlobServiceClient(storage_url):
     """
@@ -16,10 +19,15 @@ def create_BlobServiceClient(storage_url):
 
     Returns: BlobServiceClient object
     """
-    # Create a blob service client
-    blob_service_client = BlobServiceClient.from_connection_string(conn_str=storage_url)
-    return blob_service_client
-
+    try:
+        # Create a blob service client
+        blob_service_client = BlobServiceClient.from_connection_string(conn_str=storage_url)
+        return blob_service_client
+    except ValueError as e:
+        raise ConnectionStringError("The connection string is invalid. Please check the connection string.")
+    except Exception as e:
+        print(e.__str__)
+        raise Exception("Datastore.blob Unhandled Exception")
 
 def create_container_client(blob_service_client, container_name):
     """
@@ -31,9 +39,15 @@ def create_container_client(blob_service_client, container_name):
 
     Returns: ContainerClient object
     """
-    # Get the container client
-    container_client = blob_service_client.get_container_client(container_name)
-    return container_client
+    try:
+        # Get the container client
+        container_client = blob_service_client.get_container_client(container_name)
+        if not container_client.exists():
+            container_client.create_container()
+        return container_client
+    except Exception as e:
+        print(e.__str__)
+        raise Exception("Datastore.blob Unhandled Exception")
 
 
 def get_account_sas(account_name: str, key: str):
