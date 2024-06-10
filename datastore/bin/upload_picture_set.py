@@ -4,6 +4,7 @@ import datastore.db.metadata.picture_set as picture_set_metadata
 import datastore.db.metadata.picture as picture_metadata
 import datastore.db.queries.picture as picture_query
 from datastore.blob import azure_storage_api as blob
+import datastore
 import asyncio
 import json
 
@@ -109,5 +110,55 @@ def upload_picture_set(
             container_client.delete_blobs(blobs)
         raise UploadError("An error occured during the upload of the picture set")
 
+async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str):
+    try:
+
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+
+        picture_set = picture_set_metadata.build_picture_set(user_id, nb_pictures)
+        picture_set_id = picture_query.new_picture_set(
+            cursor=cursor, picture_set=picture_set, user_id=user_id
+        )
+
+        folder_created = asyncio.run(
+            blob.create_folder(container_client, str(picture_set_id))
+        )
+        if not folder_created:
+            raise AlreadyExistingFolderError(f"Folder already exists: {picture_set_id}")
+        
+        return picture_set_id
+    except (seed.SeedNotFoundError) as e:
+        raise e
+    except user.UserNotFoundError as e:
+        raise e
+    except AlreadyExistingFolderError as e:
+        raise e
+    except Exception:
+        raise UploadError("An error occured during the upload of the picture set")
+
+async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float, nb_seeds: int) :
+    try:
+        
+        if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
+            raise seed.SeedNotFoundError(
+                f"Seed not found based on the given name: {seed_name}"
+            )
+        seed_id = seed.get_seed_id(cursor=cursor, seed_name=seed_name)
+            
+        for picture_encoded in pictures:
+            datastore.upload_picture(cursor, user_id, picture_encoded, container_client, picture_set_id, seed_id, nb_seeds, zoom_level)
+        
+        return picture_set_id
+    except (seed.SeedNotFoundError) as e:
+        raise e
+    except user.UserNotFoundError as e:
+        raise e
+    except AlreadyExistingFolderError as e:
+        raise e
+    except Exception:
+        raise UploadError("An error occured during the upload of the picture set")
 if __name__ == "__main__":
     upload_picture_set()
