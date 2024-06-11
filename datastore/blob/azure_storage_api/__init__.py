@@ -341,7 +341,7 @@ async def download_container(container_client, container_name, local_dir):
         raise Exception("Error downloading container")
 
 
-async def get_blobs_from_tag(container_client, ta: str):
+async def get_blobs_from_tag(container_client, tag: str):
     """
     This function gets the list of blobs in a picture set folder
 
@@ -354,7 +354,7 @@ async def get_blobs_from_tag(container_client, ta: str):
     try:
         blob_list = container_client.find_blobs_by_tags(tag)
         if len(blob_list) > 0:
-            return blob_listg
+            return blob_list
         else:
             raise Exception("No blobs found with the given tag")
     except Exception:
