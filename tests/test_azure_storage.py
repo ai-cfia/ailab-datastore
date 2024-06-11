@@ -1,10 +1,8 @@
 import io
-import json
 import uuid
 import unittest
 import asyncio
-from unittest.mock import patch, Mock, MagicMock
-from azure.storage.blob import BlobServiceClient
+from unittest.mock import Mock
 from PIL import Image
 import datastore.blob.__init__ as blob
 import os
@@ -24,7 +22,6 @@ from datastore.blob.azure_storage_api import (
     create_folder,
     get_folder_uuid
 )
-from azure.core.exceptions import ResourceNotFoundError
 
 class TestMountContainerFunction(unittest.TestCase):
     def setUp(self):
@@ -103,7 +100,7 @@ class TestGetBlob(unittest.TestCase):
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client
 
-        with self.assertRaises(GetBlobError) as context:
+        with self.assertRaises(GetBlobError):
             asyncio.run(get_blob(mock_container_client, blob))
 
 
@@ -192,7 +189,7 @@ class TestCreateFolder(unittest.TestCase):
         folder_name="test_folder"
         asyncio.run(create_folder(self.container_client, folder_name))
         with self.assertRaises(CreateDirectoryError):
-            result = asyncio.run(create_folder(self.container_client, folder_name))
+            asyncio.run(create_folder(self.container_client, folder_name))
         
 
     def test_create_folder_error(self):
@@ -200,7 +197,7 @@ class TestCreateFolder(unittest.TestCase):
         mock_container_client = Mock()
         mock_container_client.list_blobs.side_effect = FolderListError("Resource not found")
         with self.assertRaises(CreateDirectoryError):
-             asyncio.run(create_folder(mock_container_client, folder_name))
+            asyncio.run(create_folder(mock_container_client, folder_name))
             
 class TestGenerateHash(unittest.TestCase):
     def setUp(self):

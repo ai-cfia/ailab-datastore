@@ -42,6 +42,7 @@ async def generate_hash(image):
         return hash
 
     except TypeError as error:
+        print(error.__str__())
         raise GenerateHashError("The image is not in the correct format")
     except Exception as error:
         print(error.__str__())
@@ -157,6 +158,7 @@ async def is_a_folder(container_client, folder_name):
         else:
             return False
     except FolderListError as e:
+        print(e)
         raise FolderListError("Error getting folder list, could not check if its a folder") 
     except Exception:
         raise Exception("Datastore.blob.azure_storage : Unhandled Error")
@@ -204,6 +206,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
     except CreateDirectoryError as error:
         raise error
     except FolderListError as error:
+        print(error)
         raise CreateDirectoryError("Error getting folder list, could not create folder")
     except Exception as error:
         print(error)

@@ -4,7 +4,6 @@ import asyncio
 import uuid
 from azure.storage.blob import BlobServiceClient
 import datastore.blob.__init__ as blob
-from azure.core.exceptions import ResourceNotFoundError
 from datastore.blob.__init__ import ConnectionStringError
 
 class TestGetBlobServiceClient(unittest.TestCase):
