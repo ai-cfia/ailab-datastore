@@ -176,14 +176,14 @@ class test_picture(unittest.TestCase):
         """
         Test the upload picture function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         self.assertTrue(validator.is_valid_uuid(picture_id))
 
     def test_register_inference_result(self):
         """
         Test the register inference result function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
         
         result = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
@@ -194,7 +194,7 @@ class test_picture(unittest.TestCase):
         """
         This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given
         """
-        #upload picture : picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.connection_str))
+        #upload picture : picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.connection_str))
         #define model_id : model_id = "test_model_id"
         #define result : result = "test_result"
         #register inference : inference_id = asyncio.run(datastore.register_inference_result(self.cur, picture_id, model_id, result))
