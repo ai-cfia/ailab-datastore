@@ -167,9 +167,7 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
             cursor=cursor, picture_set=picture_set, user_id=user_id
         )
 
-        folder_created = asyncio.run(
-            blob.create_folder(container_client, str(picture_set_id))
-        )
+        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id))
         if not folder_created:
             raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         
@@ -203,6 +201,7 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         # Create picture instance in DB
         if picture_set_id is None :
             picture_set_id = user.get_default_picture_set(cursor, user_id)
+        
         picture_id = picture.new_picture_unknown(
             cursor=cursor,
             picture=empty_picture,
@@ -267,6 +266,7 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
         )
         picture_link = container_client.url + "/" + str(picture_set_id) + "/" + str(picture_id)
         # Create picture metadata and update DB instance (with link to Azure blob)
+        """
         data = picture_metadata.build_picture(
             pic_encoded=picture_hash,
             link=picture_link,
@@ -274,6 +274,13 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
             zoom=zoom_level,
             description="upload_picture_set script",
         )
+        """
+        data = {
+            "link": picture_link,
+            "nb_seeds":nb_seeds,
+            "zoom":zoom_level,
+            "description": "Uploaded through the API",
+        }
         if not response:
             raise BlobUploadError("Error uploading the picture")
         
@@ -286,7 +293,7 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float, nb_seeds: int) :
+async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
     """
     Upload an array of pictures that the seed is known to the user container
 
@@ -314,7 +321,7 @@ async def upload_pictures(cursor, user_id, picture_set_id, container_client, pic
         
         pictures_id = []
         for picture_encoded in pictures:
-            id = upload_picture_known(cursor, user_id, picture_encoded, container_client, picture_set_id, seed_id, nb_seeds, zoom_level)
+            id = await upload_picture_known(cursor, user_id, picture_encoded, container_client, seed_id, picture_set_id, nb_seeds, zoom_level)
             pictures_id.append(id)
 
         return pictures_id

@@ -12,6 +12,7 @@ import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
+import datastore.db.queries.seed as seed_query
 
 
 class test_ml_structure(unittest.TestCase):
@@ -161,6 +162,8 @@ class test_picture(unittest.TestCase):
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
+        self.seed_name = "test-name"
+        self.seed_id = seed_query.new_seed(self.cur, self.seed_name)
         with open("tests/inference_result.json") as file:
             self.inference= json.load(file)
     
@@ -169,7 +172,7 @@ class test_picture(unittest.TestCase):
         self.container_client.delete_container()
         db.end_query(self.con, self.cur)
 
-    def test_upload_picture(self):
+    def test_upload_picture_unknown(self):
         """
         Test the upload picture function.
         """
@@ -187,6 +190,29 @@ class test_picture(unittest.TestCase):
         #self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
         self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
 
+    def test_create_picture_set(self):
+        """
+        Test the creation of a picture set
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        self.assertTrue(validator.is_valid_uuid(picture_set_id))
+        
+    def test_upload_picture_known(self):
+        """
+        Test the upload picture function with a known seed
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        picture_id = asyncio.run(datastore.upload_picture_known(self.cur, self.user_id, self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
+        self.assertTrue(validator.is_valid_uuid(picture_id))
+
+    def test_upload_pictures(self):
+        """
+        Test the upload pictures function
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        picture_ids = asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
+        self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
+        
     def test_new_perfect_inference_feeback(self):
         """
         This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given

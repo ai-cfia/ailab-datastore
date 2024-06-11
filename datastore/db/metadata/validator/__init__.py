@@ -1,5 +1,6 @@
 from datetime import date
 from pydantic import BaseModel, ValidationError
+from typing import Optional
 import uuid
 
 
@@ -53,8 +54,8 @@ class QualityCheck(BaseModel):
 
 class UserData(BaseModel):
     description: str
-    number_of_seeds: int
-    zoom: float
+    number_of_seeds: Optional[int] = None
+    zoom: Optional[float] = None
 
 
 class PictureSet(BaseModel):
