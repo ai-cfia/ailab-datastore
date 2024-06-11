@@ -1,4 +1,4 @@
-# Inference 
+# Inference
 
 ## Contexte
 
@@ -10,7 +10,8 @@ inference result and also incorporate a a user validation
 
 - The user must be signed in
 
-- The user has picture uploaded in the blob storage and with its metadata saved within the DB.
+- The user has picture uploaded in the blob storage and with its metadata saved
+  within the DB.
 
 ``` mermaid
 

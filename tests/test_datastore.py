@@ -2,8 +2,6 @@
 This is a test script for the highest level of the datastore packages. 
 It tests the functions in the __init__.py files of the datastore packages.
 """
-
-import base64
 import io
 import os
 import unittest
@@ -11,7 +9,6 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 import json
 import asyncio
-import datastore.blob.azure_storage_api as azure_storage
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator

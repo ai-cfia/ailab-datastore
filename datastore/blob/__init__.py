@@ -24,6 +24,7 @@ def create_BlobServiceClient(storage_url):
         blob_service_client = BlobServiceClient.from_connection_string(conn_str=storage_url)
         return blob_service_client
     except ValueError as e:
+        print(e.__str__)
         raise ConnectionStringError("The connection string is invalid. Please check the connection string.")
     except Exception as e:
         print(e.__str__)

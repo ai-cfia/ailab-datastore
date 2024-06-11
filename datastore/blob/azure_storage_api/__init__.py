@@ -42,6 +42,7 @@ async def generate_hash(image):
         return hash
 
     except TypeError as error:
+        print(error.__str__())
         raise GenerateHashError("The image is not in the correct format")
     except Exception as error:
         print(error.__str__())
@@ -157,6 +158,7 @@ async def is_a_folder(container_client, folder_name):
         else:
             return False
     except FolderListError as e:
+        print(e)
         raise FolderListError("Error getting folder list, could not check if its a folder") 
     except Exception:
         raise Exception("Datastore.blob.azure_storage : Unhandled Error")
@@ -204,6 +206,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
     except CreateDirectoryError as error:
         raise error
     except FolderListError as error:
+        print(error)
         raise CreateDirectoryError("Error getting folder list, could not create folder")
     except Exception as error:
         print(error)
@@ -341,7 +344,7 @@ async def download_container(container_client, container_name, local_dir):
         raise Exception("Error downloading container")
 
 
-async def get_blobs_from_tag(container_client, ta: str):
+async def get_blobs_from_tag(container_client, tag: str):
     """
     This function gets the list of blobs in a picture set folder
 
@@ -354,7 +357,7 @@ async def get_blobs_from_tag(container_client, ta: str):
     try:
         blob_list = container_client.find_blobs_by_tags(tag)
         if len(blob_list) > 0:
-            return blob_listg
+            return blob_list
         else:
             raise Exception("No blobs found with the given tag")
     except Exception:
