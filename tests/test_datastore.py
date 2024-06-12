@@ -2,16 +2,13 @@
 This is a test script for the highest level of the datastore packages. 
 It tests the functions in the __init__.py files of the datastore packages.
 """
-
-import base64
 import io
 import os
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from PIL import Image
 import json
 import asyncio
-import datastore.blob.azure_storage_api as azure_storage
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
@@ -51,10 +48,25 @@ class test_ml_structure(unittest.TestCase):
         
         #asyncio.run(datastore.import_ml_structure_from_json_version(self.cursor,self.ml_dict))
         ml_structure= asyncio.run(datastore.get_ml_structure(self.cursor))
-        for key in ml_structure.keys():
-            print("key: "+key+" value: "+str(ml_structure[key])) 
-            #self.assertEqual(ml_structure[key],self.ml_dict[key])
- 
+        #self.assertDictEqual(ml_structure,self.ml_dict)
+        for pipeline in self.ml_dict["pipelines"]:
+            for key in pipeline:
+                if key!='Accuracy':
+                    self.assertTrue((key in ml_structure["pipelines"][0].keys()),f"Key {key} was not found and expected in the returned dictionary")
+        for model in self.ml_dict["models"]:
+            for key in model:
+                if key!='Accuracy' and key !='endpoint_name':
+                    #print(key)
+                    self.assertTrue((key in ml_structure["models"][0].keys()),f"Key {key} was not found and expected in the returned dictionary")
+        
+    def test_get_ml_structure_eeror(self):
+        """
+        Test the get version function.
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = []
+        with self.assertRaises(datastore.MLRetrievalError):
+            asyncio.run(datastore.get_ml_structure(mock_cursor))
         
 class test_user(unittest.TestCase):
     def setUp(self):
@@ -83,7 +95,8 @@ class test_user(unittest.TestCase):
         #self.user_id=user_obj.id
         self.user_id=datastore.User.get_id(user_obj)
         self.assertTrue(validator.is_valid_uuid(self.user_id))
-    
+        self.assertEqual(datastore.User.get_email(user_obj),self.user_email)
+        
     def test_already_existing_user(self):
         """
         Test the already existing user function.
@@ -123,6 +136,15 @@ class test_user(unittest.TestCase):
         self.assertEqual(user_id,user_get_id)
         self.assertEqual(datastore.User.get_email(user_obj),datastore.User.get_email(user_get))
 
+    def test_get_user_container_client(self):
+        """
+        Test the get user container client function.
+        """
+        user_obj=asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
+        user_id= datastore.User.get_id(user_obj)
+        container_client=asyncio.run(datastore.get_user_container_client(user_id,'test-user'))
+        self.assertTrue(container_client.exists())
+
 class test_picture(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db()
@@ -134,14 +156,14 @@ class test_picture(unittest.TestCase):
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
         self.image.save(self.image_byte_array, format="TIFF")
-        self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode(
-            "utf8"
-        )
+        self.pic_encoded = self.image.tobytes()
         #self.picture_hash= asyncio.run(azure_storage.generate_hash(self.pic_encoded))
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
-
+        with open("tests/inference_result.json") as file:
+            self.inference= json.load(file)
+    
     def tearDown(self):
         self.con.rollback()
         self.container_client.delete_container()
@@ -151,19 +173,19 @@ class test_picture(unittest.TestCase):
         """
         Test the upload picture function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.connection_str))
+        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
         self.assertTrue(validator.is_valid_uuid(picture_id))
 
     def test_register_inference_result(self):
         """
         Test the register inference result function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.connection_str))
+        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
-        result = "test_result"
-        asyncio.run(datastore.register_inference_result(self.cur, picture_id, model_id, result))
-        self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
-        self.assertEqual(self.cur.fetchone()[0],result)
+        
+        result = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
+        #self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
+        self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
 
     def test_new_perfect_inference_feeback(self):
         """

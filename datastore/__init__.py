@@ -34,6 +34,8 @@ if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
 class UserAlreadyExistsError(Exception):
     pass
 
+class MLRetrievalError(Exception):
+    pass
 
 class BlobUploadError(Exception):
     pass
@@ -134,7 +136,7 @@ async def get_user_container_client(user_id, tier="user"):
     sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        NACHET_STORAGE_URL, user_id, True, tier, sas
+        NACHET_STORAGE_URL, user_id, True, tier,sas
     )
     if isinstance(container_client,ContainerClient):
         return container_client
@@ -244,7 +246,8 @@ async def register_inference_result(
         return inference_dict
     except ValueError:
         raise ValueError("The value of 'totalBoxes' is not an integer.")
-    except Exception:
+    except Exception as e:
+        print(e.__str__())
         raise Exception("Unhandled Error")
 
 
@@ -307,38 +310,46 @@ async def get_ml_structure(cursor):
 
     Returns a usable json object with the machine learning structure for the FE and BE
     """
-    ml_structure = {"pipelines": [], "models": []}
-    pipelines = machine_learning.get_active_pipeline(cursor)
-    model_list = []
-    for pipeline in pipelines:
-        # (id, name, active:bool, is_default: bool, data, model_ids: array)
-        pipeline_name = pipeline[1]
-        pipeline_id = pipeline[0]
-        default = pipeline[3]
-        model_ids = pipeline[5]
-        pipeline_dict = ml_metadata.build_pipeline_export(
-            pipeline[4], pipeline_name, pipeline_id, default, model_ids
-        )
-        ml_structure["pipelines"].append(pipeline_dict)
-        for model_id in model_ids:
-            if model_id not in model_list:
-                model_list.append(model_id)
-            model_db = machine_learning.get_model(cursor, model_id)
-            # (id, name, endpoint_name, task_name, data,version: str)
-            model_name = model_db[1]
-            model_endpoint = model_db[2]
-            model_task = model_db[3]
-            model_version = model_db[5]
-            model_dict = ml_metadata.build_model_export(
-                model_db[4],
-                model_id,
-                model_name,
-                model_endpoint,
-                model_task,
-                model_version,
+    try:
+        ml_structure = {"pipelines": [], "models": []}
+        pipelines = machine_learning.get_active_pipeline(cursor)
+        if len(pipelines)==0:
+            raise MLRetrievalError("No Active pipelines found in the database.")
+        model_list = []
+        for pipeline in pipelines:
+            # (id, name, active:bool, is_default: bool, data, model_ids: array)
+            pipeline_name = pipeline[1]
+            pipeline_id = pipeline[0]
+            default = pipeline[3]
+            model_ids = pipeline[5]
+            pipeline_dict = ml_metadata.build_pipeline_export(
+                pipeline[4], pipeline_name, pipeline_id, default, model_ids
             )
-            ml_structure["models"].append(model_dict)
-    return ml_structure
+            ml_structure["pipelines"].append(pipeline_dict)
+            for model_id in model_ids:
+                if model_id not in model_list:
+                    model_list.append(model_id)
+                model_db = machine_learning.get_model(cursor, model_id)
+                # (id, name, endpoint_name, task_name, data,version: str)
+                model_name = model_db[1]
+                model_endpoint = model_db[2]
+                model_task = model_db[3]
+                model_version = model_db[5]
+                model_dict = ml_metadata.build_model_export(
+                    model_db[4],
+                    model_id,
+                    model_name,
+                    model_endpoint,
+                    model_task,
+                    model_version,
+                )
+                ml_structure["models"].append(model_dict)
+        return ml_structure
+    except MLRetrievalError:
+        raise
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
 
 
 async def get_seed_info(cursor):
