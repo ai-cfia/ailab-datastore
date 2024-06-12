@@ -685,7 +685,7 @@ class test_inference_functions(unittest.TestCase):
         inference.set_inference_object_top_id(self.cursor,inference_obj_id,seed_obj_id)
         top_id=inference.get_inference_object_top_id(self.cursor,inference_obj_id)
         
-        self.assertEqual(seed_obj_id,top_id,f"The verified_id is not the same as the expected one")
+        self.assertEqual(seed_obj_id,top_id,"The verified_id is not the same as the expected one")
         
     def test_set_inference_object_verified_id(self):
         """
@@ -699,8 +699,8 @@ class test_inference_functions(unittest.TestCase):
 
         inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertEqual(str(inference_obj[4]),str(seed_obj_id),f"The verified_id is not the same as the expected one")
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
+        self.assertEqual(str(inference_obj[4]),str(seed_obj_id),"The verified_id is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
         
     def test_set_inference_object_valid(self):
         """
@@ -713,13 +713,13 @@ class test_inference_functions(unittest.TestCase):
 
         inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertTrue(str(inference_obj[5]),f"The object validity is not the same as the expected one")
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
+        self.assertTrue(str(inference_obj[5]),"The object validity is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
         
         inference.set_inference_object_valid(self.cursor,inference_obj_id,False)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertFalse(str(inference_obj[5]),f"The object validity is not the same as the expected one")
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],f"The update_at field is not updated")
+        self.assertFalse(str(inference_obj[5]),"The object validity is not the same as the expected one")
+        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
         
 if __name__ == "__main__":
     unittest.main()
