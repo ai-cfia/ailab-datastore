@@ -545,6 +545,7 @@ def get_task_id(cursor,task_name):
     except(ValueError):
         raise NonExistingTaskEWarning(f"Warning: the given task '{task_name}' was not found")
     except(Exception) as e:
+        print(e)
         raise PipelineCreationError("Error: task not found")
     
 def new_task(cursor,task_name):

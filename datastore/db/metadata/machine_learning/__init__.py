@@ -31,7 +31,7 @@ def build_pipeline_import(pipeline: dict) -> str:
         ]
 
         for key in keys:
-            if not key in pipeline:
+            if key not in pipeline:
                 raise MissingKeyError(key)
 
         pipeline_db = {
@@ -98,7 +98,7 @@ def build_model_import(model: dict) -> str:
         ]
 
         for key in keys:
-            if not key in model:
+            if key not in model:
                 raise MissingKeyError(key)
 
         model_db = {

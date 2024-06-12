@@ -2,9 +2,6 @@
 This module contains the queries related to the inference related tables.
 
 """
-import json
-import datastore.db.queries.seed as seed
-import datastore.db.metadata.inference as metadata
 
 class InferenceCreationError(Exception):
     pass

@@ -1,0 +1,55 @@
+
+{
+    "boxes": [
+        {
+            "box": {
+                "topX": 597,
+                "topY": 184,
+                "bottomX": 1246,
+                "bottomY": 913
+            },
+            "label": "14 Ambrosia psilostachya",
+            "score": 0.5466732978820801,
+            "topN": [
+                {
+                    "score": 0.5466732978820801,
+                    "label": "14 Ambrosia psilostachya"
+                },
+                {
+                    "score": 0.2441663295030594,
+                    "label": "12 Ambrosia artemisiifolia"
+                },
+                {
+                    "score": 0.20877225697040558,
+                    "label": "13 Ambrosia trifida"
+                },
+                {
+                    "score": 8.68770875968039e-05,
+                    "label": "8 Lolium temulentum"
+                },
+                {
+                    "score": 8.592155063524842e-05,
+                    "label": "6 Bromus hordeaceus"
+                }
+            ],
+            "overlapping": false,
+            "overlappingIndices": [],
+            "color": "#ED1C24"
+        }
+    ],
+    "filename": "",
+    "labelOccurrence": {
+        "14 Ambrosia psilostachya": 1
+    },
+    "totalBoxes": 1,
+    "models": [
+        {
+            "name": "seed-detector-1",
+            "version": "1"
+        },
+        {
+            "name": "swinv1-base-dataaugv2-1",
+            "version": "1"
+        }
+    ]
+}
