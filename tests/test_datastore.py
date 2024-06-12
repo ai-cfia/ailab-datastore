@@ -10,6 +10,7 @@ from PIL import Image
 import json
 import asyncio
 import datastore.db.__init__ as db
+import datastore.db.queries.inference as inference_queries
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed_query
@@ -213,15 +214,46 @@ class test_picture(unittest.TestCase):
         picture_ids = asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
         self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
         
+class test_feedback(unittest.TestCase):
+    def setUp(self):
+        self.con = db.connect_db()
+        self.cur = db.cursor(self.con)
+        db.create_search_path(self.con, self.cur)
+        self.connection_str=os.environ["NACHET_STORAGE_URL"]
+        self.user_email="test@email"
+        self.user_obj= asyncio.run(datastore.new_user(self.cur,self.user_email,self.connection_str,'test-user'))
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.pic_encoded = self.image.tobytes()
+        self.container_name='test-container'
+        self.user_id=datastore.User.get_id(self.user_obj)
+        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))  
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'inference_result.json')
+        with open(file_path) as file:
+            self.inference= json.load(file)
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        model_id = "test_model_id"
+        self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
+        self.inference_id = self.registered_inference.get("inference_id")
+        self.boxes_id = []
+        self.top_id = []
+        for box in self.inference["boxes"]:
+            self.boxes_id.append(box["box_id"])
+            self.top_id.append(box["top_id"])
+            
     def test_new_perfect_inference_feeback(self):
         """
         This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given
         """
-        #upload picture : picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.connection_str))
-        #define model_id : model_id = "test_model_id"
-        #define result : result = "test_result"
-        #register inference : inference_id = asyncio.run(datastore.register_inference_result(self.cur, picture_id, model_id, result))
-        #define boxes_id : boxes_id = ...
-        #register feedback : asyncio.run(datastore.new_perfect_inference_feeback(self.cur, inference_id, self.user_id, boxes_id))
+        asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, self.user_id, self.boxes_id))
+        for i in range(len(self.boxes_id)) :
+            object = inference_queries.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must be equal to top_id
+            self.assertEqual(str(object[4]), self.top_id[i])
+            # valid column must be true
+            self.assertTrue(object[5])
+
 if __name__ == "__main__":
     unittest.main()
