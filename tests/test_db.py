@@ -695,11 +695,13 @@ class test_inference_functions(unittest.TestCase):
         inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
         previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
         seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
-        sleep(10)
+        # Sleep to see a difference in the updated_at date of the object
+        sleep(3)
 
         inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
         self.assertEqual(str(inference_obj[4]),str(seed_obj_id),"The verified_id is not the same as the expected one")
+        # this test is not working because the trigger to update the update_at field is missing
         self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
         
     def test_set_inference_object_valid(self):
@@ -709,7 +711,8 @@ class test_inference_functions(unittest.TestCase):
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
         inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
         previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        sleep(10)
+        # Sleep to see a difference in the updated_at date of the object
+        sleep(3)
 
         inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
@@ -719,7 +722,42 @@ class test_inference_functions(unittest.TestCase):
         inference.set_inference_object_valid(self.cursor,inference_obj_id,False)
         inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
         self.assertFalse(str(inference_obj[5]),"The object validity is not the same as the expected one")
+        # this test is not working because the trigger to update the update_at field is missing
         self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
+        
+    def test_is_inference_verified(self):
+        """
+        Test if is_inference_verified function correctly returns the inference status
+        """        
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        
+        verified = inference.is_inference_verified(self.cursor, inference_id)
+        self.assertFalse(verified, "The inference verified field should be False")
+        
+        inference.set_inference_verified(self.cursor, inference_id, True)
+        
+        verified = inference.is_inference_verified(self.cursor, inference_id)
+        self.assertTrue(verified, "The inference should be fully verified")
+        
+    def test_verify_inference_status(self):
+        """
+        Test if verify_inference_status function correctly updates the inference status
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+
+        inference.verify_inference_status(self.cursor, inference_id, self.user_id)
+        
+        verified = inference.is_inference_verified(self.cursor, inference_id)
+        self.assertFalse(verified, "The inference verified field should be False")
+        
+        inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
+        inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
+
+        inference.verify_inference_status(self.cursor, inference_id, self.user_id)
+        verified = inference.is_inference_verified(self.cursor, inference_id)
+        self.assertTrue(verified, "The inference should be fully verified")
         
 if __name__ == "__main__":
     unittest.main()

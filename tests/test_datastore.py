@@ -8,9 +8,9 @@ import unittest
 from unittest.mock import MagicMock, patch
 from PIL import Image
 import json
+import uuid
 import asyncio
 import datastore.db.__init__ as db
-import datastore.db.queries.inference as inference_queries
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
 
@@ -217,17 +217,46 @@ class test_feedback(unittest.TestCase):
             self.boxes_id.append(box["box_id"])
             self.top_id.append(box["top_id"])
             
-    def test_new_perfect_inference_feeback(self):
+    def test_new_perfect_inference_feedback(self):
         """
         This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given
         """
         asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, self.user_id, self.boxes_id))
         for i in range(len(self.boxes_id)) :
-            object = inference_queries.get_inference_object(self.cur, self.boxes_id[i])
+            object = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
             # verified_id must be equal to top_id
             self.assertEqual(str(object[4]), self.top_id[i])
             # valid column must be true
             self.assertTrue(object[5])
-
+            
+    def test_new_perfect_inference_feedback_error_inference_not_found(self):
+        """
+        This test checks if the new_perfect_inference_feeback function correctly raise an exception if the inference given doesn't exist in db
+        """
+        with self.assertRaises(datastore.inference.InferenceNotFoundError):
+            asyncio.run(datastore.new_perfect_inference_feeback(self.cur, str(uuid.uuid4()), self.user_id, self.boxes_id))
+            
+    def test_new_perfect_inference_feedback_error_inference_object_not_found(self):
+        """
+        This test checks if the new_perfect_inference_feeback function correctly raise an exception if one of the inference object given doesn't exist in db
+        """
+        with self.assertRaises(datastore.inference.InferenceObjectNotFoundError):
+            asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, self.user_id, [self.boxes_id[0], str(uuid.uuid4())]))
+            
+    def test_new_perfect_inference_feedback_error_user_not_found(self):
+        """
+        This test checks if the new_perfect_inference_feeback function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, str(uuid.uuid4()), self.boxes_id))
+    
+    def test_new_perfect_inference_feedback_connection_error(self):
+        """
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.new_perfect_inference_feeback(mock_cursor, self.inference_id, self.user_id, self.boxes_id))
+            
 if __name__ == "__main__":
     unittest.main()
