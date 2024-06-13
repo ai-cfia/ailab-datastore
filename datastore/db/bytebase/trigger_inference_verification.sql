@@ -19,4 +19,3 @@ AFTER UPDATE ON inference
 FOR EACH ROW 
 WHEN (NEW.verified = true)
 EXECUTE FUNCTION verified_inference();
-
