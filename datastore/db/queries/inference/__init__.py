@@ -439,3 +439,50 @@ def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
         return cursor.fetchone()[0]
     except Exception:
         raise SeedObjectCreationError("Error: seed object not uploaded")
+
+
+def set_object_box_metadata(cursor,object_id:str, metadata:str):
+    """
+    This function sets the metadata of an object.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - object_id (str): The UUID of the object.
+    - metadata (str): The metadata to set.
+    """
+    try:
+        query = """
+            UPDATE 
+                object
+            SET
+                box_metadata = %s
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (metadata,object_id))
+    except Exception:
+        raise Exception(f"Error: could not set metadata {metadata} for object {object_id}")
+
+def get_seed_object_from_feedback(cursor, seed_name: str, object_id:str):
+    """
+    """
+    try:
+        query = """
+            SELECT 
+                so.id 
+            FROM
+                "nachet_0.0.11".seed_obj so 
+            LEFT JOIN 
+                "nachet_0.0.11".seed s 
+            ON 
+                s.id = so.seed_id 
+            WHERE 
+                s.name = %s
+            AND 
+                so.object_id = %s
+            """
+        cursor.execute(query, (seed_name,object_id))
+        res = cursor.fetchone()[0]
+        return res
+    except Exception:
+        raise Exception(f"Error: could not get seed object {seed_name} for object {object_id}")

@@ -57,3 +57,21 @@ def build_object_import(object: dict) -> str:
         "overlappingIndices": object["overlappingIndices"],
     }
     return json.dumps(data)
+
+def compare_object_metadata(object1:dict , object2:dict) -> bool:
+    """
+    This function compares two object metadata to check if they are the same.
+
+    Parameters:
+    - object1: (dict) The first object to compare.
+    - object2: (dict) The second object to compare.
+
+    Returns:
+    - True if the objects are the same, False otherwise.
+    """
+    keys = ["box", "color", "overlapping", "overlappingIndices"]
+    for key in keys:
+        if object1[key] != object2[key]:
+            return False
+    return True
+

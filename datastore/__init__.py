@@ -46,8 +46,10 @@ class ContainerCreationError(Exception):
 class FolderCreationError(Exception):
     pass
 
-
 class InferenceCreationError(Exception):
+    pass
+
+class InferenceFeedbackError(Exception):
     pass
 
 
@@ -249,6 +251,59 @@ async def register_inference_result(
     except Exception as e:
         print(e.__str__())
         raise Exception("Unhandled Error")
+
+async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1):
+    """
+    TODO: doc
+    """
+    try:
+        if "inference_id" in inference_dict.keys():
+            inference_id = inference_dict["inference_id"]
+        else:
+            raise InferenceFeedbackError("Error: inference_id not found in the given infence_dict")
+        for object in inference_dict["boxes"]:
+            box_id = object["box_id"]
+            box_metadata = json.loads(build_object_import(object))
+
+            # DB box metadata
+            object_db = inference.get_inference_object(cursor, box_id)
+            object_metadata = json.loads(object_db[2])
+
+            # Check if there are difference between the metadata
+            flag_box_metadata = false
+            if (inference_metadata.compare_object_metadata(box_metadata, object_metadata)):
+                # Update the object metadata
+                flag_box_metadata = true
+                inference.set_object_box_metadata(cursor, box_id, json.dumps(box_metadata))
+
+            # Check for the correct seed
+            seed_name = object["label"]
+            flag_seed = false
+            valid = false
+            if seed_name == "":
+                # box has been deleted
+                valid = false
+            else: 
+                valid = true
+                # Check if a new seed has been selected
+                top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
+                new_top_id = inference.get_seed_object_from_feedback(cursor, seed_name, box_id )
+                if top_inference_id != new_top_id:
+                    # Seed was not correctly identified, set the verified_id to the right seed_object.id
+                    flag_seed = true
+                    inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
+                else:
+                    # Seed was correctly identified, set the verified_id to the top_id
+                    flag_seed = false
+                    inference.set_inference_object_verified_id(cursor, box_id, top_inference_id)
+            # Update the object validity
+            inference.set_inference_object_valid(cursor, box_id, valid)
+            
+    except InferenceFeedbackError:
+        raise
+    except Exception as e:
+        print(e.__str__())
+        raise Exception("Datastore Unhandled Error")
 
 
 async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id) :
