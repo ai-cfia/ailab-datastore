@@ -172,9 +172,7 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
             raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         
         return picture_set_id
-    except user.UserNotFoundError as e:
-        raise e
-    except FolderCreationError as e:
+    except (user.UserNotFoundError, FolderCreationError, data_picture_set.PictureSetCreationError, picture.PictureSetCreationError, azure_storage.CreateDirectoryError) as e:
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
@@ -289,6 +287,8 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
         return picture_id
     except BlobUploadError or azure_storage.UploadImageError:
         raise BlobUploadError("Error uploading the picture")
+    except (user.UserNotFoundError) as e:
+        raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
