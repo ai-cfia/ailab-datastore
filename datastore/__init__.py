@@ -251,6 +251,52 @@ async def register_inference_result(
         raise Exception("Unhandled Error")
 
 
+async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id) :
+    """
+    Update objects when a perfect feedback is sent by a user and update the inference if all the objects in it are verified.
+    
+    Args:
+        cursor: The cursor object to interact with the database.
+        inference_id (str): id of the inference on which feedback is given
+        user_id (str): id of the user giving a feedback
+        boxes_id (str array): array of id of the objects that are correctly identified
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if boxes_id exists
+        for box_id in boxes_id :
+            if not inference.check_inference_object_exist(cursor, box_id):
+                raise inference.InferenceObjectNotFoundError(
+                    f"Error: could not get inference object for id {box_id}"
+                )
+        # Check if inference exists
+        if not inference.check_inference_exist(cursor, inference_id):
+            raise inference.InferenceNotFoundError(
+                f"Inference not found based on the given id: {inference_id}"
+            )
+        
+        if inference.is_inference_verified(cursor, inference_id):
+            raise inference.InferenceAlreadyVerifiedError(
+                f"Can't add feedback to a verified inference, id: {inference_id}"
+            )
+        
+        for object_id in boxes_id:
+            top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
+            inference.set_inference_object_verified_id(cursor, object_id, top_inference_id )
+            inference.set_inference_object_valid(cursor, object_id, True)
+            
+        inference.verify_inference_status(cursor, inference_id, user_id)
+        
+    except (user.UserNotFoundError, inference.InferenceObjectNotFoundError, inference.InferenceNotFoundError, inference.InferenceAlreadyVerifiedError) as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise Exception(f"Datastore Unhandled Error : {e}")
+    
 async def import_ml_structure_from_json_version(cursor, ml_version: dict):
     """
     TODO: build tests
