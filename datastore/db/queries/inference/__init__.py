@@ -15,6 +15,8 @@ class InferenceNotFoundError(Exception):
 class InferenceObjectNotFoundError(Exception):
     pass
 
+class InferenceAlreadyVerifiedError(Exception):
+    pass
 """
 
 INFERENCE TABLE QUERIES
@@ -130,6 +132,57 @@ def set_inference_verified(cursor, inference_id, is_verified):
         cursor.execute(query, (is_verified,inference_id))
     except Exception:
         raise Exception(f"Error: could not update verified {is_verified} for inference {inference_id}")
+    
+def is_inference_verified(cursor, inference_id):
+    """
+    Check if an inference is verified or not.
+    
+    return True if verified, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                verified
+            FROM
+                inference
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(inference_id),))
+        res = cursor.fetchone()[0]
+        return res
+    except Exception:
+        raise Exception(f"Error: could not select verified column for inference {inference_id}")
+
+def verify_inference_status(cursor, inference_id, user_id):
+    """
+    Set inference verified if inference is fully verified and set the user as the feedback user
+    """
+    objects = get_objects_by_inference(cursor, inference_id)
+    if all(obj[4] is not None for obj in objects) :
+        set_inference_feedback_user_id(cursor, inference_id, user_id)
+        set_inference_verified(cursor, inference_id, True)
+
+def check_inference_exist(cursor, inference_id):
+    """
+    Check if an inference exists in the database.
+    
+    return True if exists, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                id
+            FROM
+                inference
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(inference_id),))
+        res = cursor.fetchone()
+        return res is not None
+    except Exception:
+        raise Exception(f"Error: could not check if inference {inference_id} exists")
     
 """
 
@@ -322,7 +375,27 @@ def set_inference_object_valid(cursor, inference_object_id: str, is_valid:bool):
         cursor.execute(query, (is_valid,inference_object_id))
     except Exception:
         raise Exception(f"Error: could not update valid for object {inference_object_id}")
+
+def check_inference_object_exist(cursor, inference_object_id):
+    """
+    Check if an inference object exists in the database.
     
+    return True if exists, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                id
+            FROM
+                object
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(inference_object_id),))
+        res = cursor.fetchone()
+        return res is not None
+    except Exception:
+        raise Exception(f"Error: could not check if inference object {inference_object_id} exists")
 
 """
 
