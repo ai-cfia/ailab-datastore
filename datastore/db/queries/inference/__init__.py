@@ -385,15 +385,15 @@ def check_inference_object_exist(cursor, inference_object_id):
     try:
         query = """
             SELECT 
-                id
-            FROM
-                object
-            WHERE 
-                id = %s
+                EXISTS (
+                    SELECT 1 
+                    FROM object 
+                    WHERE id = %s
+                )
             """
         cursor.execute(query, (str(inference_object_id),))
         res = cursor.fetchone()
-        return res is not None
+        return res[0]
     except Exception:
         raise Exception(f"Error: could not check if inference object {inference_object_id} exists")
 
