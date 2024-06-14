@@ -10,7 +10,6 @@ import datastore.db.queries.picture as picture
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
-import datastore.db.metadata.picture as picture_metadata
 import datastore.db.queries.seed as seed
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
@@ -18,7 +17,6 @@ import datastore.blob.azure_storage_api as azure_storage
 import json
 from azure.storage.blob import BlobServiceClient,ContainerClient
 import os
-import asyncio
 
 NACHET_BLOB_ACCOUNT = os.environ.get("NACHET_BLOB_ACCOUNT")
 if NACHET_BLOB_ACCOUNT is None or NACHET_BLOB_ACCOUNT == "":

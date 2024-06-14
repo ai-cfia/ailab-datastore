@@ -4,7 +4,6 @@ import datastore.db.metadata.picture_set as picture_set_metadata
 import datastore.db.metadata.picture as picture_metadata
 import datastore.db.queries.picture as picture_query
 from datastore.blob import azure_storage_api as blob
-import datastore
 import asyncio
 import json
 
