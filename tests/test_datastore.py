@@ -244,9 +244,11 @@ class test_picture(unittest.TestCase):
         """
         Test the upload pictures function
         """
+        pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
         picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
-        picture_ids = asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
+        picture_ids = asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client, pictures, self.seed_name))
         self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
+        self.assertEqual(len(pictures), asyncio.run(datastore.azure_storage.get_image_count(self.container_client, str(picture_set_id))))
         
     def test_upload_pictures_error_user_not_found(self):
         """
