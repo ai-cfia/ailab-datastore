@@ -72,9 +72,12 @@ sequenceDiagram;
 
     User ->> Frontend: Validate inference
     alt Perfect Inference
-    Frontend -) Backend: Inference result positive (user_id,inference_id)
-    Backend -) Datastore: Inference result positive (user_id,inference_id)
-    Datastore ->> Database: Set each object.verified = True & object.modified=False
+    Frontend -) Backend: Inference result positive (user_id, boxes)
+    Backend -) Datastore: new_perfect_inference_feeback(inference_id, user_id, boxes_id)
+    Note over Backend, Datastore : Each box_id is an inference object in db
+        alt if inference not already verified
+            Datastore ->> Database: Set each object.valid = True & object.verified_id=object.top_id
+        end
     else Annotated Inference
     Frontend -) Backend: Inference feedback (inference_feedback.json,user_id,inference_id)
     Backend ->> Datastore: Inference feedback (inference_feedback.json, user_id, inference_id)
@@ -101,10 +104,10 @@ sequenceDiagram;
                 Datastore -) Database: Create new object and seed_object
             end
         end
-        alt if flag_all_box_verified=True
-            Datastore -) Database: Set Inference.verified=true
-        end
     end
+    Datastore -) Datastore : verify_inference_status(inference_id, user_id)
+    Note over Datastore, Database : set inference verified if all objects have a verified_id
+
     
 
 

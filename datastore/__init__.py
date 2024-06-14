@@ -279,6 +279,11 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
                 f"Inference not found based on the given id: {inference_id}"
             )
         
+        if inference.is_inference_verified(cursor, inference_id):
+            raise inference.InferenceAlreadyVerifiedError(
+                f"Can't add feedback to a verified inference, id: {inference_id}"
+            )
+        
         for object_id in boxes_id:
             top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
             inference.set_inference_object_verified_id(cursor, object_id, top_inference_id )
@@ -286,7 +291,7 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
             
         inference.verify_inference_status(cursor, inference_id, user_id)
         
-    except (user.UserNotFoundError, inference.InferenceObjectNotFoundError, inference.InferenceNotFoundError) as e:
+    except (user.UserNotFoundError, inference.InferenceObjectNotFoundError, inference.InferenceNotFoundError, inference.InferenceAlreadyVerifiedError) as e:
         raise e
     except Exception as e:
         print(e)

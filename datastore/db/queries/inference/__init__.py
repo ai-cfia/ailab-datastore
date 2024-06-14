@@ -15,6 +15,8 @@ class InferenceNotFoundError(Exception):
 class InferenceObjectNotFoundError(Exception):
     pass
 
+class InferenceAlreadyVerifiedError(Exception):
+    pass
 """
 
 INFERENCE TABLE QUERIES

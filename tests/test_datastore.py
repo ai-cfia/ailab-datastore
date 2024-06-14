@@ -228,6 +228,16 @@ class test_feedback(unittest.TestCase):
             self.assertEqual(str(object[4]), self.top_id[i])
             # valid column must be true
             self.assertTrue(object[5])
+          
+    def test_new_perfect_inference_feedback_error_verified_inference(self):
+        """
+        This test checks if the new_perfect_inference_feeback function correctly raise an exception if the inference given is already verified
+        """
+        asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, self.user_id, self.boxes_id))
+        self.assertTrue(datastore.inference.is_inference_verified(self.cur, self.inference_id))
+        with self.assertRaises(datastore.inference.InferenceAlreadyVerifiedError):
+            asyncio.run(datastore.new_perfect_inference_feeback(self.cur, self.inference_id, self.user_id, self.boxes_id))
+          
             
     def test_new_perfect_inference_feedback_error_inference_not_found(self):
         """
