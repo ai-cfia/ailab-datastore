@@ -190,7 +190,7 @@ OBJECT TABLE QUERIES
 
 """
 
-def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int):
+def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int,manual_detection:bool=False):
     """
     This function uploads a new inference object to the database.
 
@@ -208,10 +208,11 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
                 object(
                     inference_id,
                     box_metadata,
-                    type_id
+                    type_id,
+                    manual_detection
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -220,6 +221,7 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
                 inference_id,
                 box_metadata,
                 type_id,
+                manual_detection,
             ),
         )
         return cursor.fetchone()[0]
@@ -240,7 +242,16 @@ def get_inference_object(cursor, inference_object_id: str):
     try:
         query = """
             SELECT 
-                *
+                id,
+                box_metadata,
+                inference_id,
+                type_id,
+                verified_id,
+                top_id,
+                valid,
+                top_id,
+                upload_date,
+                updated_at
             FROM 
                 object
             WHERE 
@@ -463,26 +474,25 @@ def set_object_box_metadata(cursor,object_id:str, metadata:str):
     except Exception:
         raise Exception(f"Error: could not set metadata {metadata} for object {object_id}")
 
-def get_seed_object_from_feedback(cursor, seed_name: str, object_id:str):
+def get_seed_object_id(cursor, seed_id: str, object_id:str):
     """
+    This function gets the seed object from the feedback table.
     """
     try:
         query = """
             SELECT 
                 so.id 
             FROM
-                "nachet_0.0.11".seed_obj so 
-            LEFT JOIN 
-                "nachet_0.0.11".seed s 
-            ON 
-                s.id = so.seed_id 
+                seed_obj so 
             WHERE 
-                s.name = %s
+                so.seed_id = %s
             AND 
                 so.object_id = %s
             """
-        cursor.execute(query, (seed_name,object_id))
+        cursor.execute(query, (seed_id,object_id))
+        if cursor.rowcount == 0:
+            return None
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception(f"Error: could not get seed object {seed_name} for object {object_id}")
+        raise Exception(f"Error: could not get seed_object_id for seed_id {seed_id} for object {object_id}")

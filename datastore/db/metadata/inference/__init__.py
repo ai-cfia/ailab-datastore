@@ -69,7 +69,7 @@ def compare_object_metadata(object1:dict , object2:dict) -> bool:
     Returns:
     - True if the objects are the same, False otherwise.
     """
-    keys = ["box", "color", "overlapping", "overlappingIndices"]
+    keys = ["topX", "topY", "bottomX", "bottomY"]
     for key in keys:
         if object1[key] != object2[key]:
             return False

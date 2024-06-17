@@ -31,7 +31,7 @@
     "models":
     [
         {
-            "task": "classification",
+            "task": "Classification",
             "endpoint": "https://that-model.inference.ml.com/score",
             "api_key": "SeCRetKeys",
             "content_type": "application/json",
@@ -47,7 +47,7 @@
             "Accuracy": 0.6908
         },
         {
-            "task": "object-detection",
+            "task": "Object Detection",
             "endpoint": "https://other-model.inference.ml.com/score",
             "api_key": "SeCRetKeys",
             "content_type": "application/json",
