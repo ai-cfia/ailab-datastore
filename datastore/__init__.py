@@ -46,7 +46,6 @@ class ContainerCreationError(Exception):
 class FolderCreationError(Exception):
     pass
 
-
 class InferenceCreationError(Exception):
     pass
 
@@ -141,10 +140,45 @@ async def get_user_container_client(user_id, tier="user"):
     if isinstance(container_client,ContainerClient):
         return container_client
 
-
-async def upload_picture(cursor, user_id, picture_hash, container_client):
+async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str):
     """
-    Upload a picture to the user container
+    Create a picture_set in the database and a related folder in the blob storage
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        container_client: The container client of the user.
+        nb_pictures (int): number of picture that the picture set should be related to
+        user_id (str): id of the user creating this picture set
+
+    Returns:
+        _type_: _description_
+    """
+    try:
+
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+
+        picture_set = data_picture_set.build_picture_set(user_id, nb_pictures)
+        picture_set_id = picture.new_picture_set(
+            cursor=cursor, picture_set=picture_set, user_id=user_id
+        )
+
+        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id))
+        if not folder_created:
+            raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
+        
+        return picture_set_id
+    except (user.UserNotFoundError, FolderCreationError, data_picture_set.PictureSetCreationError, picture.PictureSetCreationError, azure_storage.CreateDirectoryError) as e:
+        raise e
+    except Exception:
+        raise BlobUploadError("An error occured during the upload of the picture set")
+
+
+async def upload_picture_unknown(cursor, user_id, picture_hash, container_client, picture_set_id=None):
+    """
+    Upload a picture that we don't know the seed to the user container
 
     Parameters:
     - cursor: The cursor object to interact with the database.
@@ -153,9 +187,17 @@ async def upload_picture(cursor, user_id, picture_hash, container_client):
     - container_client: The container client of the user.
     """
     try:
-        # Create picture instance in DB
+        
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        
         empty_picture = json.dumps([])
-        picture_set_id = user.get_default_picture_set(cursor, user_id)
+        # Create picture instance in DB
+        if picture_set_id is None :
+            picture_set_id = user.get_default_picture_set(cursor, user_id)
+        
         picture_id = picture.new_picture_unknown(
             cursor=cursor,
             picture=empty_picture,
@@ -165,13 +207,15 @@ async def upload_picture(cursor, user_id, picture_hash, container_client):
         response = await azure_storage.upload_image(
             container_client, "General", picture_hash, picture_id
         )
-        if not response:
-            raise BlobUploadError("Error uploading the picture")
         # Update the picture metadata in the DB
         data = {
             "link": "General/" + str(picture_id),
             "description": "Uploaded through the API",
         }
+        
+        if not response:
+            raise BlobUploadError("Error uploading the picture")
+        
         picture.update_picture_metadata(cursor, picture_id, json.dumps(data),0)
 
         return picture_id
@@ -180,6 +224,112 @@ async def upload_picture(cursor, user_id, picture_hash, container_client):
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
+
+async def upload_picture_known(cursor, user_id, picture_hash, container_client, seed_id, picture_set_id=None, nb_seeds=None, zoom_level=None):
+    """
+    Upload a picture that the seed is known to the user container
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - user_id (str): The UUID of the user.
+    - picture (str): The image to upload.
+    - container_client: The container client of the user.
+    - seed_id: The UUID of the seed on the image.
+    - picture_set_id: The UUID of the picture set where to add the picture.
+    - nb_seeds: The number of seeds on the picture.
+    - zoom_level: The zoom level of the picture.
+    """
+    try:
+        
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        
+        empty_picture = json.dumps([])
+        # Create picture instance in DB
+        if picture_set_id is None :
+            picture_set_id = user.get_default_picture_set(cursor, user_id)
+        picture_id = picture.new_picture(
+            cursor=cursor,
+            picture=empty_picture,
+            picture_set_id=picture_set_id,
+            seed_id=seed_id,
+        )
+        # Upload the picture to the Blob Storage
+        response = await azure_storage.upload_image(
+            container_client, picture_set_id, picture_hash, picture_id
+        )
+        picture_link = container_client.url + "/" + str(picture_set_id) + "/" + str(picture_id)
+        # Create picture metadata and update DB instance (with link to Azure blob)
+        """
+        data = picture_metadata.build_picture(
+            pic_encoded=picture_hash,
+            link=picture_link,
+            nb_seeds=nb_seeds,
+            zoom=zoom_level,
+            description="upload_picture_set script",
+        )
+        """
+        data = {
+            "link": picture_link,
+            "nb_seeds":nb_seeds,
+            "zoom":zoom_level,
+            "description": "Uploaded through the API",
+        }
+        if not response:
+            raise BlobUploadError("Error uploading the picture")
+        
+        picture.update_picture_metadata(cursor, picture_id, json.dumps(data),0)
+
+        return picture_id
+    except BlobUploadError or azure_storage.UploadImageError:
+        raise BlobUploadError("Error uploading the picture")
+    except (user.UserNotFoundError) as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
+
+async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
+    """
+    Upload an array of pictures that the seed is known to the user container
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - user_id (str): The UUID of the user.
+    - picture (str): The image to upload.
+    - container_client: The container client of the user.
+    - pictures array: array of images to upload
+    - seed_name: The name of the seed on the images.
+    - picture_set_id: The UUID of the picture set where to add the pictures.
+    - nb_seeds: The number of seeds on the picture.
+    - zoom_level: The zoom level of the picture.
+
+    Returns:
+        array of the new pictures UUID
+    """
+    try:
+        
+        if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
+            raise seed.SeedNotFoundError(
+                f"Seed not found based on the given name: {seed_name}"
+            )
+        seed_id = seed.get_seed_id(cursor=cursor, seed_name=seed_name)
+        
+        pictures_id = []
+        for picture_encoded in pictures:
+            id = await upload_picture_known(cursor, user_id, picture_encoded, container_client, seed_id, picture_set_id, nb_seeds, zoom_level)
+            pictures_id.append(id)
+
+        return pictures_id
+    except (seed.SeedNotFoundError) as e:
+        raise e
+    except user.UserNotFoundError as e:
+        raise e
+    except Exception:
+        raise BlobUploadError("An error occured during the upload of the pictures")
+    
 
 async def register_inference_result(
     cursor,

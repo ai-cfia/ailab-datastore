@@ -13,6 +13,7 @@ import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
+import datastore.db.queries.seed as seed_query
 
 
 class test_ml_structure(unittest.TestCase):
@@ -162,6 +163,8 @@ class test_picture(unittest.TestCase):
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
+        self.seed_name = "test-name"
+        self.seed_id = seed_query.new_seed(self.cur, self.seed_name)
         with open("tests/inference_result.json") as file:
             self.inference= json.load(file)
     
@@ -170,23 +173,108 @@ class test_picture(unittest.TestCase):
         self.container_client.delete_container()
         db.end_query(self.con, self.cur)
 
-    def test_upload_picture(self):
+    def test_upload_picture_unknown(self):
         """
         Test the upload picture function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         self.assertTrue(validator.is_valid_uuid(picture_id))
 
     def test_register_inference_result(self):
         """
         Test the register inference result function.
         """
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
         
         result = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
         #self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
         self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
+
+    def test_create_picture_set(self):
+        """
+        Test the creation of a picture set
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        self.assertTrue(validator.is_valid_uuid(picture_set_id))
+    
+    def test_create_picture_set_connection_error(self):
+        """
+        This test checks if the create_picture_set function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.create_picture_set(mock_cursor, self.container_client, 0, self.user_id))
+            
+    def test_create_picture_set_error_user_not_found(self):
+        """
+        This test checks if the create_picture_set function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, uuid.uuid4()))
+    
+    def test_upload_picture_known(self):
+        """
+        Test the upload picture function with a known seed
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        picture_id = asyncio.run(datastore.upload_picture_known(self.cur, self.user_id, self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
+        self.assertTrue(validator.is_valid_uuid(picture_id))
+     
+    def test_upload_picture_known_error_user_not_found(self):
+        """
+        This test checks if the upload_picture_known function correctly raise an exception if the user given doesn't exist in db
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.upload_picture_known(self.cur, uuid.uuid4(), self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
+    
+    def test_upload_picture_known_connection_error(self):
+        """
+        This test checks if the upload_picture_known function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.upload_picture_known(mock_cursor, self.user_id, self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
+        
+    def test_upload_pictures(self):
+        """
+        Test the upload pictures function
+        """
+        pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        picture_ids = asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client, pictures, self.seed_name))
+        self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
+        self.assertEqual(len(pictures), asyncio.run(datastore.azure_storage.get_image_count(self.container_client, str(picture_set_id))))
+        
+    def test_upload_pictures_error_user_not_found(self):
+        """
+        This test checks if the upload_picture_known function correctly raise an exception if the user given doesn't exist in db
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.upload_pictures(self.cur, uuid.uuid4(), picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
+    
+    def test_upload_pictures_connection_error(self):
+        """
+        This test checks if the upload_picture_known function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.upload_pictures(mock_cursor, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
+            
+    def test_upload_pictures_error_seed_not_found(self):
+        """
+        This test checks if the upload_picture_known function correctly raise an exception if the seed given doesn't exist in db
+        """
+        picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id))
+        with self.assertRaises(datastore.seed.SeedNotFoundError):
+            asyncio.run(datastore.upload_pictures(self.cur, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], "unknown_seed"))
 
 class test_feedback(unittest.TestCase):
     def setUp(self):
@@ -207,7 +295,7 @@ class test_feedback(unittest.TestCase):
         file_path = os.path.join(base_dir, 'inference_result.json')
         with open(file_path) as file:
             self.inference= json.load(file)
-        picture_id = asyncio.run(datastore.upload_picture(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
         self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
         self.inference_id = self.registered_inference.get("inference_id")
@@ -262,6 +350,7 @@ class test_feedback(unittest.TestCase):
     
     def test_new_perfect_inference_feedback_connection_error(self):
         """
+        This test checks if the new_perfect_inference_feeback function correctly raise an exception if the connection to the db fails
         """
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
