@@ -3,9 +3,6 @@ This module contains the function interacting with the database directly.
 """
 import os
 import psycopg
-#from dotenv import load_dotenv
-
-#load_dotenv()
 
 NACHET_DB_URL = os.environ.get("NACHET_DB_URL")
 if NACHET_DB_URL is None or NACHET_DB_URL == "":
