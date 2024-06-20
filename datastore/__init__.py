@@ -284,8 +284,8 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
             box_id = object["boxId"]
             seed_name = object["label"]
             seed_id = object["classId"]
-            flag_seed = False
-            flag_box_metadata = False
+            # flag_seed = False
+            # flag_box_metadata = False
             valid = False
             box_metadata = object["box"]
             
@@ -319,7 +319,7 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
                 # Check if there are difference between the metadata
                 if not (inference_metadata.compare_object_metadata(box_metadata["box"], object_metadata["box"])):
                     # Update the object metadata
-                    flag_box_metadata = True
+                    # flag_box_metadata = True
                     inference.set_object_box_metadata(cursor, box_id, json.dumps(box_metadata))
                 
                 # Check if the seed is known
@@ -347,14 +347,14 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
                         # Seed selected was not an inference guess, we need to create a new seed_object
                         new_top_id=inference.new_seed_object(cursor, seed_id, box_id, 0)
                         inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
-                        flag_seed = True
+                        # flag_seed = True
                     if top_inference_id != new_top_id:
                         # Seed was not correctly identified, set the verified_id to the correct seed_object.id
-                        flag_seed = True
+                        # flag_seed = True
                         inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
                     else:
                         # Seed was correctly identified, set the verified_id to the top_id
-                        flag_seed = False
+                        # flag_seed = False
                         inference.set_inference_object_verified_id(cursor, box_id, top_inference_id)
             
             # Update the object validity
