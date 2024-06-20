@@ -49,6 +49,9 @@ class FolderCreationError(Exception):
 class InferenceCreationError(Exception):
     pass
 
+class InferenceFeedbackError(Exception):
+    pass
+
 
 class User:
     def __init__(self, email: str, id: str = None,tier:str='user'):
@@ -348,6 +351,9 @@ async def register_inference_result(
     - inference (str): The inference to register in a dict string (soon to be json loaded).
     - picture_id (str): The UUID of the picture.
     - pipeline_id (str): The UUID of the pipeline.
+    
+    Returns:
+    - The inference_dict with the inference_id, box_id and top_id added.
     """
     try:
         trimmed_inference = inference_metadata.build_inference_import(inference_dict)
@@ -360,6 +366,7 @@ async def register_inference_result(
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
             if type == 1:
+                # TODO : adapt for the seed_id in the inference_dict
                 top_id = seed.get_seed_id(
                     cursor, inference_dict["boxes"][box_index]["label"]
                 )
@@ -370,7 +377,7 @@ async def register_inference_result(
                 inference_dict["boxes"][box_index]
             )
             object_inference_id = inference.new_inference_object(
-                cursor, inference_id, box, type
+                cursor, inference_id, box, type, False
             )
             inference_dict["boxes"][box_index]["box_id"] = str(object_inference_id)
             # loop through the topN Prediction
@@ -399,6 +406,116 @@ async def register_inference_result(
     except Exception as e:
         print(e.__str__())
         raise Exception("Unhandled Error")
+
+async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1):
+    """
+    TODO: doc
+    """
+    try:
+        if "inferenceId" in inference_dict.keys():
+            inference_id = inference_dict["inferenceId"]
+        else:
+            raise InferenceFeedbackError("Error: inference_id not found in the given infence_dict")
+        if "userId" in inference_dict.keys():
+            user_id = inference_dict["userId"]
+            if not (user.is_a_user_id(cursor, user_id)):
+                raise InferenceFeedbackError(f"Error: user_id {user_id} not found in the database")
+        else:
+            raise InferenceFeedbackError("Error: user_id not found in the given infence_dict")
+        # if infence_dict["totalBoxes"] != len(inference_dict["boxes"] & infence_dict["totalBoxes"] > 0 ):
+        #     if len(inference_dict["boxes"]) == 0:
+        #         raise InferenceFeedbackError("Error: No boxes found in the given inference_dict")
+        #     else if len(inference_dict["boxes"]) > infence_dict["totalBoxes"]:
+        #         raise InferenceFeedbackError("Error: There are more boxes than the totalBoxes")
+        #     else if len(inference_dict["boxes"]) < infence_dict["totalBoxes"]:
+        #         raise InferenceFeedbackError("Error: There are less boxes than the totalBoxes")
+        if inference.is_inference_verified(cursor, inference_id):
+            raise InferenceFeedbackError(f"Error: Inference {inference_id} is already verified")
+        for object in inference_dict["boxes"]:
+            box_id = object["boxId"]
+            seed_name = object["label"]
+            seed_id = object["classId"]
+            # flag_seed = False
+            # flag_box_metadata = False
+            valid = False
+            box_metadata = object["box"]
+            
+            if box_id =="":
+                # This is a new box created by the user
+                
+                # Check if the seed is known
+                if seed_id == "" and seed_name == "":
+                    raise InferenceFeedbackError("Error: seed_name and seed_id not found in the new box. We don't know what to do with it and this should not happen.")
+                if seed_id == "":
+                    if seed.is_seed_registered(cursor, seed_name):
+                        # Mistake from the FE, the seed is known in the database
+                        seed_id = seed.get_seed_id(cursor, seed_name)
+                    else:
+                        #unknown seed
+                        seed_id = seed.new_seed(cursor, seed_name)
+                # Create the new object
+                object_id = inference.new_inference_object(cursor, inference_id, box_metadata, 1,True)
+                seed_object_id = inference.new_seed_object(cursor, seed_id, object_id, 0)
+                # Set the verified_id to the seed_object_id
+                inference.set_inference_object_verified_id(cursor, object_id, seed_object_id)
+                valid = True
+            else: 
+                if (inference.is_object_verified(cursor, box_id)):
+                    raise InferenceFeedbackError(f"Error: Object {box_id} is already verified")
+                # This is a box that was created by the pipeline so it should be within the database
+                object_db = inference.get_inference_object(cursor, box_id)
+                object_metadata = object_db[1]
+                object_id = object_db[0]
+
+                # Check if there are difference between the metadata
+                if not (inference_metadata.compare_object_metadata(box_metadata["box"], object_metadata["box"])):
+                    # Update the object metadata
+                    # flag_box_metadata = True
+                    inference.set_object_box_metadata(cursor, box_id, json.dumps(box_metadata))
+                
+                # Check if the seed is known
+                if seed_id == "":
+                    if seed_name == "": 
+                        # box has been deleted by the user
+                        valid = False
+                    else:
+                        valid = True
+                        if(seed.is_seed_registered(cursor, seed_name)):
+                            # The seed is known in the database and it was a mistake from the FE
+                            seed_id = seed.get_seed_id(cursor, seed_name)
+                        else: # The seed is not known in the database
+                            seed_id = seed.new_seed(cursor, seed_name)
+                            seed_object_id = inference.new_seed_object(cursor, seed_id, object_id, 0)
+                            inference.set_inference_object_verified_id(cursor, object_id, seed_object_id)
+                else: 
+                    #Box is still valid
+                    valid = True
+                    # Check if a new seed has been selected
+                    top_inference_id = inference.get_inference_object_top_id(cursor, object_db[0])
+                    new_top_id = inference.get_seed_object_id(cursor, seed_id, box_id )
+                    
+                    if new_top_id is None:
+                        # Seed selected was not an inference guess, we need to create a new seed_object
+                        new_top_id=inference.new_seed_object(cursor, seed_id, box_id, 0)
+                        inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
+                        # flag_seed = True
+                    if top_inference_id != new_top_id:
+                        # Seed was not correctly identified, set the verified_id to the correct seed_object.id
+                        # flag_seed = True
+                        inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
+                    else:
+                        # Seed was correctly identified, set the verified_id to the top_id
+                        # flag_seed = False
+                        inference.set_inference_object_verified_id(cursor, box_id, top_inference_id)
+            
+            # Update the object validity
+            inference.set_inference_object_valid(cursor, box_id, valid)
+        inference.verify_inference_status(cursor, inference_id, user_id)
+    except InferenceFeedbackError:
+        raise
+    except Exception as e:
+        print(e.__str__())
+        raise Exception("Datastore Unhandled Error")
 
 
 async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id) :

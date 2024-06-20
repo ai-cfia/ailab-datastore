@@ -163,6 +163,7 @@ erDiagram
     uuid top_inference FK
     timestamp upload_date
     timestamp updated_at
+    boolean manual_detection
   }
   seed_object{
     uuid id PK

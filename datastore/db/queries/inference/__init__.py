@@ -154,6 +154,29 @@ def is_inference_verified(cursor, inference_id):
     except Exception:
         raise Exception(f"Error: could not select verified column for inference {inference_id}")
 
+def is_object_verified(cursor, object_id):
+    """
+    Check if an object is verified or not.
+    
+    return True if verified, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                verified_id
+            FROM
+                object
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(object_id),))
+        res = cursor.fetchone()[0]
+        return (res is not None)
+    except ValueError:
+        return False
+    except Exception:
+        raise Exception(f"Error: could not select verified_id column for object {object_id}")
+
 def verify_inference_status(cursor, inference_id, user_id):
     """
     Set inference verified if inference is fully verified and set the user as the feedback user
@@ -190,7 +213,7 @@ OBJECT TABLE QUERIES
 
 """
 
-def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int):
+def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int,manual_detection:bool=False):
     """
     This function uploads a new inference object to the database.
 
@@ -208,10 +231,11 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
                 object(
                     inference_id,
                     box_metadata,
-                    type_id
+                    type_id,
+                    manual_detection
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -220,6 +244,7 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int)
                 inference_id,
                 box_metadata,
                 type_id,
+                manual_detection,
             ),
         )
         return cursor.fetchone()[0]
@@ -240,7 +265,16 @@ def get_inference_object(cursor, inference_object_id: str):
     try:
         query = """
             SELECT 
-                *
+                id,
+                box_metadata,
+                inference_id,
+                type_id,
+                verified_id,
+                top_id,
+                valid,
+                top_id,
+                upload_date,
+                updated_at
             FROM 
                 object
             WHERE 
@@ -439,3 +473,49 @@ def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
         return cursor.fetchone()[0]
     except Exception:
         raise SeedObjectCreationError("Error: seed object not uploaded")
+
+
+def set_object_box_metadata(cursor,object_id:str, metadata:str):
+    """
+    This function sets the metadata of an object.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - object_id (str): The UUID of the object.
+    - metadata (str): The metadata to set.
+    """
+    try:
+        query = """
+            UPDATE 
+                object
+            SET
+                box_metadata = %s
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (metadata,object_id))
+    except Exception:
+        raise Exception(f"Error: could not set metadata {metadata} for object {object_id}")
+
+def get_seed_object_id(cursor, seed_id: str, object_id:str):
+    """
+    This function gets the seed object from the feedback table.
+    """
+    try:
+        query = """
+            SELECT 
+                so.id 
+            FROM
+                seed_obj so 
+            WHERE 
+                so.seed_id = %s
+            AND 
+                so.object_id = %s
+            """
+        cursor.execute(query, (seed_id,object_id))
+        if cursor.rowcount == 0:
+            return None
+        res = cursor.fetchone()[0]
+        return res
+    except Exception:
+        raise Exception(f"Error: could not get seed_object_id for seed_id {seed_id} for object {object_id}")

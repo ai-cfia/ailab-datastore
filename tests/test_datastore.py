@@ -298,12 +298,26 @@ class test_feedback(unittest.TestCase):
         picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
         self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
+        self.registered_inference["user_id"] = self.user_id
+        self.mock_box = {
+                "topX": 123,
+                "topY": 456,
+                "bottomX": 789,
+                "bottomY": 123
+            }
         self.inference_id = self.registered_inference.get("inference_id")
         self.boxes_id = []
         self.top_id = []
-        for box in self.inference["boxes"]:
+        self.unreal_seed_id= datastore.seed.new_seed(self.cur, "unreal_seed")
+        for box in self.registered_inference["boxes"]:
             self.boxes_id.append(box["box_id"])
             self.top_id.append(box["top_id"])
+            box["classId"] = datastore.seed.get_seed_id(self.cur, box["label"])
+
+    def tearDown(self):
+        self.con.rollback()
+        self.container_client.delete_container()
+        db.end_query(self.con, self.cur)
             
     def test_new_perfect_inference_feedback(self):
         """
@@ -356,6 +370,105 @@ class test_feedback(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(datastore.new_perfect_inference_feeback(mock_cursor, self.inference_id, self.user_id, self.boxes_id))
+
+    def test_new_correction_inference_feedback(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for i in range(len(self.boxes_id)) :
+            object = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must be equal to top_id
+            self.assertEqual(str(object[4]), self.top_id[i])
+            # valid column must be true
+            self.assertTrue(object[6])
             
+    def test_new_correction_inference_feedback_new_guess(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly when another guess is verified
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        new_top_ids =[]
+        for box in self.registered_inference["boxes"]:
+            box["label"] = box["topN"][1]["label"]
+            box["classId"] = datastore.seed.get_seed_id(self.cur, box["label"])
+            new_top_ids.append(box["topN"][1]["object_id"])
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for i in range(len(self.boxes_id)) :
+            object_db = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must be equal to top_id
+            self.assertTrue(str(object_db[4]) == new_top_ids[i])
+            # valid column must be true
+            self.assertTrue(object_db[6])
+            
+    def test_new_correction_inference_feedback_box_edited(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly when the box metadata is updated
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        for box in self.registered_inference["boxes"]:
+            box["box"]= self.mock_box
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for box in self.registered_inference["boxes"] :
+            object_db = datastore.inference.get_inference_object(self.cur, box["box_id"])
+            # The new box metadata must be updated
+            self.assertDictEqual(object_db[1]["box"], self.mock_box)
+            # The top_id must be equal to the previous top_id
+            self.assertEqual(str(object_db[4]), box["top_id"])
+            # valid column must be true
+            self.assertTrue(object_db[6])
+            
+    def test_new_correction_inference_feedback_not_guess(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        for box in self.registered_inference["boxes"]:
+            box["label"] = "unreal_seed"
+            box["classId"] = self.unreal_seed_id
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for i in range(len(self.boxes_id)) :
+            object_db = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must be equal to the new_top_id
+            new_top_id = datastore.inference.get_seed_object_id(self.cur,self.unreal_seed_id,object_db[0])
+            self.assertTrue(validator.is_valid_uuid(new_top_id))
+            self.assertEqual(str(object_db[4]),str(new_top_id))
+            # valid column must be true
+            self.assertTrue(object_db[6])
+            
+    def test_new_correction_inference_feedback_not_valid(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        for box in self.registered_inference["boxes"]:
+            box["label"] = ""
+            box["classId"] = ""
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for i in range(len(self.boxes_id)) :
+            object_db = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must not be an id
+            self.assertEqual(object_db[4], None)
+            # valid column must be false
+            self.assertFalse(object_db[6])
+            
+    def test_new_correction_inference_feedback_unknown_seed(self):
+        """
+        This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
+        """
+        self.assertTrue(validator.is_valid_uuid(self.inference_id))
+        for box in self.registered_inference["boxes"]:
+            box["label"] = "unknown_seed"
+            box["classId"] = ""
+        asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
+        for i in range(len(self.boxes_id)) :
+            object_db = datastore.inference.get_inference_object(self.cur, self.boxes_id[i])
+            # verified_id must be equal to an id
+            self.assertTrue(validator.is_valid_uuid(str(object_db[4])))
+            # valid column must be true
+            self.assertTrue(object_db[6])
+                    
 if __name__ == "__main__":
     unittest.main()

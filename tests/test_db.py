@@ -644,7 +644,7 @@ class test_inference_functions(unittest.TestCase):
             
         inference_obj=inference.get_inference_object(self.cursor,str(inference_obj_id))
         
-        self.assertEqual(len(inference_obj),9, "The inference object hasn't the number of keys expected")
+        self.assertEqual(len(inference_obj),10, "The inference object hasn't the number of keys expected")
         self.assertEqual(inference_obj[0],inference_obj_id, "The inference object id is not the same as the expected one")
                       
     def test_get_inference_object_error(self):
@@ -758,6 +758,28 @@ class test_inference_functions(unittest.TestCase):
         inference.verify_inference_status(self.cursor, inference_id, self.user_id)
         verified = inference.is_inference_verified(self.cursor, inference_id)
         self.assertTrue(verified, "The inference should be fully verified")
+        
+    def test_get_seed_object_id(self):
+        """
+        Test if get_seed_object_id function correctly returns the seed object id
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        
+        fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,self.seed_id, inference_obj_id)
+        self.assertEqual(seed_obj_id, fetched_seed_obj_id, "The fetched seed object id is not the same as the expected one")
+        
+    def test_get_not_seed_object_id(self):
+        """
+        Test if get_seed_object_id function correctly returns the seed object id
+        """
+        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        mock_seed_id = str(uuid.uuid4())
+        fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
+        self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
         
 if __name__ == "__main__":
     unittest.main()
