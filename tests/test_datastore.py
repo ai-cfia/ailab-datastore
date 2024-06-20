@@ -336,7 +336,6 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
         """
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
-        new_top_ids =[]
         for box in self.registered_inference["boxes"]:
             box["label"] = "unreal_seed"
             box["classId"] = self.unreal_seed_id
@@ -355,7 +354,6 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
         """
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
-        new_top_ids =[]
         for box in self.registered_inference["boxes"]:
             box["label"] = ""
             box["classId"] = ""
@@ -372,7 +370,6 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_correction_inference_feeback function correctly when the box is not a guess
         """
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
-        new_top_ids =[]
         for box in self.registered_inference["boxes"]:
             box["label"] = "unknown_seed"
             box["classId"] = ""

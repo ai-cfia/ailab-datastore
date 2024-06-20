@@ -74,4 +74,3 @@ def compare_object_metadata(object1:dict , object2:dict) -> bool:
         if object1[key] != object2[key]:
             return False
     return True
-

@@ -776,7 +776,7 @@ class test_inference_functions(unittest.TestCase):
         """
         inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
         inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
         mock_seed_id = str(uuid.uuid4())
         fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
         self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
