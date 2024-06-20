@@ -261,12 +261,12 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
     TODO: doc
     """
     try:
-        if "inference_id" in inference_dict.keys():
-            inference_id = inference_dict["inference_id"]
+        if "inferenceId" in inference_dict.keys():
+            inference_id = inference_dict["inferenceId"]
         else:
             raise InferenceFeedbackError("Error: inference_id not found in the given infence_dict")
-        if "user_id" in inference_dict.keys():
-            user_id = inference_dict["user_id"]
+        if "userId" in inference_dict.keys():
+            user_id = inference_dict["userId"]
             if not (user.is_a_user_id(cursor, user_id)):
                 raise InferenceFeedbackError(f"Error: user_id {user_id} not found in the database")
         else:
@@ -278,14 +278,16 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
         #         raise InferenceFeedbackError("Error: There are more boxes than the totalBoxes")
         #     else if len(inference_dict["boxes"]) < infence_dict["totalBoxes"]:
         #         raise InferenceFeedbackError("Error: There are less boxes than the totalBoxes")
+        if inference.is_inference_verified(cursor, inference_id):
+            raise InferenceFeedbackError(f"Error: Inference {inference_id} is already verified")
         for object in inference_dict["boxes"]:
-            box_id = object["box_id"]
+            box_id = object["boxId"]
             seed_name = object["label"]
             seed_id = object["classId"]
             flag_seed = False
             flag_box_metadata = False
             valid = False
-            box_metadata = json.loads(inference_metadata.build_object_import(object))
+            box_metadata = object["box"]
             
             if box_id =="":
                 # This is a new box created by the user
@@ -306,7 +308,9 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
                 # Set the verified_id to the seed_object_id
                 inference.set_inference_object_verified_id(cursor, object_id, seed_object_id)
                 valid = True
-            else:    
+            else: 
+                if (inference.is_object_verified(cursor, box_id)):
+                    raise InferenceFeedbackError(f"Error: Object {box_id} is already verified")
                 # This is a box that was created by the pipeline so it should be within the database
                 object_db = inference.get_inference_object(cursor, box_id)
                 object_metadata = object_db[1]
@@ -342,6 +346,7 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
                     if new_top_id is None:
                         # Seed selected was not an inference guess, we need to create a new seed_object
                         new_top_id=inference.new_seed_object(cursor, seed_id, box_id, 0)
+                        inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
                         flag_seed = True
                     if top_inference_id != new_top_id:
                         # Seed was not correctly identified, set the verified_id to the correct seed_object.id

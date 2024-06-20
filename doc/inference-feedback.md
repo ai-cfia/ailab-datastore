@@ -3,14 +3,14 @@
 ## Contexte
 
 We have a process in place to requests our pipelines to perfom an inference on a
-picture in our blob storage and register the result in the database. Therefor,
+picture in our blob storage and register the result in the database. Therefore,
 we would need a process to register the user's feedback of said inference
 
 ## Prerequisites
 
 - The user must be signed in
 
-- The user has picture uploaded in the blob storage and with its metadata saved
+- The user has a picture uploaded in the blob storage and with its metadata saved
   within the DB.
 
 - The inference result has been saved into the DB.
@@ -72,43 +72,121 @@ sequenceDiagram;
 
     User ->> Frontend: Validate inference
     alt Perfect Inference
-    Frontend -) Backend: Inference result positive (user_id, boxes)
-    Backend -) Datastore: new_perfect_inference_feeback(inference_id, user_id, boxes_id)
-    Note over Backend, Datastore : Each box_id is an inference object in db
+        Frontend -) Backend: Inference result positive (user_id, boxes)
+        Backend -) Datastore: new_perfect_inference_feeback(inference_id, user_id, boxes_id)
+        Note over Backend, Datastore : Each box_id is an inference object in db
         alt if inference not already verified
-            Datastore ->> Database: Set each object.valid = True & object.verified_id=object.top_id
+                Datastore ->> Database: Set each object.valid = True & object.verified_id=object.top_id
         end
     else Annotated Inference
-    Frontend -) Backend: Inference feedback (inference_feedback.json,user_id,inference_id)
-    Backend ->> Datastore: Inference feedback (inference_feedback.json, user_id, inference_id)
-    Datastore -> Database: Get Inference_result(inference_id)
-        loop each Boxes
-            alt box has an id value
-                alt inference_feedback.box.verified= False
-                    Datastore --> Datastore: Next box & flag_all_box_verified=False
-                else
-                    Datastore -) Database: Set object.verified=True & object.verified_by=user_id
-                    Datastore -) Datastore: Compare label & box coordinate
-                    alt label value empty
-                        Datastore -) Database: Set object.top_inference=Null
-                        Datastore -) Database: Set object.modified=False                   
-                    else label or box coordinate are changed & not empty
-                        Datastore -) Database: Update object.top_inference & object.box_metadata
-                        Note over Datastore,Database: if the top label is not part of the seed_object guesses, <br>we will need to create a new instance of seed_object.
-                        Datastore -) Database: Set object.modified=true
-                    else label and box haven't changed
-                        Datastore -) Database: Set object.modified=False
-                    end
+        Frontend -) Backend: Inference feedback (inference_feedback.json,user_id,inference_id)
+        Backend ->> Datastore: new_correction_feedback(inference_feedback.json)
+        alt inference not already verified
+            Datastore -> Database: Get Inference_result(inference_id)
+            loop each Boxes
+                alt object not already verified
+                    Datastore-)Database: update object.verified & object.valid
                 end
-            else box has no id value
-                Datastore -) Database: Create new object and seed_object
             end
         end
     end
-    Datastore -) Datastore : verify_inference_status(inference_id, user_id)
-    Note over Datastore, Database : set inference verified if all objects have a verified_id
 
-    
+```
 
+## Sequence of checking the corrected inference fields
+
+``` mermaid
+
+sequenceDiagram;
+  actor User
+  participant Datastore
+  participant f as inference feedback
+  participant Database
+  
+    User --> Datastore: gives 
+    Datastore -->> f: has key "inferenceId"
+    rect rgb(255, 170, 170)
+    alt no "inferenceId" key 
+           
+        Datastore --x User: Error
+    end
+    end
+    Datastore -->> f: has key "userId"
+    rect rgb(255, 170, 170)
+    alt no "userId" key    
+        Datastore -x User: Error
+    end
+    end
+    Datastore -) Database: is_a_user(user_id)
+    rect rgb(255, 170, 170)
+    alt not a registered user
+        Datastore -x User: Error
+    end
+    end
+    Datastore -) Database: is_inference_verified(inference_id)
+    rect rgb(255, 170, 170)
+    alt inference is verified
+        Datastore --x User: Error
+    end
+    end
+    loop for each box in "boxes"
+        Datastore -->> f: get "boxId"
+        Datastore -->> f: get "classId" (seed_id) & "label" (seed_name)
+        rect rgb(250,150,250)
+        note right of f: The box was created by the user
+        alt no boxId
+            Datastore -) Database: new_inference_object(inference_id,box_metadata)
+            Database -->> Datastore: object_id
+            Datastore -) Database: new_seed_object(object_id,seed_id)
+            Database -->> Datastore: seed_object_id
+            Datastore -) Database: set_inference_object_verified_id(object_id,seed_object_id)
+        end
+        end
+        rect rgb(255,200,150)
+        Note right of f: Finding the seed_id
+        alt no seed_id
+            alt no seed_name
+                note right of Datastore: The box was deleted by the user and is not valid anymore.
+            else 
+                Datastore -) Database: is_seed_registered(seed_name)
+                alt seed not registered
+                note right of Datastore: The selected seed is not known in our database.
+                    Datastore -) Database: new_seed(seed_name)
+                    Database -->> Datastore: seed_id
+                end
+            end
+        end
+        end
+        Datastore -) Database: is_object_verified(box_id)
+        rect rgb(255, 170, 170)
+        alt box is verified
+            Datastore --x User: Error
+        end
+        end
+        rect rgb(150,255,255)
+        Note right of f: Checking box_metadata update
+        Datastore -) Database: get_inference_object(box_id)
+        Datastore -) Database: new_top_id = get_seed_object_id(seed_id,box_id)
+        alt box_metadata has changed
+            Datastore -) Database: set_object_box_metadata(box_id, box_metadata)
+        end
+        end
+        rect rgb(150,255,200)
+        Note right of f: Checking which guess <br> is the correct one
+        alt new_top_id is None
+        note right of Datastore: The seed selected was not part of the inference guesses
+            Datastore -) Database: seed_object_id = new_seed_object(object_id,seed_id)
+            Datastore -) Database: set_inference_object_verified_id(object_id,seed_object_id)
+        else new_top_id != old_top_id
+        note right of Datastore: The seed was not correctly identified but is within the inference guesses
+            Datastore -) Database: set_inference_object_verified_id(object_id,new_top_id)
+        else new_top_id == old_top_id
+        note right of Datastore: The seed was correctly identified
+            Datastore -) Database: set_inference_object_verified_id(object_id,old_top_id)
+        end
+        end
+        Datastore -) Database: set_inference_object_valid(box_id,is_valid)
+    end
+    Datastore -) Database: verify_inference_status(inference_id,user_id)
 
 ```

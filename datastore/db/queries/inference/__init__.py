@@ -154,6 +154,29 @@ def is_inference_verified(cursor, inference_id):
     except Exception:
         raise Exception(f"Error: could not select verified column for inference {inference_id}")
 
+def is_object_verified(cursor, object_id):
+    """
+    Check if an object is verified or not.
+    
+    return True if verified, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                verified_id
+            FROM
+                object
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(object_id),))
+        res = cursor.fetchone()[0]
+        return (res is not None)
+    except ValueError:
+        return False
+    except Exception:
+        raise Exception(f"Error: could not select verified_id column for object {object_id}")
+
 def verify_inference_status(cursor, inference_id, user_id):
     """
     Set inference verified if inference is fully verified and set the user as the feedback user
