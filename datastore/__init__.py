@@ -468,7 +468,7 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
                 object_id = object_db[0]
 
                 # Check if there are difference between the metadata
-                if not (inference_metadata.compare_object_metadata(box_metadata["box"], object_metadata["box"])):
+                if not (inference_metadata.compare_object_metadata(box_metadata, object_metadata["box"])):
                     # Update the object metadata
                     # flag_box_metadata = True
                     inference.set_object_box_metadata(cursor, box_id, json.dumps(box_metadata))
