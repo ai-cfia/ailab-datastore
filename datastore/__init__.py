@@ -143,7 +143,7 @@ async def get_user_container_client(user_id, tier="user"):
     if isinstance(container_client,ContainerClient):
         return container_client
 
-async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str):
+async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None):
     """
     Create a picture_set in the database and a related folder in the blob storage
 
@@ -152,6 +152,7 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
         container_client: The container client of the user.
         nb_pictures (int): number of picture that the picture set should be related to
         user_id (str): id of the user creating this picture set
+        folder_name : name of the folder/picture set
 
     Returns:
         _type_: _description_
@@ -165,10 +166,10 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
 
         picture_set = data_picture_set.build_picture_set(user_id, nb_pictures)
         picture_set_id = picture.new_picture_set(
-            cursor=cursor, picture_set=picture_set, user_id=user_id
+            cursor=cursor, picture_set=picture_set, user_id=user_id, folder_name=folder_name
         )
 
-        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id))
+        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name)
         if not folder_created:
             raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         

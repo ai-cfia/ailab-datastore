@@ -22,8 +22,7 @@ class PictureUpdateError(Exception):
 This module contains all the queries related to the Picture and PictureSet tables.
 """
 
-
-def new_picture_set(cursor, picture_set, user_id: str):
+def new_picture_set(cursor, picture_set, user_id: str, folder_name: str = None):
     """
     This function uploads a new PictureSet to the database.
 
@@ -31,28 +30,50 @@ def new_picture_set(cursor, picture_set, user_id: str):
     - cursor (cursor): The cursor of the database.
     - picture_set (str): The PictureSet to upload. Must be formatted as a json
     - user_id (str): The UUID of the user uploading.
+    - folder_name (str, optional): The name of the folder. Defaults to None.
 
     Returns:
     - The UUID of the picture_set.
     """
     try:
-        query = """
-            INSERT INTO 
-                picture_set(
+        if folder_name is None:
+            query = """
+                INSERT INTO 
+                    picture_set(
+                        picture_set,
+                        owner_id
+                        )
+                VALUES
+                    (%s, %s)
+                RETURNING id
+                """
+            cursor.execute(
+                query,
+                (
                     picture_set,
-                    owner_id
-                    )
-            VALUES
-                (%s,%s)
-            RETURNING id    
-            """
-        cursor.execute(
-            query,
-            (
-                picture_set,
-                user_id,
-            ),
-        )
+                    user_id,
+                ),
+            )
+        else:
+            query = """
+                INSERT INTO 
+                    picture_set(
+                        picture_set,
+                        owner_id,
+                        name
+                        )
+                VALUES
+                    (%s, %s, %s)
+                RETURNING id
+                """
+            cursor.execute(
+                query,
+                (
+                    picture_set,
+                    user_id,
+                    folder_name,
+                ),
+            )
         return cursor.fetchone()[0]
     except Exception:
         raise PictureSetCreationError("Error: picture_set not uploaded")
