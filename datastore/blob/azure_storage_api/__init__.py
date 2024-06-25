@@ -112,24 +112,24 @@ async def get_blob(container_client, blob_name):
         raise GetBlobError("Error getting blob")
 
 
-async def upload_image(container_client, folder_uuid, image:str, image_uuid):
+async def upload_image(container_client, folder_name, image:str, image_uuid):
     """
     uploads the image to the specified folder within the user's container,
     if the specified folder doesnt exist, it creates it with a uuid
     
     Parameters:
     - container_client: the Azure container client
-    - folder_uuid: the name of the destination folder
+    - folder_name: the name of the destination folder
     - image:
     """
     try:
-        if not await is_a_folder(container_client, folder_uuid):
-            raise CreateDirectoryError(f"Folder:{folder_uuid} does not exist")
+        if not await is_a_folder(container_client, folder_name):
+            raise CreateDirectoryError(f"Folder:{folder_name} does not exist")
         else:
-            blob_name = "{}/{}.png".format(folder_uuid, image_uuid)
+            blob_name = "{}/{}.png".format(folder_name, image_uuid)
             metadata = {
                 "picture_uuid": f"{str(image_uuid)}",
-                "picture_set_uuid": f"{str(folder_uuid)}",
+                "picture_set_uuid": f"{str(folder_name)}",
             }
             blob_client = container_client.upload_blob(blob_name, image, overwrite=True)
             blob_client.set_blob_tags(metadata)
@@ -270,7 +270,7 @@ async def get_image_count(container_client, folder_name):
             blob_list = container_client.list_blobs()
             count = 0
             for blob in blob_list:
-                if (blob.name.split("/")[0] == folder_uuid) and (
+                if (blob.name.split("/")[0] == folder_name) and (
                     blob.name.split(".")[-1] == "png"
                 ):
                     count += 1
@@ -307,7 +307,7 @@ async def get_directories(container_client):
         raise error
     except Exception as error:
         print(error)
-        raise Exception("Datastore.blob.azure_storage unHandled Error")
+        raise FolderListError(f"Error getting directories: {str(error)}")
 
 
 async def download_container(container_client, container_name, local_dir):
@@ -346,19 +346,30 @@ async def download_container(container_client, container_name, local_dir):
 
 async def get_blobs_from_tag(container_client, tag: str):
     """
-    This function gets the list of blobs in a picture set folder
+    This function gets the names of blobs in a picture set folder
 
     Parameters:
     - container_client: the Azure container client
-    - tag: the tag to search for in the blobs ex: ""yourtagname"='firsttag' and "yourtagname2"='secondtag'"
+    - tag: the tag to search for in the blobs ex: 'folder_name'
 
-    Returns: the list of blobs
+    Returns: the names of blobs
     """
     try:
-        blob_list = container_client.find_blobs_by_tags(tag)
-        if len(blob_list) > 0:
-            return blob_list
+        # The find_blobs_by_tags methods should return a list of blobs with the given tag
+        #blob_list = list(container_client.find_blobs_by_tags(filter_expression=tag))
+        
+        # Without the find_blobs_by_tags method
+        blob_list = list(container_client.list_blobs(include=['tags']))
+        result = []
+        for blob in blob_list:
+            if 'picture_set_uuid' in blob.get('tags') and blob.get('tags').get('picture_set_uuid') == tag:
+                result.append(blob.name)
+
+    
+        if len(result) > 0:
+            return result
         else:
-            raise Exception("No blobs found with the given tag")
-    except Exception:
-        raise Exception("Error getting blobs")
+            raise GetBlobError("No blobs found with the given tag")
+    except Exception as e:
+        print(f"Exception during find_blobs_by_tags: {e}")
+        raise GetBlobError(f"Error getting blobs: {str(e)}")

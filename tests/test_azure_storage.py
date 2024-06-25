@@ -20,7 +20,9 @@ from datastore.blob.azure_storage_api import (
     mount_container,
     is_a_folder,
     create_folder,
-    get_folder_uuid
+    get_folder_uuid,
+    get_blobs_from_tag,
+    get_directories
 )
 
 class TestMountContainerFunction(unittest.TestCase):
@@ -238,5 +240,84 @@ class TestGetFolderUUID(unittest.TestCase):
         with self.assertRaises(GetFolderUUIDError):
             asyncio.run(get_folder_uuid(self.container_client,not_folder_name))
 
+class TestGetBlobsFromTag(unittest.TestCase) :
+    def setUp(self):
+        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.tier="testuser"
+        self.container_uuid=str(uuid.uuid4())
+        self.container_name=f"{self.tier}-{self.container_uuid}"
+        self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.container_client = self.blob_service_client.create_container(self.container_name)
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.image_byte = self.image.tobytes()
+        self.image_hash = asyncio.run(generate_hash(self.image_byte))
+        self.image_uuid = str(uuid.uuid4())
+        self.folder_name="test_folder"
+        self.folder_uuid= str(uuid.uuid4())
+        asyncio.run(create_folder(self.container_client,self.folder_uuid, self.folder_name))
+        asyncio.run(upload_image(self.container_client, self.folder_name,self.image_hash,self.image_uuid))
+        
+    def tearDown(self):
+        self.container_client.delete_container()
+
+    def test_get_blobs_from_tag(self):
+        tag = 'test_folder'
+        try:
+            result = asyncio.run(get_blobs_from_tag(self.container_client, tag))
+            self.assertGreater(len(result), 0)
+        except Exception as e:
+            print(f"Test failed with exception: {e}")
+
+    def test_get_blobs_from_tag_error(self):
+        tag = "wrong_tag"
+        with self.assertRaises(Exception):
+            asyncio.run(get_blobs_from_tag(self.container_client, tag))
+            
+    
+
+class TestGetDirectories(unittest.TestCase) :
+    def setUp(self) :
+        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.tier="testuser"
+        self.container_uuid=str(uuid.uuid4())
+        self.container_name=f"{self.tier}-{self.container_uuid}"
+        self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.container_client = self.blob_service_client.create_container(self.container_name)
+        self.folder_name="test_folder"
+        self.folder_uuid= str(uuid.uuid4())
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.image_byte = self.image.tobytes()
+        self.image_hash = asyncio.run(generate_hash(self.image_byte))
+        self.image_uuid = str(uuid.uuid4())
+        asyncio.run(create_folder(self.container_client,self.folder_uuid, self.folder_name))
+        
+    def tearDown(self):
+        self.container_client.delete_container()
+    
+    def test_get_directories(self) :
+        try:
+            result = asyncio.run(get_directories(self.container_client))
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result.get(self.folder_name), 0)
+            
+            asyncio.run(upload_image(self.container_client, self.folder_name,self.image_hash,self.image_uuid))
+            
+            result = asyncio.run(get_directories(self.container_client))
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result.get(self.folder_name), 1)
+        except Exception as e:
+            print(f"Test failed with exception: {e}")
+            
+    def test_get_directories_error(self):
+        mock_container_client = Mock()
+        mock_container_client.list_blobs.side_effect = FolderListError("Resource not found")
+        with self.assertRaises(FolderListError):
+            asyncio.run(get_directories(mock_container_client))
+        
+    
 if __name__ == "__main__":
     unittest.main()
