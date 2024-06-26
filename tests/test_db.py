@@ -11,7 +11,7 @@ from PIL import Image
 import io
 import base64
 from time import sleep
-from datastore.db.queries import user,seed,picture,inference
+from datastore.db.queries import user,seed,picture,inference,analysis
 from datastore.db.metadata import picture_set as picture_set_data,picture as picture_data,validator
 import datastore.db.__init__ as db
 
@@ -781,5 +781,32 @@ class test_inference_functions(unittest.TestCase):
         fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
         self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
         
+class test_analysis_functions(unittest.TestCase):
+    def setUp(self):
+        # prepare the connection and cursor
+        self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
+        self.cursor = db.cursor(self.con)
+        db.create_search_path(self.con, self.cursor)
+
+        self.analysis_dict = {
+            "company_name": "GreenGrow Fertilizers Inc.",
+            "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
+            "company_website": "www.greengrowfertilizers.com",
+        }      
+
+    def tearDown(self):
+        self.con.rollback()
+        db.end_query(self.con, self.cursor)
+
+    def test_new_analysis(self):
+        """
+        This test checks if the new_analysis function returns a valid UUID
+        """
+        analysis_id = analysis.new_analysis(self.cursor, self.analysis_dict)
+
+        self.assertTrue(
+            validator.is_valid_uuid(analysis_id), "The analysis_id is not a valid UUID"
+        )
+
 if __name__ == "__main__":
     unittest.main()

@@ -12,6 +12,14 @@ NACHET_SCHEMA = os.environ.get("NACHET_SCHEMA")
 if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA is not set")
 
+FERTISCAN_DB_URL = os.environ.get("FERTISCAN_DB_URL")
+if FERTISCAN_DB_URL is None or FERTISCAN_DB_URL == "":
+    raise ValueError("FERTISCAN_DB_URL is not set")
+
+FERTISCAN_SCHEMA = os.environ.get("FERTISCAN_SCHEMA")
+if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
+    raise ValueError("FERTISCAN_SCHEMA is not set")
+
 # def connect_db():
 #     """Connect to the postgresql database and return the connection."""
 #     connection = psycopg.connect(
@@ -24,12 +32,12 @@ if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
 #     return connection
 
 
-def connect_db():
+def connect_db(conn_str : str = NACHET_DB_URL, schema :str  = NACHET_SCHEMA):
     """Connect to the postgresql database and return the connection."""
     connection = psycopg.connect(
-        conninfo=NACHET_DB_URL,
+        conninfo=conn_str,
         autocommit=False,
-        options=f"-c search_path={NACHET_SCHEMA},public",
+        options=f"-c search_path={schema},public",
     )
     assert connection.info.encoding == "utf-8", (
         "Encoding is not UTF8: " + connection.info.encoding
@@ -50,7 +58,7 @@ def end_query(connection, cursor):
     connection.close()
 
 
-def create_search_path(connection, cur):
+def create_search_path(connection, cur,schema = NACHET_SCHEMA):
     cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
     connection.commit()
 

@@ -469,6 +469,49 @@ class test_feedback(unittest.TestCase):
             self.assertTrue(validator.is_valid_uuid(str(object_db[4])))
             # valid column must be true
             self.assertTrue(object_db[6])
+
+class test_register_analysis(unittest.TestCase):
+    def setUp(self):
+        self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
+        self.cur = db.cursor(self.con)
+        db.create_search_path(self.con, self.cur)
+        self.connection_str=os.environ["NACHET_STORAGE_URL"]
+        self.user_email="test@email"
+        self.user_obj= asyncio.run(datastore.new_user(self.cur,self.user_email,self.connection_str,'test-user'))
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.pic_encoded = self.image.tobytes()
+        self.container_name='test-container'
+        self.user_id=datastore.User.get_id(self.user_obj)
+        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))  
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, 'inference_result.json')
+        with open(file_path) as file:
+            self.inference= json.load(file)
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
+        model_id = "test_model_id"
+        self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
+        self.registered_inference["user_id"] = self.user_id
+        self.mock_box = {
+                "topX": 123,
+                "topY": 456,
+                "bottomX": 789,
+                "bottomY": 123
+            }
+        self.inference_id = self.registered_inference.get("inference_id")
+        self.boxes_id = []
+        self.top_id = []
+        self.unreal_seed_id= datastore.seed.new_seed(self.cur, "unreal_seed")
+        for box in self.registered_inference["boxes"]:
+            self.boxes_id.append(box["box_id"])
+            self.top_id.append(box["top_id"])
+            box["classId"] = datastore.seed.get_seed_id(self.cur, box["label"])
+
+    def tearDown(self):
+        self.con.rollback()
+        self.container_client.delete_container()
+        db.end_query(self.con, self.cur)
                     
 if __name__ == "__main__":
     unittest.main()

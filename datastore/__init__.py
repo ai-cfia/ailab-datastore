@@ -14,6 +14,7 @@ import datastore.db.queries.seed as seed
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
+import uuid
 import json
 from azure.storage.blob import BlobServiceClient,ContainerClient
 import os
@@ -29,6 +30,10 @@ if NACHET_BLOB_KEY is None or NACHET_BLOB_KEY == "":
 NACHET_STORAGE_URL = os.environ.get("NACHET_STORAGE_URL")
 if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
     raise ValueError("NACHET_STORAGE_URL is not set")
+
+FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
+if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
+    raise ValueError("FERTISCAN_STORAGE_URL is not set")
 
 
 class UserAlreadyExistsError(Exception):
@@ -654,3 +659,29 @@ async def get_seed_info(cursor):
         seed_name = seed_db[1]
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
+
+async def register_analysis(cursor,container_client, analysis_dict,picture,folder = "General",picture_id :str):
+    """
+    Register an analysis in the database
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - container_client: The container client of the user.
+    - analysis_dict (dict): The analysis to register in a dict string (soon to be json loaded).
+    - picture (str): The picture to upload.
+
+    Returns:
+    - The analysis_dict with the analysis_id added.
+    """
+    try:
+        if picture_id is None or picture_id == "":
+            picture_id = str(uuid.uuid4())
+        if not azure_storage.is_a_folder(container_client, folder):
+            azure_storage.create_folder(container_client, folder)
+        azure_storage.upload_image(container_client, folder, picture, )
+        analysis_id = inference.new_analysis(cursor, analysis_dict, user_id)
+        analysis_dict["analysis_id"] = str(analysis_id)
+        return analysis_dict
+    except Exception as e:
+        print(e.__str__())
+        raise Exception("Datastore Unhandled Error")
