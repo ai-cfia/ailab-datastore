@@ -106,7 +106,7 @@ async def new_user(cursor,email, connection_string,tier='user')->User:
         pic_set_metadata = data_picture_set.build_picture_set(
             user_id=user_uuid, nb_picture=0
         )
-        pic_set_id = picture.new_picture_set(cursor, pic_set_metadata, user_uuid)
+        pic_set_id = picture.new_picture_set(cursor, pic_set_metadata, user_uuid,  "General")
         user.set_default_picture_set(cursor, user_uuid, pic_set_id)
         # Basic user container structure
         response = await azure_storage.create_folder(
