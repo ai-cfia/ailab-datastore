@@ -7,6 +7,7 @@ import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
 import datastore.db.queries.picture as picture
+import datastore.db.queries.analysis as analysis
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
@@ -679,7 +680,7 @@ async def register_analysis(cursor,container_client, analysis_dict,picture_id :s
         if not azure_storage.is_a_folder(container_client, folder):
             azure_storage.create_folder(container_client, folder)
         azure_storage.upload_image(container_client, folder, picture, picture_id)
-        analysis_id = inference.new_analysis(cursor, analysis_dict, user_id)
+        analysis_id = analysis.new_analysis(cursor, analysis_dict)
         analysis_dict["analysis_id"] = str(analysis_id)
         return analysis_dict
     except Exception as e:
