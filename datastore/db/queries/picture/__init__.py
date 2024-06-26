@@ -17,6 +17,8 @@ class PictureSetNotFoundError(Exception):
 class PictureUpdateError(Exception):
     pass
 
+class GetPictureSetError(Exception):
+    pass
 
 """
 This module contains all the queries related to the Picture and PictureSet tables.
@@ -196,7 +198,55 @@ def get_picture_set(cursor, picture_set_id: str):
         return cursor.fetchone()[0]
     except Exception:
         raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
+    
+def get_picture_set_name(cursor, picture_set_id: str):
+    """
+    This function retrieves the name of a PictureSet from the database.
 
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user to retrieve the picture_set from (the owner).
+    - picture_set_id (str): The UUID of the PictureSet to retrieve.
+
+    Returns:
+    - The name of the PictureSet.
+    """
+    try:
+        query = """
+            SELECT
+                name
+            FROM
+                picture_set
+            WHERE
+                id = %s
+                """
+        cursor.execute(query, (picture_set_id, ))
+        return cursor.fetchone()[0]
+    except Exception:
+        raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
+
+def get_user_picture_sets(cursor, user_id: str):
+    """
+    This function retrieves all the PictureSets of a specific user from the database.
+
+    Args:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): uuid of the user
+    """
+    try :
+        query = """
+            SELECT
+                id,
+                name
+            FROM
+                picture_set
+            WHERE
+                owner_id = %s
+            """
+        cursor.execute(query, (user_id,))
+        return cursor.fetchall()
+    except Exception:
+        raise GetPictureSetError(f"Error: Error retrieving picture_sets for user:{user_id}")
 
 def get_picture(cursor, picture_id: str):
     """
@@ -223,6 +273,26 @@ def get_picture(cursor, picture_id: str):
     except Exception:
         raise PictureNotFoundError(f"Error: Picture not found: {picture_id}")
 
+def count_pictures(cursor, picture_set_id: str):
+    """This function retrieves the number of pictures in a picture_set.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_set_id (str): id of the picture_set to count the pictures from.
+    """
+    try :
+        query = """
+            SELECT
+                COUNT(*)
+            FROM
+                picture
+            WHERE
+                picture_set_id = %s
+            """
+        cursor.execute(query, (picture_set_id,))
+        return cursor.fetchone()[0]
+    except Exception:
+        raise PictureSetNotFoundError(f"Error getting pictures count in picture set : {picture_set_id}")
 
 def get_user_latest_picture_set(cursor, user_id: str):
     """

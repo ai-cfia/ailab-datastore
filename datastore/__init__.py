@@ -261,10 +261,14 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
             seed_id=seed_id,
         )
         # Upload the picture to the Blob Storage
+        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        if folder_name is None:
+            folder_name = picture_set_id
+        
         response = await azure_storage.upload_image(
-            container_client, picture_set_id, picture_hash, picture_id
+            container_client, folder_name, picture_hash, picture_id
         )
-        picture_link = container_client.url + "/" + str(picture_set_id) + "/" + str(picture_id)
+        picture_link = container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
         # Create picture metadata and update DB instance (with link to Azure blob)
         """
         data = picture_metadata.build_picture(
@@ -655,3 +659,25 @@ async def get_seed_info(cursor):
         seed_name = seed_db[1]
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
+
+async def get_picture_sets_info(cursor, user_id: str):
+    """This function retrieves the picture sets names and number of pictures from the database.
+
+    Args:
+        user_id (str): id of the user
+    """
+    # Check if user exists
+    if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+        raise user.UserNotFoundError(
+            f"User not found based on the given id: {user_id}"
+        )
+    
+    result = {}
+    picture_sets = picture.get_user_picture_sets(cursor, user_id)
+    for picture_set in picture_sets:
+        picture_set_id = picture_set[0]
+        nb_picture = picture.count_pictures(cursor, picture_set_id)
+        result[picture_set[1]] = nb_picture
+    return result
+    
+    
