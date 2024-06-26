@@ -507,5 +507,40 @@ class test_feedback(unittest.TestCase):
             # valid column must be true
             self.assertTrue(object_db[6])
 
+class test_analysis(unittest.TestCase):
+    def setUp(self):
+        self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
+        self.cur = db.cursor(self.con)
+        db.create_search_path(self.con, self.cur,db.FERTISCAN_SCHEMA)
+        self.connection_str=os.environ["FERTISCAN_STORAGE_URL"]
+        
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.pic_encoded = self.image.tobytes()
+
+        self.container_name='dev'
+        # self.credentials = datastore.blob.get_account_sas(os.environ["FERTISCAN_BLOB_ACCOUNT"], os.environ["FERTISCAN_BLOB_KEY"])
+        # self.container_client = asyncio.run(datastore.azure_storage.mount_container(self.connection_str,self.container_name,True,'test',self.credentials))
+        self.container_client = 'on hold'
+        self.analysis_dict = {
+            "company_name": "GreenGrow Fertilizers Inc.",
+            "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
+            "company_website": "www.greengrowfertilizers.com",
+        }      
+
+    def tearDown(self):
+        self.con.rollback()
+        # self.container_client.delete_container()
+        db.end_query(self.con, self.cur)
+
+    def test_registere_analysis(self):
+        """
+        Test the register analysis function
+        """
+        # self.assertTrue(self.container_client.exists())
+        analysis = asyncio.run(datastore.register_analysis(self.cur, self.container_client,self.analysis_dict,self.pic_encoded,"","General"))
+        self.assertTrue(validator.is_valid_uuid(analysis["analysis_id"]))
+                    
 if __name__ == "__main__":
     unittest.main()
