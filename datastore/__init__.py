@@ -144,7 +144,7 @@ async def get_user_container_client(user_id, tier="user",storage_url = NACHET_ST
     sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        storage, user_id, True, tier,sas
+        storage_url, user_id, True, tier,sas
     )
     if isinstance(container_client,ContainerClient):
         return container_client
