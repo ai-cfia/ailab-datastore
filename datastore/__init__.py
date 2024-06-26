@@ -11,6 +11,7 @@ import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed
+import datastore.db.queries.analysis as analysis
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
@@ -660,7 +661,7 @@ async def get_seed_info(cursor):
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
 
-async def register_analysis(cursor,container_client, analysis_dict,picture,folder = "General",picture_id :str):
+async def register_analysis(cursor,container_client, analysis_dict,picture,picture_id :str,folder = "General"):
     """
     Register an analysis in the database
 
@@ -676,10 +677,10 @@ async def register_analysis(cursor,container_client, analysis_dict,picture,folde
     try:
         if picture_id is None or picture_id == "":
             picture_id = str(uuid.uuid4())
-        if not azure_storage.is_a_folder(container_client, folder):
-            azure_storage.create_folder(container_client, folder)
-        azure_storage.upload_image(container_client, folder, picture, )
-        analysis_id = inference.new_analysis(cursor, analysis_dict, user_id)
+        # if not await azure_storage.is_a_folder(container_client, folder):
+        #     await azure_storage.create_folder(container_client, folder)
+        # azure_storage.upload_image(container_client, folder, picture, picture_id)
+        analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
         analysis_dict["analysis_id"] = str(analysis_id)
         return analysis_dict
     except Exception as e:

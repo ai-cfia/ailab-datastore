@@ -786,13 +786,13 @@ class test_analysis_functions(unittest.TestCase):
         # prepare the connection and cursor
         self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
         self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor)
+        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
 
-        self.analysis_dict = {
+        self.analysis_dict = json.dumps({
             "company_name": "GreenGrow Fertilizers Inc.",
             "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
             "company_website": "www.greengrowfertilizers.com",
-        }      
+        })
 
     def tearDown(self):
         self.con.rollback()

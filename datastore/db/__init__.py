@@ -59,12 +59,13 @@ def end_query(connection, cursor):
 
 
 def create_search_path(connection, cur,schema = NACHET_SCHEMA):
-    cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
+    cur.execute(f"""SET search_path TO "{schema}";""")
     connection.commit()
 
 if __name__ == "__main__":
-    connection = connect_db()
+    connection = connect_db(FERTISCAN_DB_URL,FERTISCAN_SCHEMA)
+    print(FERTISCAN_DB_URL)
     cur = cursor(connection)
-    create_search_path(connection, cur)
+    create_search_path(connection, cur,FERTISCAN_SCHEMA)
     end_query(connection, cur)
     print("Connection to the database successful")

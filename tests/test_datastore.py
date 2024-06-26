@@ -470,48 +470,40 @@ class test_feedback(unittest.TestCase):
             # valid column must be true
             self.assertTrue(object_db[6])
 
-class test_register_analysis(unittest.TestCase):
+class test_analysis(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
         self.cur = db.cursor(self.con)
-        db.create_search_path(self.con, self.cur)
-        self.connection_str=os.environ["NACHET_STORAGE_URL"]
-        self.user_email="test@email"
-        self.user_obj= asyncio.run(datastore.new_user(self.cur,self.user_email,self.connection_str,'test-user'))
+        db.create_search_path(self.con, self.cur,db.FERTISCAN_SCHEMA)
+        self.connection_str=os.environ["FERTISCAN_STORAGE_URL"]
+        
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
         self.image.save(self.image_byte_array, format="TIFF")
         self.pic_encoded = self.image.tobytes()
-        self.container_name='test-container'
-        self.user_id=datastore.User.get_id(self.user_obj)
-        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))  
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(base_dir, 'inference_result.json')
-        with open(file_path) as file:
-            self.inference= json.load(file)
-        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
-        model_id = "test_model_id"
-        self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
-        self.registered_inference["user_id"] = self.user_id
-        self.mock_box = {
-                "topX": 123,
-                "topY": 456,
-                "bottomX": 789,
-                "bottomY": 123
-            }
-        self.inference_id = self.registered_inference.get("inference_id")
-        self.boxes_id = []
-        self.top_id = []
-        self.unreal_seed_id= datastore.seed.new_seed(self.cur, "unreal_seed")
-        for box in self.registered_inference["boxes"]:
-            self.boxes_id.append(box["box_id"])
-            self.top_id.append(box["top_id"])
-            box["classId"] = datastore.seed.get_seed_id(self.cur, box["label"])
+
+        self.container_name='dev'
+        # self.credentials = datastore.blob.get_account_sas(os.environ["FERTISCAN_BLOB_ACCOUNT"], os.environ["FERTISCAN_BLOB_KEY"])
+        # self.container_client = asyncio.run(datastore.azure_storage.mount_container(self.connection_str,self.container_name,True,'test',self.credentials))
+        self.container_client = 'on hold'
+        self.analysis_dict = {
+            "company_name": "GreenGrow Fertilizers Inc.",
+            "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
+            "company_website": "www.greengrowfertilizers.com",
+        }      
 
     def tearDown(self):
         self.con.rollback()
-        self.container_client.delete_container()
+        # self.container_client.delete_container()
         db.end_query(self.con, self.cur)
+
+    def test_registere_analysis(self):
+        """
+        Test the register analysis function
+        """
+        # self.assertTrue(self.container_client.exists())
+        analysis = asyncio.run(datastore.register_analysis(self.cur, self.container_client,self.analysis_dict,self.pic_encoded,"","General"))
+        self.assertTrue(validator.is_valid_uuid(analysis["analysis_id"]))
                     
 if __name__ == "__main__":
     unittest.main()

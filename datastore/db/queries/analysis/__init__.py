@@ -15,11 +15,16 @@ def new_analysis(cursor, analysis_dict):
     """
     try:
         query = """
-            INSERT INTO analysis (data)
-            VALUES (%s)
+            INSERT INTO 
+                analysis(
+                    data
+                    )
+            VALUES 
+                (%s)
             RETURNING id
             """
         cursor.execute(query, (analysis_dict,))
         return cursor.fetchone()[0]
-    except Exception:
+    except Exception as e:
+        print(e)
         raise Exception("Error: analysis could not be created")
