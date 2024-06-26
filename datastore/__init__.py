@@ -11,7 +11,6 @@ import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed
-import datastore.db.queries.analysis as analysis
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
@@ -132,7 +131,7 @@ async def new_user(cursor,email, connection_string,tier='user')->User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, tier="user"):
+async def get_user_container_client(user_id, tier="user",storage_url = NACHET_STORAGE_URL):
     """
     Get the container client of a user
 
@@ -144,7 +143,7 @@ async def get_user_container_client(user_id, tier="user"):
     sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        NACHET_STORAGE_URL, user_id, True, tier,sas
+        storage, user_id, True, tier,sas
     )
     if isinstance(container_client,ContainerClient):
         return container_client
@@ -661,7 +660,7 @@ async def get_seed_info(cursor):
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
 
-async def register_analysis(cursor,container_client, analysis_dict,picture,picture_id :str,folder = "General"):
+async def register_analysis(cursor,container_client, analysis_dict,picture_id :str,picture,folder = "General"):
     """
     Register an analysis in the database
 
@@ -669,7 +668,7 @@ async def register_analysis(cursor,container_client, analysis_dict,picture,pictu
     - cursor: The cursor object to interact with the database.
     - container_client: The container client of the user.
     - analysis_dict (dict): The analysis to register in a dict string (soon to be json loaded).
-    - picture (str): The picture to upload.
+    - picture: The picture encoded to upload.
 
     Returns:
     - The analysis_dict with the analysis_id added.
@@ -677,10 +676,10 @@ async def register_analysis(cursor,container_client, analysis_dict,picture,pictu
     try:
         if picture_id is None or picture_id == "":
             picture_id = str(uuid.uuid4())
-        # if not await azure_storage.is_a_folder(container_client, folder):
-        #     await azure_storage.create_folder(container_client, folder)
-        # azure_storage.upload_image(container_client, folder, picture, picture_id)
-        analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
+        if not azure_storage.is_a_folder(container_client, folder):
+            azure_storage.create_folder(container_client, folder)
+        azure_storage.upload_image(container_client, folder, picture, picture_id)
+        analysis_id = inference.new_analysis(cursor, analysis_dict, user_id)
         analysis_dict["analysis_id"] = str(analysis_id)
         return analysis_dict
     except Exception as e:
