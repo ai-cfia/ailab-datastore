@@ -677,10 +677,10 @@ async def register_analysis(cursor,container_client, analysis_dict,picture_id :s
     try:
         if picture_id is None or picture_id == "":
             picture_id = str(uuid.uuid4())
-        if not azure_storage.is_a_folder(container_client, folder):
-            azure_storage.create_folder(container_client, folder)
-        azure_storage.upload_image(container_client, folder, picture, picture_id)
-        analysis_id = analysis.new_analysis(cursor, analysis_dict)
+        # if not azure_storage.is_a_folder(container_client, folder):
+        #     azure_storage.create_folder(container_client, folder)
+        # azure_storage.upload_image(container_client, folder, picture, picture_id)
+        analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
         analysis_dict["analysis_id"] = str(analysis_id)
         return analysis_dict
     except Exception as e:
