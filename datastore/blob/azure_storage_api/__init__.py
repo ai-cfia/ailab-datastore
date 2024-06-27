@@ -363,7 +363,7 @@ async def get_blobs_from_tag(container_client, tag: str):
         result = []
         for blob in blob_list:
             if 'picture_set_uuid' in blob.get('tags') and blob.get('tags').get('picture_set_uuid') == tag:
-                result.append(blob.name)
+                result.append(blob)
 
     
         if len(result) > 0:
@@ -373,3 +373,23 @@ async def get_blobs_from_tag(container_client, tag: str):
     except Exception as e:
         print(f"Exception during find_blobs_by_tags: {e}")
         raise GetBlobError(f"Error getting blobs: {str(e)}")
+
+async def delete_folder(container_client, picture_set_id):
+    """
+    This function deletes a folder in the user's container
+
+    Parameters:
+    - container_client: the Azure container client
+    - picture_set_id: id of the picture set related to the folder to delete
+
+    Returns: True if the folder is deleted, False otherwise
+    """
+    try:
+        blobs = get_blobs_from_tag(container_client, picture_set_id)
+        for blob in blobs:
+            container_client.delete_blob(blob)
+        
+    except GetFolderUUIDError:
+        return False
+    except Exception:
+        return False

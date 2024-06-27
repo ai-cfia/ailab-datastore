@@ -685,7 +685,66 @@ async def get_picture_sets_info(cursor, user_id: str):
         nb_picture = picture.count_pictures(cursor, picture_set_id)
         result[picture_set[1]] = nb_picture
     return result
-    
+
+async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
+    """
+    Delete a picture set from the database and the blob storage
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        user_id (str): id of the user
+        picture_set_id (str): id of the picture set to delete
+        container_client: The container client of the user.
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_set_id(cursor, picture_set_id):
+            raise picture.PictureSetNotFoundError(
+                f"Picture set not found based on the given id: {picture_set_id}"
+            )
+        # Check user is owner of the picture set
+        if not picture.get_picture_set_owner_id(cursor, picture_set_id) == user_id:
+            raise picture.PictureSetDeleteError(
+                f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
+            )
+        # Check if the picture set is the default picture set
+        general_folder_id = user.get_default_picture_set(cursor, user_id)
+        if general_folder_id == picture_set_id:
+            raise picture.PictureSetDeleteError(
+                f"User can't delete the default picture set, user uuid :{user_id}"
+            )
+
+        if picture.count_pictures(cursor, picture_set_id) > 0:
+            #move the pictures to the default picture set	
+            for p in picture.get_picture_set_pictures(cursor, picture_set_id):
+                picture_id = p[0]
+                # set picture set to default one
+                picture.update_picture_picture_set_id(cursor, picture_id, general_folder_id)
+                # change the link in the metadata
+                picture_metadata = json.loads(p[1])
+                picture_metadata["link"] = f"General/{picture_id}"
+                picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), general_folder_id)
+        
+        if picture.count_pictures(cursor, picture_set_id) > 0:
+            raise picture.PictureSetDeleteError(
+                f"Can't delete the folder, there are still pictures in it, folder name : {picture_set_id}"
+            )
+
+        # Delete the picture set
+        picture.delete_picture_set(cursor, picture_set_id)
+        # Delete the folder in the blob storage
+        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        await azure_storage.delete_folder(container_client, folder_name)
+    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError) as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
     
 async def register_analysis(cursor,container_client, analysis_dict,picture_id :str,picture,folder = "General"):
     """
