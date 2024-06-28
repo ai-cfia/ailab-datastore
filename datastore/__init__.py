@@ -682,8 +682,9 @@ async def get_picture_sets_info(cursor, user_id: str):
     picture_sets = picture.get_user_picture_sets(cursor, user_id)
     for picture_set in picture_sets:
         picture_set_id = picture_set[0]
+        picture_set_name = picture_set[1]
         nb_picture = picture.count_pictures(cursor, picture_set_id)
-        result[picture_set[1]] = nb_picture
+        result[picture_set_id] = [picture_set_name, nb_picture]
     return result
 
 async def delete_picture_set(cursor, user_id, picture_set_id, container_client):

@@ -505,7 +505,8 @@ class test_picture_set(unittest.TestCase):
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        self.assertEqual(picture_sets_info.get(self.folder_name), 0)
+        self.assertEqual(picture_sets_info.get(self.picture_set_id)[1], 0)
+        self.assertEqual(picture_sets_info.get(self.picture_set_id)[0], self.folder_name)
         
         self.pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name + "2"))
@@ -513,7 +514,8 @@ class test_picture_set(unittest.TestCase):
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 3)
-        self.assertEqual(picture_sets_info.get(self.folder_name + "2"), 3)
+        self.assertEqual(picture_sets_info.get(self.picture_set_id)[1], 3)
+        self.assertEqual(picture_sets_info.get(self.picture_set_id)[0], self.folder_name + "2")
         
     def test_get_picture_sets_info_error_user_not_found(self):
         """
