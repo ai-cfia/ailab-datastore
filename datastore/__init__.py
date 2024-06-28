@@ -735,11 +735,11 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
                 f"Can't delete the folder, there are still pictures in it, folder name : {picture_set_id}"
             )
 
-        # Delete the picture set
-        picture.delete_picture_set(cursor, picture_set_id)
         # Delete the folder in the blob storage
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         await azure_storage.delete_folder(container_client, folder_name)
+        # Delete the picture set
+        picture.delete_picture_set(cursor, picture_set_id)
     except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError) as e:
         raise e
     except Exception as e:

@@ -491,6 +491,7 @@ class test_picture_set(unittest.TestCase):
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cur, self.seed_name)
         self.folder_name = "test_folder"
+        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name))
     
     def tearDown(self):
         self.con.rollback()
@@ -501,12 +502,10 @@ class test_picture_set(unittest.TestCase):
         """
         Test the get_picture_sets_info function
         """
-        asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name))
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
         self.assertEqual(picture_sets_info.get(self.folder_name), 0)
-        
         
         self.pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name + "2"))
@@ -538,7 +537,7 @@ class test_picture_set(unittest.TestCase):
         """
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        asyncio.run(datastore.delete_picture_set(self.cur, self.user_id, self.folder_name, self.container_client))
+        asyncio.run(datastore.delete_picture_set(self.cur, self.user_id, self.picture_set_id, self.container_client))
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 1)
@@ -548,7 +547,7 @@ class test_picture_set(unittest.TestCase):
         This test checks if the delete_picture_set function correctly raise an exception if the user given doesn't exist in db
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
-            asyncio.run(datastore.delete_picture_set(self.cur, uuid.uuid4(), self.folder_name, self.container_client))
+            asyncio.run(datastore.delete_picture_set(self.cur, uuid.uuid4(), self.picture_set_id, self.container_client))
     
     def test_delete_picture_set_error_connection_error(self):
         """
@@ -557,14 +556,14 @@ class test_picture_set(unittest.TestCase):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.delete_picture_set(mock_cursor, self.user_id, self.folder_name, self.container_client))
+            asyncio.run(datastore.delete_picture_set(mock_cursor, self.user_id, self.picture_set_id, self.container_client))
         
     def test_delete_picture_set_error_picture_set_not_found(self):
         """
         This test checks if the delete_picture_set function correctly raise an exception if the picture set given doesn't exist in db
         """
         with self.assertRaises(datastore.picture.PictureSetNotFoundError):
-            asyncio.run(datastore.delete_picture_set(self.cur, self.user_id, "unknown_folder", self.container_client))
+            asyncio.run(datastore.delete_picture_set(self.cur, self.user_id, uuid.uuid4(), self.container_client))
     
     def test_delete_picture_set_error_not_owner(self):
         """
@@ -574,12 +573,19 @@ class test_picture_set(unittest.TestCase):
         not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
         
         with self.assertRaises(datastore.picture.PictureSetDeleteError):
-            asyncio.run(datastore.delete_picture_set(self.cur, not_owner_user_id, self.folder_name, self.container_client))
+            asyncio.run(datastore.delete_picture_set(self.cur, not_owner_user_id, self.picture_set_id, self.container_client))
             
         container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,'test-user'))
         container_client.delete_container()
     
-        
+    def test_delete_picture_set_error_default_folder(self):
+        """
+        This test checks if the delete_picture_st function correctly raise an exception if the user want to delete the folder "General"
+        """
+        general_folder_id = datastore.user.get_default_picture_set(self.cur, self.user_id)
+        with self.assertRaises(datastore.picture.PictureSetDeleteError):
+            asyncio.run(datastore.delete_picture_set(self.cur, self.user_id, general_folder_id, self.container_client))
+               
 class test_analysis(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
