@@ -38,44 +38,25 @@ def new_picture_set(cursor, picture_set, user_id: str, folder_name: str = None):
     - The UUID of the picture_set.
     """
     try:
-        if folder_name is None:
-            query = """
-                INSERT INTO 
-                    picture_set(
-                        picture_set,
-                        owner_id
-                        )
-                VALUES
-                    (%s, %s)
-                RETURNING id
-                """
-            cursor.execute(
-                query,
-                (
+        query = """
+            INSERT INTO 
+                picture_set(
                     picture_set,
-                    user_id,
-                ),
-            )
-        else:
-            query = """
-                INSERT INTO 
-                    picture_set(
-                        picture_set,
-                        owner_id,
-                        name
-                        )
-                VALUES
-                    (%s, %s, %s)
-                RETURNING id
-                """
-            cursor.execute(
-                query,
-                (
-                    picture_set,
-                    user_id,
-                    folder_name,
-                ),
-            )
+                    owner_id,
+                    name
+                    )
+            VALUES
+                (%s, %s, %s)
+            RETURNING id
+            """
+        cursor.execute(
+            query,
+            (
+                picture_set,
+                user_id,
+                folder_name,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise PictureSetCreationError("Error: picture_set not uploaded")
