@@ -20,6 +20,8 @@ class PictureUpdateError(Exception):
 class GetPictureSetError(Exception):
     pass
 
+class GetPictureError(Exception):
+    pass
 
 class PictureSetDeleteError(Exception):
     pass
@@ -304,7 +306,32 @@ def get_picture_set_pictures(cursor, picture_set_id: str):
         cursor.execute(query, (picture_set_id,))
         return cursor.fetchall()
     except Exception:
-        raise PictureNotFoundError(f"Error: Pictures not found for picture_set:{picture_set_id}")
+        raise GetPictureError(f"Error: Error while getting pictures for picture_set:{picture_set_id}")
+
+def change_picture_set_id(cursor, user_id, old_picture_set_id, new_picture_set_id):
+    """
+    This function change picture_set_id of all pictures in a picture_set to a new one.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user who want to change the picture_set of pictures (the owner).
+    - picture_set_id (str): The UUID of the PictureSet to retrieve the pictures from.
+    """
+    try :
+        if get_picture_set_owner_id(cursor, old_picture_set_id) != user_id or get_picture_set_owner_id(cursor, new_picture_set_id) != user_id:
+            raise PictureUpdateError(f"Error: picture set not own by user :{user_id}")
+        
+        query = """
+            UPDATE picture
+            SET picture_set_id = %s
+            WHERE picture_set_id = %s
+        """
+        cursor.execute(query, (new_picture_set_id, old_picture_set_id,))
+    except PictureUpdateError as e:
+        raise e
+    except Exception:
+        raise PictureUpdateError(f"Error: Error while updating pictures for picture_set:{old_picture_set_id}, for user:{user_id}")
+
 def get_user_latest_picture_set(cursor, user_id: str):
     """
     This function retrieves the latest picture_set of a specific user from the database.
