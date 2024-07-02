@@ -225,6 +225,8 @@ def get_user_picture_sets(cursor, user_id: str):
                 owner_id = %s
             """
         cursor.execute(query, (user_id,))
+        if cursor.rowcount == 0:
+            raise GetPictureSetError(f"Error: PictureSet not found for user:{user_id}")
         return cursor.fetchall()
     except Exception:
         raise GetPictureSetError(f"Error: Error retrieving picture_sets for user:{user_id}")
