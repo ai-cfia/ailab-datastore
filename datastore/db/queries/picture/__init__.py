@@ -42,44 +42,25 @@ def new_picture_set(cursor, picture_set, user_id: str, folder_name: str = None):
     - The UUID of the picture_set.
     """
     try:
-        if folder_name is None:
-            query = """
-                INSERT INTO 
-                    picture_set(
-                        picture_set,
-                        owner_id
-                        )
-                VALUES
-                    (%s, %s)
-                RETURNING id
-                """
-            cursor.execute(
-                query,
-                (
+        query = """
+            INSERT INTO 
+                picture_set(
                     picture_set,
-                    user_id,
-                ),
-            )
-        else:
-            query = """
-                INSERT INTO 
-                    picture_set(
-                        picture_set,
-                        owner_id,
-                        name
-                        )
-                VALUES
-                    (%s, %s, %s)
-                RETURNING id
-                """
-            cursor.execute(
-                query,
-                (
-                    picture_set,
-                    user_id,
-                    folder_name,
-                ),
-            )
+                    owner_id,
+                    name
+                    )
+            VALUES
+                (%s, %s, %s)
+            RETURNING id
+            """
+        cursor.execute(
+            query,
+            (
+                picture_set,
+                user_id,
+                folder_name,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise PictureSetCreationError("Error: picture_set not uploaded")
@@ -248,6 +229,8 @@ def get_user_picture_sets(cursor, user_id: str):
                 owner_id = %s
             """
         cursor.execute(query, (user_id,))
+        if cursor.rowcount == 0:
+            raise GetPictureSetError(f"Error: PictureSet not found for user:{user_id}")
         return cursor.fetchall()
     except Exception:
         raise GetPictureSetError(f"Error: Error retrieving picture_sets for user:{user_id}")

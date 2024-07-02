@@ -112,7 +112,7 @@ async def get_blob(container_client, blob_name):
         raise GetBlobError("Error getting blob")
 
 
-async def upload_image(container_client, folder_name, image:str, image_uuid):
+async def upload_image(container_client, folder_name, folder_uuid, image:str, image_uuid):
     """
     uploads the image to the specified folder within the user's container,
     if the specified folder doesnt exist, it creates it with a uuid
@@ -120,6 +120,7 @@ async def upload_image(container_client, folder_name, image:str, image_uuid):
     Parameters:
     - container_client: the Azure container client
     - folder_name: the name of the destination folder
+    - folder_uuid : uuid of the picture_set
     - image:
     """
     try:
@@ -129,7 +130,7 @@ async def upload_image(container_client, folder_name, image:str, image_uuid):
             blob_name = "{}/{}.png".format(folder_name, image_uuid)
             metadata = {
                 "picture_uuid": f"{str(image_uuid)}",
-                "picture_set_uuid": f"{str(folder_name)}",
+                "picture_set_uuid": f"{str(folder_uuid)}",
             }
             blob_client = container_client.upload_blob(blob_name, image, overwrite=True)
             blob_client.set_blob_tags(metadata)
@@ -352,7 +353,7 @@ async def get_blobs_from_tag(container_client, tag: str):
     - container_client: the Azure container client
     - tag: the tag to search for in the blobs ex: 'folder_name'
 
-    Returns: the names of blobs
+    Returns: the list of blobs
     """
     try:
         # The find_blobs_by_tags methods should return a list of blobs with the given tag
