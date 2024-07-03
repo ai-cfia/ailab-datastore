@@ -741,7 +741,6 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
             )
 
         # Delete the folder in the blob storage
-        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
