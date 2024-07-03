@@ -122,6 +122,7 @@ class TestUploadImage(unittest.TestCase):
         self.image_uuid = str(uuid.uuid4())
         #self.container_client.upload_blob(name=self.blob_name, data=self.blob)
         self.folder_name="test_folder"
+        self.folder_uuid = str(uuid.uuid4())
         asyncio.run(create_folder(self.container_client, self.folder_name))
     
     def tearDown(self):
@@ -130,7 +131,7 @@ class TestUploadImage(unittest.TestCase):
     def test_upload_image(self):
         expected_result = "{}/{}.png".format(self.folder_name, self.image_uuid)
         result = asyncio.run(
-            upload_image(self.container_client, self.folder_name,self.image_hash,self.image_uuid)
+            upload_image(self.container_client, self.folder_name,self.folder_uuid,self.image_hash,self.image_uuid)
         )
 
         self.assertEqual(result, expected_result)
@@ -142,7 +143,7 @@ class TestUploadImage(unittest.TestCase):
         not_folder_name="not_folder"
         with self.assertRaises(CreateDirectoryError):
             asyncio.run(
-                upload_image(self.container_client, not_folder_name,self.image_hash,self.image_uuid)
+                upload_image(self.container_client, not_folder_name,str(uuid.uuid4()),self.image_hash,self.image_uuid)
             )
 
 class TestIsAFolder(unittest.TestCase):
@@ -257,7 +258,7 @@ class TestGetBlobsFromTag(unittest.TestCase) :
         self.folder_name="test_folder"
         self.folder_uuid= str(uuid.uuid4())
         asyncio.run(create_folder(self.container_client,self.folder_uuid, self.folder_name))
-        asyncio.run(upload_image(self.container_client, self.folder_name,self.image_hash,self.image_uuid))
+        asyncio.run(upload_image(self.container_client, self.folder_name,self.folder_uuid,self.image_hash,self.image_uuid))
         
     def tearDown(self):
         self.container_client.delete_container()
