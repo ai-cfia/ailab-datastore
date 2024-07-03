@@ -16,7 +16,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "picture_set" json NOT NULL,
         "owner_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
-        "upload_date" date NOT NULL DEFAULT current_timestamp
+        "upload_date" date NOT NULL DEFAULT current_timestamp,
+        "name" text
     );
     
     CREATE TABLE "nachet_0.0.11"."picture" (
@@ -91,7 +92,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "valid" boolean NOT NULL DEFAULT true,
         "top_id" uuid,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "manual_detection" boolean NOT NULL DEFAULT false
     );
     
     
@@ -99,7 +101,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "name" text NOT NULL,
         "active" boolean NOT NULL DEFAULT false,
-        "is_default" boolean not null default false
+        "is_default" boolean NOT NULL default false,
+        "data" json NOT NULL
     );
    
     CREATE TRIGGER "pipeline_default_trigger" BEFORE insert OR UPDATE ON "nachet_0.0.11"."pipeline"
