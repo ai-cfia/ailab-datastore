@@ -1,6 +1,6 @@
-## Database Architecture
+# Database Architecture
   
-### Needs
+## Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
   blob Storage.

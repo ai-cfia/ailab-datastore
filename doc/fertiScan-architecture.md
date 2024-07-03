@@ -172,5 +172,4 @@ erDiagram
   micronutrient ||--|| element_compound: test
   guaranteed ||--|| element_compound: test
 
-
 ```
