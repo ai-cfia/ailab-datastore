@@ -327,6 +327,7 @@ class test_pictures_functions(unittest.TestCase):
         self.picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
         )
+        self.folder_name = "test_folder"
 
     def tearDown(self):
         self.con.rollback()
@@ -337,6 +338,21 @@ class test_pictures_functions(unittest.TestCase):
         This test checks if the new_picture_set function returns a valid UUID
         """
         picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+
+        self.assertTrue(
+            validator.is_valid_uuid(picture_set_id),
+            "The picture_set_id is not a valid UUID",
+        )
+        
+        self.assertEqual(picture.get_picture_set_name(self.cursor, picture_set_id), self.folder_name, "The folder name is not test_folder")
+
+    def test_new_picture_set_no_name(self):
+        """
+        This test checks if the new_picture_set function returns a valid UUID if there is no specified name
+        """
+        picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id
         )
 
@@ -344,6 +360,8 @@ class test_pictures_functions(unittest.TestCase):
             validator.is_valid_uuid(picture_set_id),
             "The picture_set_id is not a valid UUID",
         )
+        
+        self.assertEqual(picture.get_picture_set_name(self.cursor, picture_set_id), str(picture_set_id), "As the folder_name is None the picture_set name should be the picture_set_id")
 
     def test_new_picture_set_error(self):
         """
@@ -523,6 +541,95 @@ class test_pictures_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             picture.is_a_picture_set_id(mock_cursor, uuid.uuid4())
 
+    def test_get_picture_set_name(self) :
+        """
+        This test checks if the get_picture_set_name function returns the correct name of the picture_set
+        """
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        name = picture.get_picture_set_name(self.cursor, picture_set_id)
+        self.assertEqual(name, self.folder_name, "The folder name is not test_folder")
+    
+    def test_get_picture_set_name_error(self) :
+        """
+        This test checks if the get_picture_set_name function raises an exception when the connection fails
+        """
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            picture.get_picture_set_name(mock_cursor, picture_set_id)
+    
+    def test_get_user_picture_sets(self) :
+        """
+        This test checks if the get_user_picture_sets function returns all picture_sets of the user
+        """
+        picture_set_id1 = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture_set_id2 = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name + "2"
+        )
+        
+        picture_sets = picture.get_user_picture_sets(self.cursor, self.user_id)
+        self.assertEqual(len(picture_sets), 2, "The number of picture_sets is not the expected one")
+        self.assertIn((picture_set_id1,self.folder_name), picture_sets, "The first picture_set is not in the list of picture_sets")
+        self.assertIn((picture_set_id2,self.folder_name + "2"), picture_sets, "The second picture_set is not in the list of picture_sets")
+    
+    def test_get_user_picture_sets_error(self) :
+        """
+        This test checks if the get_user_picture_sets function raises an exception when the connection fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.side_effect = Exception("Connection error")
+        
+        with self.assertRaises(picture.GetPictureSetError):
+            picture.get_user_picture_sets(mock_cursor, self.user_id)
+    
+    def test_get_user_picture_sets_user_error(self) :
+        """
+        This test checks if the get_user_picture_sets function raises an exception when the user do not exist
+        """
+        with self.assertRaises(picture.GetPictureSetError):
+            picture.get_user_picture_sets(self.cursor, str(uuid.uuid4()))
+
+    def test_count_pictures(self) :
+        """
+        This test checks if the count_pictures function returns the correct number of pictures
+        """
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        
+        count = picture.count_pictures(self.cursor, picture_set_id)
+        self.assertEqual(count, 2, "The number of pictures is not the expected one")
+        
+    def test_count_pictures_error(self) :
+        """
+        This test checks if the count_pictures function raises an exception when the connection fails
+        """ 
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        
+        with self.assertRaises(picture.PictureSetNotFoundError):
+            picture.count_pictures(mock_cursor, picture_set_id)
+        
 # --------------------  INFERENCE FUNCTIONS --------------------
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
