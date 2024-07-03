@@ -434,7 +434,7 @@ def get_picture_set_owner_id(cursor, picture_set_id):
                 id = %s
             """
         cursor.execute(query, (picture_set_id,))
-        return cursor.fetchone()[0]
+        return str(cursor.fetchone()[0])
     except Exception:
         raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
     

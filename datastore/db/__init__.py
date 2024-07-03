@@ -17,11 +17,13 @@ if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
 
 FERTISCAN_DB_URL = os.environ.get("FERTISCAN_DB_URL")
 if FERTISCAN_DB_URL is None or FERTISCAN_DB_URL == "":
-    raise ValueError("FERTISCAN_DB_URL is not set")
+    # raise ValueError("FERTISCAN_DB_URL is not set")
+    print("Warning: FERTISCAN_DB_URL not set")
 
 FERTISCAN_SCHEMA = os.environ.get("FERTISCAN_SCHEMA")
 if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
-    raise ValueError("FERTISCAN_SCHEMA is not set")
+    # raise ValueError("FERTISCAN_SCHEMA is not set")
+    print("Warning: FERTISCAN_SCHEMA not set")
 
 # def connect_db():
 #     """Connect to the postgresql database and return the connection."""

@@ -37,7 +37,8 @@ if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
 
 FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
-    raise ValueError("FERTISCAN_STORAGE_URL is not set")
+    # raise ValueError("FERTISCAN_STORAGE_URL is not set")
+    print("Warning: FERTISCAN_STORAGE_URL not set")
 
 
 class UserAlreadyExistsError(Exception):
@@ -687,7 +688,7 @@ async def get_picture_sets_info(cursor, user_id: str):
         picture_set_id = picture_set[0]
         picture_set_name = picture_set[1]
         nb_picture = picture.count_pictures(cursor, picture_set_id)
-        result[picture_set_id] = [picture_set_name, nb_picture]
+        result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
 
 async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
@@ -712,7 +713,7 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
                 f"Picture set not found based on the given id: {picture_set_id}"
             )
         # Check user is owner of the picture set
-        if not picture.get_picture_set_owner_id(cursor, picture_set_id) == user_id:
+        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
             raise picture.PictureSetDeleteError(
                 f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
             )
@@ -730,9 +731,9 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
                 # set picture set to default one
                 picture.update_picture_picture_set_id(cursor, picture_id, general_folder_id)
                 # change the link in the metadata
-                picture_metadata = json.loads(p[1])
+                picture_metadata = p[1]
                 picture_metadata["link"] = f"General/{picture_id}"
-                picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), general_folder_id)
+                picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), 0)
         
         if picture.count_pictures(cursor, picture_set_id) > 0:
             raise picture.PictureSetDeleteError(
@@ -741,7 +742,7 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
 
         # Delete the folder in the blob storage
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        await azure_storage.delete_folder(container_client, folder_name)
+        await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
     except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError) as e:

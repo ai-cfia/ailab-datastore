@@ -363,7 +363,7 @@ async def get_blobs_from_tag(container_client, tag: str):
         blob_list = list(container_client.list_blobs(include=['tags']))
         result = []
         for blob in blob_list:
-            if 'picture_set_uuid' in blob.get('tags') and blob.get('tags').get('picture_set_uuid') == tag:
+            if blob.get('tags') and 'picture_set_uuid' in blob.get('tags') and blob.get('tags').get('picture_set_uuid') == tag:
                 result.append(blob)
 
     
