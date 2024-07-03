@@ -630,6 +630,102 @@ class test_pictures_functions(unittest.TestCase):
         with self.assertRaises(picture.PictureSetNotFoundError):
             picture.count_pictures(mock_cursor, picture_set_id)
         
+    def test_get_picture_set_pictures(self):
+        """
+        This test checks if the get_picture_set_pictures function returns the correct pictures
+        """
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        
+        self.assertEqual(len(picture.get_picture_set_pictures(self.cursor, picture_set_id)), 0, "The number of pictures is not the expected one")
+        
+        pictureId = picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        pictureId2 = picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        
+        pictures = picture.get_picture_set_pictures(self.cursor, picture_set_id)
+        self.assertEqual(len(pictures), 2, "The number of pictures is not the expected one")
+        self.assertEqual(pictures[0][0], pictureId, "The first picture is not the expected one")
+        self.assertEqual(pictures[1][0], pictureId2, "The second picture is not the expected one")
+    
+    def test_get_picture_set_pictures_error(self):
+        """
+        This test checks if the get_picture_set_pictures function raises an error if connection fails
+        """
+        picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+        )
+        
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.side_effect = Exception("Connection error")
+        
+        with self.assertRaises(Exception):
+            picture.get_picture_set_pictures(mock_cursor, picture_set_id)
+
+    def test_change_picture_set_id(self) :
+        old_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+        )
+        picture.new_picture(
+            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+        )
+        new_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        
+        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
+        self.assertEqual(len(old_picture_set), 2, "The number of pictures is not the expected one")
+        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
+        self.assertEqual(len(new_picture_set), 0, "The number of pictures is not the expected one")
+        
+        picture.change_picture_set_id(self.cursor, self.user_id, old_picture_set_id, new_picture_set_id)
+
+        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
+        self.assertEqual(len(old_picture_set), 0, "The number of pictures is not the expected one")
+        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
+        self.assertEqual(len(new_picture_set), 2, "The number of pictures is not the expected one")
+    
+    def test_change_picture_set_id_error(self):
+        old_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+        )
+        new_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        
+        mock_cursor = MagicMock()
+        mock_cursor.execute.side_effect = Exception("Connection error")
+        
+        with self.assertRaises(picture.PictureUpdateError):
+            picture.change_picture_set_id(mock_cursor, self.user_id, old_picture_set_id, new_picture_set_id)
+            
+    def test_change_picture_set_id_user_error(self):
+        old_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        picture.new_picture(
+            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+        )
+        new_picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id, self.folder_name
+        )
+        
+        with self.assertRaises(picture.PictureUpdateError):
+            picture.change_picture_set_id(self.cursor, str(uuid.uuid4()), old_picture_set_id, new_picture_set_id)
+    
 # --------------------  INFERENCE FUNCTIONS --------------------
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
