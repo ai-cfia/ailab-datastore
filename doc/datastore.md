@@ -78,6 +78,6 @@ flowchart LR;
 
 - A User can verify the result of a picture that went through the pipeline and
   the changes are saved for training.
-  
+
 - A User can verify an inference by confirming the positive result, or entering
   the right value.
