@@ -34,7 +34,8 @@ if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
 
 FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
-    raise ValueError("FERTISCAN_STORAGE_URL is not set")
+    # raise ValueError("FERTISCAN_STORAGE_URL is not set")
+    print("Warning: FERTISCAN_STORAGE_URL not set")
 
 
 class UserAlreadyExistsError(Exception):
