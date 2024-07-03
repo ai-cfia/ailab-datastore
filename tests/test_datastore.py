@@ -191,7 +191,7 @@ class test_picture(unittest.TestCase):
         
         result = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
         #self.cur.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
-        self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
+        self.assertTrue(validator.is_valid_uuid(result["inferenceId"]))
 
     def test_create_picture_set(self):
         """
@@ -335,19 +335,19 @@ class test_feedback(unittest.TestCase):
         picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client))
         model_id = "test_model_id"
         self.registered_inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,self.inference, picture_id, model_id))
-        self.registered_inference["user_id"] = self.user_id
+        self.registered_inference["userId"] = self.user_id
         self.mock_box = {
                 "topX": 123,
                 "topY": 456,
                 "bottomX": 789,
                 "bottomY": 123
             }
-        self.inference_id = self.registered_inference.get("inference_id")
+        self.inference_id = self.registered_inference.get("inferenceId")
         self.boxes_id = []
         self.top_id = []
         self.unreal_seed_id= datastore.seed.new_seed(self.cur, "unreal_seed")
         for box in self.registered_inference["boxes"]:
-            self.boxes_id.append(box["box_id"])
+            self.boxes_id.append(box["boxId"])
             self.top_id.append(box["top_id"])
             box["classId"] = datastore.seed.get_seed_id(self.cur, box["label"])
 
@@ -449,9 +449,9 @@ class test_feedback(unittest.TestCase):
             box["box"]= self.mock_box
         asyncio.run(datastore.new_correction_inference_feedback(self.cur, self.registered_inference, 1))
         for box in self.registered_inference["boxes"] :
-            object_db = datastore.inference.get_inference_object(self.cur, box["box_id"])
+            object_db = datastore.inference.get_inference_object(self.cur, box["boxId"])
             # The new box metadata must be updated
-            self.assertDictEqual(object_db[1]["box"], self.mock_box)
+            self.assertDictEqual(object_db[1], self.mock_box)
             # The top_id must be equal to the previous top_id
             self.assertEqual(str(object_db[4]), box["top_id"])
             # valid column must be true

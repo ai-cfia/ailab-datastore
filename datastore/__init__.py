@@ -216,7 +216,7 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         )
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
-            container_client, "General", picture_hash, picture_id
+            container_client, "General",picture_set_id, picture_hash, picture_id
         )
         # Update the picture metadata in the DB
         data = {
@@ -273,7 +273,7 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
             folder_name = picture_set_id
         
         response = await azure_storage.upload_image(
-            container_client, folder_name, picture_hash, picture_id
+            container_client, folder_name,picture_set_id, picture_hash, picture_id
         )
         picture_link = container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
         # Create picture metadata and update DB instance (with link to Azure blob)
@@ -373,7 +373,7 @@ async def register_inference_result(
             cursor, trimmed_inference, user_id, picture_id, type
         )
         nb_object = int(inference_dict["totalBoxes"])
-        inference_dict["inference_id"] = str(inference_id)
+        inference_dict["inferenceId"] = str(inference_id)
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
@@ -391,7 +391,7 @@ async def register_inference_result(
             object_inference_id = inference.new_inference_object(
                 cursor, inference_id, box, type, False
             )
-            inference_dict["boxes"][box_index]["box_id"] = str(object_inference_id)
+            inference_dict["boxes"][box_index]["boxId"] = str(object_inference_id)
             # loop through the topN Prediction
             top_score = -1
             if "topN" in inference_dict["boxes"][box_index]:
