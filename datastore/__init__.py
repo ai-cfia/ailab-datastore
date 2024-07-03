@@ -19,6 +19,9 @@ import uuid
 import json
 from azure.storage.blob import BlobServiceClient,ContainerClient
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 NACHET_BLOB_ACCOUNT = os.environ.get("NACHET_BLOB_ACCOUNT")
 if NACHET_BLOB_ACCOUNT is None or NACHET_BLOB_ACCOUNT == "":
@@ -215,7 +218,7 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         )
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
-            container_client, "General", picture_hash, picture_id
+            container_client, "General", picture_set_id, picture_hash, picture_id
         )
         # Update the picture metadata in the DB
         data = {
@@ -272,7 +275,7 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
             folder_name = picture_set_id
         
         response = await azure_storage.upload_image(
-            container_client, folder_name, picture_hash, picture_id
+            container_client, folder_name, picture_set_id, picture_hash, picture_id
         )
         picture_link = container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
         # Create picture metadata and update DB instance (with link to Azure blob)
