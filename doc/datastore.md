@@ -1,7 +1,7 @@
 # Datastore
 
-Welcome to the Datastore - the integral data management layer of the
-Nachet and FertiScan solution serving a dual function role. As a central repository, it
+Welcome to the Datastore - the integral data management layer of the Nachet and
+FertiScan solution serving a dual function role. As a central repository, it
 efficiently manages multimedia storage in the blob storage server while
 concurrently ensuring accurate metadata registration into a database server.
 
