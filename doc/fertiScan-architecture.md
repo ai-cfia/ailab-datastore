@@ -8,7 +8,7 @@ This is the doc about the FertiScan Database Architecture
 title: FertiScan DB Structure
 ---
 erDiagram
-  user{
+  users{
     uuid id PK
     string email
     timestamp registration_date
@@ -33,7 +33,7 @@ erDiagram
     string registration_number
     timestamp upload_date
     timestamp update_time
-    uuid latest_Analyses FK
+    uuid latest_analysis FK
     uuid respo_id FK
   }
   responsable{
@@ -94,31 +94,36 @@ erDiagram
     uuid id PK
     text first_aid_fr
     text first_aid_en
+    boolean edited
   }
   warranty{
     uuid id PK
     text warranty_fr
     text warranty_en
+    boolean edited
   }
   instruction{
     uuid id PK
     text instruction_fr
     text instruction_en
+    boolean edited
   }
   caution{
     uuid id PK
     text caution_fr
     text caution_en
+    boolean edited
   }
   metric{
     uuid id PK
     float value
     uuid unit_id
+    boolean edited
   }
   unit{
     uuid id PK
     string unit
-    float to_metric_unit
+    float to_si_unit
   }
   micronutrient{
     uuid id PK
@@ -126,6 +131,7 @@ erDiagram
     float value
     string unit
     int element_id FK
+    boolean edited
   }
   guaranteed{
     uuid id PK
@@ -133,11 +139,13 @@ erDiagram
     float value
     string unit
     int element_id FK
+    boolean edited
   }
   ingredient{
     uuid id PK
     boolean organic
     string name
+    boolean edited
   }
   element_compound{
     int id PK
