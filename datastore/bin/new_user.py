@@ -15,3 +15,4 @@ if __name__ == "__main__":
     user = asyncio.run(datastore.new_user(cur, email,datastore.NACHET_STORAGE_URL,'user'))
     print(f"User created with the following uuid: {user.get_id()}")
     db.end_query(connection, cur)
+    
