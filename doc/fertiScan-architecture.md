@@ -34,9 +34,7 @@ erDiagram
     timestamp upload_date
     timestamp update_time
     uuid latest_Analyses FK
-    uuid respo_id 
-    uuid fertilizer_information FK
-    uuid manufacturer_companie_id FK
+    uuid respo_id FK
   }
   responsable{
     uuid id PK
@@ -147,29 +145,32 @@ erDiagram
     string name_en
     string symbol
   }
-  analysis ||--|| sample :test
+  analysis ||--|| sample :has
   picture }o--|| picture_set: contains
-  analysis ||--|| responsable :test
-  analysis ||--|| user :test
-  analysis ||--o{ picture :test
-  analysis ||--|| fertilizer :test
-  analysis ||--|| label_information :test
-  province ||--|| region: test
-  region ||--|| location: test
-  responsable ||--|| location: test
-  sample ||--|| location: test
-  label_information ||--|| metric: test
-  label_information ||--|| caution: test
-  label_information ||--|| instruction: test
-  label_information ||--|| first_aid: test
-  label_information ||--|| ingredient: test
-  label_information ||--|| guaranteed: test
-  label_information ||--|| specification: test
-  label_information ||--|| warranty: test
-  label_information ||--|| micronutrient: test
+  analysis ||--|| responsable :manage
+  fertilizer ||--|| responsable: manage
+  analysis ||--|| user :does
+  analysis ||--o{ picture :has
+  analysis ||--|| fertilizer :is about
+  analysis ||--|| label_information : defines
+  province ||--|| region: apart of
+  region ||--|| location: defines
+  responsable ||--|| location: located
+  sample ||--|| location: taken
+  label_information ||--|o metric: weight
+  label_information ||--|o metric: density
+  label_information ||--|o metric: volume
+  label_information ||--|| caution: defines
+  label_information ||--|| instruction: defines
+  label_information ||--|| first_aid: defines
+  label_information ||--|{ ingredient: has
+  label_information ||--|{ guaranteed: has
+  label_information ||--|| specification: defines
+  label_information ||--|| warranty: defines
+  label_information ||--|{ micronutrient: has
   
-  metric ||--|| unit: test
-  micronutrient ||--|| element_compound: test
-  guaranteed ||--|| element_compound: test
+  metric ||--|| unit: defines
+  micronutrient ||--|| element_compound: is
+  guaranteed ||--|| element_compound: is
 
 ```
