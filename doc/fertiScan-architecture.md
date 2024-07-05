@@ -159,7 +159,7 @@ erDiagram
   fertilizer ||--|| responsable: manage
   analysis ||--|| user :does
   analysis ||--o{ picture :has
-  analysis ||--|| fertilizer :is about
+  analysis ||--|| fertilizer : represent
   analysis ||--|| label_information : defines
   province ||--|| region: apart of
   region ||--|| location: defines
