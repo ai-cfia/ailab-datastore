@@ -308,6 +308,29 @@ def get_picture_set_pictures(cursor, picture_set_id: str):
     except Exception:
         raise GetPictureError(f"Error: Error while getting pictures for picture_set:{picture_set_id}")
 
+def get_pictures_with_picture_seed(cursor, picture_set_id: str):
+    """
+    This functions select pictures from a picture set that have a validated inference
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_set_id (str): The UUID of the PictureSet to retrieve the pictures from.
+    """
+    try :
+        query = """
+            SELECT
+                *
+            FROM
+                picture_seed ps
+            JOIN picture p on ps.picture_id = p.id 
+            WHERE
+                p.picture_set_id = %s
+            """
+        cursor.execute(query, (picture_set_id,))
+        return cursor.fetchall()
+    except Exception:
+        raise GetPictureError(f"Error: Error while getting validated pictures for picture_set:{picture_set_id}")
+
 def change_picture_set_id(cursor, user_id, old_picture_set_id, new_picture_set_id):
     """
     This function change picture_set_id of all pictures in a picture_set to a new one.

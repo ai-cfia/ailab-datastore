@@ -44,6 +44,9 @@ if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
 class UserAlreadyExistsError(Exception):
     pass
 
+class UserNotOwnerError(Exception):
+    pass
+
 class MLRetrievalError(Exception):
     pass
 
@@ -714,7 +717,7 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
             )
         # Check user is owner of the picture set
         if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
-            raise picture.PictureSetDeleteError(
+            raise UserNotOwnerError(
                 f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
             )
         # Check if the picture set is the default picture set
@@ -744,12 +747,49 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
         await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
-    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError) as e:
+    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
         raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
-    
+
+async def find_validated_pictures(cursor, user_id, picture_set_id):
+    """
+    Find pictures that have been validated by the user in the given picture set
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        user_id (str): id of the user that should be the owner of the picture set
+        picture_set_id (str): id of the picture set
+
+    Returns:
+        list of picture_id
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_set_id(cursor, picture_set_id):
+            raise picture.PictureSetNotFoundError(
+                f"Picture set not found based on the given id: {picture_set_id}"
+            )
+        # Check user is owner of the picture set
+        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
+            raise UserNotOwnerError(
+                f"User isn't owner of this folder, user uuid :{user_id}, folder uuid : {picture_set_id}"
+            )
+        
+        validated_pictures_id = picture.get_pictures_with_picture_seed(cursor, picture_set_id)
+        return validated_pictures_id
+    except (user.UserNotFoundError, picture.PictureSetNotFoundError, UserNotOwnerError) as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
+
 async def register_analysis(cursor,container_client, analysis_dict,picture_id :str,picture,folder = "General"):
     """
     Register an analysis in the database
