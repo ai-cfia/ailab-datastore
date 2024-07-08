@@ -605,23 +605,23 @@ class test_picture_set(unittest.TestCase):
         container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,'test-user'))
         container_client.delete_container()
     
-    def test_delete_picture_set(self):
+    def test_delete_picture_set_permanently(self):
         """
         This test checks the delete_picture_set function 
         """
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        asyncio.run(datastore.delete_picture_set(self.cur, str(self.user_id), str(self.picture_set_id), self.container_client))
+        asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(self.user_id), str(self.picture_set_id), self.container_client))
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 1)
     
-    def test_delete_picture_set_error_user_not_found(self):
+    def test_delete_picture_set_permanently_error_user_not_found(self):
         """
         This test checks if the delete_picture_set function correctly raise an exception if the user given doesn't exist in db
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
-            asyncio.run(datastore.delete_picture_set(self.cur, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
+            asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
     
     def test_delete_picture_set_error_connection_error(self):
         """
@@ -630,14 +630,14 @@ class test_picture_set(unittest.TestCase):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.delete_picture_set(mock_cursor, str(self.user_id), str(self.picture_set_id), self.container_client))
+            asyncio.run(datastore.delete_picture_set_permanently(mock_cursor, str(self.user_id), str(self.picture_set_id), self.container_client))
         
     def test_delete_picture_set_error_picture_set_not_found(self):
         """
         This test checks if the delete_picture_set function correctly raise an exception if the picture set given doesn't exist in db
         """
         with self.assertRaises(datastore.picture.PictureSetNotFoundError):
-            asyncio.run(datastore.delete_picture_set(self.cur, str(self.user_id), str(uuid.uuid4()), self.container_client))
+            asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(self.user_id), str(uuid.uuid4()), self.container_client))
     
     def test_delete_picture_set_error_not_owner(self):
         """
@@ -647,7 +647,7 @@ class test_picture_set(unittest.TestCase):
         not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
         
         with self.assertRaises(datastore.UserNotOwnerError):
-            asyncio.run(datastore.delete_picture_set(self.cur, str(not_owner_user_id), str(self.picture_set_id), self.container_client))
+            asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(not_owner_user_id), str(self.picture_set_id), self.container_client))
             
         container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,'test-user'))
         container_client.delete_container()
@@ -658,7 +658,7 @@ class test_picture_set(unittest.TestCase):
         """
         general_folder_id = datastore.user.get_default_picture_set(self.cur, self.user_id)
         with self.assertRaises(datastore.picture.PictureSetDeleteError):
-            asyncio.run(datastore.delete_picture_set(self.cur, str(self.user_id), str(general_folder_id), self.container_client))
+            asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(self.user_id), str(general_folder_id), self.container_client))
                
 class test_analysis(unittest.TestCase):
     def setUp(self):

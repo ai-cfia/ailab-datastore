@@ -694,7 +694,7 @@ async def get_picture_sets_info(cursor, user_id: str):
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
 
-async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
+async def delete_picture_set_permanently(cursor, user_id, picture_set_id, container_client):
     """
     Delete a picture set from the database and the blob storage
 
@@ -725,22 +725,6 @@ async def delete_picture_set(cursor, user_id, picture_set_id, container_client):
         if general_folder_id == picture_set_id:
             raise picture.PictureSetDeleteError(
                 f"User can't delete the default picture set, user uuid :{user_id}"
-            )
-
-        if picture.count_pictures(cursor, picture_set_id) > 0:
-            #move the pictures to the default picture set	
-            for p in picture.get_picture_set_pictures(cursor, picture_set_id):
-                picture_id = p[0]
-                # set picture set to default one
-                picture.update_picture_picture_set_id(cursor, picture_id, general_folder_id)
-                # change the link in the metadata
-                picture_metadata = p[1]
-                picture_metadata["link"] = f"General/{picture_id}"
-                picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), 0)
-        
-        if picture.count_pictures(cursor, picture_set_id) > 0:
-            raise picture.PictureSetDeleteError(
-                f"Can't delete the folder, there are still pictures in it, folder name : {picture_set_id}"
             )
 
         # Delete the folder in the blob storage
