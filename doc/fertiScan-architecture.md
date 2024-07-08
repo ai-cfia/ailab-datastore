@@ -157,11 +157,11 @@ erDiagram
   picture }o--|| picture_set: contains
   analysis ||--|| responsable :manage
   fertilizer ||--|| responsable: manage
-  analysis ||--|| user :does
+  analysis ||--|| users :does
   analysis ||--o{ picture :has
   analysis ||--|| fertilizer : represent
   analysis ||--|| label_information : defines
-  province ||--|| region: apart of
+  province ||--|| region: apart
   region ||--|| location: defines
   responsable ||--|| location: located
   sample ||--|| location: taken
