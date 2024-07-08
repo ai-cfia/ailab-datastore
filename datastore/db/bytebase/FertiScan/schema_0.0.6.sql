@@ -114,6 +114,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.6"."element_compound" (
     "id" SERIAL PRIMARY KEY,
+    "number" int NOT NULL,
     "name_fr" text NOT NULL,
     "name_en" text NOT NULL,
     "symbol" text NOT NULL
@@ -163,7 +164,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "organic" boolean NOT NULL,
     "name" text NOT NULL,
-    "edited" boolean
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.6"."analysis" (

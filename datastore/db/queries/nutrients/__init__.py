@@ -64,11 +64,11 @@ def new_element(cursor,number,name_fr,name_en,symbol):
     
     try:
         query = """
-            INSERT INTO element_compound (name_fr,name_en,symbol)
-            VALUES (%s,%s,%s)
+            INSERT INTO element_compound (number,name_fr,name_en,symbol)
+            VALUES (%s,%s,%s,%s)
             RETURNING id
             """
-        cursor.execute(query, (name_fr,name_en,symbol))
+        cursor.execute(query, (number,name_fr,name_en,symbol))
         return cursor.fetchone()[0]
     except Exception:
         raise ElementCreationError
