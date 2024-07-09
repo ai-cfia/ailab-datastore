@@ -1,19 +1,5 @@
 """
-This module represent the function for the table micronutrient, guaranteed and its children element_compound:
-
-    CREATE TABLE "fertiscan_0.0.6"."label_information" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "lot_number" text,
-    "npk" text,
-    "registration_number" text,
-    "n" float,
-    "p" float,
-    "k" float,
-    "weight" uuid REFERENCES "fertiscan_0.0.6".metric(id),
-    "density" uuid REFERENCES "fertiscan_0.0.6".metric(id),
-    "volume" uuid REFERENCES "fertiscan_0.0.6".metric(id),
-    );
-
+This module represent the function for the table label_information
 """
 
 def new_label_information(cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume):

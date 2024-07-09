@@ -1,19 +1,6 @@
 """
 This module represent the function for the table metric and its children unit:
 
-    CREATE TABLE "fertiscan_0.0.6"."metric" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "value" float NOT NULL,
-    "unit_id" uuid REFERENCES "fertiscan_0.0.6".unit(id),
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."unit" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "unit" text NOT NULL,
-    "to_si_unit" float
-    );
-
 """
 
 class MetricCreationError(Exception):

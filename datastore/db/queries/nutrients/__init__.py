@@ -1,33 +1,6 @@
 """
 This module represent the function for the table micronutrient, guaranteed and its children element_compound:
 
-    CREATE TABLE "fertiscan_0.0.6"."element_compound" (
-    "id" SERIAL PRIMARY KEY,
-    "name_fr" text NOT NULL,
-    "name_en" text NOT NULL,
-    "symbol" text NOT NULL
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."micronutrient" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
-    "element_id" int REFERENCES "fertiscan_0.0.6".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id),
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."guaranteed" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
-    "element_id" int REFERENCES "fertiscan_0.0.6".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id),
-    "edited" boolean
-    );
-
 """
 class ElementCreationError(Exception):
     pass

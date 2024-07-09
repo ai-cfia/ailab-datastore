@@ -314,13 +314,3 @@ class test_ingredient(unittest.TestCase):
 
         self.assertFalse(ingredient_data[0][2])
         self.assertTrue(ingredient_data[1][2])
-
-    
-
-
-
-
-
-
-
-

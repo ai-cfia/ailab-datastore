@@ -1,53 +1,5 @@
 """
-This module represent the function for the sub table of label_information and the ingredient table:
-
-    --sub table 1-1 label_information
-    CREATE TABLE "fertiscan_0.0.6"."specification" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "humidity" float,
-    "ph" float,
-    "solubility" float,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."first_aid" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "first_aid_fr" text,
-    "first_aid_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."warranty" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "warranty_fr" text,
-    "warranty_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."instruction" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "instruction_fr" text,
-    "instruction_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."caution" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "caution_fr" text,
-    "caution_en" text,
-    "edited" boolean
-    );
-
-
-    -- label_information 1-* ingredient
-    CREATE TABLE "fertiscan_0.0.6"."ingredient" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "organic" boolean NOT NULL,
-    "name" text NOT NULL,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
-    );
-
+This module represent the function for the sub table of label_information
 
 """
 class SpecificationCreationError(Exception):
