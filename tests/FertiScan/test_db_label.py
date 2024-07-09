@@ -1,11 +1,4 @@
 import unittest
-from unittest.mock import MagicMock
-import uuid
-import json
-from PIL import Image
-import io
-import base64
-from time import sleep
 from datastore.db.queries import label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
