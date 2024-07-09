@@ -52,8 +52,30 @@ This module represent the function for the sub table of label_information and th
 """
 class SpecificationCreationError(Exception):
     pass
+class SpecificationNotFoundError(Exception):
+    pass
+class FirstAidCreationError(Exception):
+    pass
+class FirstAidNotFoundError(Exception):
+    pass
+class WarrantyCreationError(Exception):
+    pass
+class WarrantyNotFoundError(Exception):
+    pass
+class InstructionCreationError(Exception):
+    pass
+class InstructionNotFoundError(Exception):
+    pass
+class CautionCreationError(Exception):
+    pass
+class CautionNotFoundError(Exception):
+    pass
+class IngredientCreationError(Exception):
+    pass
+class IngredientNotFoundError(Exception):
+    pass
 
-def new_specification(cursor,humidity, ph, solubility, edited=False):
+def new_specification(cursor,humidity, ph, solubility,label_id, edited=False):
     """
     This function creates a new specification in the database.
 
@@ -70,13 +92,13 @@ def new_specification(cursor,humidity, ph, solubility, edited=False):
     try:
         query = """
             INSERT INTO 
-                specification (humidity, ph, solubility, edited)
+                specification (humidity, ph, solubility, edited,label_id)
             VALUES 
-                (%s, %s, %s, %s)
+                (%s, %s, %s, %s,%s)
             RETURNING 
                 id
         """
-        cursor.execute(query, (humidity, ph, solubility, edited))
+        cursor.execute(query, (humidity, ph, solubility, edited,label_id,))
         return cursor.fetchone()[0]
     except Exception:
         raise SpecificationCreationError("Error: could not create the specification")
@@ -109,7 +131,37 @@ def get_specification(cursor, specification_id):
     except Exception:
         raise SpecificationNotFoundError("Error: could not get the specification")
 
-def new_first_aid(cursor,first_aid_fr, first_aid_en, edited=False):
+def get_all_specifications(cursor, label_id):
+    """
+    This function gets all the specifications of a label_information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - The list of specifications.
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                humidity, 
+                ph, 
+                solubility, 
+                edited
+            FROM 
+                specification
+            WHERE 
+                label_id = %s
+        """
+        cursor.execute(query, (label_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise SpecificationNotFoundError("Error: could not get the specifications")
+
+def new_first_aid(cursor,first_aid_fr, first_aid_en,label_id, edited=False):
     """
     This function creates a new first aid in the database.
 
@@ -125,13 +177,13 @@ def new_first_aid(cursor,first_aid_fr, first_aid_en, edited=False):
     try:
         query = """
             INSERT INTO 
-                first_aid (first_aid_fr, first_aid_en, edited)
+                first_aid (first_aid_fr, first_aid_en, edited,label_id)
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s,%s)
             RETURNING 
                 id
         """
-        cursor.execute(query, (first_aid_fr, first_aid_en, edited))
+        cursor.execute(query, (first_aid_fr, first_aid_en, edited,label_id))
         return cursor.fetchone()[0]
     except Exception:
         raise FirstAidCreationError("Error: could not create the first aid")
@@ -163,7 +215,36 @@ def get_first_aid(cursor, first_aid_id):
     except Exception:
         raise FirstAidNotFoundError("Error: could not get the first aid")
 
-def new_warranty(cursor,warranty_fr, warranty_en, edited=False):
+def get_all_first_aids(cursor, label_id):
+    """
+    This function gets all the first aids of a label_information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - The list of first aids.
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                first_aid_fr, 
+                first_aid_en, 
+                edited
+            FROM 
+                first_aid
+            WHERE 
+                label_id = %s
+        """
+        cursor.execute(query, (label_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise FirstAidNotFoundError("Error: could not get the first aids")
+
+def new_warranty(cursor,warranty_fr, warranty_en,label_id, edited=False):
     """
     This function creates a new warranty in the database.
 
@@ -179,13 +260,13 @@ def new_warranty(cursor,warranty_fr, warranty_en, edited=False):
     try:
         query = """
             INSERT INTO 
-                warranty (warranty_fr, warranty_en, edited)
+                warranty (warranty_fr, warranty_en, edited,label_id)
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s,%s)
             RETURNING 
                 id
         """
-        cursor.execute(query, (warranty_fr, warranty_en, edited))
+        cursor.execute(query, (warranty_fr, warranty_en, edited,label_id,))
         return cursor.fetchone()[0]
     except Exception:
         raise WarrantyCreationError("Error: could not create the warranty")
@@ -213,8 +294,40 @@ def get_warranty(cursor, warranty_id):
                 id = %s
         """
         cursor.execute(query, (warranty_id,))
+        return cursor.fetchone()
+    except Exception:
+        raise WarrantyNotFoundError("Error: could not get the first aid")
 
-def new_instruction(cursor,instruction_fr, instruction_en, edited=False):
+def get_all_warranties(cursor, label_id):
+    """
+    This function gets all the warranties of a label_information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - The list of warranties.
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                warranty_fr, 
+                warranty_en, 
+                edited
+            FROM 
+                warranty
+            WHERE 
+                label_id = %s
+        """
+        cursor.execute(query, (label_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise WarrantyNotFoundError("Error: could not get the warranties")
+
+def new_instruction(cursor,instruction_fr, instruction_en,label_id, edited=False):
     """
     This function creates a new instruction in the database.
 
@@ -230,13 +343,13 @@ def new_instruction(cursor,instruction_fr, instruction_en, edited=False):
     try:
         query = """
             INSERT INTO 
-                instruction (instruction_fr, instruction_en, edited)
+                instruction (instruction_fr, instruction_en, edited,label_id)
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s,%s)
             RETURNING 
                 id
         """
-        cursor.execute(query, (instruction_fr, instruction_en, edited))
+        cursor.execute(query, (instruction_fr, instruction_en, edited,label_id,))
         return cursor.fetchone()[0]
     except Exception:
         raise InstructionCreationError("Error: could not create the instruction")
@@ -268,7 +381,36 @@ def get_instruction(cursor, instruction_id):
     except Exception:
         raise InstructionNotFoundError("Error: could not get the instruction")
 
-def new_caution(cursor,caution_fr, caution_en, edited=False):
+def get_all_instructions(cursor, label_id):
+    """
+    This function gets all the instructions of a label_information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - The list of instructions.
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                instruction_fr, 
+                instruction_en, 
+                edited
+            FROM 
+                instruction
+            WHERE 
+                label_id = %s
+        """
+        cursor.execute(query, (label_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise InstructionNotFoundError("Error: could not get the instructions")
+
+def new_caution(cursor,caution_fr, caution_en,label_id, edited=False):
     """
     This function creates a new caution in the database.
 
@@ -284,13 +426,13 @@ def new_caution(cursor,caution_fr, caution_en, edited=False):
     try:
         query = """
             INSERT INTO 
-                caution (caution_fr, caution_en, edited)
+                caution (caution_fr, caution_en, edited,label_id)
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s,%s)
             RETURNING 
                 id
         """
-        cursor.execute(query, (caution_fr, caution_en, edited))
+        cursor.execute(query, (caution_fr, caution_en, edited,label_id,))
         return cursor.fetchone()[0]
     except Exception:
         raise CautionCreationError("Error: could not create the caution")
@@ -322,7 +464,36 @@ def get_caution(cursor, caution_id):
     except Exception:
         raise CautionNotFoundError("Error: could not get the caution")
 
-def new_ingredient(cursor, name,label_id, organic:boolean ,edited:boolean=False ):
+def get_all_cautions(cursor, label_id):
+    """
+    This function gets all the cautions of a label_information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - The list of cautions.
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                caution_fr, 
+                caution_en, 
+                edited
+            FROM 
+                caution
+            WHERE 
+                label_id = %s
+        """
+        cursor.execute(query, (label_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise CautionNotFoundError("Error: could not get the cautions")
+
+def new_ingredient(cursor, name,label_id, organic:bool ,edited:bool=False ):
     """
     This function creates a new ingredient in the database.
 
@@ -399,6 +570,8 @@ def get_all_ingredients(cursor, label_id):
                 ingredient
             WHERE 
                 label_id = %s
+            ORDER BY
+                organic ASC
         """
         cursor.execute(query, (label_id,))
         res = cursor.fetchall()

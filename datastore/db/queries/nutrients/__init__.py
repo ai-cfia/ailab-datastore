@@ -198,9 +198,8 @@ def get_micronutrient(cursor, micronutrient_id):
                 value,
                 unit,
                 element_id,
-                label_id,
                 edited,
-                read_name + ' ' + value + unit as reading
+                CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
             FROM 
                 micronutrient
             WHERE 
@@ -211,16 +210,14 @@ def get_micronutrient(cursor, micronutrient_id):
     except Exception:
         raise MicronutrientNotFoundError
     
-def get_full_micronutrient(cursor,micronutrient):
+def get_full_micronutrient(cursor,micronutrient_id):
     """
     This function get the micronutrient in the database with the element.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - micronutrient (str): The UUID of the micronutrient.
+    - micronutrient_id (str): The UUID of the micronutrient.
 
-    Returns:
-    - str: The UUID of the micronutrient.
     """
     
     try:
@@ -233,7 +230,7 @@ def get_full_micronutrient(cursor,micronutrient):
                 ec.name_en,
                 ec.symbol,
                 m.edited,
-                m.read_name + ' ' + m.value + m.unit as reading
+                CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
             FROM 
                 micronutrient m
             JOIN 
@@ -241,7 +238,7 @@ def get_full_micronutrient(cursor,micronutrient):
             WHERE 
                 m.id = %s
             """
-        cursor.execute(query, (micronutrient,))
+        cursor.execute(query, (micronutrient_id,))
         return cursor.fetchone()
     except Exception:
         raise MicronutrientNotFoundError
@@ -269,7 +266,7 @@ def get_all_micronutrients(cursor,label_id):
                 ec.name_en,
                 ec.symbol,
                 m.edited,
-                m.read_name + ' ' + m.value + m.unit as reading
+                CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
             FROM 
                 micronutrient m
             JOIN 
@@ -282,7 +279,7 @@ def get_all_micronutrients(cursor,label_id):
     except Exception:
         raise MicronutrientNotFoundError
 
-def new_garanteed(cursor,read_name,value,unit,element_id,label_id,edited=False):
+def new_guaranteed(cursor,read_name,value,unit,element_id,label_id,edited=False):
     """
     This function add a new guaranteed in the database.
 
@@ -333,7 +330,7 @@ def get_guaranteed(cursor, guaranteed_id):
                 element_id,
                 label_id,
                 edited,
-                read_name + ' ' + value + unit as reading
+                CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
             FROM 
                 guaranteed
             WHERE 
@@ -366,7 +363,7 @@ def get_full_guaranteed(cursor,guaranteed):
                 ec.name_en,
                 ec.symbol,
                 g.edited,
-                g.read_name + ' ' + g.value + g.unit as reading
+                CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
             FROM 
                 guaranteed g
             JOIN 
@@ -402,7 +399,7 @@ def get_all_guaranteeds(cursor,label_id):
                 ec.name_en,
                 ec.symbol,
                 g.edited,
-                g.read_name + ' ' + g.value + g.unit as reading
+                CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
             FROM 
                 guaranteed g
             JOIN 

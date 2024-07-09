@@ -68,35 +68,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "humidity" float,
     "ph" float,
     "solubility" float,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."first_aid" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "first_aid_fr" text,
-    "first_aid_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."warranty" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "warranty_fr" text,
-    "warranty_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."instruction" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "instruction_fr" text,
-    "instruction_en" text,
-    "edited" boolean
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."caution" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "caution_fr" text,
-    "caution_en" text,
-    "edited" boolean
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.6"."unit" (
@@ -117,7 +90,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "number" int NOT NULL,
     "name_fr" text NOT NULL,
     "name_en" text NOT NULL,
-    "symbol" text NOT NULL
+    "symbol" text NOT NULL UNIQUE
     );
 
     CREATE TABLE "fertiscan_0.0.6"."label_information" (
@@ -128,16 +101,41 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "n" float,
     "p" float,
     "k" float,
-    "warranty" text,
     "weight" uuid REFERENCES "fertiscan_0.0.6".metric(id),
     "density" uuid REFERENCES "fertiscan_0.0.6".metric(id),
-    "volume" uuid REFERENCES "fertiscan_0.0.6".metric(id),
-    "specification_id" uuid REFERENCES "fertiscan_0.0.6".specification(id),
-    "first_aid_id" uuid REFERENCES "fertiscan_0.0.6".first_aid(id),
-    "warranty_id" uuid REFERENCES "fertiscan_0.0.6".warranty(id),
-    "instruction_id" uuid REFERENCES "fertiscan_0.0.6".instruction(id),
-    "caution_id" uuid REFERENCES "fertiscan_0.0.6".caution(id),
-    "metric_id" uuid
+    "volume" uuid REFERENCES "fertiscan_0.0.6".metric(id)
+    );
+
+        CREATE TABLE "fertiscan_0.0.6"."first_aid" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "first_aid_fr" text,
+    "first_aid_en" text,
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
+    );
+
+    CREATE TABLE "fertiscan_0.0.6"."warranty" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "warranty_fr" text,
+    "warranty_en" text,
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
+    );
+
+    CREATE TABLE "fertiscan_0.0.6"."instruction" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "instruction_fr" text,
+    "instruction_en" text,
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
+    );
+
+    CREATE TABLE "fertiscan_0.0.6"."caution" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "caution_fr" text,
+    "caution_en" text,
+    "edited" boolean,
+    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.6"."micronutrient" (

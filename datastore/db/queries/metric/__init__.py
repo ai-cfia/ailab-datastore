@@ -56,7 +56,7 @@ def is_a_metric(cursor, metric_id):
     except Exception:
         return False
 
-def new_metric(cursor,value, unit_id, edited=false):
+def new_metric(cursor,value, unit_id, edited=False):
     """
     This function uploads a new metric to the database.
 
@@ -109,7 +109,9 @@ def get_metric(cursor, metric_id):
     try:
         query = """
             SELECT
-                *
+                value,
+                unit_id,
+                edited
             FROM
                 metric
             WHERE
@@ -140,7 +142,7 @@ def get_full_metric(cursor, metric_id):
                 unit.unit,
                 unit.to_si_unit,
                 metric.edited,
-                metric.value + ' ' + unit.unit AS full_metric
+                CONCAT(CAST(metric.value AS CHAR), ' ', unit.unit) AS full_metric
             FROM
                 metric
             JOIN
@@ -203,7 +205,7 @@ def is_a_unit(cursor, unit):
     """
     
     try:
-       query = """
+        query = """
             SELECT EXISTS(
                 SELECT 
                     1 
