@@ -40,6 +40,10 @@ if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
 
+DEV_USER_EMAIL = os.environ.get("DEV_USER_EMAIL")
+if DEV_USER_EMAIL is None or DEV_USER_EMAIL == "":
+    # raise ValueError("DEV_USER_EMAIL is not set")
+    print("Warning: DEV_USER_EMAIL not set")
 
 class UserAlreadyExistsError(Exception):
     pass
@@ -156,7 +160,7 @@ async def get_user_container_client(user_id, tier="user",storage_url = NACHET_ST
     if isinstance(container_client,ContainerClient):
         return container_client
 
-async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None):
+async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None, blob_name = None):
     """
     Create a picture_set in the database and a related folder in the blob storage
 
@@ -182,7 +186,7 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
             cursor=cursor, picture_set=picture_set, user_id=user_id, folder_name=folder_name
         )
 
-        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name)
+        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name, blob_name)
         if not folder_created:
             raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         
@@ -214,7 +218,11 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         # Create picture instance in DB
         if picture_set_id is None :
             picture_set_id = user.get_default_picture_set(cursor, user_id)
-        
+            
+        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        if folder_name is None:
+            folder_name = "General"
+            
         picture_id = picture.new_picture_unknown(
             cursor=cursor,
             picture=empty_picture,
@@ -222,11 +230,11 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         )
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
-            container_client, "General", picture_set_id, picture_hash, picture_id
+            container_client, folder_name, picture_set_id, picture_hash, picture_id
         )
         # Update the picture metadata in the DB
         data = {
-            "link": "General/" + str(picture_id),
+            "link": f"{folder_name}/" + str(picture_id),
             "description": "Uploaded through the API",
         }
         
@@ -731,10 +739,89 @@ async def delete_picture_set_permanently(cursor, user_id, picture_set_id, contai
         await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
+        
+        #Temp#
+        # On cascade it should delete : picture_set --> picture --> inference --> object --> seed_object
+                                                            #   --> picture_seed
+
     except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
         raise e
     except Exception as e:
         print(e)
+        raise Exception("Datastore Unhandled Error")
+
+async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, container_client):
+    """
+    Delete a picture set from the database and the blob storage but archives inferences and pictures in dev container
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        user_id (str): id of the user
+        picture_set_id (str): id of the picture set to delete
+        container_client: The container client of the user.
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_set_id(cursor, picture_set_id):
+            raise picture.PictureSetNotFoundError(
+                f"Picture set not found based on the given id: {picture_set_id}"
+            )
+        # Check user is owner of the picture set
+        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
+            raise UserNotOwnerError(
+                f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
+            )
+        # Check if the picture set is the default picture set
+        general_folder_id = user.get_default_picture_set(cursor, user_id)
+        if general_folder_id == picture_set_id:
+            raise picture.PictureSetDeleteError(
+                f"User can't delete the default picture set, user uuid :{user_id}"
+            )
+        
+        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        validated_pictures = picture.get_pictures_with_picture_seed(cursor, picture_set_id)
+        
+        dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
+        dev_container_client = await get_user_container_client(dev_user_id)
+        
+        await azure_storage.create_folder(dev_container_client, str(user_id))
+        folder_blob_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
+        dev_picture_set_id = await create_picture_set(cursor, dev_container_client, len(validated_pictures), dev_user_id, folder_name, folder_blob_name)
+        
+        for picture_id in picture.get_pictures_with_picture_seed(cursor, picture_set_id):
+            picture_metadata = picture.get_picture(cursor, picture_id)
+            blob_name = picture_metadata["link"]+".png"
+            # change the link in the metadata
+            picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
+            picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), 0)
+            # set picture set to dev one
+            picture.update_picture_picture_set_id(cursor, picture_id, dev_picture_set_id)
+            # move the picture to the dev container
+            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
+            print(f"blob_name : {new_blob_name}")
+            print(f"dev set id : {dev_picture_set_id}")
+            await azure_storage.move_blob(blob_name, new_blob_name, dev_picture_set_id, container_client, dev_container_client)
+        
+        if len(picture.get_pictures_with_picture_seed(cursor, picture_set_id)) > 0:
+            raise picture.PictureSetDeleteError(
+                f"Can't delete the folder, there are still validated pictures in it, folder name : {picture_set_id}"
+            )
+
+        # Delete the folder in the blob storage
+        await azure_storage.delete_folder(container_client, picture_set_id)
+        # Delete the picture set
+        picture.delete_picture_set(cursor, picture_set_id)
+        
+        return dev_picture_set_id
+    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
+        raise e
+    except Exception as e:
+        print(f"Datastore Unhandled Error : {e}")
         raise Exception("Datastore Unhandled Error")
 
 async def find_validated_pictures(cursor, user_id, picture_set_id):

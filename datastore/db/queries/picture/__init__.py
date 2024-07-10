@@ -319,7 +319,7 @@ def get_pictures_with_picture_seed(cursor, picture_set_id: str):
     try :
         query = """
             SELECT
-                *
+                p.id
             FROM
                 picture_seed ps
             JOIN picture p on ps.picture_id = p.id 
@@ -327,7 +327,8 @@ def get_pictures_with_picture_seed(cursor, picture_set_id: str):
                 p.picture_set_id = %s
             """
         cursor.execute(query, (picture_set_id,))
-        return cursor.fetchall()
+        result = [row[0] for row in cursor.fetchall()]
+        return result
     except Exception:
         raise GetPictureError(f"Error: Error while getting validated pictures for picture_set:{picture_set_id}")
 

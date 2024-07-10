@@ -488,12 +488,20 @@ class test_picture_set(unittest.TestCase):
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
+        print(self.user_id)
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cur, self.seed_name)
         self.folder_name = "test_folder"
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name))
+        self.pictures_id =[]
+        for i in range(3) :
+            picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
+            self.pictures_id.append(picture_id)
         with open("tests/inference_result.json") as file:
             self.inference= json.load(file)
+            
+        self.dev_user_id=datastore.user.get_user_id(self.cur, os.environ["DEV_USER_EMAIL"])
+        self.dev_container_client = asyncio.run(datastore.get_user_container_client(self.dev_user_id))
 
     def tearDown(self):
         self.con.rollback()
@@ -507,16 +515,14 @@ class test_picture_set(unittest.TestCase):
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 0)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 3)
         self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name)
         
-        self.pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cur, self.container_client, 0, self.user_id, self.folder_name + "2"))
-        asyncio.run(datastore.upload_pictures(self.cur, self.user_id, self.picture_set_id, self.container_client, self.pictures, self.seed_name))
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 3)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 3)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 0)
         self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name + "2")
         
     def test_get_picture_sets_info_error_user_not_found(self):
@@ -540,15 +546,11 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the find_validated_pictures function correctly returns the validated pictures of a picture_set
         """
-        pictures_id =[]
-        for i in range(3) :
-            picture_id = asyncio.run(datastore.upload_picture_unknown(self.cur, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
-            pictures_id.append(picture_id)
         
         self.assertEqual(len(asyncio.run(datastore.find_validated_pictures(self.cur, str(self.user_id), str(self.picture_set_id)))), 0, "No validated pictures should be found")
         
         inferences = []
-        for picture_id in pictures_id :
+        for picture_id in self.pictures_id :
             # Using deepcopy to ensure each inference is a unique object without shared references
             inference_copy = deepcopy(self.inference)
             inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,inference_copy, picture_id, "test_model_id"))
@@ -607,7 +609,7 @@ class test_picture_set(unittest.TestCase):
     
     def test_delete_picture_set_permanently(self):
         """
-        This test checks the delete_picture_set function 
+        This test checks the delete_picture_set_permanently function 
         """
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
@@ -618,30 +620,30 @@ class test_picture_set(unittest.TestCase):
     
     def test_delete_picture_set_permanently_error_user_not_found(self):
         """
-        This test checks if the delete_picture_set function correctly raise an exception if the user given doesn't exist in db
+        This test checks if the delete_picture_set_permanently function correctly raise an exception if the user given doesn't exist in db
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
     
-    def test_delete_picture_set_error_connection_error(self):
+    def test_delete_picture_set_permanently_error_connection_error(self):
         """
-        This test checks if the delete_picture_set function correctly raise an exception if the connection to the db fails
+        This test checks if the delete_picture_set_permanently function correctly raise an exception if the connection to the db fails
         """
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(datastore.delete_picture_set_permanently(mock_cursor, str(self.user_id), str(self.picture_set_id), self.container_client))
         
-    def test_delete_picture_set_error_picture_set_not_found(self):
+    def test_delete_picture_set_permanently_error_picture_set_not_found(self):
         """
-        This test checks if the delete_picture_set function correctly raise an exception if the picture set given doesn't exist in db
+        This test checks if the delete_picture_set_permanently function correctly raise an exception if the picture set given doesn't exist in db
         """
         with self.assertRaises(datastore.picture.PictureSetNotFoundError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(self.user_id), str(uuid.uuid4()), self.container_client))
     
-    def test_delete_picture_set_error_not_owner(self):
+    def test_delete_picture_set_permanently_error_not_owner(self):
         """
-        This test checks if the delete_picture_set function correctly raise an exception if the user is not the owner of the picture set
+        This test checks if the delete_picture_set_permanently function correctly raise an exception if the user is not the owner of the picture set
         """
         not_owner_user_obj= asyncio.run(datastore.new_user(self.cur,"notowner@email",self.connection_str,'test-user'))
         not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
@@ -652,14 +654,99 @@ class test_picture_set(unittest.TestCase):
         container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,'test-user'))
         container_client.delete_container()
     
-    def test_delete_picture_set_error_default_folder(self):
+    def test_delete_picture_set_permanently_error_default_folder(self):
         """
-        This test checks if the delete_picture_st function correctly raise an exception if the user want to delete the folder "General"
+        This test checks if the delete_picture_set_permanently function correctly raise an exception if the user want to delete the folder "General"
         """
         general_folder_id = datastore.user.get_default_picture_set(self.cur, self.user_id)
         with self.assertRaises(datastore.picture.PictureSetDeleteError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cur, str(self.user_id), str(general_folder_id), self.container_client))
-               
+    
+    def test_delete_picture_set_with_archive(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly archive the picture set in dev container and delete it from user container
+        """
+        # Create inferences for pictures in the picture set
+        inferences = []
+        for picture_id in self.pictures_id :
+            # Using deepcopy to ensure each inference is a unique object without shared references
+            inference_copy = deepcopy(self.inference)
+            inference = asyncio.run(datastore.register_inference_result(self.cur,self.user_id,inference_copy, picture_id, "test_model_id"))
+            inferences.append(inference)
+        # Validate 2 of 3 pictures in the picture set
+        asyncio.run(datastore.new_perfect_inference_feeback(self.cur, inferences[1]["inferenceId"], self.user_id, [box["boxId"] for box in inferences[1]["boxes"]]))
+        asyncio.run(datastore.new_perfect_inference_feeback(self.cur, inferences[2]["inferenceId"], self.user_id, [box["boxId"] for box in inferences[2]["boxes"]]))
+        validated_pictures = asyncio.run(datastore.find_validated_pictures(self.cur, str(self.user_id), str(self.picture_set_id)))
+        
+        # Check there is the right number of picture sets in db for each user
+        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))), 2)
+        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id))), 1)
+        
+        dev_picture_set_id = asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(self.user_id), str(self.picture_set_id), self.container_client))
+
+        # Check there is the right number of picture sets in db for each user after moving
+        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))), 1)
+        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id))), 2)
+        
+        # Check blobs have also moved in blob storage
+        for picture_id in validated_pictures :
+            blob_name = "{}/{}.png".format(self.folder_name, picture_id)
+            with self.assertRaises(Exception):
+                asyncio.run(datastore.azure_storage.get_blob(self.container_client, blob_name))
+        
+            blob_name = "{}/{}/{}.png".format(self.user_id, self.folder_name, str(picture_id))
+            blob = asyncio.run(datastore.azure_storage.get_blob(self.dev_container_client, blob_name))
+            self.assertEqual(blob, self.pic_encoded)
+        
+        # TEAR DOWN
+        # Delete the user folder in the blob storage
+        asyncio.run(datastore.azure_storage.delete_folder(self.dev_container_client, str(dev_picture_set_id)))
+        asyncio.run(datastore.azure_storage.delete_folder(self.dev_container_client, str(self.user_id)))
+        
+    def test_delete_picture_set_with_archive_error_user_not_found(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
+    
+    def test_delete_picture_set_with_archive_error_connection_error(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.delete_picture_set_with_archive(mock_cursor, str(self.user_id), str(self.picture_set_id), self.container_client))
+        
+    def test_delete_picture_set_with_archive_error_picture_set_not_found(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly raise an exception if the picture set given doesn't exist in db
+        """
+        with self.assertRaises(datastore.picture.PictureSetNotFoundError):
+            asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(self.user_id), str(uuid.uuid4()), self.container_client))
+    
+    def test_delete_picture_set_with_archive_error_not_owner(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly raise an exception if the user is not the owner of the picture set
+        """
+        not_owner_user_obj= asyncio.run(datastore.new_user(self.cur,"notowner@email",self.connection_str,'test-user'))
+        not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
+        
+        with self.assertRaises(datastore.UserNotOwnerError):
+            asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(not_owner_user_id), str(self.picture_set_id), self.container_client))
+            
+        container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,'test-user'))
+        container_client.delete_container()
+    
+    def test_delete_picture_set_with_archive_error_default_folder(self):
+        """
+        This test checks if the delete_picture_set_with_archive function correctly raise an exception if the user want to delete the folder "General"
+        """
+        general_folder_id = datastore.user.get_default_picture_set(self.cur, self.user_id)
+        with self.assertRaises(datastore.picture.PictureSetDeleteError):
+            asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(self.user_id), str(general_folder_id), self.container_client))
+
 class test_analysis(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)

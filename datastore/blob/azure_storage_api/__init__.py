@@ -165,7 +165,7 @@ async def is_a_folder(container_client, folder_name):
         raise Exception("Datastore.blob.azure_storage : Unhandled Error")
 
 
-async def create_folder(container_client, folder_uuid=None, folder_name=None):
+async def create_folder(container_client, folder_uuid=None, folder_name=None, file_name=None):
     """
     creates a folder in the user's container
 
@@ -194,11 +194,12 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
             # Those folder do not have a UUID and are used to store general data
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
-            file_name = "{}/{}.json".format(folder_name, folder_name)
+            if file_name is None :
+                file_name = "{}/{}.json".format(folder_name, folder_name)
             blob_client = container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
-            metadata = {"picture_set_uuid": f"{str(folder_name)}"}
+            metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
             blob_client.set_blob_tags(metadata)
             return True
         else:
@@ -386,6 +387,7 @@ async def delete_folder(container_client, picture_set_id):
     Returns: True if the folder is deleted, False otherwise
     """
     try:
+        print(f"tag {picture_set_id}")
         blobs = await get_blobs_from_tag(container_client, picture_set_id)
         for blob in blobs:
             container_client.delete_blob(blob)
@@ -394,3 +396,28 @@ async def delete_folder(container_client, picture_set_id):
         return False
     except Exception:
         return False
+
+async def move_blob(blob_name_source, blob_name_dest, folder_uuid, container_client_source, container_client_destination):
+    """
+    This function move a blob from a container to another
+    
+    Parameters:
+    - blob_name: the name of the blob to move
+    - container_client_source: the Azure container client where the blob is
+    - container_client_destination : the Azure container client where the blob will be moved
+    """
+    try:
+        blob_client = container_client_source.get_blob_client(blob_name_source)
+        
+        blob = blob_client.download_blob().readall()
+        
+        blob_client_destination = container_client_destination.get_blob_client(blob_name_dest)
+
+        blob_client_destination.upload_blob(blob, overwrite=True)
+        metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
+        blob_client_destination.set_blob_tags(metadata)
+        
+        container_client_source.delete_blob(blob_name_source)
+        return True
+    except Exception as e:
+        raise Exception(f"Error moving blob: {e}")
