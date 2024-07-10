@@ -8,11 +8,27 @@ This is the doc about the FertiScan Database Architecture
 title: FertiScan DB Structure
 ---
 erDiagram
-  users{
+  user{
     uuid id PK
     string email
     timestamp registration_date
     timestamp updated_at
+  }
+  picture_set{
+    uuid id PK
+    string name
+    json picture_set
+    uuid owner_id FK
+    timestamp upload_date
+  }
+  picture{
+    uuid id PK
+    json picture
+    uuid picture_set_id FK
+    uuid parent FK
+    int nb_object
+    boolean verified
+    timestamp upload_date 
   }
   analysis {
     uuid id PK
@@ -46,12 +62,13 @@ erDiagram
   location{
     uuid id PK
     string address
+    region_id uuid FK
   }
   sample{
     uuid id PK
     uuid number
     Date collection_date
-    uuid location
+    uuid location FK
   }
   province{
     int id PK
@@ -75,49 +92,47 @@ erDiagram
     uuid weight FK
     uuid density FK
     uuid volume FK
-    uuid specification_id FK    
-    uuid first_aid_id FK
-    uuid warranty_id FK
-    uuid instruction_id FK
-    uuid caution_id FK
-    uuid metric_id FK
   }
-
   specification{
     uuid id PK
     float humidity
     float ph
     float solubility
     boolean edited
+    label_id uuid FK
   }  
   first_aid{
     uuid id PK
     text first_aid_fr
     text first_aid_en
     boolean edited
+    label_id uuid FK
   }
   warranty{
     uuid id PK
     text warranty_fr
     text warranty_en
     boolean edited
+    label_id uuid FK
   }
   instruction{
     uuid id PK
     text instruction_fr
     text instruction_en
     boolean edited
+    label_id uuid FK
   }
   caution{
     uuid id PK
     text caution_fr
     text caution_en
     boolean edited
+    label_id uuid FK
   }
   metric{
     uuid id PK
     float value
-    uuid unit_id
+    uuid unit_id FK
     boolean edited
   }
   unit{
@@ -132,6 +147,7 @@ erDiagram
     string unit
     int element_id FK
     boolean edited
+    label_id uuid FK
   }
   guaranteed{
     uuid id PK
@@ -140,12 +156,14 @@ erDiagram
     string unit
     int element_id FK
     boolean edited
+    label_id uuid FK
   }
   ingredient{
     uuid id PK
     boolean organic
     string name
     boolean edited
+    label_id uuid FK
   }
   element_compound{
     int id PK
@@ -168,13 +186,13 @@ erDiagram
   label_information ||--|o metric: weight
   label_information ||--|o metric: density
   label_information ||--|o metric: volume
-  label_information ||--|| caution: defines
-  label_information ||--|| instruction: defines
-  label_information ||--|| first_aid: defines
+  label_information ||--|{ caution: has
+  label_information ||--|{ instruction: has
+  label_information ||--|{ first_aid: has
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
-  label_information ||--|| specification: defines
-  label_information ||--|| warranty: defines
+  label_information ||--|{ specification: has
+  label_information ||--|{ warranty: has
   label_information ||--|{ micronutrient: has
   
   metric ||--|| unit: defines
