@@ -14,7 +14,6 @@ from datastore.blob.azure_storage_api import (
     FolderListError,
     GenerateHashError,
     GetFolderUUIDError,
-    UploadImageError,
     generate_hash,
     get_blob,
     upload_image,

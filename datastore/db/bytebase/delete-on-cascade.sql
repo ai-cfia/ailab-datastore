@@ -1,5 +1,3 @@
-BEGIN;
-
 --- SEED_OBJECT ---
 -- delete actual constraint
 ALTER TABLE "nachet_0.0.11"."seed_obj" DROP CONSTRAINT IF EXISTS seed_obj_object_id_fkey;
@@ -39,5 +37,3 @@ ALTER TABLE "nachet_0.0.11"."picture" DROP CONSTRAINT IF EXISTS picture_picture_
 ALTER TABLE "nachet_0.0.11"."picture"
 ADD CONSTRAINT picture_picture_set_id_fkey FOREIGN KEY (picture_set_id)
 REFERENCES "nachet_0.0.11"."picture_set"(id) ON DELETE CASCADE;
-
-COMMIT;
