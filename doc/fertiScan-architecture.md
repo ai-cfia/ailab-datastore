@@ -8,7 +8,7 @@ This is the doc about the FertiScan Database Architecture
 title: FertiScan DB Structure
 ---
 erDiagram
-  user{
+  users{
     uuid id PK
     string email
     timestamp registration_date
@@ -93,41 +93,18 @@ erDiagram
     uuid density FK
     uuid volume FK
   }
-  specification{
+  sub_label{
     uuid id PK
-    float humidity
-    float ph
-    float solubility
-    boolean edited
+    text content_fr
+    text content_en
     label_id uuid FK
-  }  
-  first_aid{
-    uuid id PK
-    text first_aid_fr
-    text first_aid_en
     boolean edited
-    label_id uuid FK
+    sub_type_id uuid FK
   }
-  warranty{
-    uuid id PK
-    text warranty_fr
-    text warranty_en
-    boolean edited
-    label_id uuid FK
-  }
-  instruction{
-    uuid id PK
-    text instruction_fr
-    text instruction_en
-    boolean edited
-    label_id uuid FK
-  }
-  caution{
-    uuid id PK
-    text caution_fr
-    text caution_en
-    boolean edited
-    label_id uuid FK
+  sub_type{
+    id uuid FK
+    text type_fr "unique"
+    text type_en "unique"
   }
   metric{
     uuid id PK
@@ -186,14 +163,11 @@ erDiagram
   label_information ||--|o metric: weight
   label_information ||--|o metric: density
   label_information ||--|o metric: volume
-  label_information ||--|{ caution: has
-  label_information ||--|{ instruction: has
-  label_information ||--|{ first_aid: has
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
-  label_information ||--|{ specification: has
-  label_information ||--|{ warranty: has
   label_information ||--|{ micronutrient: has
+  label_information ||--|{ sub_label: has
+  sub_label }o--|| sub_type: defines
   
   metric ||--|| unit: defines
   micronutrient ||--|| element_compound: is
