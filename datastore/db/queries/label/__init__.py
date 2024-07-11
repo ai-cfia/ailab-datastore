@@ -66,9 +66,9 @@ def get_label_information(cursor, label_information_id):
                 n, 
                 p, 
                 k, 
-                weight, 
-                density, 
-                volume
+                weight_id, 
+                density_id, 
+                volume_id
             FROM 
                 label_information
             WHERE 

@@ -32,7 +32,7 @@ class test_label(unittest.TestCase):
     def test_get_label_information(self):
         label_information_id = label.new_label_information(self.cursor, self.lot_number, self.npk, self.registration_number, self.n, self.p, self.k, self.weight, self.density, self.volume)
         label_data = label.get_label_information(self.cursor, label_information_id)
-        print(label_data)
+        
         self.assertEqual(label_data[0], self.lot_number)
         self.assertEqual(label_data[1], self.npk)
         self.assertEqual(label_data[2], self.registration_number)

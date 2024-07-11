@@ -67,4 +67,3 @@ class test_specification(unittest.TestCase):
     def test_get_all_specification_not_found(self):
         with self.assertRaises(specification.SpecificationNotFoundError):
             specification.get_all_specifications(self.cursor, str(uuid.uuid4()))
-

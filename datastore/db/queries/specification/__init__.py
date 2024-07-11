@@ -57,7 +57,11 @@ def get_specification(cursor, specification_id):
                 id = %s
         """
         cursor.execute(query, (specification_id,))
-        return cursor.fetchone()
+        result = cursor.fetchone()
+
+        if result is None:
+            raise SpecificationNotFoundError("No record found for the given specification_id")
+        return result
     except Exception:
         raise SpecificationNotFoundError("Error: could not get the specification")
     
@@ -84,6 +88,9 @@ def get_all_specifications(cursor,label_id):
                 label_id = %s
         """
         cursor.execute(query, (label_id,))
-        return cursor.fetchall()
+        result = cursor.fetchall()
+        if result is None or len(result) == 0:
+            raise SpecificationNotFoundError("No record found for the given specification_id")
+        return result
     except Exception:
         raise SpecificationNotFoundError("Error: could not get the specifications with the label_id= "+label_id)

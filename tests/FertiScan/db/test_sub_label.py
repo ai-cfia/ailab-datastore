@@ -107,4 +107,3 @@ class test_sub_label(unittest.TestCase):
 
         self.assertEqual(sub_label_data[0][1], self.text_fr)
         self.assertEqual(sub_label_data[1][1], other_fr)
-
