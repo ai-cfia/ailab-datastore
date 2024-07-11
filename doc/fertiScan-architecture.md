@@ -98,7 +98,7 @@ erDiagram
     text content_en
     uuid label_id FK
     boolean edited
-    sub_type_id uuid FK
+    uuid sub_type_id FK
   }
   sub_type{
     id uuid PK
