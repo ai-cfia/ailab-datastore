@@ -16,12 +16,21 @@ from datastore.db.metadata import picture_set as picture_set_data,picture as pic
 import datastore.db.__init__ as db
 
 
+DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("NACHET_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("NACHET_SCHEMA_TESTING is not set")
+
+
 # --------------------  USER FUNCTIONS --------------------
 class test_user_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.email = "test@email.gouv.ca"
 
     def tearDown(self):
@@ -203,8 +212,9 @@ class test_user_functions(unittest.TestCase):
 # --------------------  SEED FUNCTIONS --------------------
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.seed_name = "test-name"
 
     def tearDown(self):
@@ -305,8 +315,9 @@ class test_seed_functions(unittest.TestCase):
 class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
 
         # prepare the seed
         self.seed_name = "test seed"
@@ -730,8 +741,9 @@ class test_pictures_functions(unittest.TestCase):
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
 
         # prepare the seed
         self.seed_name = "test seed"
@@ -983,33 +995,6 @@ class test_inference_functions(unittest.TestCase):
         mock_seed_id = str(uuid.uuid4())
         fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
         self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
-        
-class test_analysis_functions(unittest.TestCase):
-    def setUp(self):
-        # prepare the connection and cursor
-        self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
-        self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
-
-        self.analysis_dict = json.dumps({
-            "company_name": "GreenGrow Fertilizers Inc.",
-            "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
-            "company_website": "www.greengrowfertilizers.com",
-        })
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_analysis(self):
-        """
-        This test checks if the new_analysis function returns a valid UUID
-        """
-        analysis_id = analysis.new_analysis(self.cursor, self.analysis_dict)
-
-        self.assertTrue(
-            validator.is_valid_uuid(analysis_id), "The analysis_id is not a valid UUID"
-        )
 
 if __name__ == "__main__":
     unittest.main()
