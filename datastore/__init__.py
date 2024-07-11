@@ -160,7 +160,7 @@ async def get_user_container_client(user_id, tier="user",storage_url = NACHET_ST
     if isinstance(container_client,ContainerClient):
         return container_client
 
-async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None, blob_name = None):
+async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None):
     """
     Create a picture_set in the database and a related folder in the blob storage
 
@@ -187,7 +187,7 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
             cursor=cursor, picture_set=picture_set, user_id=user_id, folder_name=folder_name
         )
 
-        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name, blob_name)
+        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name)
         if not folder_created:
             raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         
@@ -792,10 +792,17 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
         dev_container_client = await get_user_container_client(dev_user_id)
         
-        if not azure_storage.is_a_folder(dev_container_client, str(user_id)):
+        if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
-        folder_blob_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
-        dev_picture_set_id = await create_picture_set(cursor, dev_container_client, len(validated_pictures), dev_user_id, folder_name, folder_blob_name)
+        
+        picture_set = data_picture_set.build_picture_set(dev_user_id, len(validated_pictures))
+        dev_picture_set_id = picture.new_picture_set(
+            cursor=cursor, picture_set=picture_set, user_id=dev_user_id, folder_name=folder_name
+        )
+
+        folder_created = await azure_storage.create_dev_container_folder(dev_container_client, str(picture_set_id), folder_name, user_id)
+        if not folder_created:
+            raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
         
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
