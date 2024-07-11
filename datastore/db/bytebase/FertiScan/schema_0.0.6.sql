@@ -63,15 +63,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "location" uuid REFERENCES "fertiscan_0.0.6".location(id)
     );
 
-    CREATE TABLE "fertiscan_0.0.6"."specification" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "humidity" float,
-    "ph" float,
-    "solubility" float,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
-    );
-
     CREATE TABLE "fertiscan_0.0.6"."unit" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "unit" text NOT NULL,
@@ -106,36 +97,19 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "volume" uuid REFERENCES "fertiscan_0.0.6".metric(id)
     );
 
-        CREATE TABLE "fertiscan_0.0.6"."first_aid" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "first_aid_fr" text,
-    "first_aid_en" text,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
+    CREATE TABLE "fertiscan_0.0.6"."sub_type" (
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "type_fr" text Unique NOT NULL,
+        "type_en" text unique NOT NULL
     );
 
-    CREATE TABLE "fertiscan_0.0.6"."warranty" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "warranty_fr" text,
-    "warranty_en" text,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."instruction" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "instruction_fr" text,
-    "instruction_en" text,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
-    );
-
-    CREATE TABLE "fertiscan_0.0.6"."caution" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "caution_fr" text,
-    "caution_en" text,
-    "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.6".label_information(id)
+    CREATE TABLE "fertiscan_0.0.6"."sub_label" (
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "text_content_fr" text NOT NULL DEFAULT '',
+        "text_content_en" text NOT NULL DEFAULT '',
+        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.6"."label_information" ("id"),
+        "edited" boolean NOT NULL,
+        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.6"."sub_type" ("id")
     );
 
     CREATE TABLE "fertiscan_0.0.6"."micronutrient" (
@@ -234,5 +208,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     BEFORE UPDATE ON  "fertiscan_0.0.6".fertilizer
     FOR EACH ROW
     EXECUTE FUNCTION update_fertilizer_timestamp();
+
+    -- Insert the default types : [instruction, first_aid, specification, warranty]
+    INSERT INTO "fertiscan_0.0.6".sub_label(type_fr,type_en) VALUES
+    ('Instruction','Instruction'),
+    ('Premier soin','First aid'),
+    ('Spécification','Specification'),
+    ('Garantie','Warranty');
 END
 $do$

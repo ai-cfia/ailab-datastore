@@ -48,7 +48,7 @@ erDiagram
     string name "Unique"
     string registration_number
     timestamp upload_date
-    timestamp update_time
+    timestamp update_at
     uuid latest_analysis FK
     uuid respo_id FK
   }
@@ -87,17 +87,16 @@ erDiagram
     float n
     float p
     float k
-    text warranty
 
-    uuid weight FK
-    uuid density FK
-    uuid volume FK
+    uuid weight_id FK
+    uuid density_id FK
+    uuid volume_id FK
   }
   sub_label{
     uuid id PK
     text content_fr
     text content_en
-    label_id uuid FK
+    uuid label_id FK
     boolean edited
     sub_type_id uuid FK
   }
