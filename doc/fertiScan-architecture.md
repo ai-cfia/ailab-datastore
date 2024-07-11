@@ -173,6 +173,7 @@ erDiagram
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
+  label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
   sub_label }o--|| sub_type: defines
   
