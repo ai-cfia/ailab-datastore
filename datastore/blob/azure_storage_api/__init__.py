@@ -165,7 +165,7 @@ async def is_a_folder(container_client, folder_name):
         raise Exception("Datastore.blob.azure_storage : Unhandled Error")
 
 
-async def create_folder(container_client, folder_uuid=None, folder_name=None, file_name=None):
+async def create_folder(container_client, folder_uuid=None, folder_name=None, blob_name=None):
     """
     creates a folder in the user's container
 
@@ -173,6 +173,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None, fi
     - container_client: the container client object to interact with the Azure storage account
     - folder_uuid: the uuid of the folder to be created
     - folder_name: the name of the folder to be created (usually it's uuid)
+    - blob_name: customize blob name to create the folder. Should look like a path for a json file, example : {...}/{...}/{...}.json
     """
     try:
         # We want to enable 2 types of folder creation
@@ -194,10 +195,10 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None, fi
             # Those folder do not have a UUID and are used to store general data
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
-            if file_name is None :
-                file_name = "{}/{}.json".format(folder_name, folder_name)
+            if blob_name is None :
+                blob_name = "{}/{}.json".format(folder_name, folder_name)
             blob_client = container_client.upload_blob(
-                file_name, json.dumps(folder_data), overwrite=True
+                blob_name, json.dumps(folder_data), overwrite=True
             )
             metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
             blob_client.set_blob_tags(metadata)

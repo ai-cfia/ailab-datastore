@@ -170,9 +170,10 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
         nb_pictures (int): number of picture that the picture set should be related to
         user_id (str): id of the user creating this picture set
         folder_name : name of the folder/picture set
+        blob_name: customize blob name to create the folder in blob storage. Should look like path for a json file, example : {...}/{...}/{...}.json
 
     Returns:
-        _type_: _description_
+        picture_set_id : uuid of the new picture set
     """
     try:
 
@@ -215,14 +216,17 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
             )
         
         empty_picture = json.dumps([])
-        # Create picture instance in DB
-        if picture_set_id is None :
-            picture_set_id = user.get_default_picture_set(cursor, user_id)
-            
-        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        if folder_name is None:
+        
+        default_picture_set = str(user.get_default_picture_set(cursor, user_id))
+        if picture_set_id is None or str(picture_set_id) == default_picture_set:
+            picture_set_id = default_picture_set
             folder_name = "General"
+        else :
+            folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+            if folder_name is None :
+                folder_name = picture_set_id
             
+        # Create picture instance in DB
         picture_id = picture.new_picture_unknown(
             cursor=cursor,
             picture=empty_picture,
@@ -783,7 +787,7 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         if folder_name is None :
             folder_name = picture_set_id
-        validated_pictures = picture.get_pictures_with_picture_seed(cursor, picture_set_id)
+        validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
         
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
         dev_container_client = await get_user_container_client(dev_user_id)
@@ -793,7 +797,7 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
         folder_blob_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
         dev_picture_set_id = await create_picture_set(cursor, dev_container_client, len(validated_pictures), dev_user_id, folder_name, folder_blob_name)
         
-        for picture_id in picture.get_pictures_with_picture_seed(cursor, picture_set_id):
+        for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
             blob_name = f"{folder_name}/{str(picture_id)}.png"
             # change the link in the metadata
@@ -805,7 +809,7 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
             new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
             await azure_storage.move_blob(blob_name, new_blob_name, dev_picture_set_id, container_client, dev_container_client)
         
-        if len(picture.get_pictures_with_picture_seed(cursor, picture_set_id)) > 0:
+        if len(picture.get_validated_pictures(cursor, picture_set_id)) > 0:
             raise picture.PictureSetDeleteError(
                 f"Can't delete the folder, there are still validated pictures in it, folder name : {picture_set_id}"
             )
@@ -851,7 +855,7 @@ async def find_validated_pictures(cursor, user_id, picture_set_id):
                 f"User isn't owner of this folder, user uuid :{user_id}, folder uuid : {picture_set_id}"
             )
         
-        validated_pictures_id = picture.get_pictures_with_picture_seed(cursor, picture_set_id)
+        validated_pictures_id = picture.get_validated_pictures(cursor, picture_set_id)
         return validated_pictures_id
     except (user.UserNotFoundError, picture.PictureSetNotFoundError, UserNotOwnerError) as e:
         raise e

@@ -308,9 +308,9 @@ def get_picture_set_pictures(cursor, picture_set_id: str):
     except Exception:
         raise GetPictureError(f"Error: Error while getting pictures for picture_set:{picture_set_id}")
 
-def get_pictures_with_picture_seed(cursor, picture_set_id: str):
+def get_validated_pictures(cursor, picture_set_id: str):
     """
-    This functions select pictures from a picture set that have a validated inference
+    This functions select pictures from a picture set that have been validated. Therefore, there should exists picture_seed entity for this picture.  
 
     Parameters:
     - cursor (cursor): The cursor of the database.

@@ -677,15 +677,15 @@ class test_picture_set(unittest.TestCase):
         asyncio.run(datastore.new_perfect_inference_feeback(self.cur, inferences[2]["inferenceId"], self.user_id, [box["boxId"] for box in inferences[2]["boxes"]]))
         validated_pictures = asyncio.run(datastore.find_validated_pictures(self.cur, str(self.user_id), str(self.picture_set_id)))
         
+        dev_nb_folders = len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id)))
         # Check there is the right number of picture sets in db for each user
         self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))), 2)
-        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id))), 1)
         
         dev_picture_set_id = asyncio.run(datastore.delete_picture_set_with_archive(self.cur, str(self.user_id), str(self.picture_set_id), self.container_client))
 
         # Check there is the right number of picture sets in db for each user after moving
         self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.user_id))), 1)
-        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id))), 2)
+        self.assertEqual(len(asyncio.run(datastore.get_picture_sets_info(self.cur, self.dev_user_id))), dev_nb_folders + 1)
         
         # Check blobs have also moved in blob storage
         for picture_id in validated_pictures :
