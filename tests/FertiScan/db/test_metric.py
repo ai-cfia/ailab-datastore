@@ -7,13 +7,22 @@ import unittest
 from datastore.db.queries import metric
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
+import os
+
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("FERTISCAN_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
 # ------------ unit ------------
 class test_unit(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(db.FERTISCAN_DB_URL,db.FERTISCAN_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.unit_unit = "milli-unite"
         self.unit_to_si_unit = 0.001
 
@@ -36,9 +45,9 @@ class test_unit(unittest.TestCase):
 
 class test_metric(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(db.FERTISCAN_DB_URL,db.FERTISCAN_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.unit_unit = "milli-unite"
         self.unit_to_si_unit = 0.001
         self.unit_id = metric.new_unit(self.cursor, self.unit_unit, self.unit_to_si_unit)

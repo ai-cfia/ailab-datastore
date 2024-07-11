@@ -8,12 +8,21 @@ import unittest
 from datastore.db.queries import nutrients,label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
+import os
+
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("FERTISCAN_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
 class test_element(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(db.FERTISCAN_DB_URL,db.FERTISCAN_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         
         self.element_name_fr = "test-nutriment"
         self.element_name_en = "test-nutrient"
@@ -45,9 +54,9 @@ class test_element(unittest.TestCase):
 
 class test_micronutrient(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(db.FERTISCAN_DB_URL,db.FERTISCAN_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         
         self.element_name_fr = "test-nutriment"
         self.element_name_en = "test-nutrient"
@@ -114,9 +123,9 @@ class test_micronutrient(unittest.TestCase):
     
 class test_guaranteed_analysis(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(db.FERTISCAN_DB_URL,db.FERTISCAN_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         
         self.element_name_fr = "test-nutriment"
         self.element_name_en = "test-nutrient"
