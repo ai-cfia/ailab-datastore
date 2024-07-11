@@ -1,0 +1,9 @@
+# Codeowners list
+
+* @ai-cfia/Data
+* @ai-cfia/fertiscan
+* @ai-cfia/nachet
+/.github/ @ai-cfia/devops
+Dockerfile @ai-cfia/devops
+docker-compose.yml @ai-cfia/devops
+docker-compose.*.yml @ai-cfia/devops
