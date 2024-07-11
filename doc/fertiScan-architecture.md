@@ -8,11 +8,27 @@ This is the doc about the FertiScan Database Architecture
 title: FertiScan DB Structure
 ---
 erDiagram
-  user{
+  users{
     uuid id PK
     string email
     timestamp registration_date
     timestamp updated_at
+  }
+  picture_set{
+    uuid id PK
+    string name
+    json picture_set
+    uuid owner_id FK
+    timestamp upload_date
+  }
+  picture{
+    uuid id PK
+    json picture
+    uuid picture_set_id FK
+    uuid parent FK
+    int nb_object
+    boolean verified
+    timestamp upload_date 
   }
   analysis {
     uuid id PK
@@ -32,8 +48,8 @@ erDiagram
     string name "Unique"
     string registration_number
     timestamp upload_date
-    timestamp update_time
-    uuid latest_Analyses FK
+    timestamp update_at
+    uuid latest_analysis FK
     uuid respo_id FK
   }
   responsable{
@@ -46,12 +62,13 @@ erDiagram
   location{
     uuid id PK
     string address
+    region_id uuid FK
   }
   sample{
     uuid id PK
     uuid number
     Date collection_date
-    uuid location
+    uuid location FK
   }
   province{
     int id PK
@@ -70,55 +87,42 @@ erDiagram
     float n
     float p
     float k
-    text warranty
 
-    uuid weight FK
-    uuid density FK
-    uuid volume FK
-    uuid specification_id FK    
-    uuid first_aid_id FK
-    uuid warranty_id FK
-    uuid instruction_id FK
-    uuid caution_id FK
-    uuid metric_id FK
+    uuid weight_id FK
+    uuid density_id FK
+    uuid volume_id FK
   }
-
-  specification{
+  sub_label{
     uuid id PK
+    text content_fr
+    text content_en
+    uuid label_id FK
+    boolean edited
+    uuid sub_type_id FK
+  }
+  sub_type{
+    id uuid PK
+    text type_fr "unique"
+    text type_en "unique"
+  }
+  specification{
+    id uuid PK
     float humidity
     float ph
     float solubility
     boolean edited
-  }  
-  first_aid{
-    uuid id PK
-    text first_aid_fr
-    text first_aid_en
-  }
-  warranty{
-    uuid id PK
-    text warranty_fr
-    text warranty_en
-  }
-  instruction{
-    uuid id PK
-    text instruction_fr
-    text instruction_en
-  }
-  caution{
-    uuid id PK
-    text caution_fr
-    text caution_en
+    uuid label_id FK
   }
   metric{
     uuid id PK
     float value
-    uuid unit_id
+    uuid unit_id FK
+    boolean edited
   }
   unit{
     uuid id PK
     string unit
-    float to_metric_unit
+    float to_si_unit
   }
   micronutrient{
     uuid id PK
@@ -126,6 +130,8 @@ erDiagram
     float value
     string unit
     int element_id FK
+    boolean edited
+    uuid label_id FK
   }
   guaranteed{
     uuid id PK
@@ -133,11 +139,15 @@ erDiagram
     float value
     string unit
     int element_id FK
+    boolean edited
+    uuid label_id FK
   }
   ingredient{
     uuid id PK
     boolean organic
     string name
+    boolean edited
+    uuid label_id FK
   }
   element_compound{
     int id PK
@@ -149,25 +159,23 @@ erDiagram
   picture }o--|| picture_set: contains
   analysis ||--|| responsable :manage
   fertilizer ||--|| responsable: manage
-  analysis ||--|| user :does
+  analysis ||--|| users :does
   analysis ||--o{ picture :has
-  analysis ||--|| fertilizer :is about
+  analysis ||--|| fertilizer : represent
   analysis ||--|| label_information : defines
-  province ||--|| region: apart of
+  province ||--|| region: apart
   region ||--|| location: defines
   responsable ||--|| location: located
   sample ||--|| location: taken
   label_information ||--|o metric: weight
   label_information ||--|o metric: density
   label_information ||--|o metric: volume
-  label_information ||--|| caution: defines
-  label_information ||--|| instruction: defines
-  label_information ||--|| first_aid: defines
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
-  label_information ||--|| specification: defines
-  label_information ||--|| warranty: defines
   label_information ||--|{ micronutrient: has
+  label_information ||--|{ specification: has
+  label_information ||--|{ sub_label: has
+  sub_label }o--|| sub_type: defines
   
   metric ||--|| unit: defines
   micronutrient ||--|| element_compound: is
