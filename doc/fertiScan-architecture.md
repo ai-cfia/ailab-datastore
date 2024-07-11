@@ -101,9 +101,17 @@ erDiagram
     sub_type_id uuid FK
   }
   sub_type{
-    id uuid FK
+    id uuid PK
     text type_fr "unique"
     text type_en "unique"
+  }
+  specification{
+    id uuid PK
+    float humidity
+    float ph
+    float solubility
+    boolean edited
+    uuid label_id FK
   }
   metric{
     uuid id PK
