@@ -488,7 +488,6 @@ class test_picture_set(unittest.TestCase):
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
-        print(self.user_id)
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cur, self.seed_name)
         self.folder_name = "test_folder"

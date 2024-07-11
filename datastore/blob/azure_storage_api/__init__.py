@@ -387,7 +387,6 @@ async def delete_folder(container_client, picture_set_id):
     Returns: True if the folder is deleted, False otherwise
     """
     try:
-        print(f"tag {picture_set_id}")
         blobs = await get_blobs_from_tag(container_client, picture_set_id)
         for blob in blobs:
             container_client.delete_blob(blob)

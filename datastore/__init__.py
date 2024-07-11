@@ -740,10 +740,7 @@ async def delete_picture_set_permanently(cursor, user_id, picture_set_id, contai
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
         
-        #Temp#
-        # On cascade it should delete : picture_set --> picture --> inference --> object --> seed_object
-                                                            #   --> picture_seed
-
+        return True
     except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
         raise e
     except Exception as e:
@@ -777,25 +774,28 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
                 f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
             )
         # Check if the picture set is the default picture set
-        general_folder_id = user.get_default_picture_set(cursor, user_id)
+        general_folder_id = str(user.get_default_picture_set(cursor, user_id))
         if general_folder_id == picture_set_id:
             raise picture.PictureSetDeleteError(
                 f"User can't delete the default picture set, user uuid :{user_id}"
             )
         
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        if folder_name is None :
+            folder_name = picture_set_id
         validated_pictures = picture.get_pictures_with_picture_seed(cursor, picture_set_id)
         
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
         dev_container_client = await get_user_container_client(dev_user_id)
         
-        await azure_storage.create_folder(dev_container_client, str(user_id))
+        if not azure_storage.is_a_folder(dev_container_client, str(user_id)):
+            await azure_storage.create_folder(dev_container_client, str(user_id))
         folder_blob_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
         dev_picture_set_id = await create_picture_set(cursor, dev_container_client, len(validated_pictures), dev_user_id, folder_name, folder_blob_name)
         
         for picture_id in picture.get_pictures_with_picture_seed(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
-            blob_name = picture_metadata["link"]+".png"
+            blob_name = f"{folder_name}/{str(picture_id)}.png"
             # change the link in the metadata
             picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
             picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), 0)
@@ -803,8 +803,6 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
             picture.update_picture_picture_set_id(cursor, picture_id, dev_picture_set_id)
             # move the picture to the dev container
             new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
-            print(f"blob_name : {new_blob_name}")
-            print(f"dev set id : {dev_picture_set_id}")
             await azure_storage.move_blob(blob_name, new_blob_name, dev_picture_set_id, container_client, dev_container_client)
         
         if len(picture.get_pictures_with_picture_seed(cursor, picture_set_id)) > 0:
