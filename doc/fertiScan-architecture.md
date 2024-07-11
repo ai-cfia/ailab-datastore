@@ -98,7 +98,7 @@ erDiagram
     text content_en
     uuid label_id FK
     boolean edited
-    sub_type_id uuid FK
+    uuid sub_type_id FK
   }
   sub_type{
     id uuid PK
@@ -131,7 +131,7 @@ erDiagram
     string unit
     int element_id FK
     boolean edited
-    label_id uuid FK
+    uuid label_id FK
   }
   guaranteed{
     uuid id PK
@@ -140,14 +140,14 @@ erDiagram
     string unit
     int element_id FK
     boolean edited
-    label_id uuid FK
+    uuid label_id FK
   }
   ingredient{
     uuid id PK
     boolean organic
     string name
     boolean edited
-    label_id uuid FK
+    uuid label_id FK
   }
   element_compound{
     int id PK
