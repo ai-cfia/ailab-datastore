@@ -688,7 +688,7 @@ class test_pictures_functions(unittest.TestCase):
         new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
         self.assertEqual(len(new_picture_set), 0, "The number of pictures is not the expected one")
         
-        picture.change_picture_set_id(self.cursor, self.user_id, old_picture_set_id, new_picture_set_id)
+        picture.change_picture_set_id(self.cursor, str(self.user_id), str(old_picture_set_id), str(new_picture_set_id))
 
         old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
         self.assertEqual(len(old_picture_set), 0, "The number of pictures is not the expected one")
