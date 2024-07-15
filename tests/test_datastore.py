@@ -37,7 +37,7 @@ class test_ml_structure(unittest.TestCase):
         
     def tearDown(self):
         self.con.rollback()
-        db.end_query(self.conn, self.cursor)
+        db.end_query(self.con, self.cursor)
         
         
     def test_import_ml_structure_from_json(self):
@@ -64,11 +64,11 @@ class test_ml_structure(unittest.TestCase):
         #self.assertDictEqual(ml_structure,self.ml_dict)
         for pipeline in self.ml_dict["pipelines"]:
             for key in pipeline:
-                if key!='Accursoracy':
+                if key!='Accuracy':
                     self.assertTrue((key in ml_structure["pipelines"][0].keys()),f"Key {key} was not found and expected in the returned dictionary")
         for model in self.ml_dict["models"]:
             for key in model:
-                if key!='Accursoracy' and key !='endpoint_name':
+                if key!='Accuracy' and key !='endpoint_name':
                     #print(key)
                     self.assertTrue((key in ml_structure["models"][0].keys()),f"Key {key} was not found and expected in the returned dictionary")
         
@@ -97,7 +97,7 @@ class test_user(unittest.TestCase):
             self.container_client=asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
             self.container_client.delete_container()
         self.user_id=None
-        db.end_query(self.conn, self.cursor)
+        db.end_query(self.con, self.cursor)
 
     def test_new_user(self):
         """
