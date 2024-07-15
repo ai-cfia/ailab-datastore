@@ -342,8 +342,10 @@ def change_picture_set_id(cursor, user_id, old_picture_set_id, new_picture_set_i
     - picture_set_id (str): The UUID of the PictureSet to retrieve the pictures from.
     """
     try :
-        if get_picture_set_owner_id(cursor, old_picture_set_id) != user_id or get_picture_set_owner_id(cursor, new_picture_set_id) != user_id:
-            raise PictureUpdateError(f"Error: picture set not own by user :{user_id}")
+        if get_picture_set_owner_id(cursor, old_picture_set_id) != user_id :
+            raise PictureUpdateError(f"Error: old picture set not own by user :{user_id}")
+        if get_picture_set_owner_id(cursor, new_picture_set_id) != user_id :
+            raise PictureUpdateError(f"Error: new picture set not own by user :{user_id}")
         
         query = """
             UPDATE picture
