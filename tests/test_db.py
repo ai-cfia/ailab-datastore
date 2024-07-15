@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import MagicMock
 import uuid
 import json
+import os
 from PIL import Image
 import io
 import base64
