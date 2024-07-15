@@ -1,0 +1,475 @@
+"""
+This module represent the function for the table organization and its children tables: [location, region, province]
+
+    
+"""
+class OrganizationCreationError(Exception):
+    pass
+
+class OrganizationNotFoundError(Exception):
+    pass
+
+class LocationCreationError(Exception):
+    pass
+
+class LocationNotFoundError(Exception):
+    pass
+
+class RegionCreationError(Exception):
+    pass
+
+class RegionNotFoundError(Exception):
+    pass
+
+def new_organization(cursor,name,website,phone_number):
+    """
+    This function create a new organization in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+    - website (str): The website of the organization.
+    - phone_number (str): The phone number of the organization.
+
+    Returns:
+    - str: The UUID of the organization
+    """
+    try:
+        query = """
+            INSERT INTO 
+                organization (
+                    name, 
+                    website, 
+                    phone_number 
+                    )
+            VALUES 
+                (%s, %s, %s)
+            RETURNING 
+                id
+            """
+        cursor.execute(query, (name, website, phone_number,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise OrganizationCreationError
+    
+def get_organization(cursor, organization_id):
+    """
+    This function get a organization from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - organization_id (str): The UUID of the organization.
+
+    Returns:
+    - dict: The organization
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name, 
+                website, 
+                phone_number 
+            FROM 
+                organization
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (organization_id,))
+        res = cursor.fetchone()
+        if res is None:
+            raise OrganizationNotFoundError
+        return res
+    except Exception as e:
+        raise e
+    
+def get_full_organization(cursor,org_id):
+    """
+    This function get the full organization details from the database.
+    This includes the location, region and province info of the organization.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - org_id (str): The UUID of the organization.
+
+    Returns:
+    - dict: The organization
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name, 
+                website, 
+                phone_number, 
+                location.name,
+                location.address,
+                region.name,
+                province.name
+            FROM
+                organization
+            LEFT JOIN
+                location
+            ON
+                organization.main_location_id = location.id
+            LEFT JOIN
+                region
+            ON
+                location.region_id = region.id
+            LEFT JOIN
+                province
+            ON
+                region.province_id = province.id
+            WHERE 
+                organization.id = %s
+            """
+        cursor.execute(query, (org_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e 
+    
+def new_location(cursor,org_id,name,address,region_id):
+    """
+    This function create a new location in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - org_id (str): The UUID of the organization.
+    - name (str): The name of the location.
+    - address (str): The address of the location.
+    - region_id (str): The UUID of the region.
+
+    Returns:
+    - str: The UUID of the location
+    """
+    try:
+        query = """
+            INSERT INTO 
+                location (
+                    name, 
+                    address, 
+                    region_id,
+                    owner_id 
+                    )
+            VALUES 
+                (%s, %s, %s, %s)
+            RETURNING 
+                id
+            """
+        cursor.execute(query, (name, address, region_id,org_id,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise LocationCreationError
+    
+def get_location(cursor, location_id):
+    """
+    This function get a location from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - location_id (str): The UUID of the location.
+
+    Returns:
+    - dict: The location
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name, 
+                address, 
+                region_id 
+            FROM 
+                location
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (location_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e
+    
+def get_full_location(cursor,location_id):
+    """
+    This function get the full location details from the database.
+    This includes the region and province info of the location.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - location_id (str): The UUID of the location.
+
+    Returns:
+    - dict: The location
+    """
+    try:
+        query = """
+            SELECT 
+                location.id, 
+                location.name,
+                location.address,
+                region.name,
+                province.name
+            FROM
+                location
+            LEFT JOIN
+                region
+            ON
+                location.region_id = region.id
+            LEFT JOIN
+                province
+            ON
+                region.province_id = province.id
+            WHERE 
+                location.id = %s
+            """
+        cursor.execute(query, (location_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e
+    
+def get_location_by_region(cursor, region_id):
+    """
+    This function get a location from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - region_id (str): The UUID of the region.
+
+    Returns:
+    - dict: The location
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name, 
+                address, 
+                region_id 
+            FROM 
+                location
+            WHERE 
+                region_id = %s
+            """
+        cursor.execute(query, (region_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise e
+
+def get_location_by_organization(cursor, org_id):
+    """
+    This function get a location from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - org_id (str): The UUID of the organization.
+
+    Returns:
+    - dict: The location
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name, 
+                address, 
+                region_id 
+            FROM 
+                location
+            WHERE 
+                owner_id = %s
+            """
+        cursor.execute(query, (org_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise e
+
+def new_region(cursor,province_id,name):
+    """
+    This function create a new region in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - province_id (int): The id of the province.
+    - name (str): The name of the region.
+
+    Returns:
+    - str: The UUID of the region
+    """
+    try:
+        query = """
+            INSERT INTO 
+                region (
+                    province_id, 
+                    name 
+                    )
+            VALUES 
+                (%s, %s)
+            RETURNING 
+                id
+            """
+        cursor.execute(query, (province_id, name,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise RegionCreationError
+    
+def get_region(cursor, region_id):
+    """
+    This function get a region from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - region_id (str): The UUID of the region.
+
+    Returns:
+    - dict: The region
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                province_id, 
+                name 
+            FROM 
+                region
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (region_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e
+    
+def get_full_region(cursor,region_id):
+    """
+    This function get the full region details from the database.
+    This includes the province info of the region.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - region_id (str): The UUID of the region.
+
+    Returns:
+    - dict: The region
+    """
+    try:
+        query = """
+            SELECT 
+                region.id, 
+                region.name,
+                province.name
+            FROM
+                region
+            LEFT JOIN
+                province
+            ON
+                region.province_id = province.id
+            WHERE 
+                region.id = %s
+            """
+        cursor.execute(query, (region_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e
+
+def get_region_by_province(cursor, province_id):
+    """
+    This function get a region from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - province_id (str): The UUID of the province.
+
+    Returns:
+    - dict: The region
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                province_id, 
+                name 
+            FROM 
+                region
+            WHERE 
+                province_id = %s
+            """
+        cursor.execute(query, (province_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise e
+    
+def new_province(cursor,name):
+    """
+    This function create a new province in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the province.
+
+    Returns:
+    - str: The UUID of the province
+    """
+    try:
+        query = """
+            INSERT INTO 
+                province (
+                    name 
+                    )
+            VALUES 
+                (%s)
+            RETURNING 
+                id
+            """
+        cursor.execute(query, (name,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise ProvinceCreationError
+
+def get_province(cursor, province_id):
+    """
+    This function get a province from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - province_id (str): The UUID of the province.
+
+    Returns:
+    - dict: The province
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name 
+            FROM 
+                province
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (province_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise e
+    
+def get_all_province(cursor):
+    """
+    This function get all province from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+
+    Returns:
+    - dict: The province
+    """
+    try:
+        query = """
+            SELECT 
+                id, 
+                name 
+            FROM 
+                province
+            """
+        cursor.execute(query)
+        return cursor.fetchall()
+    except Exception as e:
+        raise e

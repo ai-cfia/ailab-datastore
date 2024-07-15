@@ -1,5 +1,5 @@
 """
-This module represent the function for the table inspection and its children unit:
+This module represent the function for the table inspection:
 
     CREATE TABLE "fertiscan_0.0.7"."inspection" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
