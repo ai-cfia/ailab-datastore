@@ -25,12 +25,23 @@ from datastore.blob.azure_storage_api import (
     get_directories,
     move_blob
 )
+BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
+if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
+    raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
+
+BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT_TESTING"]
+if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
+    raise ValueError("NACHET_BLOB_ACCOUNT is not set")
+
+BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
+if BLOB_KEY is None or BLOB_KEY == "":
+    raise ValueError("NACHET_BLOB_KEY is not set")
 
 class TestMountContainerFunction(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
-        self.account_name = os.environ.get("NACHET_BLOB_ACCOUNT")
-        self.account_key = os.environ.get("NACHET_BLOB_KEY")
+        self.storage_url = BLOB_CONNECTION_STRING
+        self.account_name = BLOB_ACCOUNT
+        self.account_key = BLOB_KEY
         self.credential= blob.get_account_sas(self.account_name, self.account_key)
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
@@ -74,7 +85,7 @@ class TestMountContainerFunction(unittest.TestCase):
 
 class TestGetBlob(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -109,7 +120,7 @@ class TestGetBlob(unittest.TestCase):
 
 class TestUploadImage(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -149,7 +160,7 @@ class TestUploadImage(unittest.TestCase):
 
 class TestIsAFolder(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -174,7 +185,7 @@ class TestIsAFolder(unittest.TestCase):
         
 class TestCreateFolder(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -220,7 +231,7 @@ class TestGenerateHash(unittest.TestCase):
             
 class TestGetFolderUUID(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -244,7 +255,7 @@ class TestGetFolderUUID(unittest.TestCase):
 
 class TestGetBlobsFromTag(unittest.TestCase) :
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
@@ -281,7 +292,7 @@ class TestGetBlobsFromTag(unittest.TestCase) :
 
 class TestGetDirectories(unittest.TestCase) :
     def setUp(self) :
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.tier="testuser"
         self.container_uuid=str(uuid.uuid4())
         self.container_name=f"{self.tier}-{self.container_uuid}"
