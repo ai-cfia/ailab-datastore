@@ -198,7 +198,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
             blob_client = container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
-            metadata = {"picture_set_uuid": f"{str(folder_name)}"}
+            metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
             blob_client.set_blob_tags(metadata)
             return True
         else:
@@ -213,6 +213,56 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
         print(error)
         raise Exception("Datastore unHandled Error")
 
+async def create_dev_container_folder(dev_container_client, folder_uuid=None, folder_name=None, user_id=None):
+    """
+    creates a folder in the dev user's container, this is used to archive data
+
+    Parameters:
+    - container_client: the container client object to interact with the Azure storage account
+    - folder_uuid: the uuid of the folder to be created
+    - folder_name: the name of the folder to be created (usually it's uuid)
+    - user_id : the user id of the user archiving a folder
+    """
+    try:
+        # We want to enable 2 types of folder creation
+        if folder_uuid is None and folder_name is None:
+            raise CreateDirectoryError("Folder name and uuid not provided")
+        elif folder_uuid is None:
+            raise CreateDirectoryError("Folder uuid not provided")
+        if user_id is None:
+            raise CreateDirectoryError("User id not provided")
+        # Until we allow user to manually create folder and name them
+        if folder_name is None:
+            folder_name = folder_uuid
+        if not await is_a_folder(dev_container_client, "{}/{}".format(user_id, folder_name)):
+            folder_data = {
+                "folder_name": "{}/{}".format(user_id, folder_name),
+                "date_created": str(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                ),
+            }
+            # Usually we create a folder named General after creating a container.
+            # Those folder do not have a UUID and are used to store general data
+            if folder_uuid is not None:
+                folder_data["folder_uuid"] = str(folder_uuid)
+            file_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
+            blob_client = dev_container_client.upload_blob(
+                file_name, json.dumps(folder_data), overwrite=True
+            )
+            metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
+            blob_client.set_blob_tags(metadata)
+            return True
+        else:
+            raise CreateDirectoryError("Folder already exists")
+
+    except CreateDirectoryError as error:
+        raise error
+    except FolderListError as error:
+        print(error)
+        raise CreateDirectoryError("Error getting folder list, could not create folder")
+    except Exception as error:
+        print(error)
+        raise Exception("Datastore unHandled Error")
 
 async def upload_inference_result(container_client, folder_name, result, hash_value):
     """
@@ -394,3 +444,28 @@ async def delete_folder(container_client, picture_set_id):
         return False
     except Exception:
         return False
+
+async def move_blob(blob_name_source, blob_name_dest, folder_uuid, container_client_source, container_client_destination):
+    """
+    This function move a blob from a container to another
+    
+    Parameters:
+    - blob_name: the name of the blob to move
+    - container_client_source: the Azure container client where the blob is
+    - container_client_destination : the Azure container client where the blob will be moved
+    """
+    try:
+        blob_client = container_client_source.get_blob_client(blob_name_source)
+        
+        blob = blob_client.download_blob().readall()
+        
+        blob_client_destination = container_client_destination.get_blob_client(blob_name_dest)
+
+        blob_client_destination.upload_blob(blob, overwrite=True)
+        metadata = {"picture_set_uuid": f"{str(folder_uuid)}"}
+        blob_client_destination.set_blob_tags(metadata)
+        
+        container_client_source.delete_blob(blob_name_source)
+        return True
+    except Exception as e:
+        raise Exception(f"Error moving blob: {e}")

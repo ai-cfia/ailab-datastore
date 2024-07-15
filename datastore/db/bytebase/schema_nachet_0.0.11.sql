@@ -23,10 +23,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
     CREATE TABLE "nachet_0.0.11"."picture" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "picture" json NOT NULL,
-        "picture_set_id" uuid NOT NULL REFERENCES "nachet_0.0.11".picture_set(id),
+        "picture_set_id" uuid NOT NULL
         "nb_obj" integer NOT NULL,
         "verified" boolean NOT NULL DEFAULT false,
-        "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY ("picture_set_id") REFERENCES "nachet_0.0.11"."picture_set"(id) ON DELETE CASCADE
     );
     CREATE TABLE "nachet_0.0.11"."object_type" (
         "id" SERIAL PRIMARY KEY,
@@ -44,19 +45,21 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
 
     CREATE TABLE "nachet_0.0.11"."picture_seed" (
         "id" uuid DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
-        "picture_id" uuid NOT NULL REFERENCES picture(id),
+        "picture_id" uuid NOT NULL,
         "seed_id" uuid NOT NULL REFERENCES seeds(id),
-        "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY ("picture_id") REFERENCES "nachet_0.0.11"."picture"(id) ON DELETE CASCADE
     );
 
     CREATE TABLE "nachet_0.0.11"."inference" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "inference" json NOT NULL,
-        "picture_id" uuid NOT NULL REFERENCES "nachet_0.0.11".picture(id),
+        "picture_id" uuid NOT NULL,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "user_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
         "feedback_user_id" uuid,
-        "verified" boolean DEFAULT false NOT NULL
+        "verified" boolean DEFAULT false NOT NULL,
+        FOREIGN KEY ("picture_id") REFERENCES "nachet_0.0.11"."picture"(id) ON DELETE CASCADE
     );
 
     CREATE TABLE "nachet_0.0.11"."task" (
@@ -86,14 +89,15 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
     CREATE TABLE "nachet_0.0.11"."object" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "box_metadata" json NOT NULL,
-        "inference_id" uuid NOT NULL REFERENCES "nachet_0.0.11".inference(id),
+        "inference_id" uuid NOT NULL,
         "type_id" integer NOT NULL REFERENCES "nachet_0.0.11".object_type(id),
         "verified_id" uuid ,
         "valid" boolean NOT NULL DEFAULT true,
         "top_id" uuid,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "manual_detection" boolean NOT NULL DEFAULT false
+        "manual_detection" boolean NOT NULL DEFAULT false,
+        FOREIGN KEY ("inference_id") REFERENCES "nachet_0.0.11"."inference"(id) ON DELETE CASCADE
     );
     
     
@@ -134,8 +138,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
     CREATE TABLE "nachet_0.0.11"."seed_obj" (
         "id" uuid NOT NULL DEFAULT uuid_.uuid_generate_v4() PRIMARY KEY,
         "seed_id" uuid NOT NULL REFERENCES "nachet_0.0.11".seed(id),
-        "object_id" uuid NOT NULL REFERENCES "nachet_0.0.11".object(id)
-        "score" float NOT NULL
+        "object_id" uuid NOT NULL,
+        "score" float NOT NULL,
+        FOREIGN KEY ("object_id") REFERENCES "nachet_0.0.11"."object"(id) ON DELETE CASCADE
     );  
 
     CREATE OR REPLACE FUNCTION verified_inference() RETURNS TRIGGER LANGUAGE plpgsql AS $$

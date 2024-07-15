@@ -22,7 +22,8 @@ from datastore.blob.azure_storage_api import (
     create_folder,
     get_folder_uuid,
     get_blobs_from_tag,
-    get_directories
+    get_directories,
+    move_blob
 )
 BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -326,10 +327,52 @@ class TestGetDirectories(unittest.TestCase) :
             
     def test_get_directories_error(self):
         mock_container_client = Mock()
-        mock_container_client.list_blobs.side_effect = FolderListError("Resource not found")
+        mock_container_client.upload_blob.side_effect = FolderListError("Resource not found")
         with self.assertRaises(FolderListError):
             asyncio.run(get_directories(mock_container_client))
-        
     
+class TestMoveBlob(unittest.TestCase):
+    def setUp(self):
+        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.tier="testuser"
+        
+        self.container_uuid_source=str(uuid.uuid4())
+        self.container_name_source=f"{self.tier}-{self.container_uuid_source}"
+        self.container_client_source = self.blob_service_client.create_container(self.container_name_source)
+        
+        self.container_uuid_dest=str(uuid.uuid4())
+        self.container_name_dest=f"{self.tier}-{self.container_uuid_dest}"
+        self.container_client_dest = self.blob_service_client.create_container(self.container_name_dest)
+        
+        self.blob_name = "test_blob"
+        self.blob= "test_blob_content"
+        self.container_client_source.upload_blob(name=self.blob_name, data=self.blob)
+
+    def tearDown(self):
+        self.container_client_source.delete_container()
+        self.container_client_dest.delete_container()
+        
+    def test_move_blob(self):
+        asyncio.run(move_blob(self.blob_name, self.blob_name, None, self.container_client_source, self.container_client_dest))
+        
+        with self.assertRaises(Exception):
+            asyncio.run(get_blob(self.container_client_source, self.blob_name))
+        
+        blob = asyncio.run(get_blob(self.container_client_dest, self.blob_name))
+        self.assertEqual(str(blob.decode()), self.blob)
+    
+    def test_move_blob_error(self):
+        mock_container_client_source = Mock()
+        mock_container_client_source.get_blob_client.side_effect = Exception("Resource not found")
+        with self.assertRaises(Exception):
+            asyncio.run(move_blob(self.blob_name, self.blob_name, None, mock_container_client_source, self.container_client_dest))
+            
+        
+        mock_container_client_dest = Mock()
+        mock_container_client_dest.get_blob_client.side_effect = Exception("Get blob Error")
+        with self.assertRaises(Exception):
+            asyncio.run(move_blob(self.blob_name, self.blob_name, None, self.container_client_source, mock_container_client_dest))
+        
 if __name__ == "__main__":
     unittest.main()

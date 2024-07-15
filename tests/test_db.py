@@ -754,36 +754,17 @@ class test_pictures_functions(unittest.TestCase):
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
+        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
+        self.assertEqual(len(old_picture_set), 2, "The number of pictures is not the expected one")
+        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
+        self.assertEqual(len(new_picture_set), 0, "The number of pictures is not the expected one")
+        
+        picture.change_picture_set_id(self.cursor, str(self.user_id), str(old_picture_set_id), str(new_picture_set_id))
 
-        old_picture_set = picture.get_picture_set_pictures(
-            self.cursor, old_picture_set_id
-        )
-        self.assertEqual(
-            len(old_picture_set), 2, "The number of pictures is not the expected one"
-        )
-        new_picture_set = picture.get_picture_set_pictures(
-            self.cursor, new_picture_set_id
-        )
-        self.assertEqual(
-            len(new_picture_set), 0, "The number of pictures is not the expected one"
-        )
-
-        picture.change_picture_set_id(
-            self.cursor, self.user_id, old_picture_set_id, new_picture_set_id
-        )
-
-        old_picture_set = picture.get_picture_set_pictures(
-            self.cursor, old_picture_set_id
-        )
-        self.assertEqual(
-            len(old_picture_set), 0, "The number of pictures is not the expected one"
-        )
-        new_picture_set = picture.get_picture_set_pictures(
-            self.cursor, new_picture_set_id
-        )
-        self.assertEqual(
-            len(new_picture_set), 2, "The number of pictures is not the expected one"
-        )
+        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
+        self.assertEqual(len(old_picture_set), 0, "The number of pictures is not the expected one")
+        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
+        self.assertEqual(len(new_picture_set), 2, "The number of pictures is not the expected one")
 
     def test_change_picture_set_id_error(self):
         old_picture_set_id = picture.new_picture_set(
