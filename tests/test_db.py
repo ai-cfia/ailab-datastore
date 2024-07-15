@@ -3,10 +3,6 @@ This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
-import base64
-import io
-import json
-import os
 import unittest
 import uuid
 import json
@@ -16,8 +12,6 @@ import io
 import base64
 from time import sleep
 from unittest.mock import MagicMock
-
-from PIL import Image
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import picture as picture_data

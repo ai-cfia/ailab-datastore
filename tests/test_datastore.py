@@ -14,13 +14,13 @@ import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed_query
+from copy import deepcopy
 
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("NACHET_DB_URL is not set")
-    
-from copy import deepcopy
+
 
 DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
