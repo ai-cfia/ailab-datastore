@@ -1,19 +1,5 @@
 """
 This module represent the function for the table inspection:
-
-    CREATE TABLE "fertiscan_0.0.7"."inspection" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "verified" boolean DEFAULT false,
-    "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "inspector_id" uuid REFERENCES "fertiscan_0.0.7".users(id),
-    "label_info" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
-    "sample_id" uuid REFERENCES "fertiscan_0.0.7".sample(id),
-    "company_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),
-    "manufacturer_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),
-    "picture_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id),
-    fertilizer_id uuid REFERENCES "fertiscan_0.0.7".fertilizer(id),
-    );
     
 """
 class InspectionCreationError(Exception):
