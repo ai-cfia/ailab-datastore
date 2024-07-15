@@ -163,14 +163,15 @@ erDiagram
   inspection ||--o| organization: manufacturer
   inspection ||--o| organization: company
   fertilizer ||--|| organization: responsable
+  organization ||--|{ organization_location: has
+  organization ||--|| location: has
+  location ||--|| organization_location: defines
+  location ||--|| region: defines
+  region ||--|| province: apart
+  inspection ||--|| fertilizer : about
   inspection ||--|| users :inspect
   inspection ||--o| picture_set :has
-  inspection ||--|| fertilizer : about
   inspection ||--|| label_information : defines
-  region ||--|| location: defines
-  region ||--|| province: apart
-  organization ||--|{ organization_location: has
-  location ||--|| organization_location: defines
   label_information ||--|o metric: weight
   label_information ||--|o metric: density
   label_information ||--|o metric: volume
