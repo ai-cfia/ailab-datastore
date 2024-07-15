@@ -181,7 +181,7 @@ erDiagram
   label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
   sub_label }o--|| sub_type: defines
-  
+  users ||--o{ picture_set: owns
   metric ||--|| unit: defines
   micronutrient ||--|| element_compound: is
   guaranteed ||--|| element_compound: is
