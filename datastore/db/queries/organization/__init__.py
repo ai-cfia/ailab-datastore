@@ -21,7 +21,7 @@ class RegionCreationError(Exception):
 class RegionNotFoundError(Exception):
     pass
 
-def new_organization(cursor,name,website,phone_number):
+def new_organization(cursor,name,website,phone_number,location_id=None):
     """
     This function create a new organization in the database.
 
@@ -40,17 +40,50 @@ def new_organization(cursor,name,website,phone_number):
                 organization (
                     name, 
                     website, 
-                    phone_number 
+                    phone_number,
+                    main_location_id 
                     )
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s, %s)
             RETURNING 
                 id
             """
-        cursor.execute(query, (name, website, phone_number,))
+        cursor.execute(query, (name, website, phone_number,location_id,))
         return cursor.fetchone()[0]
     except Exception as e:
         raise OrganizationCreationError
+    
+def update_organization(cursor,organization_id,name,website,phone_number,location_id):
+    """
+    This function update a organization in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - organization_id (str): The UUID of the organization.
+    - name (str): The name of the organization.
+    - website (str): The website of the organization.
+    - phone_number (str): The phone number of the organization.
+    - location_id (str): The UUID of the location.
+
+    Returns:
+    - str: The UUID of the organization
+    """
+    try:
+        query = """
+            UPDATE 
+                organization
+            SET 
+                name = COALESCE(%s,name), 
+                website = COALESCE(%s,website),
+                phone_number = COALESCE(%s,phone_number),
+                main_location_id = COALESCE(%s,main_location_id)
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (name, website, phone_number, location_id, organization_id,))
+        return organization_id
+    except Exception as e:
+        raise OrganizationUpdateError
     
 def get_organization(cursor, organization_id):
     """
@@ -66,10 +99,10 @@ def get_organization(cursor, organization_id):
     try:
         query = """
             SELECT 
-                id, 
                 name, 
                 website, 
-                phone_number 
+                phone_number,
+                main_location_id 
             FROM 
                 organization
             WHERE 
@@ -101,10 +134,13 @@ def get_full_organization(cursor,org_id):
                 id, 
                 name, 
                 website, 
-                phone_number, 
+                phone_number,
+                location.id, 
                 location.name,
                 location.address,
+                region.id,
                 region.name,
+                province.id,
                 province.name
             FROM
                 organization
@@ -128,7 +164,7 @@ def get_full_organization(cursor,org_id):
     except Exception as e:
         raise e 
     
-def new_location(cursor,org_id,name,address,region_id):
+def new_location(cursor,name,address,region_id,org_id=None):
     """
     This function create a new location in the database.
 
@@ -175,17 +211,22 @@ def get_location(cursor, location_id):
     try:
         query = """
             SELECT 
-                id, 
                 name, 
                 address, 
-                region_id 
+                region_id,
+                owner_id 
             FROM 
                 location
             WHERE 
                 id = %s
             """
         cursor.execute(query, (location_id,))
+        res = cursor.fetchone()
+        if res is None:
+            raise LocationNotFoundError
         return cursor.fetchone()
+    except ValueError as e:
+        raise LocationNotFoundError
     except Exception as e:
         raise e
     
@@ -243,8 +284,7 @@ def get_location_by_region(cursor, region_id):
             SELECT 
                 id, 
                 name, 
-                address, 
-                region_id 
+                address
             FROM 
                 location
             WHERE 
@@ -326,16 +366,20 @@ def get_region(cursor, region_id):
     try:
         query = """
             SELECT 
-                id, 
-                province_id, 
-                name 
+                name,
+                province_id
             FROM 
                 region
             WHERE 
                 id = %s
             """
         cursor.execute(query, (region_id,))
-        return cursor.fetchone()
+        res = cursor.fetchone()
+        if res is None:
+            raise RegionNotFoundError
+        return res
+    except ValueError as e:
+        raise RegionNotFoundError
     except Exception as e:
         raise e
     
@@ -439,7 +483,6 @@ def get_province(cursor, province_id):
     try:
         query = """
             SELECT 
-                id, 
                 name 
             FROM 
                 province
@@ -447,7 +490,10 @@ def get_province(cursor, province_id):
                 id = %s
             """
         cursor.execute(query, (province_id,))
-        return cursor.fetchone()
+        res = cursor.fetchone()
+        if res is None:
+            raise ProvinceNotFoundError
+        return res
     except Exception as e:
         raise e
     
