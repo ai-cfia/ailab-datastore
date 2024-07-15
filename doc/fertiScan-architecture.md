@@ -24,24 +24,23 @@ erDiagram
   picture{
     uuid id PK
     json picture
-    uuid picture_set_id FK
-    uuid parent FK
-    int nb_object
-    boolean verified
+    boolean used_for_digitalization
     timestamp upload_date 
+    uuid picture_set_id FK
+    uuid parent_picture_id FK
   }
-  analysis {
+  inspection {
     uuid id PK
-    uuid user_id FK
     boolean verified
-    uuid label_info fk
     TIMESTAMP upload_date
     TIMESTAMP updated_at
-    uuid fertilizer_id
+    uuid inspector_id FK
+    uuid label_info fk
+    uuid fertilizer_id FK
     uuid sample_id FK
     uuid company_id FK
     uuid manufacturer_id FK
-    uuid picture_id
+    uuid picture_set_id FK
   }
   fertilizer{
     uuid id PK
@@ -49,15 +48,20 @@ erDiagram
     string registration_number
     timestamp upload_date
     timestamp update_at
-    uuid latest_analysis FK
-    uuid respo_id FK
+    uuid latest_inspection_id FK
+    uuid owner_id FK
   }
-  responsable{
+  organization{
     uuid id PK
-    string name
+    string name "unique"
     string website
     string phone_number
-    uuid location_id
+    uuid main_location_id FK
+  }
+  organization_location{
+    uuid id PK
+    uuid location_id FK
+    uuid organization_id FK
   }
   location{
     uuid id PK
@@ -68,7 +72,6 @@ erDiagram
     uuid id PK
     uuid number
     Date collection_date
-    uuid location FK
   }
   province{
     int id PK
@@ -96,8 +99,8 @@ erDiagram
     uuid id PK
     text content_fr
     text content_en
-    uuid label_id FK
     boolean edited
+    uuid label_id FK
     uuid sub_type_id FK
   }
   sub_type{
@@ -116,8 +119,8 @@ erDiagram
   metric{
     uuid id PK
     float value
-    uuid unit_id FK
     boolean edited
+    uuid unit_id FK
   }
   unit{
     uuid id PK
@@ -129,17 +132,17 @@ erDiagram
     string read_name
     float value
     string unit
-    int element_id FK
     boolean edited
     uuid label_id FK
+    int element_id FK
   }
   guaranteed{
     uuid id PK
     string read_name
     float value
     string unit
-    int element_id FK
     boolean edited
+    int element_id FK
     uuid label_id FK
   }
   ingredient{
@@ -155,18 +158,19 @@ erDiagram
     string name_en
     string symbol
   }
-  analysis ||--|| sample :has
-  picture }o--|| picture_set: contains
-  analysis ||--|| responsable :manage
-  fertilizer ||--|| responsable: manage
-  analysis ||--|| users :does
-  analysis ||--o{ picture :has
-  analysis ||--|| fertilizer : represent
-  analysis ||--|| label_information : defines
-  province ||--|| region: apart
+  inspection ||--|| sample :has
+  picture_set ||--|{picture : contains
+  inspection ||--o| organization: manufacturer
+  inspection ||--o| organization: company
+  fertilizer ||--|| organization: responsable
+  inspection ||--|| users :inspect
+  inspection ||--o| picture_set :has
+  inspection ||--|| fertilizer : about
+  inspection ||--|| label_information : defines
   region ||--|| location: defines
-  responsable ||--|| location: located
-  sample ||--|| location: taken
+  region ||--|| province: apart
+  organization ||--|{ organization_location: has
+  location ||--|| organization_location: defines
   label_information ||--|o metric: weight
   label_information ||--|o metric: density
   label_information ||--|o metric: volume
