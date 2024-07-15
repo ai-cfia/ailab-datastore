@@ -35,7 +35,7 @@ erDiagram
     TIMESTAMP upload_date
     TIMESTAMP updated_at
     uuid inspector_id FK
-    uuid label_info fk
+    uuid label_info Fk
     uuid fertilizer_id FK
     uuid sample_id FK
     uuid company_id FK
@@ -58,15 +58,11 @@ erDiagram
     string phone_number
     uuid main_location_id FK
   }
-  organization_location{
-    uuid id PK
-    uuid location_id FK
-    uuid organization_id FK
-  }
   location{
     uuid id PK
     string address
-    region_id uuid FK
+    uuid organization_id FK
+    uuid region_id FK
   }
   sample{
     uuid id PK
@@ -163,9 +159,8 @@ erDiagram
   inspection ||--o| organization: manufacturer
   inspection ||--o| organization: company
   fertilizer ||--|| organization: responsable
-  organization ||--|{ organization_location: has
-  organization ||--|| location: has
-  location ||--|| organization_location: defines
+  location }|--|| organization: host
+  organization ||--|| location: HQ
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
