@@ -44,23 +44,23 @@ class test_ml_structure(unittest.TestCase):
         """
         Test the import function.
         """
-        asyncio.run(datastore.import_ml_structure_from_json_version(self.cursorsor,self.ml_dict))
-        self.cursorsor.execute("SELECT id FROM model WHERE name='that_model_name'")
-        model_id=self.cursorsor.fetchone()[0]
+        asyncio.run(datastore.import_ml_structure_from_json_version(self.cursor,self.ml_dict))
+        self.cursor.execute("SELECT id FROM model WHERE name='that_model_name'")
+        model_id=self.cursor.fetchone()[0]
         self.assertTrue(validator.is_valid_uuid(str(model_id)))
-        self.cursorsor.execute("SELECT id FROM pipeline WHERE name='Second Pipeline'")
-        pipeline_id=self.cursorsor.fetchone()[0]
+        self.cursor.execute("SELECT id FROM pipeline WHERE name='Second Pipeline'")
+        pipeline_id=self.cursor.fetchone()[0]
         self.assertTrue(validator.is_valid_uuid(str(pipeline_id)))
-        self.cursorsor.execute("SELECT id FROM pipeline_model WHERE pipeline_id=%s AND model_id=%s",(pipeline_id,model_id,))
-        self.assertTrue(validator.is_valid_uuid(self.cursorsor.fetchone()[0]))
+        self.cursor.execute("SELECT id FROM pipeline_model WHERE pipeline_id=%s AND model_id=%s",(pipeline_id,model_id,))
+        self.assertTrue(validator.is_valid_uuid(self.cursor.fetchone()[0]))
         
     def test_get_ml_structure(self):
         """
         Test the get function.
         """
         
-        #asyncio.run(datastore.import_ml_structure_from_json_version(self.cursorsor,self.ml_dict))
-        ml_structure= asyncio.run(datastore.get_ml_structure(self.cursorsor))
+        #asyncio.run(datastore.import_ml_structure_from_json_version(self.cursor,self.ml_dict))
+        ml_structure= asyncio.run(datastore.get_ml_structure(self.cursor))
         #self.assertDictEqual(ml_structure,self.ml_dict)
         for pipeline in self.ml_dict["pipelines"]:
             for key in pipeline:
@@ -76,10 +76,10 @@ class test_ml_structure(unittest.TestCase):
         """
         Test the get version function.
         """
-        mock_cursorsor = MagicMock()
-        mock_cursorsor.fetchall.return_value = []
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = []
         with self.assertRaises(datastore.MLRetrievalError):
-            asyncio.run(datastore.get_ml_structure(mock_cursorsor))
+            asyncio.run(datastore.get_ml_structure(mock_cursor))
         
 class test_user(unittest.TestCase):
     def setUp(self):
@@ -97,13 +97,13 @@ class test_user(unittest.TestCase):
             self.container_client=asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
             self.container_client.delete_container()
         self.user_id=None
-        db.end_query(self.conn, self.cursorsor)
+        db.end_query(self.conn, self.cursor)
 
     def test_new_user(self):
         """
         Test the new user function.
         """
-        user_obj=asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+        user_obj=asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
         self.assertIsInstance(user_obj,datastore.User)
         #self.user_id=user_obj.id
         self.user_id=datastore.User.get_id(user_obj)
@@ -114,11 +114,11 @@ class test_user(unittest.TestCase):
         """
         Test the already existing user function.
         """
-        user_obj=asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+        user_obj=asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
         self.user_id=datastore.User.get_id(user_obj)
         self.assertTrue(validator.is_valid_uuid(self.user_id))
         with self.assertRaises(datastore.UserAlreadyExistsError):
-            asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+            asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
         
     @patch("azure.storage.blob.ContainerClient.exists")
     def test_new_user_container_error(self,MockExists):
@@ -127,7 +127,7 @@ class test_user(unittest.TestCase):
         """
         MockExists.return_value=False
         with self.assertRaises(datastore.ContainerCreationError):
-            asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+            asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
 
     @patch("datastore.blob.azure_storage_api.create_folder")
     def test_new_user_folder_error(self,MockCreateFolder):
@@ -136,15 +136,15 @@ class test_user(unittest.TestCase):
         """
         MockCreateFolder.side_effect= datastore.azure_storage.CreateDirectoryError("Test error")
         with self.assertRaises(datastore.FolderCreationError):
-            asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+            asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
 
     def test_get_User(self):
         """
         Test the get User object function.
         """
-        user_obj=asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+        user_obj=asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
         user_id= datastore.User.get_id(user_obj)
-        user_get=asyncio.run(datastore.get_user(self.cursorsor,self.user_email))
+        user_get=asyncio.run(datastore.get_user(self.cursor,self.user_email))
         user_get_id=datastore.User.get_id(user_get)
         self.assertEqual(user_id,user_get_id)
         self.assertEqual(datastore.User.get_email(user_obj),datastore.User.get_email(user_get))
@@ -153,7 +153,7 @@ class test_user(unittest.TestCase):
         """
         Test the get user container client function.
         """
-        user_obj=asyncio.run(datastore.new_user(self.cursorsor,self.user_email,self.connection_str,'test-user'))
+        user_obj=asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
         user_id= datastore.User.get_id(user_obj)
         container_client=asyncio.run(datastore.get_user_container_client(user_id,'test-user'))
         self.assertTrue(container_client.exists())
@@ -214,10 +214,10 @@ class test_picture(unittest.TestCase):
         """
         This test checks if the create_picture_set function correctly raise an exception if the connection to the db fails
         """
-        mock_cursorsor = MagicMock()
-        mock_cursorsor.fetchone.side_effect = Exception("Connection error")
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.create_picture_set(mock_cursorsor, self.container_client, 0, self.user_id))
+            asyncio.run(datastore.create_picture_set(mock_cursor, self.container_client, 0, self.user_id))
             
     def test_create_picture_set_error_user_not_found(self):
         """
@@ -250,7 +250,7 @@ class test_picture(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
         with self.assertRaises(Exception):
-            asyncio.run(datastore.upload_picture_known(mock_cursorsor, self.user_id, self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
+            asyncio.run(datastore.upload_picture_known(mock_cursor, self.user_id, self.pic_encoded,self.container_client, self.seed_id, picture_set_id))
         
     def test_upload_pictures(self):
         """
@@ -278,7 +278,7 @@ class test_picture(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
         with self.assertRaises(Exception):
-            asyncio.run(datastore.upload_pictures(mock_cursorsor, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
+            asyncio.run(datastore.upload_pictures(mock_cursor, self.user_id, picture_set_id, self.container_client,[self.pic_encoded,self.pic_encoded,self.pic_encoded], self.seed_name))
             
     def test_upload_pictures_error_seed_not_found(self):
         """
@@ -378,10 +378,10 @@ class test_feedback(unittest.TestCase):
         """
         This test checks if the new_perfect_inference_feeback function correctly raise an exception if the connection to the db fails
         """
-        mock_cursorsor = MagicMock()
-        mock_cursorsor.fetchone.side_effect = Exception("Connection error")
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.new_perfect_inference_feeback(mock_cursorsor, self.inference_id, self.user_id, self.boxes_id))
+            asyncio.run(datastore.new_perfect_inference_feeback(mock_cursor, self.inference_id, self.user_id, self.boxes_id))
 
     def test_new_correction_inference_feedback(self):
         """
@@ -538,10 +538,10 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the get_picture_sets_info function correctly raise an exception if the connection to the db fails
         """
-        mock_cursorsor = MagicMock()
-        mock_cursorsor.fetchone.side_effect = Exception("Connection error")
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.get_picture_sets_info(mock_cursorsor, self.user_id))
+            asyncio.run(datastore.get_picture_sets_info(mock_cursor, self.user_id))
     
     def test_delete_picture_set(self):
         """
@@ -565,10 +565,10 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set function correctly raise an exception if the connection to the db fails
         """
-        mock_cursorsor = MagicMock()
-        mock_cursorsor.fetchone.side_effect = Exception("Connection error")
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
-            asyncio.run(datastore.delete_picture_set(mock_cursorsor, self.user_id, self.picture_set_id, self.container_client))
+            asyncio.run(datastore.delete_picture_set(mock_cursor, self.user_id, self.picture_set_id, self.container_client))
         
     def test_delete_picture_set_error_picture_set_not_found(self):
         """
