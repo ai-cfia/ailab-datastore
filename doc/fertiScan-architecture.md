@@ -13,6 +13,7 @@ erDiagram
     string email
     timestamp registration_date
     timestamp updated_at
+    uuid default_set_id FK
   }
   picture_set{
     uuid id PK
