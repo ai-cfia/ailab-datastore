@@ -83,7 +83,7 @@ def get_inspection(cursor,inspection_id):
                 upload_date,
                 updated_at,
                 inspector_id,
-                label_info,
+                label_info_id,
                 sample_id,
                 company_id,
                 manufacturer_id,
@@ -118,7 +118,7 @@ def get_all_user_inspection(cursor,user_id):
                 verified,
                 upload_date,
                 updated_at,
-                label_info,
+                label_info_id,
                 sample_id,
                 company_id,
                 manufacturer_id,
@@ -154,7 +154,7 @@ def get_all_organization_inspection(cursor,org_id):
                 upload_date,
                 updated_at,
                 inspector_id,
-                label_info,
+                label_info_id,
                 sample_id,
                 company_id,
                 manufacturer_id,
@@ -170,7 +170,7 @@ def get_all_organization_inspection(cursor,org_id):
     except Exception as e:
         raise e
     
-def update_inspection(cursor,inspection_id,verified = None,label_info = None,sample_id = None,company_id = None,manufacturer_id = None,picture_set_id = None,fertilizer_id = None):
+def update_inspection(cursor,inspection_id,verified = None,label_info_id = None,sample_id = None,company_id = None,manufacturer_id = None,picture_set_id = None,fertilizer_id = None):
     """
     This function updates the inspection in the database.
 
@@ -178,7 +178,7 @@ def update_inspection(cursor,inspection_id,verified = None,label_info = None,sam
     - cursor (cursor): The cursor of the database.
     - inspection_id (str): The UUID of the inspection.
     - verified (boolean, optional): The value if the inspection has been verified by the user. Default is None.
-    - label_info (str, optional): The UUID of the label information. Default is None.
+    - label_info_id (str, optional): The UUID of the label information. Default is None.
     - sample_id (str, optional): The UUID of the sample. Default is None.
     - company_id (str, optional): The UUID of the company. Default is None.
     - manufacturer_id (str, optional): The UUID of the manufacturer. Default is None.
@@ -194,7 +194,7 @@ def update_inspection(cursor,inspection_id,verified = None,label_info = None,sam
             UPDATE inspection
             SET 
                 verified = COALESCE(%s, verified),
-                label_info = COALESCE(%s, label_info),
+                label_info_id = COALESCE(%s, label_info_id),
                 sample_id = COALESCE(%s, sample_id),
                 company_id = COALESCE(%s, company_id),
                 manufacturer_id = COALESCE(%s, manufacturer_id),
@@ -206,7 +206,7 @@ def update_inspection(cursor,inspection_id,verified = None,label_info = None,sam
             RETURNING 
                 id
             """
-        cursor.execute(query, (verified,label_info,sample_id,company_id,manufacturer_id,picture_set_id,fertilizer_id,inspection_id))
+        cursor.execute(query, (verified,label_info_id,sample_id,company_id,manufacturer_id,picture_set_id,fertilizer_id,inspection_id))
         return cursor.fetchone()[0]
     except Exception as e:
         raise InspectionUpdateError

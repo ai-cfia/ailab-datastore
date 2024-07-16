@@ -1,6 +1,6 @@
 """
 This is a test script for the database packages. 
-It tests the functions in the user, seed and picture modules.
+It tests the functions in the organization module.
 """
 
 from random import randint

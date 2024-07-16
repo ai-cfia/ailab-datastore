@@ -11,7 +11,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "email" text NOT NULL UNIQUE,
     "registration_date" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" timestamp
+    "updated_at" timestamp,
+    "default_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id)
     );
 
     CREATE TABLE "fertiscan_0.0.7"."picture_set" (
@@ -158,7 +159,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
     "inspector_id" uuid REFERENCES "fertiscan_0.0.7".users(id),
-    "label_info" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
+    "label_info_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
     "sample_id" uuid REFERENCES "fertiscan_0.0.7".sample(id),
     "company_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),
     "manufacturer_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),

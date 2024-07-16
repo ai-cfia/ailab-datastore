@@ -35,7 +35,7 @@ erDiagram
     TIMESTAMP upload_date
     TIMESTAMP updated_at
     uuid inspector_id FK
-    uuid label_info Fk
+    uuid label_info_id Fk
     uuid fertilizer_id FK
     uuid sample_id FK
     uuid company_id FK
