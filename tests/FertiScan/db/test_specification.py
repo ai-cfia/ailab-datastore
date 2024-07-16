@@ -5,7 +5,7 @@ It tests the functions in the user, seed and picture modules.
 
 import unittest
 import uuid
-from datastore.db.queries import specification,label
+from datastore.db.queries import specification, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
@@ -18,12 +18,13 @@ DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
+
 class test_specification(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        
+
         self.lot_number = "lot_number"
         self.npk = "npk"
         self.registration_number = "registration_number"
@@ -33,23 +34,40 @@ class test_specification(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
-        self.label_id = label.new_label_information(self.cursor, self.lot_number, self.npk, self.registration_number, self.n, self.p, self.k, self.weight, self.density, self.volume)
-        
+        self.label_id = label.new_label_information(
+            self.cursor,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.weight,
+            self.density,
+            self.volume,
+        )
+
         self.humidity = 10.0
         self.ph = 20.0
         self.solubility = 30.0
-    
+
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_specification(self):
-        specification_id = specification.new_specification(self.cursor, self.humidity, self.ph, self.solubility,self.label_id)
+        specification_id = specification.new_specification(
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+        )
         self.assertTrue(validator.is_valid_uuid(specification_id))
 
     def test_get_specification(self):
-        specification_id = specification.new_specification(self.cursor, self.humidity, self.ph, self.solubility,self.label_id)
-        specification_data = specification.get_specification(self.cursor, specification_id)
+        specification_id = specification.new_specification(
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+        )
+        specification_data = specification.get_specification(
+            self.cursor, specification_id
+        )
         self.assertEqual(specification_data[0], self.humidity)
         self.assertEqual(specification_data[1], self.ph)
         self.assertEqual(specification_data[2], self.solubility)
@@ -60,9 +78,15 @@ class test_specification(unittest.TestCase):
 
     def test_get_all_specification(self):
         other_humidity = 40
-        specification_id = specification.new_specification(self.cursor, self.humidity, self.ph, self.solubility,self.label_id)
-        specif_id= specification.new_specification(self.cursor, other_humidity, self.ph, self.solubility,self.label_id)
-        specification_data = specification.get_all_specifications(self.cursor,self.label_id)
+        specification_id = specification.new_specification(
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+        )
+        specif_id = specification.new_specification(
+            self.cursor, other_humidity, self.ph, self.solubility, self.label_id
+        )
+        specification_data = specification.get_all_specifications(
+            self.cursor, self.label_id
+        )
         self.assertEqual(len(specification_data), 2)
 
         self.assertTrue(validator.is_valid_uuid(specification_data[0][0]))

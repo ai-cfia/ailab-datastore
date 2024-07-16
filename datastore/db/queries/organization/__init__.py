@@ -3,34 +3,45 @@ This module represent the function for the table organization and its children t
 
     
 """
+
+
 class OrganizationCreationError(Exception):
     pass
+
 
 class OrganizationNotFoundError(Exception):
     pass
 
+
 class OrganizationUpdateError(Exception):
     pass
+
 
 class LocationCreationError(Exception):
     pass
 
+
 class LocationNotFoundError(Exception):
     pass
+
 
 class RegionCreationError(Exception):
     pass
 
+
 class RegionNotFoundError(Exception):
     pass
+
 
 class ProvinceCreationError(Exception):
     pass
 
+
 class ProvinceNotFoundError(Exception):
     pass
 
-def new_organization(cursor,name,website,phone_number,location_id=None):
+
+def new_organization(cursor, name, website, phone_number, location_id=None):
     """
     This function create a new organization in the database.
 
@@ -57,12 +68,23 @@ def new_organization(cursor,name,website,phone_number,location_id=None):
             RETURNING 
                 id
             """
-        cursor.execute(query, (name, website, phone_number,location_id,))
+        cursor.execute(
+            query,
+            (
+                name,
+                website,
+                phone_number,
+                location_id,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception as e:
         raise OrganizationCreationError
-    
-def update_organization(cursor,organization_id,name,website,phone_number,location_id):
+
+
+def update_organization(
+    cursor, organization_id, name, website, phone_number, location_id
+):
     """
     This function update a organization in the database.
 
@@ -89,11 +111,21 @@ def update_organization(cursor,organization_id,name,website,phone_number,locatio
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (name, website, phone_number, location_id, organization_id,))
+        cursor.execute(
+            query,
+            (
+                name,
+                website,
+                phone_number,
+                location_id,
+                organization_id,
+            ),
+        )
         return organization_id
     except Exception as e:
         raise OrganizationUpdateError
-    
+
+
 def get_organization(cursor, organization_id):
     """
     This function get a organization from the database.
@@ -124,8 +156,9 @@ def get_organization(cursor, organization_id):
         return res
     except Exception as e:
         raise e
-    
-def get_full_organization(cursor,org_id):
+
+
+def get_full_organization(cursor, org_id):
     """
     This function get the full organization details from the database.
     This includes the location, region and province info of the organization.
@@ -171,9 +204,10 @@ def get_full_organization(cursor,org_id):
         cursor.execute(query, (org_id,))
         return cursor.fetchone()
     except Exception as e:
-        raise e 
-    
-def new_location(cursor,name,address,region_id,org_id=None):
+        raise e
+
+
+def new_location(cursor, name, address, region_id, org_id=None):
     """
     This function create a new location in the database.
 
@@ -201,11 +235,20 @@ def new_location(cursor,name,address,region_id,org_id=None):
             RETURNING 
                 id
             """
-        cursor.execute(query, (name, address, region_id,org_id,))
+        cursor.execute(
+            query,
+            (
+                name,
+                address,
+                region_id,
+                org_id,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception as e:
         raise LocationCreationError
-    
+
+
 def get_location(cursor, location_id):
     """
     This function get a location from the database.
@@ -238,8 +281,9 @@ def get_location(cursor, location_id):
         raise LocationNotFoundError
     except Exception as e:
         raise e
-    
-def get_full_location(cursor,location_id):
+
+
+def get_full_location(cursor, location_id):
     """
     This function get the full location details from the database.
     This includes the region and province info of the location.
@@ -276,7 +320,8 @@ def get_full_location(cursor,location_id):
         return cursor.fetchone()
     except Exception as e:
         raise e
-    
+
+
 def get_location_by_region(cursor, region_id):
     """
     This function get a location from the database.
@@ -303,6 +348,7 @@ def get_location_by_region(cursor, region_id):
         return cursor.fetchall()
     except Exception as e:
         raise e
+
 
 def get_location_by_organization(cursor, org_id):
     """
@@ -332,7 +378,8 @@ def get_location_by_organization(cursor, org_id):
     except Exception as e:
         raise e
 
-def new_region(cursor,name,province_id):
+
+def new_region(cursor, name, province_id):
     """
     This function create a new region in the database.
 
@@ -356,11 +403,18 @@ def new_region(cursor,name,province_id):
             RETURNING 
                 id
             """
-        cursor.execute(query, (province_id, name,))
+        cursor.execute(
+            query,
+            (
+                province_id,
+                name,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception as e:
         raise RegionCreationError
-    
+
+
 def get_region(cursor, region_id):
     """
     This function get a region from the database.
@@ -391,8 +445,9 @@ def get_region(cursor, region_id):
         raise RegionNotFoundError
     except Exception as e:
         raise e
-    
-def get_full_region(cursor,region_id):
+
+
+def get_full_region(cursor, region_id):
     """
     This function get the full region details from the database.
     This includes the province info of the region.
@@ -424,6 +479,7 @@ def get_full_region(cursor,region_id):
     except Exception as e:
         raise e
 
+
 def get_region_by_province(cursor, province_id):
     """
     This function get a region from the database.
@@ -450,8 +506,9 @@ def get_region_by_province(cursor, province_id):
         return cursor.fetchall()
     except Exception as e:
         raise e
-    
-def new_province(cursor,name):
+
+
+def new_province(cursor, name):
     """
     This function create a new province in the database.
 
@@ -477,6 +534,7 @@ def new_province(cursor,name):
         return cursor.fetchone()[0]
     except Exception as e:
         raise ProvinceCreationError
+
 
 def get_province(cursor, province_id):
     """
@@ -505,7 +563,8 @@ def get_province(cursor, province_id):
         return res
     except Exception as e:
         raise e
-    
+
+
 def get_all_province(cursor):
     """
     This function get all province from the database.

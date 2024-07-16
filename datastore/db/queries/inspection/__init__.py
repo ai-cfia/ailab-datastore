@@ -2,13 +2,17 @@
 This module represent the function for the table inspection:
     
 """
+
+
 class InspectionCreationError(Exception):
     pass
+
 
 class InspectionUpdateError(Exception):
     pass
 
-def new_inspection(cursor,user_id,picture_set_id,verified =False):
+
+def new_inspection(cursor, user_id, picture_set_id, verified=False):
     """
     This function uploads a new inspection to the database.
 
@@ -21,7 +25,7 @@ def new_inspection(cursor,user_id,picture_set_id,verified =False):
     Returns:
     - The UUID of the inspection.
     """
-    
+
     try:
         query = """
             INSERT INTO inspection (
@@ -37,8 +41,9 @@ def new_inspection(cursor,user_id,picture_set_id,verified =False):
         return cursor.fetchone()[0]
     except Exception:
         raise InspectionCreationError
-    
-def is_inspection_verified(cursor,inspection_id):
+
+
+def is_inspection_verified(cursor, inspection_id):
     """
     This function checks if the inspection has been verified.
 
@@ -49,7 +54,7 @@ def is_inspection_verified(cursor,inspection_id):
     Returns:
     - The value if the inspection has been verified.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -63,8 +68,9 @@ def is_inspection_verified(cursor,inspection_id):
         return cursor.fetchone()[0]
     except Exception as e:
         raise e
-    
-def get_inspection(cursor,inspection_id):
+
+
+def get_inspection(cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -75,7 +81,7 @@ def get_inspection(cursor,inspection_id):
     Returns:
     - The inspection.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -98,8 +104,9 @@ def get_inspection(cursor,inspection_id):
         return cursor.fetchone()
     except Exception as e:
         raise e
-    
-def get_all_user_inspection(cursor,user_id):
+
+
+def get_all_user_inspection(cursor, user_id):
     """
     This function gets all the inspection of a user from the database.
 
@@ -110,7 +117,7 @@ def get_all_user_inspection(cursor,user_id):
     Returns:
     - The inspection.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -133,8 +140,9 @@ def get_all_user_inspection(cursor,user_id):
         return cursor.fetchall()
     except Exception as e:
         raise e
-    
-def get_all_organization_inspection(cursor,org_id):
+
+
+def get_all_organization_inspection(cursor, org_id):
     """
     This function gets all the inspection of an organization from the database.
 
@@ -145,7 +153,7 @@ def get_all_organization_inspection(cursor,org_id):
     Returns:
     - The inspection.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -165,12 +173,23 @@ def get_all_organization_inspection(cursor,org_id):
             WHERE 
                 company_id = %s OR manufacturer_id = %s
             """
-        cursor.execute(query, (org_id,org_id))
+        cursor.execute(query, (org_id, org_id))
         return cursor.fetchall()
     except Exception as e:
         raise e
-    
-def update_inspection(cursor,inspection_id,verified = None,label_info_id = None,sample_id = None,company_id = None,manufacturer_id = None,picture_set_id = None,fertilizer_id = None):
+
+
+def update_inspection(
+    cursor,
+    inspection_id,
+    verified=None,
+    label_info_id=None,
+    sample_id=None,
+    company_id=None,
+    manufacturer_id=None,
+    picture_set_id=None,
+    fertilizer_id=None,
+):
     """
     This function updates the inspection in the database.
 
@@ -188,7 +207,7 @@ def update_inspection(cursor,inspection_id,verified = None,label_info_id = None,
     Returns:
     - The UUID of the inspection.
     """
-    
+
     try:
         query = """
             UPDATE inspection
@@ -206,7 +225,19 @@ def update_inspection(cursor,inspection_id,verified = None,label_info_id = None,
             RETURNING 
                 id
             """
-        cursor.execute(query, (verified,label_info_id,sample_id,company_id,manufacturer_id,picture_set_id,fertilizer_id,inspection_id))
+        cursor.execute(
+            query,
+            (
+                verified,
+                label_info_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id,
+                fertilizer_id,
+                inspection_id,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception as e:
         raise InspectionUpdateError
