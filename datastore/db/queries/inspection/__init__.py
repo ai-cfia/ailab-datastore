@@ -40,7 +40,7 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
         cursor.execute(query, (user_id, picture_set_id, verified))
         return cursor.fetchone()[0]
     except Exception:
-        raise InspectionCreationError
+        raise InspectionCreationError("Datastore inspection unhandeled error")
 
 
 def is_inspection_verified(cursor, inspection_id):
@@ -67,7 +67,7 @@ def is_inspection_verified(cursor, inspection_id):
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()[0]
     except Exception as e:
-        raise e
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 
 def get_inspection(cursor, inspection_id):
@@ -103,7 +103,7 @@ def get_inspection(cursor, inspection_id):
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
     except Exception as e:
-        raise e
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 
 def get_all_user_inspection(cursor, user_id):
@@ -139,7 +139,7 @@ def get_all_user_inspection(cursor, user_id):
         cursor.execute(query, (user_id,))
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 
 def get_all_organization_inspection(cursor, org_id):
@@ -176,7 +176,7 @@ def get_all_organization_inspection(cursor, org_id):
         cursor.execute(query, (org_id, org_id))
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 
 def update_inspection(
@@ -240,4 +240,4 @@ def update_inspection(
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise InspectionUpdateError
+        raise InspectionUpdateError(e.__str__())

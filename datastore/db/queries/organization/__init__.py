@@ -79,7 +79,7 @@ def new_organization(cursor, name, website, phone_number, location_id=None):
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise OrganizationCreationError
+        raise OrganizationCreationError("Datastore organization unhandeled error" + e.__str__())
 
 
 def update_organization(
@@ -123,7 +123,7 @@ def update_organization(
         )
         return organization_id
     except Exception as e:
-        raise OrganizationUpdateError
+        raise OrganizationUpdateError("Datastore organization unhandeled error"+e.__str__())
 
 
 def get_organization(cursor, organization_id):
@@ -155,7 +155,7 @@ def get_organization(cursor, organization_id):
             raise OrganizationNotFoundError
         return res
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_full_organization(cursor, org_id):
@@ -204,8 +204,7 @@ def get_full_organization(cursor, org_id):
         cursor.execute(query, (org_id,))
         return cursor.fetchone()
     except Exception as e:
-        raise e
-
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 def new_location(cursor, name, address, region_id, org_id=None):
     """
@@ -246,7 +245,7 @@ def new_location(cursor, name, address, region_id, org_id=None):
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise LocationCreationError
+        raise LocationCreationError("Datastore location unhandeled error"+e.__str__())
 
 
 def get_location(cursor, location_id):
@@ -277,10 +276,10 @@ def get_location(cursor, location_id):
         if res is None:
             raise LocationNotFoundError
         return res
-    except ValueError as e:
-        raise LocationNotFoundError
+    except ValueError:
+        raise LocationNotFoundError("location not found with location_id: " + location_id)
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_full_location(cursor, location_id):
@@ -319,7 +318,7 @@ def get_full_location(cursor, location_id):
         cursor.execute(query, (location_id,))
         return cursor.fetchone()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_location_by_region(cursor, region_id):
@@ -347,7 +346,7 @@ def get_location_by_region(cursor, region_id):
         cursor.execute(query, (region_id,))
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_location_by_organization(cursor, org_id):
@@ -376,7 +375,7 @@ def get_location_by_organization(cursor, org_id):
         cursor.execute(query, (org_id,))
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def new_region(cursor, name, province_id):
@@ -412,7 +411,7 @@ def new_region(cursor, name, province_id):
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise RegionCreationError
+        raise RegionCreationError("Datastore region unhandeled error" + e.__str__())
 
 
 def get_region(cursor, region_id):
@@ -441,10 +440,10 @@ def get_region(cursor, region_id):
         if res is None:
             raise RegionNotFoundError
         return res
-    except ValueError as e:
-        raise RegionNotFoundError
+    except ValueError:
+        raise RegionNotFoundError("region not found with region_id: " + region_id)
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_full_region(cursor, region_id):
@@ -477,7 +476,7 @@ def get_full_region(cursor, region_id):
         cursor.execute(query, (region_id,))
         return cursor.fetchone()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_region_by_province(cursor, province_id):
@@ -505,7 +504,7 @@ def get_region_by_province(cursor, province_id):
         cursor.execute(query, (province_id,))
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def new_province(cursor, name):
@@ -533,7 +532,7 @@ def new_province(cursor, name):
         cursor.execute(query, (name,))
         return cursor.fetchone()[0]
     except Exception as e:
-        raise ProvinceCreationError
+        raise ProvinceCreationError("Datastore province unhandeled error" + e.__str__())
 
 
 def get_province(cursor, province_id):
@@ -559,10 +558,10 @@ def get_province(cursor, province_id):
         cursor.execute(query, (province_id,))
         res = cursor.fetchone()
         if res is None:
-            raise ProvinceNotFoundError
+            raise ProvinceNotFoundError("province not found with province_id: " + province_id)
         return res
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def get_all_province(cursor):
@@ -586,4 +585,4 @@ def get_all_province(cursor):
         cursor.execute(query)
         return cursor.fetchall()
     except Exception as e:
-        raise e
+        raise Exception("Datastore organization unhandeled error" + e.__str__())

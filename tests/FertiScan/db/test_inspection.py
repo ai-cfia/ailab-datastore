@@ -3,9 +3,7 @@ This is a test script for the database packages.
 It tests the functions in the inspection.
 """
 
-from random import randint
 import unittest
-import uuid
 from datastore.db.queries import inspection, user, picture, organization
 from datastore.db.metadata import validator, picture_set
 import datastore.db.__init__ as db

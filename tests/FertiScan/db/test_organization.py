@@ -3,7 +3,6 @@ This is a test script for the database packages.
 It tests the functions in the organization module.
 """
 
-from random import randint
 import unittest
 import uuid
 from datastore.db.queries import organization
