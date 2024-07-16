@@ -140,10 +140,10 @@ def get_full_organization(cursor,org_id):
     try:
         query = """
             SELECT 
-                id, 
-                name, 
-                website, 
-                phone_number,
+                organization.id, 
+                organization.name, 
+                organization.website, 
+                organization.phone_number,
                 location.id, 
                 location.name,
                 location.address,
@@ -233,7 +233,7 @@ def get_location(cursor, location_id):
         res = cursor.fetchone()
         if res is None:
             raise LocationNotFoundError
-        return cursor.fetchone()
+        return res
     except ValueError as e:
         raise LocationNotFoundError
     except Exception as e:

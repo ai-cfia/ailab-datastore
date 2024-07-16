@@ -103,6 +103,7 @@ class test_location(unittest.TestCase):
         self.province_name = "test-province"
         self.region_name = "test-region"
         self.name = "test-location"
+        self.address = "test-address"
         self.province_id = organization.new_province(self.cursor, self.province_name)
         self.region_id = organization.new_region(self.cursor, self.region_name, self.province_id)
         
@@ -111,12 +112,13 @@ class test_location(unittest.TestCase):
         db.end_query(self.con, self.cursor)
         
     def test_new_location(self):
-        location_id = organization.new_location(self.cursor, self.name, self.region_id)
+        location_id = organization.new_location(self.cursor, self.name, self.address,self.region_id)
         self.assertTrue(validator.is_valid_uuid(location_id))
         
     def test_get_location(self):
-        location_id = organization.new_location(self.cursor, self.name, self.region_id)
+        location_id = organization.new_location(self.cursor, self.name, self.address,self.region_id)
         location_data = organization.get_location(self.cursor, location_id)
+        
         self.assertEqual(location_data[0], self.name)
         self.assertEqual(location_data[2], self.region_id)
         self.assertIsNone(location_data[3])
@@ -126,15 +128,16 @@ class test_location(unittest.TestCase):
             organization.get_location(self.cursor, str(uuid.uuid4()))
             
     def test_get_full_location(self):
-        location_id = organization.new_location(self.cursor, self.name, self.region_id)
+        location_id = organization.new_location(self.cursor, self.name, self.address,self.region_id)
         location_data = organization.get_full_location(self.cursor, location_id)
         self.assertEqual(location_data[0], location_id)
         self.assertEqual(location_data[1], self.name)
-        self.assertEqual(location_data[2], self.region_name)
-        self.assertEqual(location_data[3], self.province_name)
+        self.assertEqual(location_data[2], self.address)
+        self.assertEqual(location_data[3], self.region_name)
+        self.assertEqual(location_data[4], self.province_name)
         
     def get_location_by_region(self):
-        location_id = organization.new_location(self.cursor, self.name, self.region_id)
+        location_id = organization.new_location(self.cursor, self.name, self.address,self.region_id)
         location_data = organization.get_location_by_region(self.cursor, self.region_id)
         self.assertEqual(len(location_data), 1)
         self.assertEqual(location_data[0][0], location_id)
@@ -145,7 +148,7 @@ class test_organization(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        print(DB_SCHEMA)
+
         self.province_name = "test-province"
         self.region_name = "test-region"
         self.name = "test-organization"
