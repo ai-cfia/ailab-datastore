@@ -3,6 +3,7 @@ This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
+from random import randint
 import unittest
 import uuid
 from datastore.db.queries import organization
@@ -32,7 +33,7 @@ class test_province(unittest.TestCase):
         
     def test_new_province(self):
         province_id = organization.new_province(self.cursor, self.name)
-        self.assertTrue(validator.is_valid_uuid(province_id))
+        self.assertIsInstance(province_id, int)
         
     def test_get_province(self):
         province_id = organization.new_province(self.cursor, self.name)
@@ -41,7 +42,7 @@ class test_province(unittest.TestCase):
         
     def test_get_province_not_found(self):
         with self.assertRaises(organization.ProvinceNotFoundError):
-            organization.get_province(self.cursor, str(uuid.uuid4()))
+            organization.get_province(self.cursor, 0)
         
     def test_get_all_province(self):
         province_id = organization.new_province(self.cursor, self.name)
@@ -144,16 +145,17 @@ class test_organization(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        
+        print(DB_SCHEMA)
         self.province_name = "test-province"
         self.region_name = "test-region"
         self.name = "test-organization"
         self.website = "www.test.com"
         self.phone = "123456789"
         self.location_name = "test-location"
-        self.location_id = organization.new_location(self.cursor, self.location_name, self.region_id)
+        self.location_address="test-address"
         self.province_id = organization.new_province(self.cursor, self.province_name)
         self.region_id = organization.new_region(self.cursor, self.region_name, self.province_id)
+        self.location_id = organization.new_location(self.cursor, self.location_name, self.location_address,self.region_id)
         
     def tearDown(self):
         self.con.rollback()

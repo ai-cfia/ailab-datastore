@@ -9,6 +9,9 @@ class OrganizationCreationError(Exception):
 class OrganizationNotFoundError(Exception):
     pass
 
+class OrganizationUpdateError(Exception):
+    pass
+
 class LocationCreationError(Exception):
     pass
 
@@ -19,6 +22,12 @@ class RegionCreationError(Exception):
     pass
 
 class RegionNotFoundError(Exception):
+    pass
+
+class ProvinceCreationError(Exception):
+    pass
+
+class ProvinceNotFoundError(Exception):
     pass
 
 def new_organization(cursor,name,website,phone_number,location_id=None):
@@ -323,7 +332,7 @@ def get_location_by_organization(cursor, org_id):
     except Exception as e:
         raise e
 
-def new_region(cursor,province_id,name):
+def new_region(cursor,name,province_id):
     """
     This function create a new region in the database.
 

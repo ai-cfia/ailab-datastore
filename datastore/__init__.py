@@ -7,7 +7,6 @@ import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
 import datastore.db.queries.picture as picture
-import datastore.db.queries.analysis as analysis
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
