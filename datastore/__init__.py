@@ -454,7 +454,7 @@ async def register_inference_result(
             cursor, trimmed_inference, user_id, picture_id, type
         )
         nb_object = int(inference_dict["totalBoxes"])
-        inference_dict["inferenceId"] = str(inference_id)
+        inference_dict["inference_id"] = str(inference_id)
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
@@ -472,7 +472,7 @@ async def register_inference_result(
             object_inference_id = inference.new_inference_object(
                 cursor, inference_id, box, type, False
             )
-            inference_dict["boxes"][box_index]["boxId"] = str(object_inference_id)
+            inference_dict["boxes"][box_index]["box_id"] = str(object_inference_id)
             # loop through the topN Prediction
             top_score = -1
             if "topN" in inference_dict["boxes"][box_index]:
