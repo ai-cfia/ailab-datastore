@@ -2,117 +2,38 @@
 
 ## Context
 
+The Datastore receives from its Backend JSON files related to pictures which we
+also have to register. Therefore, we would need a module in place to manipulate
+all the JSON and format them for our DB needs. The modules needs to also be able
+to rebuild a JSON to be used by the other layers (BE & FE)  
+
 The following documentation provide an overview of the metadata importation
-process for the Nachet pipeline. We outline each steps of the workflow,
-illustrating how data progresses until it becomes usable by our models.
+process . We outline each steps of the workflow, illustrating how data
+progresses until it becomes usable by our applications.
+
 Additionally, the upcoming process are showcased with the expected files
 structure.
 
 ``` mermaid
 
 ---
-title: Nachet data upload
+title: Data upload
 ---
 flowchart LR;
     FE(Frontend)
     BE(Backend)
-    file[/Folder/]
     classDef foo stroke:#f00
 
-    file --> FE
     FE-->BE
     subgraph dbProcess [New Process]
     MD(Datastore)
     DB[(Database)] 
     blob[(Blob)]
     end
-    BE -- TODO --- MD
+    BE -- Work in progress --- MD
     MD --> DB
     MD --> blob
-
 ```
-
-As shown above, we are currently working on a process to validate the files
-uploaded to the cloud. However, since Nachet is still a work in progress, here's
-the current workflow for our user to upload their images for the models.
-
-## Workflow: Metadata upload to Azure cloud (Currently)
-
-``` mermaid  
-
-sequenceDiagram;
-  actor User
-  actor DataScientist
-  participant Azure Portal
-  participant Azure Storage Explorer
-  
-  alt New User
-      User->>DataScientist: Storage subscription key request 
-      Note right of User: Email
-      DataScientist->>Azure Portal: Create Storage Blob
-      create participant Azure Storage
-      Azure Portal-)Azure Storage: Create()
-      DataScientist->>Azure Storage: Retrieve Key
-      DataScientist->>User: Send back subscription key
-      Note left of DataScientist: Email
-      User-)Azure Storage Explorer: SubscribeToStorage(key)
-  end
-  loop for each project Folder
-      User-)Azure Storage Explorer: Upload(Folder)
-      Azure Storage Explorer-) Azure Storage: Save(folder)
-  end
-  
-```
-
-This workflow showcase the two options that a user will face to upload data. The
-first one being he's a first time user. Therefore, the current process for a
-first time user is to contact the AI-Lab team and subscribe to the Blob storage
-with a given subscription key.
-
-## Sequence of processing metadata for model (Currently)
-
-``` mermaid
-
-sequenceDiagram;
-  actor DataScientist
-  participant Azure Portal
-  participant Notebook
-  participant Azure Storage
-  DataScientist->>Azure Storage: Check files structure
-  alt Wrong structure
-      DataScientist->>Azure Portal: Create Alt. Azure Storage
-      Azure Portal-)Azure Storage: Create(Alt)
-      create participant Azure Storage Alt
-      DataScientist-)Azure Storage Alt: Copy files
-      DataScientist-)Azure Storage Alt: Rework structure + Edit files/folders
-      DataScientist-)Azure Storage Alt: Replace Storage content with Alt. Storage content
-      destroy Azure Storage Alt 
-      Azure Storage Alt -) Azure Storage: Export files
-  end
-  DataScientist->>Azure Storage: Retrieve extraction code
-  DataScientist->>Notebook: Edit parameters of extraction code commands
-  
-  DataScientist-) Notebook: Run extraction code
-  Note left of Notebook: output source needs to be specified
-  Notebook -) Azure Storage: Processing files into metadata
-  DataScientist->> Azure Storage: Use files to train the model
-
-```
-
-This sequence illustrate the manual task done by our team to maintain the
-storage of user's data.
-
-### Legend
-
-| Element                | Description                                                                                                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| User                   | Anyone wanting to upload data.                                                                                             |
-| DataScientist          | Member of the AI-Lab Team.                                                                                                 |
-| Azure Portal           | Interface managing Azure's services                                                                                        |
-| Azure Storage          | Interface storing data in the cloud.                                                                                       |
-| Azure Storage Explorer | Application with GUI offering a user friendly access to a Azure Storage without granting full acess To the Azure Services. |
-| NoteBook               | Azure Service enabling to run code with Azure Storage structure                                                            |
-| Folder                 | All project folder should follow the files structure presented bellow.                                                     |
 
 ## Development
 
@@ -123,8 +44,8 @@ will be able to remove all manual metadata maintenance. Once the validation
 process is complete, the upload process will come into play, enabling the
 distribution of the files between the BLOB storage and a PostgreSQL database.
 
- We are currently working on such process, which will be handled by the  backend
- part of nachet once it is finished.
+ We are currently improving the process to make it more efficient across all our
+ project. 
 
 ``` mermaid
 
@@ -149,177 +70,6 @@ flowchart LR;
     MD --> blob
 
     style dbProcess stroke:#f00,stroke-width:2px
-
-```
-
-## Finished processes
-
-### [Deployment mass import](deployment-mass-import.md)
-
-### [Trusted User Upload](trusted-user-upload.md)
-
-## Database
-
-We plan on storing the metadata of the user's files in a postgreSQL Database.
-The database should have the following structure:
-
-``` mermaid
-
----
-title: Nachet DB Structure
----
-erDiagram
-  user{
-    uuid id PK
-    string email
-    timestamp registration_date
-    timestamp updated_at
-    integer permission_id
-  }
-  picture_set{
-    uuid id PK
-    json picture_set
-    uuid owner_id FK
-    timestamp upload_date
-  }
-  picture{
-    uuid id PK
-    json picture
-    uuid picture_set_id FK
-    uuid parent FK
-    int nb_object
-    boolean verified
-    timestamp upload_date 
-  }
-  picture_seed{
-    uuid id PK
-    uuid picture_id FK
-    uuid seed_id FK
-    timestamp upload_date
-  }
-  seed{
-    uuid id PK
-    string name
-    json information
-    uuid object_type_id
-    timestamp upload_date
-  }
-  object_type{
-    integer id PK
-    text name 
-  }
-  inference{
-    uuid id PK
-    json inference 
-    uuid picture_id FK
-    uuid user_id FK
-    timestamp upload_date
-  }
-  model{
-    uuid id PK
-    text name
-    text endpoint_name
-    integer task_id FK
-    uuid active_version FK
-  }
-  model_version{
-    uuid id PK
-    uuid model_id FK
-    json data
-    text version
-    timestamp upload_date 
-  }
-  object{
-    uuid id PK
-    json box_metadata
-    uuid inference_id FK
-    integer type_id
-    uuid verified_id
-    boolean valid
-    uuid top_inference FK
-    timestamp upload_date
-    timestamp updated_at
-  }
-  seed_object{
-    uuid id PK
-    uuid seed_id FK 
-    uuid object_id FK
-  }
-  pipeline{
-    uuid id PK
-    text name
-    boolean active
-    boolean is_default
-    json data
-  }
-  pipeline_model{
-    uuid id PK
-    uuid pipeline_id FK
-    uuid model_id FK
-  }
-  pipeline_default{
-    uuid id PK
-    uuid pipeline_id FK
-    uuid user_id FK
-    timestamp update_date
-  }
-  group{
-    uuid id PK
-    text name
-    int permission_id FK
-    uuid owner_id FK
-    timestamp upload_date
-  }
-  permission{
-    int id
-    text name
-  }
-  user_group{
-    uuid id
-    uuid user_id
-    uuid group_id
-    timestamp upload_date
-
-  }
-  group_container{
-    uuid id
-    uuid group_id
-    uuid container_id
-    timestamp upload_date
-  }
-  container{
-    uuid id PK
-    uuid owner_id FK
-    boolean public
-    timestamp creation_date
-    timestamp updated_at
-  }
-
-  user ||--|{ picture_set: uploads
-  picture_set ||--o{picture: contains
-  picture ||--o{picture: cropped
-  picture |o--o{picture_seed: has
-  picture_seed }o--o| seed: has
-  object_type ||--|| seed: is
-  user ||--o{ inference: requests
-  inference ||--|| picture: infers
-  inference }o--|| pipeline: uses
-  inference ||--o{ object: detects
-  object ||--o{ seed_object: is
-  seed_object }o--|| seed: is
-  object }o--|| object_type: is 
-  user ||--||pipeline_default: select
-  pipeline_default }o--||pipeline: is
-  pipeline }o--o{ pipeline_model: uses
-  model }o--o{ pipeline_model: uses
-  model_version ||--o{ model: has
-  user }o--o{ user_group: apart
-  user_group }o--o{group: represent
-  permission ||--|| user: has
-  permission ||--|| group: has
-  group }o--o{group_container: has
-  container }o--o{group_container: represent
-  container ||--o{picture_set: contains
 
 ```
 
@@ -356,8 +106,8 @@ Storage account:
 
 ## Consequences
 
-  Implementing this structure and introducing the new backend features in Nachet
-  will result in the following impact:
+  Implementing this structure and introducing the new backend features will
+  result in the following impact:
 
 - **Automation of file structure maintenance:** This process will autonomously
 
