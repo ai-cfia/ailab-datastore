@@ -113,7 +113,9 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
+async def get_user_container_client(
+    user_id, storage_url, account, key, tier="user"
+):
     """
     Get the container client of a user
 
