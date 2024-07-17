@@ -1,5 +1,19 @@
 # FertiScan DB Architecture
 
+## Needs
+
+- A User must be able to take a picture on the app and it must be saved in the
+  blob Storage.
+
+- A User can do an analysis of a label during its inspection and must confirm
+  the digitalization of the label_ information.
+
+- A User must be able to store its inspection about fertilizers
+
+- A User must be able to to a search about fertilizer with filters
+
+- The application needs to register the structure of the Blob Storage used.
+
 This is the doc about the FertiScan Database Architecture
 
 ``` mermaid
@@ -13,6 +27,7 @@ erDiagram
     string email
     timestamp registration_date
     timestamp updated_at
+    uuid default_set_id FK
   }
   picture_set{
     uuid id PK
@@ -35,7 +50,7 @@ erDiagram
     TIMESTAMP upload_date
     TIMESTAMP updated_at
     uuid inspector_id FK
-    uuid label_info Fk
+    uuid label_info_id Fk
     uuid fertilizer_id FK
     uuid sample_id FK
     uuid company_id FK
@@ -164,7 +179,7 @@ erDiagram
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
-  inspection ||--|| users :inspect
+  inspection }|--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
   label_information ||--|o metric: weight

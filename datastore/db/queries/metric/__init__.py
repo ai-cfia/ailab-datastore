@@ -3,17 +3,22 @@ This module represent the function for the table metric and its children unit:
 
 """
 
+
 class MetricCreationError(Exception):
     pass
+
 
 class MetricNotFoundError(Exception):
     pass
 
+
 class UnitCreationError(Exception):
     pass
 
+
 class UnitNotFoundError(Exception):
     pass
+
 
 def is_a_metric(cursor, metric_id):
     """
@@ -26,7 +31,7 @@ def is_a_metric(cursor, metric_id):
     Returns:
     - boolean: if the metric exists.
     """
-    
+
     try:
         query = """
             SELECT EXISTS(
@@ -43,7 +48,8 @@ def is_a_metric(cursor, metric_id):
     except Exception:
         return False
 
-def new_metric(cursor,value, unit_id, edited=False):
+
+def new_metric(cursor, value, unit_id, edited=False):
     """
     This function uploads a new metric to the database.
 
@@ -56,7 +62,7 @@ def new_metric(cursor,value, unit_id, edited=False):
     Returns:
     - The UUID of the metric.
     """
-    
+
     try:
         query = """
             INSERT INTO 
@@ -81,6 +87,7 @@ def new_metric(cursor,value, unit_id, edited=False):
     except Exception:
         raise MetricCreationError("Error: metric not uploaded")
 
+
 def get_metric(cursor, metric_id):
     """
     This function gets the metric from the database.
@@ -92,7 +99,7 @@ def get_metric(cursor, metric_id):
     Returns:
     - The metric.
     """
-    
+
     try:
         query = """
             SELECT
@@ -109,6 +116,7 @@ def get_metric(cursor, metric_id):
     except Exception:
         raise MetricNotFoundError("Error: metric not found")
 
+
 def get_full_metric(cursor, metric_id):
     """
     This function gets the metric from the database with the unit.
@@ -120,7 +128,7 @@ def get_full_metric(cursor, metric_id):
     Returns:
     - The metric with the unit.
     """
-    
+
     try:
         query = """
             SELECT
@@ -144,6 +152,7 @@ def get_full_metric(cursor, metric_id):
     except Exception:
         raise MetricNotFoundError("Error: metric not found")
 
+
 def new_unit(cursor, unit, to_si_unit):
     """
     This function uploads a new unit to the database.
@@ -156,7 +165,7 @@ def new_unit(cursor, unit, to_si_unit):
     Returns:
     - The UUID of the unit.
     """
-    
+
     try:
         query = """
             INSERT INTO 
@@ -179,6 +188,7 @@ def new_unit(cursor, unit, to_si_unit):
     except Exception:
         raise UnitCreationError("Error: unit not uploaded")
 
+
 def is_a_unit(cursor, unit):
     """
     This function checks if the unit is in the database.
@@ -190,7 +200,7 @@ def is_a_unit(cursor, unit):
     Returns:
     - boolean: if the unit exists.
     """
-    
+
     try:
         query = """
             SELECT EXISTS(
@@ -207,6 +217,7 @@ def is_a_unit(cursor, unit):
     except Exception:
         return False
 
+
 def get_unit_id(cursor, unit):
     """
     This function gets the unit from the database.
@@ -218,7 +229,7 @@ def get_unit_id(cursor, unit):
     Returns:
     - The UUID of the unit.
     """
-    
+
     try:
         query = """
             SELECT

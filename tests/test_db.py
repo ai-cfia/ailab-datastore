@@ -4,24 +4,55 @@ It tests the functions in the user, seed and picture modules.
 """
 
 import unittest
-from unittest.mock import MagicMock
 import uuid
 import json
+import os
 from PIL import Image
 import io
 import base64
 from time import sleep
-from datastore.db.queries import user,seed,picture,inference,analysis
-from datastore.db.metadata import picture_set as picture_set_data,picture as picture_data,validator
+from unittest.mock import MagicMock
+
 import datastore.db.__init__ as db
+from datastore.db.metadata import picture as picture_data
+from datastore.db.metadata import picture_set as picture_set_data
+from datastore.db.metadata import validator
+from datastore.db.queries import inference, picture, seed, user
+
+DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("NACHET_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("NACHET_SCHEMA_TESTING is not set")
+
+
+DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("NACHET_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("NACHET_SCHEMA_TESTING is not set")
+
+
+DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
+if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
+    raise ValueError("NACHET_DB_URL is not set")
+
+DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
+if DB_SCHEMA is None or DB_SCHEMA == "":
+    raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
 
 # --------------------  USER FUNCTIONS --------------------
 class test_user_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.email = "test@email.gouv.ca"
 
     def tearDown(self):
@@ -200,11 +231,14 @@ class test_user_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             user.get_container_url(mock_cursor, user_id)
 
+
 # --------------------  SEED FUNCTIONS --------------------
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
+        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.seed_name = "test-name"
 
     def tearDown(self):
@@ -301,11 +335,13 @@ class test_seed_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             seed.is_seed_registered(mock_cursor, self.seed_name)
 
+
 # --------------------  PICTURE FUNCTIONS --------------------
 class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
 
         # prepare the seed
@@ -322,7 +358,7 @@ class test_pictures_functions(unittest.TestCase):
         self.pic_encoded = base64.b64encode(self.image_byte_array.getvalue()).decode(
             "utf8"
         )
-        self.nb_seed=1
+        self.nb_seed = 1
         self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
         self.picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
@@ -345,8 +381,12 @@ class test_pictures_functions(unittest.TestCase):
             validator.is_valid_uuid(picture_set_id),
             "The picture_set_id is not a valid UUID",
         )
-        
-        self.assertEqual(picture.get_picture_set_name(self.cursor, picture_set_id), self.folder_name, "The folder name is not test_folder")
+
+        self.assertEqual(
+            picture.get_picture_set_name(self.cursor, picture_set_id),
+            self.folder_name,
+            "The folder name is not test_folder",
+        )
 
     def test_new_picture_set_no_name(self):
         """
@@ -360,8 +400,12 @@ class test_pictures_functions(unittest.TestCase):
             validator.is_valid_uuid(picture_set_id),
             "The picture_set_id is not a valid UUID",
         )
-        
-        self.assertEqual(picture.get_picture_set_name(self.cursor, picture_set_id), str(picture_set_id), "As the folder_name is None the picture_set name should be the picture_set_id")
+
+        self.assertEqual(
+            picture.get_picture_set_name(self.cursor, picture_set_id),
+            str(picture_set_id),
+            "As the folder_name is None the picture_set name should be the picture_set_id",
+        )
 
     def test_new_picture_set_error(self):
         """
@@ -383,7 +427,7 @@ class test_pictures_functions(unittest.TestCase):
 
         # create the new picture in the db
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
 
         self.assertTrue(
@@ -398,7 +442,7 @@ class test_pictures_functions(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(picture.PictureUploadError):
             picture.new_picture(
-                mock_cursor, self.picture, str(uuid.uuid4()), self.seed_id,self.nb_seed
+                mock_cursor, self.picture, str(uuid.uuid4()), self.seed_id, self.nb_seed
             )
 
     def test_get_inexisting_picture_set(self):
@@ -440,7 +484,7 @@ class test_pictures_functions(unittest.TestCase):
 
         # prepare picture
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
 
         # test the function
@@ -460,14 +504,14 @@ class test_pictures_functions(unittest.TestCase):
 
         # prepare picture
         picture_id = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
         new_picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", 6, 1.0, ""
         )
         picture_metadata = picture.get_picture(self.cursor, picture_id)
         # update the metadata
-        picture.update_picture_metadata(self.cursor, picture_id, new_picture,6)
+        picture.update_picture_metadata(self.cursor, picture_id, new_picture, 6)
         new_picture = json.loads(new_picture)
         # get the updated metadata
         new_picture_metadata = picture.get_picture(self.cursor, picture_id)
@@ -511,7 +555,9 @@ class test_pictures_functions(unittest.TestCase):
         mock_cursor.execute.side_effect = Exception("Connection error")
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(picture.PictureUpdateError):
-            picture.update_picture_metadata(mock_cursor, uuid.uuid4(), self.picture,self.nb_seed)
+            picture.update_picture_metadata(
+                mock_cursor, uuid.uuid4(), self.picture, self.nb_seed
+            )
 
     def test_is_a_picture_set_id(self):
         """
@@ -541,7 +587,7 @@ class test_pictures_functions(unittest.TestCase):
         with self.assertRaises(Exception):
             picture.is_a_picture_set_id(mock_cursor, uuid.uuid4())
 
-    def test_get_picture_set_name(self) :
+    def test_get_picture_set_name(self):
         """
         This test checks if the get_picture_set_name function returns the correct name of the picture_set
         """
@@ -550,8 +596,8 @@ class test_pictures_functions(unittest.TestCase):
         )
         name = picture.get_picture_set_name(self.cursor, picture_set_id)
         self.assertEqual(name, self.folder_name, "The folder name is not test_folder")
-    
-    def test_get_picture_set_name_error(self) :
+
+    def test_get_picture_set_name_error(self):
         """
         This test checks if the get_picture_set_name function raises an exception when the connection fails
         """
@@ -562,8 +608,8 @@ class test_pictures_functions(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             picture.get_picture_set_name(mock_cursor, picture_set_id)
-    
-    def test_get_user_picture_sets(self) :
+
+    def test_get_user_picture_sets(self):
         """
         This test checks if the get_user_picture_sets function returns all picture_sets of the user
         """
@@ -573,30 +619,40 @@ class test_pictures_functions(unittest.TestCase):
         picture_set_id2 = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name + "2"
         )
-        
+
         picture_sets = picture.get_user_picture_sets(self.cursor, self.user_id)
-        self.assertEqual(len(picture_sets), 2, "The number of picture_sets is not the expected one")
-        self.assertIn((picture_set_id1,self.folder_name), picture_sets, "The first picture_set is not in the list of picture_sets")
-        self.assertIn((picture_set_id2,self.folder_name + "2"), picture_sets, "The second picture_set is not in the list of picture_sets")
-    
-    def test_get_user_picture_sets_error(self) :
+        self.assertEqual(
+            len(picture_sets), 2, "The number of picture_sets is not the expected one"
+        )
+        self.assertIn(
+            (picture_set_id1, self.folder_name),
+            picture_sets,
+            "The first picture_set is not in the list of picture_sets",
+        )
+        self.assertIn(
+            (picture_set_id2, self.folder_name + "2"),
+            picture_sets,
+            "The second picture_set is not in the list of picture_sets",
+        )
+
+    def test_get_user_picture_sets_error(self):
         """
         This test checks if the get_user_picture_sets function raises an exception when the connection fails
         """
         mock_cursor = MagicMock()
         mock_cursor.fetchall.side_effect = Exception("Connection error")
-        
+
         with self.assertRaises(picture.GetPictureSetError):
             picture.get_user_picture_sets(mock_cursor, self.user_id)
-    
-    def test_get_user_picture_sets_user_error(self) :
+
+    def test_get_user_picture_sets_user_error(self):
         """
         This test checks if the get_user_picture_sets function raises an exception when the user do not exist
         """
         with self.assertRaises(picture.GetPictureSetError):
             picture.get_user_picture_sets(self.cursor, str(uuid.uuid4()))
 
-    def test_count_pictures(self) :
+    def test_count_pictures(self):
         """
         This test checks if the count_pictures function returns the correct number of pictures
         """
@@ -604,32 +660,32 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
         picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
-        
+
         count = picture.count_pictures(self.cursor, picture_set_id)
         self.assertEqual(count, 2, "The number of pictures is not the expected one")
-        
-    def test_count_pictures_error(self) :
+
+    def test_count_pictures_error(self):
         """
         This test checks if the count_pictures function raises an exception when the connection fails
-        """ 
+        """
         picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
-        
+
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
-        
+
         with self.assertRaises(picture.PictureSetNotFoundError):
             picture.count_pictures(mock_cursor, picture_set_id)
-        
+
     def test_get_picture_set_pictures(self):
         """
         This test checks if the get_picture_set_pictures function returns the correct pictures
@@ -637,21 +693,31 @@ class test_pictures_functions(unittest.TestCase):
         picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        
-        self.assertEqual(len(picture.get_picture_set_pictures(self.cursor, picture_set_id)), 0, "The number of pictures is not the expected one")
-        
+
+        self.assertEqual(
+            len(picture.get_picture_set_pictures(self.cursor, picture_set_id)),
+            0,
+            "The number of pictures is not the expected one",
+        )
+
         pictureId = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
         pictureId2 = picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
-        
+
         pictures = picture.get_picture_set_pictures(self.cursor, picture_set_id)
-        self.assertEqual(len(pictures), 2, "The number of pictures is not the expected one")
-        self.assertEqual(pictures[0][0], pictureId, "The first picture is not the expected one")
-        self.assertEqual(pictures[1][0], pictureId2, "The second picture is not the expected one")
-    
+        self.assertEqual(
+            len(pictures), 2, "The number of pictures is not the expected one"
+        )
+        self.assertEqual(
+            pictures[0][0], pictureId, "The first picture is not the expected one"
+        )
+        self.assertEqual(
+            pictures[1][0], pictureId2, "The second picture is not the expected one"
+        )
+
     def test_get_picture_set_pictures_error(self):
         """
         This test checks if the get_picture_set_pictures function raises an error if connection fails
@@ -660,29 +726,28 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, picture_set_id, self.seed_id, self.nb_seed
         )
-        
+
         mock_cursor = MagicMock()
         mock_cursor.fetchall.side_effect = Exception("Connection error")
-        
+
         with self.assertRaises(Exception):
             picture.get_picture_set_pictures(mock_cursor, picture_set_id)
 
-    def test_change_picture_set_id(self) :
+    def test_change_picture_set_id(self):
         old_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, old_picture_set_id, self.seed_id, self.nb_seed
         )
         picture.new_picture(
-            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, old_picture_set_id, self.seed_id, self.nb_seed
         )
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        
         old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
         self.assertEqual(len(old_picture_set), 2, "The number of pictures is not the expected one")
         new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
@@ -694,43 +759,49 @@ class test_pictures_functions(unittest.TestCase):
         self.assertEqual(len(old_picture_set), 0, "The number of pictures is not the expected one")
         new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
         self.assertEqual(len(new_picture_set), 2, "The number of pictures is not the expected one")
-    
+
     def test_change_picture_set_id_error(self):
         old_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, old_picture_set_id, self.seed_id, self.nb_seed
         )
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        
+
         mock_cursor = MagicMock()
         mock_cursor.execute.side_effect = Exception("Connection error")
-        
+
         with self.assertRaises(picture.PictureUpdateError):
-            picture.change_picture_set_id(mock_cursor, self.user_id, old_picture_set_id, new_picture_set_id)
-            
+            picture.change_picture_set_id(
+                mock_cursor, self.user_id, old_picture_set_id, new_picture_set_id
+            )
+
     def test_change_picture_set_id_user_error(self):
         old_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
         picture.new_picture(
-            self.cursor, self.picture, old_picture_set_id, self.seed_id,self.nb_seed
+            self.cursor, self.picture, old_picture_set_id, self.seed_id, self.nb_seed
         )
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        
+
         with self.assertRaises(picture.PictureUpdateError):
-            picture.change_picture_set_id(self.cursor, str(uuid.uuid4()), old_picture_set_id, new_picture_set_id)
-    
+            picture.change_picture_set_id(
+                self.cursor, str(uuid.uuid4()), old_picture_set_id, new_picture_set_id
+            )
+
+
 # --------------------  INFERENCE FUNCTIONS --------------------
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db()
+        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING)
         self.cursor = db.cursor(self.con)
 
         # prepare the seed
@@ -748,16 +819,22 @@ class test_inference_functions(unittest.TestCase):
             "utf8"
         )
         self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
-        self.nb_seed=1
+        self.nb_seed = 1
         self.picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
         )
-        self.picture_set_id=picture.new_picture_set(self.cursor, self.picture_set, self.user_id)
-        self.picture_id=picture.new_picture(self.cursor, self.picture, self.picture_set_id, self.seed_id,self.nb_seed)
+        self.picture_set_id = picture.new_picture_set(
+            self.cursor, self.picture_set, self.user_id
+        )
+        self.picture_id = picture.new_picture(
+            self.cursor, self.picture, self.picture_set_id, self.seed_id, self.nb_seed
+        )
         with open("tests/inference_example.json", "r") as f:
-            self.inference= json.loads(f.read())
-        self.inference_trim= '{"filename": "inference_example", "totalBoxes": 1, "totalBoxes": 1}'
-        self.type=1
+            self.inference = json.loads(f.read())
+        self.inference_trim = (
+            '{"filename": "inference_example", "totalBoxes": 1, "totalBoxes": 1}'
+        )
+        self.type = 1
 
     def tearDown(self):
         self.con.rollback()
@@ -767,12 +844,15 @@ class test_inference_functions(unittest.TestCase):
         """
         This test checks if the new_inference function returns a valid UUID
         """
-        inference_id = inference.new_inference(self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
 
         self.assertTrue(
-            validator.is_valid_uuid(inference_id), "The inference_id is not a valid UUID"
+            validator.is_valid_uuid(inference_id),
+            "The inference_id is not a valid UUID",
         )
-        
+
     def test_new_inference_error(self):
         """
         This test checks if the new_inference function raises an exception when the connection fails
@@ -780,236 +860,373 @@ class test_inference_functions(unittest.TestCase):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(inference.InferenceCreationError):
-            inference.new_inference(mock_cursor, self.inference_trim, self.user_id, self.picture_id, self.type)
+            inference.new_inference(
+                mock_cursor,
+                self.inference_trim,
+                self.user_id,
+                self.picture_id,
+                self.type,
+            )
 
     def test_new_inference_obj(self):
         """
         This test checks if the new_inference_object function returns a valid UUID
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
         for box in self.inference["boxes"]:
-            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
-            self.assertTrue(
-                validator.is_valid_uuid(inference_obj_id), "The inference_obj_id is not a valid UUID"
+            inference_obj_id = inference.new_inference_object(
+                self.cursor, inference_id, json.dumps(box), self.type
             )
-    
+            self.assertTrue(
+                validator.is_valid_uuid(inference_obj_id),
+                "The inference_obj_id is not a valid UUID",
+            )
+
     def test_new_inference_obj_error(self):
         """
         This test checks if the new_inference_object function raises an exception when the connection fails
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
-    
+
         with self.assertRaises(inference.InferenceCreationError):
-            inference.new_inference_object(mock_cursor,inference_id,self.inference["boxes"][0],self.type)
+            inference.new_inference_object(
+                mock_cursor, inference_id, self.inference["boxes"][0], self.type
+            )
 
     def test_new_seed_object(self):
         """
         This test checks if the new_seed_object function returns a valid UUID
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
         for box in self.inference["boxes"]:
-            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
-            seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,box["score"])
-            self.assertTrue(
-                validator.is_valid_uuid(seed_obj_id), "The seed_obj_id is not a valid UUID"
+            inference_obj_id = inference.new_inference_object(
+                self.cursor, inference_id, json.dumps(box), self.type
             )
-      
+            seed_obj_id = inference.new_seed_object(
+                self.cursor, self.seed_id, inference_obj_id, box["score"]
+            )
+            self.assertTrue(
+                validator.is_valid_uuid(seed_obj_id),
+                "The seed_obj_id is not a valid UUID",
+            )
+
     def test_new_seed_object_error(self):
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(inference.SeedObjectCreationError):
-            inference.new_seed_object(mock_cursor,self.seed_id,inference_obj_id,32.1)
-      
+            inference.new_seed_object(mock_cursor, self.seed_id, inference_obj_id, 32.1)
+
     def test_get_inference(self):
         """
         This test checks if the get_inference function returns a correctly build inference
         TODO : Add test for not existing inference
         """
-        inference_trim=json.loads(self.inference_trim)
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_data=inference.get_inference(self.cursor,str(inference_id))
-        #inference_json=json.loads(inference_data)
-        self.assertGreaterEqual(len(inference_trim),len(inference_data), "The inference is not correctly build and has more keys than expected")
+        inference_trim = json.loads(self.inference_trim)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_data = inference.get_inference(self.cursor, str(inference_id))
+        # inference_json=json.loads(inference_data)
+        self.assertGreaterEqual(
+            len(inference_trim),
+            len(inference_data),
+            "The inference is not correctly build and has more keys than expected",
+        )
         for key in inference_trim:
-            self.assertTrue(key in inference_data, f"The key: {key} is not in the inference")
-            self.assertEqual(inference_trim[key],inference_data[key],f"The value ({inference_data[key]}) of the key: {key} is not the same as the expected one: {inference_trim[key]}")
-              
+            self.assertTrue(
+                key in inference_data, f"The key: {key} is not in the inference"
+            )
+            self.assertEqual(
+                inference_trim[key],
+                inference_data[key],
+                f"The value ({inference_data[key]}) of the key: {key} is not the same as the expected one: {inference_trim[key]}",
+            )
+
     def test_get_inference_object(self):
         """
         This test checks if the get_inference_object function returns a correctly build object
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-            
-        inference_obj=inference.get_inference_object(self.cursor,str(inference_obj_id))
-        
-        self.assertEqual(len(inference_obj),10, "The inference object hasn't the number of keys expected")
-        self.assertEqual(inference_obj[0],inference_obj_id, "The inference object id is not the same as the expected one")
-                      
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+
+        inference_obj = inference.get_inference_object(
+            self.cursor, str(inference_obj_id)
+        )
+
+        self.assertEqual(
+            len(inference_obj),
+            10,
+            "The inference object hasn't the number of keys expected",
+        )
+        self.assertEqual(
+            inference_obj[0],
+            inference_obj_id,
+            "The inference object id is not the same as the expected one",
+        )
+
     def test_get_inference_object_error(self):
         """
         This test checks if the get_inference_object function raise an error if the inference oject does not exist
         """
-        inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id="00000000-0000-0000-0000-000000000000"
-            
+        inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = "00000000-0000-0000-0000-000000000000"
+
         with self.assertRaises(Exception):
-            inference.get_inference_object(self.cursor,str(inference_obj_id))
-        
+            inference.get_inference_object(self.cursor, str(inference_obj_id))
+
     def test_get_objects_by_inference(self):
         """
         This test checks if the get_objects_by_inference function returns the corrects objects for an inference
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
         total_boxes = len(self.inference["boxes"])
-        objects_id=[]
+        objects_id = []
         for box in self.inference["boxes"]:
-            inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(box),self.type)
+            inference_obj_id = inference.new_inference_object(
+                self.cursor, inference_id, json.dumps(box), self.type
+            )
             objects_id.append(inference_obj_id)
-        
+
         objects = inference.get_objects_by_inference(self.cursor, inference_id)
-        self.assertEqual(len(objects),total_boxes, "The number of objects is not the same as the expected one")
-        for object in objects :
-            self.assertEqual(object[2],inference_id, "The inference id is not the same as the expected one")
-            self.assertTrue(object[0] in objects_id, "The object id is not in the list of expected objects")
+        self.assertEqual(
+            len(objects),
+            total_boxes,
+            "The number of objects is not the same as the expected one",
+        )
+        for object in objects:
+            self.assertEqual(
+                object[2],
+                inference_id,
+                "The inference id is not the same as the expected one",
+            )
+            self.assertTrue(
+                object[0] in objects_id,
+                "The object id is not in the list of expected objects",
+            )
 
     def test_get_inference_object_top_id(self):
         """
         This test checks if the get_inference_object_top_id function returns the correct top_id of an inference object
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
-        
-        inference.set_inference_object_top_id(self.cursor,inference_obj_id,seed_obj_id)
-        top_id=inference.get_inference_object_top_id(self.cursor,inference_obj_id)
-        
-        self.assertEqual(seed_obj_id,top_id,"The verified_id is not the same as the expected one")
-        
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        seed_obj_id = inference.new_seed_object(
+            self.cursor,
+            self.seed_id,
+            inference_obj_id,
+            self.inference["boxes"][0]["score"],
+        )
+
+        inference.set_inference_object_top_id(
+            self.cursor, inference_obj_id, seed_obj_id
+        )
+        top_id = inference.get_inference_object_top_id(self.cursor, inference_obj_id)
+
+        self.assertEqual(
+            seed_obj_id, top_id, "The verified_id is not the same as the expected one"
+        )
+
     def test_set_inference_object_verified_id(self):
         """
         This test checks if the set_inference_object_verified_id function returns a correctly update inference object
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        previous_inference_obj = inference.get_inference_object(
+            self.cursor, inference_obj_id
+        )
+        seed_obj_id = inference.new_seed_object(
+            self.cursor,
+            self.seed_id,
+            inference_obj_id,
+            self.inference["boxes"][0]["score"],
+        )
         # Sleep to see a difference in the updated_at date of the object
         sleep(3)
 
-        inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
-        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertEqual(str(inference_obj[4]),str(seed_obj_id),"The verified_id is not the same as the expected one")
+        inference.set_inference_object_verified_id(
+            self.cursor, inference_obj_id, seed_obj_id
+        )
+        inference_obj = inference.get_inference_object(self.cursor, inference_obj_id)
+        self.assertEqual(
+            str(inference_obj[4]),
+            str(seed_obj_id),
+            "The verified_id is not the same as the expected one",
+        )
         # this test is not working because the trigger to update the update_at field is missing
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
-        
+        self.assertNotEqual(
+            inference_obj[8],
+            previous_inference_obj[8],
+            "The update_at field is not updated",
+        )
+
     def test_set_inference_object_valid(self):
         """
         This test checks if the set_inference_object_verified_id function returns a correctly update inference object
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        previous_inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        previous_inference_obj = inference.get_inference_object(
+            self.cursor, inference_obj_id
+        )
         # Sleep to see a difference in the updated_at date of the object
         sleep(3)
 
-        inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
-        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertTrue(str(inference_obj[5]),"The object validity is not the same as the expected one")
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
-        
-        inference.set_inference_object_valid(self.cursor,inference_obj_id,False)
-        inference_obj=inference.get_inference_object(self.cursor,inference_obj_id)
-        self.assertFalse(str(inference_obj[5]),"The object validity is not the same as the expected one")
+        inference.set_inference_object_valid(self.cursor, inference_obj_id, True)
+        inference_obj = inference.get_inference_object(self.cursor, inference_obj_id)
+        self.assertTrue(
+            str(inference_obj[5]),
+            "The object validity is not the same as the expected one",
+        )
+        self.assertNotEqual(
+            inference_obj[8],
+            previous_inference_obj[8],
+            "The update_at field is not updated",
+        )
+
+        inference.set_inference_object_valid(self.cursor, inference_obj_id, False)
+        inference_obj = inference.get_inference_object(self.cursor, inference_obj_id)
+        self.assertFalse(
+            str(inference_obj[5]),
+            "The object validity is not the same as the expected one",
+        )
         # this test is not working because the trigger to update the update_at field is missing
-        self.assertNotEqual(inference_obj[8],previous_inference_obj[8],"The update_at field is not updated")
-        
+        self.assertNotEqual(
+            inference_obj[8],
+            previous_inference_obj[8],
+            "The update_at field is not updated",
+        )
+
     def test_is_inference_verified(self):
         """
         Test if is_inference_verified function correctly returns the inference status
-        """        
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        
+        """
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+
         verified = inference.is_inference_verified(self.cursor, inference_id)
         self.assertFalse(verified, "The inference verified field should be False")
-        
+
         inference.set_inference_verified(self.cursor, inference_id, True)
-        
+
         verified = inference.is_inference_verified(self.cursor, inference_id)
         self.assertTrue(verified, "The inference should be fully verified")
-        
+
     def test_verify_inference_status(self):
         """
         Test if verify_inference_status function correctly updates the inference status
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        seed_obj_id = inference.new_seed_object(
+            self.cursor,
+            self.seed_id,
+            inference_obj_id,
+            self.inference["boxes"][0]["score"],
+        )
 
         inference.verify_inference_status(self.cursor, inference_id, self.user_id)
-        
+
         verified = inference.is_inference_verified(self.cursor, inference_id)
         self.assertFalse(verified, "The inference verified field should be False")
-        
-        inference.set_inference_object_valid(self.cursor,inference_obj_id,True)
-        inference.set_inference_object_verified_id(self.cursor,inference_obj_id,seed_obj_id)
+
+        inference.set_inference_object_valid(self.cursor, inference_obj_id, True)
+        inference.set_inference_object_verified_id(
+            self.cursor, inference_obj_id, seed_obj_id
+        )
 
         inference.verify_inference_status(self.cursor, inference_id, self.user_id)
         verified = inference.is_inference_verified(self.cursor, inference_id)
         self.assertTrue(verified, "The inference should be fully verified")
-        
+
     def test_get_seed_object_id(self):
         """
         Test if get_seed_object_id function correctly returns the seed object id
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        seed_obj_id=inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
-        
-        fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,self.seed_id, inference_obj_id)
-        self.assertEqual(seed_obj_id, fetched_seed_obj_id, "The fetched seed object id is not the same as the expected one")
-        
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        seed_obj_id = inference.new_seed_object(
+            self.cursor,
+            self.seed_id,
+            inference_obj_id,
+            self.inference["boxes"][0]["score"],
+        )
+
+        fetched_seed_obj_id = inference.get_seed_object_id(
+            self.cursor, self.seed_id, inference_obj_id
+        )
+        self.assertEqual(
+            seed_obj_id,
+            fetched_seed_obj_id,
+            "The fetched seed object id is not the same as the expected one",
+        )
+
     def test_get_not_seed_object_id(self):
         """
         Test if get_seed_object_id function correctly returns the seed object id
         """
-        inference_id=inference.new_inference(self.cursor,self.inference_trim,self.user_id,self.picture_id,self.type)
-        inference_obj_id=inference.new_inference_object(self.cursor,inference_id,json.dumps(self.inference["boxes"][0]),self.type)
-        inference.new_seed_object(self.cursor,self.seed_id,inference_obj_id,self.inference["boxes"][0]["score"])
+        inference_id = inference.new_inference(
+            self.cursor, self.inference_trim, self.user_id, self.picture_id, self.type
+        )
+        inference_obj_id = inference.new_inference_object(
+            self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
+        )
+        inference.new_seed_object(
+            self.cursor,
+            self.seed_id,
+            inference_obj_id,
+            self.inference["boxes"][0]["score"],
+        )
         mock_seed_id = str(uuid.uuid4())
         fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
         self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
-        
-class test_analysis_functions(unittest.TestCase):
-    def setUp(self):
-        # prepare the connection and cursor
-        self.con = db.connect_db(db.FERTISCAN_DB_URL, db.FERTISCAN_SCHEMA)
-        self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor, db.FERTISCAN_SCHEMA)
 
-        self.analysis_dict = json.dumps({
-            "company_name": "GreenGrow Fertilizers Inc.",
-            "company_address": "123 Greenway Blvd Springfield IL 62701 USA",
-            "company_website": "www.greengrowfertilizers.com",
-        })
 
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_analysis(self):
-        """
-        This test checks if the new_analysis function returns a valid UUID
-        """
-        analysis_id = analysis.new_analysis(self.cursor, self.analysis_dict)
-
-        self.assertTrue(
-            validator.is_valid_uuid(analysis_id), "The analysis_id is not a valid UUID"
-        )
+if __name__ == "__main__":
+    unittest.main()
 
 if __name__ == "__main__":
     unittest.main()

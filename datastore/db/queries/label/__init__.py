@@ -2,7 +2,10 @@
 This module represent the function for the table label_information
 """
 
-def new_label_information(cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume):
+
+def new_label_information(
+    cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume
+):
     """
     This function create a new label_information in the database.
 
@@ -37,14 +40,28 @@ def new_label_information(cursor, lot_number, npk, registration_number, n, p, k,
             RETURNING 
                 id
             """
-        cursor.execute(query, (lot_number, npk, registration_number, n, p, k,))
+        cursor.execute(
+            query,
+            (
+                lot_number,
+                npk,
+                registration_number,
+                n,
+                p,
+                k,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception as e:
         raise e
 
-def new_label_information_complete(cursor,lot_number, npk, registration_number, n, p, k, weight, density, volume):
+
+def new_label_information_complete(
+    cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume
+):
     ##TODO: Implement this function
     return None
+
 
 def get_label_information(cursor, label_information_id):
     """
