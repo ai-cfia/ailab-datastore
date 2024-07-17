@@ -19,7 +19,9 @@ if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
 
-async def register_analysis(cursor,container_client, analysis_dict,picture_id :str,picture,folder = "General"):
+async def register_analysis(
+    cursor, container_client, analysis_dict, picture_id: str, picture, folder="General"
+):
     """
     Register an analysis in the database
 
@@ -34,12 +36,11 @@ async def register_analysis(cursor,container_client, analysis_dict,picture_id :s
     """
     try:
         if picture_id is None or picture_id == "":
-            #picture_id = str(uuid.uuid4())
-            print('test')
+            picture_id = str(uuid.uuid4())
         # if not azure_storage.is_a_folder(container_client, folder):
         #     azure_storage.create_folder(container_client, folder)
         # azure_storage.upload_image(container_client, folder, picture, picture_id)
-        #analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
+        # analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
         #analysis_dict["analysis_id"] = str(analysis_id)
         return None
     except Exception as e:
