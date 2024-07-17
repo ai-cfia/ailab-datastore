@@ -7,7 +7,6 @@ import datastore.db.queries.user as user
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
 import datastore.db.queries.picture as picture
-import datastore.db.queries.analysis as analysis
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.validator as validator
@@ -17,7 +16,7 @@ import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
 import uuid
 import json
-from azure.storage.blob import BlobServiceClient,ContainerClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
 import os
 from dotenv import load_dotenv
 
@@ -35,7 +34,7 @@ NACHET_STORAGE_URL = os.environ.get("NACHET_STORAGE_URL")
 if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
     raise ValueError("NACHET_STORAGE_URL is not set")
 
-FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
+FERTISCAN_STORAGE_URL = os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
@@ -45,45 +44,56 @@ if DEV_USER_EMAIL is None or DEV_USER_EMAIL == "":
     # raise ValueError("DEV_USER_EMAIL is not set")
     print("Warning: DEV_USER_EMAIL not set")
 
+
 class UserAlreadyExistsError(Exception):
     pass
+
 
 class UserNotOwnerError(Exception):
     pass
 
+
 class MLRetrievalError(Exception):
     pass
+
 
 class BlobUploadError(Exception):
     pass
 
+
 class ContainerCreationError(Exception):
     pass
+
 
 class FolderCreationError(Exception):
     pass
 
+
 class InferenceCreationError(Exception):
     pass
+
 
 class InferenceFeedbackError(Exception):
     pass
 
 
 class User:
-    def __init__(self, email: str, id: str = None,tier:str='user'):
+    def __init__(self, email: str, id: str = None, tier: str = "user"):
         self.id = id
         self.email = email
         self.tier = tier
+
     def get_email(self):
         return self.email
+
     def get_id(self):
         return self.id
+
     def get_container_client(self):
-        return get_user_container_client(self.id,self.tier)
+        return get_user_container_client(self.id, self.tier)
 
 
-async def get_user(cursor, email)->User:
+async def get_user(cursor, email) -> User:
     """
     Get a user from the database
 
@@ -95,7 +105,7 @@ async def get_user(cursor, email)->User:
     return User(email, user_id)
 
 
-async def new_user(cursor,email, connection_string,tier='user')->User:
+async def new_user(cursor, email, connection_string, tier="user") -> User:
     """
     Create a new user in the database and blob storage.
 
@@ -123,7 +133,9 @@ async def new_user(cursor,email, connection_string,tier='user')->User:
         pic_set_metadata = data_picture_set.build_picture_set(
             user_id=user_uuid, nb_picture=0
         )
-        pic_set_id = picture.new_picture_set(cursor, pic_set_metadata, user_uuid,  "General")
+        pic_set_id = picture.new_picture_set(
+            cursor, pic_set_metadata, user_uuid, "General"
+        )
         user.set_default_picture_set(cursor, user_uuid, pic_set_id)
         # Basic user container structure
         response = await azure_storage.create_folder(
@@ -137,13 +149,15 @@ async def new_user(cursor,email, connection_string,tier='user')->User:
     except UserAlreadyExistsError:
         raise
     except ContainerCreationError:
-        raise 
+        raise
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, tier="user",storage_url = NACHET_STORAGE_URL):
+async def get_user_container_client(
+    user_id, tier="user", storage_url=NACHET_STORAGE_URL
+):
     """
     Get the container client of a user
 
@@ -155,12 +169,15 @@ async def get_user_container_client(user_id, tier="user",storage_url = NACHET_ST
     sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        storage_url, user_id, True, tier,sas
+        storage_url, user_id, True, tier, sas
     )
-    if isinstance(container_client,ContainerClient):
+    if isinstance(container_client, ContainerClient):
         return container_client
 
-async def create_picture_set(cursor, container_client, nb_pictures:int, user_id: str, folder_name = None):
+
+async def create_picture_set(
+    cursor, container_client, nb_pictures: int, user_id: str, folder_name=None
+):
     """
     Create a picture_set in the database and a related folder in the blob storage
 
@@ -184,21 +201,36 @@ async def create_picture_set(cursor, container_client, nb_pictures:int, user_id:
 
         picture_set = data_picture_set.build_picture_set(user_id, nb_pictures)
         picture_set_id = picture.new_picture_set(
-            cursor=cursor, picture_set=picture_set, user_id=user_id, folder_name=folder_name
+            cursor=cursor,
+            picture_set=picture_set,
+            user_id=user_id,
+            folder_name=folder_name,
         )
 
-        folder_created = await azure_storage.create_folder(container_client, str(picture_set_id), folder_name)
+        folder_created = await azure_storage.create_folder(
+            container_client, str(picture_set_id), folder_name
+        )
         if not folder_created:
-            raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
-        
+            raise FolderCreationError(
+                f"Error while creating this folder : {picture_set_id}"
+            )
+
         return picture_set_id
-    except (user.UserNotFoundError, FolderCreationError, data_picture_set.PictureSetCreationError, picture.PictureSetCreationError, azure_storage.CreateDirectoryError) as e:
+    except (
+        user.UserNotFoundError,
+        FolderCreationError,
+        data_picture_set.PictureSetCreationError,
+        picture.PictureSetCreationError,
+        azure_storage.CreateDirectoryError,
+    ) as e:
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
 
 
-async def upload_picture_unknown(cursor, user_id, picture_hash, container_client, picture_set_id=None):
+async def upload_picture_unknown(
+    cursor, user_id, picture_hash, container_client, picture_set_id=None
+):
     """
     Upload a picture that we don't know the seed to the user container
 
@@ -209,23 +241,23 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
     - container_client: The container client of the user.
     """
     try:
-        
+
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
-        
+
         empty_picture = json.dumps([])
-        
+
         default_picture_set = str(user.get_default_picture_set(cursor, user_id))
         if picture_set_id is None or str(picture_set_id) == default_picture_set:
             picture_set_id = default_picture_set
             folder_name = "General"
-        else :
+        else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-            if folder_name is None :
+            if folder_name is None:
                 folder_name = picture_set_id
-            
+
         # Create picture instance in DB
         picture_id = picture.new_picture_unknown(
             cursor=cursor,
@@ -241,11 +273,11 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
             "link": f"{folder_name}/" + str(picture_id),
             "description": "Uploaded through the API",
         }
-        
+
         if not response:
             raise BlobUploadError("Error uploading the picture")
-        
-        picture.update_picture_metadata(cursor, picture_id, json.dumps(data),0)
+
+        picture.update_picture_metadata(cursor, picture_id, json.dumps(data), 0)
 
         return picture_id
     except BlobUploadError or azure_storage.UploadImageError:
@@ -254,7 +286,17 @@ async def upload_picture_unknown(cursor, user_id, picture_hash, container_client
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-async def upload_picture_known(cursor, user_id, picture_hash, container_client, seed_id, picture_set_id=None, nb_seeds=None, zoom_level=None):
+
+async def upload_picture_known(
+    cursor,
+    user_id,
+    picture_hash,
+    container_client,
+    seed_id,
+    picture_set_id=None,
+    nb_seeds=None,
+    zoom_level=None,
+):
     """
     Upload a picture that the seed is known to the user container
 
@@ -269,15 +311,15 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
     - zoom_level: The zoom level of the picture.
     """
     try:
-        
+
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
-        
+
         empty_picture = json.dumps([])
         # Create picture instance in DB
-        if picture_set_id is None :
+        if picture_set_id is None:
             picture_set_id = user.get_default_picture_set(cursor, user_id)
         picture_id = picture.new_picture(
             cursor=cursor,
@@ -289,11 +331,13 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         if folder_name is None:
             folder_name = picture_set_id
-        
+
         response = await azure_storage.upload_image(
             container_client, folder_name, picture_set_id, picture_hash, picture_id
         )
-        picture_link = container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
+        picture_link = (
+            container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
+        )
         # Create picture metadata and update DB instance (with link to Azure blob)
         """
         data = picture_metadata.build_picture(
@@ -306,25 +350,35 @@ async def upload_picture_known(cursor, user_id, picture_hash, container_client, 
         """
         data = {
             "link": picture_link,
-            "nb_seeds":nb_seeds,
-            "zoom":zoom_level,
+            "nb_seeds": nb_seeds,
+            "zoom": zoom_level,
             "description": "Uploaded through the API",
         }
         if not response:
             raise BlobUploadError("Error uploading the picture")
-        
-        picture.update_picture_metadata(cursor, picture_id, json.dumps(data),0)
+
+        picture.update_picture_metadata(cursor, picture_id, json.dumps(data), 0)
 
         return picture_id
     except BlobUploadError or azure_storage.UploadImageError:
         raise BlobUploadError("Error uploading the picture")
-    except (user.UserNotFoundError) as e:
+    except user.UserNotFoundError as e:
         raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-async def upload_pictures(cursor, user_id, picture_set_id, container_client, pictures, seed_name: str, zoom_level: float = None, nb_seeds: int = None) :
+
+async def upload_pictures(
+    cursor,
+    user_id,
+    picture_set_id,
+    container_client,
+    pictures,
+    seed_name: str,
+    zoom_level: float = None,
+    nb_seeds: int = None,
+):
     """
     Upload an array of pictures that the seed is known to the user container
 
@@ -343,26 +397,35 @@ async def upload_pictures(cursor, user_id, picture_set_id, container_client, pic
         array of the new pictures UUID
     """
     try:
-        
+
         if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
             raise seed.SeedNotFoundError(
                 f"Seed not found based on the given name: {seed_name}"
             )
         seed_id = seed.get_seed_id(cursor=cursor, seed_name=seed_name)
-        
+
         pictures_id = []
         for picture_encoded in pictures:
-            id = await upload_picture_known(cursor, user_id, picture_encoded, container_client, seed_id, picture_set_id, nb_seeds, zoom_level)
+            id = await upload_picture_known(
+                cursor,
+                user_id,
+                picture_encoded,
+                container_client,
+                seed_id,
+                picture_set_id,
+                nb_seeds,
+                zoom_level,
+            )
             pictures_id.append(id)
 
         return pictures_id
-    except (seed.SeedNotFoundError) as e:
+    except seed.SeedNotFoundError as e:
         raise e
     except user.UserNotFoundError as e:
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the pictures")
-    
+
 
 async def register_inference_result(
     cursor,
@@ -381,7 +444,7 @@ async def register_inference_result(
     - inference (str): The inference to register in a dict string (soon to be json loaded).
     - picture_id (str): The UUID of the picture.
     - pipeline_id (str): The UUID of the pipeline.
-    
+
     Returns:
     - The inference_dict with the inference_id, box_id and top_id added.
     """
@@ -425,8 +488,15 @@ async def register_inference_result(
                         top_score = topN["score"]
                         top_id = id
             else:
-                seed_id = seed.get_seed_id(cursor, inference_dict["boxes"][box_index]["label"])
-                top_id = inference.new_seed_object(cursor, seed_id, object_inference_id, inference_dict["boxes"][box_index]["score"])
+                seed_id = seed.get_seed_id(
+                    cursor, inference_dict["boxes"][box_index]["label"]
+                )
+                top_id = inference.new_seed_object(
+                    cursor,
+                    seed_id,
+                    object_inference_id,
+                    inference_dict["boxes"][box_index]["score"],
+                )
             inference.set_inference_object_top_id(cursor, object_inference_id, top_id)
             inference_dict["boxes"][box_index]["top_id"] = str(top_id)
 
@@ -437,7 +507,8 @@ async def register_inference_result(
         print(e.__str__())
         raise Exception("Unhandled Error")
 
-async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1):
+
+async def new_correction_inference_feedback(cursor, inference_dict, type: int = 1):
     """
     TODO: doc
     """
@@ -445,13 +516,19 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
         if "inferenceId" in inference_dict.keys():
             inference_id = inference_dict["inferenceId"]
         else:
-            raise InferenceFeedbackError("Error: inference_id not found in the given infence_dict")
+            raise InferenceFeedbackError(
+                "Error: inference_id not found in the given infence_dict"
+            )
         if "userId" in inference_dict.keys():
             user_id = inference_dict["userId"]
             if not (user.is_a_user_id(cursor, user_id)):
-                raise InferenceFeedbackError(f"Error: user_id {user_id} not found in the database")
+                raise InferenceFeedbackError(
+                    f"Error: user_id {user_id} not found in the database"
+                )
         else:
-            raise InferenceFeedbackError("Error: user_id not found in the given infence_dict")
+            raise InferenceFeedbackError(
+                "Error: user_id not found in the given infence_dict"
+            )
         # if infence_dict["totalBoxes"] != len(inference_dict["boxes"] & infence_dict["totalBoxes"] > 0 ):
         #     if len(inference_dict["boxes"]) == 0:
         #         raise InferenceFeedbackError("Error: No boxes found in the given inference_dict")
@@ -460,7 +537,9 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
         #     else if len(inference_dict["boxes"]) < infence_dict["totalBoxes"]:
         #         raise InferenceFeedbackError("Error: There are less boxes than the totalBoxes")
         if inference.is_inference_verified(cursor, inference_id):
-            raise InferenceFeedbackError(f"Error: Inference {inference_id} is already verified")
+            raise InferenceFeedbackError(
+                f"Error: Inference {inference_id} is already verified"
+            )
         for object in inference_dict["boxes"]:
             box_id = object["boxId"]
             seed_name = object["label"]
@@ -469,75 +548,105 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
             # flag_box_metadata = False
             valid = False
             box_metadata = object["box"]
-            
-            if box_id =="":
+
+            if box_id == "":
                 # This is a new box created by the user
-                
+
                 # Check if the seed is known
                 if seed_id == "" and seed_name == "":
-                    raise InferenceFeedbackError("Error: seed_name and seed_id not found in the new box. We don't know what to do with it and this should not happen.")
+                    raise InferenceFeedbackError(
+                        "Error: seed_name and seed_id not found in the new box. We don't know what to do with it and this should not happen."
+                    )
                 if seed_id == "":
                     if seed.is_seed_registered(cursor, seed_name):
                         # Mistake from the FE, the seed is known in the database
                         seed_id = seed.get_seed_id(cursor, seed_name)
                     else:
-                        #unknown seed
+                        # unknown seed
                         seed_id = seed.new_seed(cursor, seed_name)
                 # Create the new object
-                object_id = inference.new_inference_object(cursor, inference_id, box_metadata, 1,True)
-                seed_object_id = inference.new_seed_object(cursor, seed_id, object_id, 0)
+                object_id = inference.new_inference_object(
+                    cursor, inference_id, box_metadata, 1, True
+                )
+                seed_object_id = inference.new_seed_object(
+                    cursor, seed_id, object_id, 0
+                )
                 # Set the verified_id to the seed_object_id
-                inference.set_inference_object_verified_id(cursor, object_id, seed_object_id)
+                inference.set_inference_object_verified_id(
+                    cursor, object_id, seed_object_id
+                )
                 valid = True
-            else: 
-                if (inference.is_object_verified(cursor, box_id)):
-                    raise InferenceFeedbackError(f"Error: Object {box_id} is already verified")
+            else:
+                if inference.is_object_verified(cursor, box_id):
+                    raise InferenceFeedbackError(
+                        f"Error: Object {box_id} is already verified"
+                    )
                 # This is a box that was created by the pipeline so it should be within the database
                 object_db = inference.get_inference_object(cursor, box_id)
                 object_metadata = object_db[1]
                 object_id = object_db[0]
 
                 # Check if there are difference between the metadata
-                if not (inference_metadata.compare_object_metadata(box_metadata, object_metadata["box"])):
+                if not (
+                    inference_metadata.compare_object_metadata(
+                        box_metadata, object_metadata["box"]
+                    )
+                ):
                     # Update the object metadata
                     # flag_box_metadata = True
-                    inference.set_object_box_metadata(cursor, box_id, json.dumps(box_metadata))
-                
+                    inference.set_object_box_metadata(
+                        cursor, box_id, json.dumps(box_metadata)
+                    )
+
                 # Check if the seed is known
                 if seed_id == "":
-                    if seed_name == "": 
+                    if seed_name == "":
                         # box has been deleted by the user
                         valid = False
                     else:
                         valid = True
-                        if(seed.is_seed_registered(cursor, seed_name)):
+                        if seed.is_seed_registered(cursor, seed_name):
                             # The seed is known in the database and it was a mistake from the FE
                             seed_id = seed.get_seed_id(cursor, seed_name)
-                        else: # The seed is not known in the database
+                        else:  # The seed is not known in the database
                             seed_id = seed.new_seed(cursor, seed_name)
-                            seed_object_id = inference.new_seed_object(cursor, seed_id, object_id, 0)
-                            inference.set_inference_object_verified_id(cursor, object_id, seed_object_id)
-                else: 
-                    #Box is still valid
+                            seed_object_id = inference.new_seed_object(
+                                cursor, seed_id, object_id, 0
+                            )
+                            inference.set_inference_object_verified_id(
+                                cursor, object_id, seed_object_id
+                            )
+                else:
+                    # Box is still valid
                     valid = True
                     # Check if a new seed has been selected
-                    top_inference_id = inference.get_inference_object_top_id(cursor, object_db[0])
-                    new_top_id = inference.get_seed_object_id(cursor, seed_id, box_id )
-                    
+                    top_inference_id = inference.get_inference_object_top_id(
+                        cursor, object_db[0]
+                    )
+                    new_top_id = inference.get_seed_object_id(cursor, seed_id, box_id)
+
                     if new_top_id is None:
                         # Seed selected was not an inference guess, we need to create a new seed_object
-                        new_top_id=inference.new_seed_object(cursor, seed_id, box_id, 0)
-                        inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
+                        new_top_id = inference.new_seed_object(
+                            cursor, seed_id, box_id, 0
+                        )
+                        inference.set_inference_object_verified_id(
+                            cursor, box_id, new_top_id
+                        )
                         # flag_seed = True
                     if top_inference_id != new_top_id:
                         # Seed was not correctly identified, set the verified_id to the correct seed_object.id
                         # flag_seed = True
-                        inference.set_inference_object_verified_id(cursor, box_id, new_top_id)
+                        inference.set_inference_object_verified_id(
+                            cursor, box_id, new_top_id
+                        )
                     else:
                         # Seed was correctly identified, set the verified_id to the top_id
                         # flag_seed = False
-                        inference.set_inference_object_verified_id(cursor, box_id, top_inference_id)
-            
+                        inference.set_inference_object_verified_id(
+                            cursor, box_id, top_inference_id
+                        )
+
             # Update the object validity
             inference.set_inference_object_valid(cursor, box_id, valid)
         inference.verify_inference_status(cursor, inference_id, user_id)
@@ -548,10 +657,10 @@ async def new_correction_inference_feedback(cursor,inference_dict, type: int = 1
         raise Exception("Datastore Unhandled Error")
 
 
-async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id) :
+async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id):
     """
     Update objects when a perfect feedback is sent by a user and update the inference if all the objects in it are verified.
-    
+
     Args:
         cursor: The cursor object to interact with the database.
         inference_id (str): id of the inference on which feedback is given
@@ -565,7 +674,7 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
                 f"User not found based on the given id: {user_id}"
             )
         # Check if boxes_id exists
-        for box_id in boxes_id :
+        for box_id in boxes_id:
             if not inference.check_inference_object_exist(cursor, box_id):
                 raise inference.InferenceObjectNotFoundError(
                     f"Error: could not get inference object for id {box_id}"
@@ -575,25 +684,33 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
             raise inference.InferenceNotFoundError(
                 f"Inference not found based on the given id: {inference_id}"
             )
-        
+
         if inference.is_inference_verified(cursor, inference_id):
             raise inference.InferenceAlreadyVerifiedError(
                 f"Can't add feedback to a verified inference, id: {inference_id}"
             )
-        
+
         for object_id in boxes_id:
             top_inference_id = inference.get_inference_object_top_id(cursor, object_id)
-            inference.set_inference_object_verified_id(cursor, object_id, top_inference_id )
+            inference.set_inference_object_verified_id(
+                cursor, object_id, top_inference_id
+            )
             inference.set_inference_object_valid(cursor, object_id, True)
-            
+
         inference.verify_inference_status(cursor, inference_id, user_id)
-        
-    except (user.UserNotFoundError, inference.InferenceObjectNotFoundError, inference.InferenceNotFoundError, inference.InferenceAlreadyVerifiedError) as e:
+
+    except (
+        user.UserNotFoundError,
+        inference.InferenceObjectNotFoundError,
+        inference.InferenceNotFoundError,
+        inference.InferenceAlreadyVerifiedError,
+    ) as e:
         raise e
     except Exception as e:
         print(e)
         raise Exception(f"Datastore Unhandled Error : {e}")
-    
+
+
 async def import_ml_structure_from_json_version(cursor, ml_version: dict):
     """
     TODO: build tests
@@ -632,7 +749,7 @@ async def get_ml_structure(cursor):
     try:
         ml_structure = {"pipelines": [], "models": []}
         pipelines = machine_learning.get_active_pipeline(cursor)
-        if len(pipelines)==0:
+        if len(pipelines) == 0:
             raise MLRetrievalError("No Active pipelines found in the database.")
         model_list = []
         for pipeline in pipelines:
@@ -685,6 +802,7 @@ async def get_seed_info(cursor):
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
 
+
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -693,10 +811,8 @@ async def get_picture_sets_info(cursor, user_id: str):
     """
     # Check if user exists
     if not user.is_a_user_id(cursor=cursor, user_id=user_id):
-        raise user.UserNotFoundError(
-            f"User not found based on the given id: {user_id}"
-        )
-    
+        raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
+
     result = {}
     picture_sets = picture.get_user_picture_sets(cursor, user_id)
     for picture_set in picture_sets:
@@ -706,7 +822,10 @@ async def get_picture_sets_info(cursor, user_id: str):
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
 
-async def delete_picture_set_permanently(cursor, user_id, picture_set_id, container_client):
+
+async def delete_picture_set_permanently(
+    cursor, user_id, picture_set_id, container_client
+):
     """
     Delete a picture set from the database and the blob storage
 
@@ -743,15 +862,23 @@ async def delete_picture_set_permanently(cursor, user_id, picture_set_id, contai
         await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
-        
+
         return True
-    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
+    except (
+        user.UserNotFoundError,
+        picture.PictureSetNotFoundError,
+        picture.PictureSetDeleteError,
+        UserNotOwnerError,
+    ) as e:
         raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, container_client):
+
+async def delete_picture_set_with_archive(
+    cursor, user_id, picture_set_id, container_client
+):
     """
     Delete a picture set from the database and the blob storage but archives inferences and pictures in dev container
 
@@ -783,39 +910,58 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
             raise picture.PictureSetDeleteError(
                 f"User can't delete the default picture set, user uuid :{user_id}"
             )
-        
+
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        if folder_name is None :
+        if folder_name is None:
             folder_name = picture_set_id
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
-        
+
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
         dev_container_client = await get_user_container_client(dev_user_id)
-        
+
         if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
-        
-        picture_set = data_picture_set.build_picture_set(dev_user_id, len(validated_pictures))
+
+        picture_set = data_picture_set.build_picture_set(
+            dev_user_id, len(validated_pictures)
+        )
         dev_picture_set_id = picture.new_picture_set(
-            cursor=cursor, picture_set=picture_set, user_id=dev_user_id, folder_name=folder_name
+            cursor=cursor,
+            picture_set=picture_set,
+            user_id=dev_user_id,
+            folder_name=folder_name,
         )
 
-        folder_created = await azure_storage.create_dev_container_folder(dev_container_client, str(picture_set_id), folder_name, user_id)
+        folder_created = await azure_storage.create_dev_container_folder(
+            dev_container_client, str(picture_set_id), folder_name, user_id
+        )
         if not folder_created:
-            raise FolderCreationError(f"Error while creating this folder : {picture_set_id}")
-        
+            raise FolderCreationError(
+                f"Error while creating this folder : {picture_set_id}"
+            )
+
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
             blob_name = f"{folder_name}/{str(picture_id)}.png"
             # change the link in the metadata
             picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
-            picture.update_picture_metadata(cursor, picture_id, json.dumps(picture_metadata), 0)
+            picture.update_picture_metadata(
+                cursor, picture_id, json.dumps(picture_metadata), 0
+            )
             # set picture set to dev one
-            picture.update_picture_picture_set_id(cursor, picture_id, dev_picture_set_id)
+            picture.update_picture_picture_set_id(
+                cursor, picture_id, dev_picture_set_id
+            )
             # move the picture to the dev container
             new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
-            await azure_storage.move_blob(blob_name, new_blob_name, dev_picture_set_id, container_client, dev_container_client)
-        
+            await azure_storage.move_blob(
+                blob_name,
+                new_blob_name,
+                dev_picture_set_id,
+                container_client,
+                dev_container_client,
+            )
+
         if len(picture.get_validated_pictures(cursor, picture_set_id)) > 0:
             raise picture.PictureSetDeleteError(
                 f"Can't delete the folder, there are still validated pictures in it, folder name : {picture_set_id}"
@@ -825,13 +971,19 @@ async def delete_picture_set_with_archive(cursor, user_id, picture_set_id, conta
         await azure_storage.delete_folder(container_client, picture_set_id)
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
-        
+
         return dev_picture_set_id
-    except (user.UserNotFoundError, picture.PictureSetNotFoundError, picture.PictureSetDeleteError, UserNotOwnerError) as e:
+    except (
+        user.UserNotFoundError,
+        picture.PictureSetNotFoundError,
+        picture.PictureSetDeleteError,
+        UserNotOwnerError,
+    ) as e:
         raise e
     except Exception as e:
         print(f"Datastore Unhandled Error : {e}")
         raise Exception("Datastore Unhandled Error")
+
 
 async def find_validated_pictures(cursor, user_id, picture_set_id):
     """
@@ -861,16 +1013,23 @@ async def find_validated_pictures(cursor, user_id, picture_set_id):
             raise UserNotOwnerError(
                 f"User isn't owner of this folder, user uuid :{user_id}, folder uuid : {picture_set_id}"
             )
-        
+
         validated_pictures_id = picture.get_validated_pictures(cursor, picture_set_id)
         return validated_pictures_id
-    except (user.UserNotFoundError, picture.PictureSetNotFoundError, UserNotOwnerError) as e:
+    except (
+        user.UserNotFoundError,
+        picture.PictureSetNotFoundError,
+        UserNotOwnerError,
+    ) as e:
         raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-async def register_analysis(cursor,container_client, analysis_dict,picture_id :str,picture,folder = "General"):
+
+async def register_analysis(
+    cursor, container_client, analysis_dict, picture_id: str, picture, folder="General"
+):
     """
     Register an analysis in the database
 
@@ -889,9 +1048,9 @@ async def register_analysis(cursor,container_client, analysis_dict,picture_id :s
         # if not azure_storage.is_a_folder(container_client, folder):
         #     azure_storage.create_folder(container_client, folder)
         # azure_storage.upload_image(container_client, folder, picture, picture_id)
-        analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
-        analysis_dict["analysis_id"] = str(analysis_id)
-        return analysis_dict
+        # analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
+        #analysis_dict["analysis_id"] = str(analysis_id)
+        return None
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore Unhandled Error")

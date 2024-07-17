@@ -2,25 +2,33 @@
 This module represent the function for the table micronutrient, guaranteed and its children element_compound:
 
 """
+
+
 class ElementCreationError(Exception):
     pass
+
 
 class ElementNotFoundError(Exception):
     pass
 
+
 class MicronutrientCreationError(Exception):
     pass
+
 
 class MicronutrientNotFoundError(Exception):
     pass
 
+
 class GuaranteedCreationError(Exception):
     pass
+
 
 class GuaranteedNotFoundError(Exception):
     pass
 
-def new_element(cursor,number,name_fr,name_en,symbol):
+
+def new_element(cursor, number, name_fr, name_en, symbol):
     """
     This function add a new element in the database.
 
@@ -34,19 +42,20 @@ def new_element(cursor,number,name_fr,name_en,symbol):
     Returns:
     - str: The UUID of the element.
     """
-    
+
     try:
         query = """
             INSERT INTO element_compound (number,name_fr,name_en,symbol)
             VALUES (%s,%s,%s,%s)
             RETURNING id
             """
-        cursor.execute(query, (number,name_fr,name_en,symbol))
+        cursor.execute(query, (number, name_fr, name_en, symbol))
         return cursor.fetchone()[0]
     except Exception:
         raise ElementCreationError
 
-def get_element_id_full_search(cursor,name):
+
+def get_element_id_full_search(cursor, name):
     """
     This function get the element in the database.
 
@@ -57,19 +66,20 @@ def get_element_id_full_search(cursor,name):
     Returns:
     - str: The UUID of the element.
     """
-    
+
     try:
         query = """
             SELECT id
             FROM element_compound
             WHERE name_fr ILIKE %s OR name_en ILIKE %s OR symbol = %s
             """
-        cursor.execute(query, (name,name,name))
+        cursor.execute(query, (name, name, name))
         return cursor.fetchone()[0]
     except Exception:
         raise ElementNotFoundError
 
-def get_element_id_name(cursor,name):
+
+def get_element_id_name(cursor, name):
     """
     This function get the element in the database.
 
@@ -80,7 +90,7 @@ def get_element_id_name(cursor,name):
     Returns:
     - str: The UUID of the element.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -91,12 +101,13 @@ def get_element_id_name(cursor,name):
                 name_fr = %s OR 
                 name_en = %s
             """
-        cursor.execute(query, (name,name))
+        cursor.execute(query, (name, name))
         return cursor.fetchone()[0]
     except Exception:
         raise ElementNotFoundError
 
-def get_element_id_symbol(cursor,symbol):
+
+def get_element_id_symbol(cursor, symbol):
     """
     This function get the element in the database.
 
@@ -107,7 +118,7 @@ def get_element_id_symbol(cursor,symbol):
     Returns:
     - str: The UUID of the element.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -122,7 +133,10 @@ def get_element_id_symbol(cursor,symbol):
     except Exception:
         raise ElementNotFoundError
 
-def new_micronutrient(cursor,read_name,value,unit,element_id,label_id,edited=False):
+
+def new_micronutrient(
+    cursor, read_name, value, unit, element_id, label_id, edited=False
+):
     """
     This function add a new micronutrient in the database.
 
@@ -137,7 +151,7 @@ def new_micronutrient(cursor,read_name,value,unit,element_id,label_id,edited=Fal
     Returns:
     - str: The UUID of the micronutrient.
     """
-    
+
     try:
         query = """
             INSERT INTO 
@@ -147,11 +161,12 @@ def new_micronutrient(cursor,read_name,value,unit,element_id,label_id,edited=Fal
             RETURNING 
                 id
             """
-        cursor.execute(query, (read_name,value,unit,element_id,label_id,edited))
+        cursor.execute(query, (read_name, value, unit, element_id, label_id, edited))
         return cursor.fetchone()[0]
     except Exception:
         raise MicronutrientCreationError
-    
+
+
 def get_micronutrient(cursor, micronutrient_id):
     """
     This function get the micronutrient in the database.
@@ -163,7 +178,7 @@ def get_micronutrient(cursor, micronutrient_id):
     Returns:
     - str: The UUID of the micronutrient.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -182,8 +197,9 @@ def get_micronutrient(cursor, micronutrient_id):
         return cursor.fetchone()
     except Exception:
         raise MicronutrientNotFoundError
-    
-def get_full_micronutrient(cursor,micronutrient_id):
+
+
+def get_full_micronutrient(cursor, micronutrient_id):
     """
     This function get the micronutrient in the database with the element.
 
@@ -192,7 +208,7 @@ def get_full_micronutrient(cursor,micronutrient_id):
     - micronutrient_id (str): The UUID of the micronutrient.
 
     """
-    
+
     try:
         query = """
             SELECT 
@@ -216,7 +232,8 @@ def get_full_micronutrient(cursor,micronutrient_id):
     except Exception:
         raise MicronutrientNotFoundError
 
-def get_all_micronutrients(cursor,label_id):
+
+def get_all_micronutrients(cursor, label_id):
     """
     This function get all the micronutrients in the database.
 
@@ -227,7 +244,7 @@ def get_all_micronutrients(cursor,label_id):
     Returns:
     - str: The UUID of the micronutrient.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -252,7 +269,8 @@ def get_all_micronutrients(cursor,label_id):
     except Exception:
         raise MicronutrientNotFoundError
 
-def new_guaranteed(cursor,read_name,value,unit,element_id,label_id,edited=False):
+
+def new_guaranteed(cursor, read_name, value, unit, element_id, label_id, edited=False):
     """
     This function add a new guaranteed in the database.
 
@@ -267,7 +285,7 @@ def new_guaranteed(cursor,read_name,value,unit,element_id,label_id,edited=False)
     Returns:
     - str: The UUID of the guaranteed.
     """
-    
+
     try:
         query = """
             INSERT INTO 
@@ -277,10 +295,11 @@ def new_guaranteed(cursor,read_name,value,unit,element_id,label_id,edited=False)
             RETURNING 
                 id
             """
-        cursor.execute(query, (read_name,value,unit,element_id,label_id,edited))
+        cursor.execute(query, (read_name, value, unit, element_id, label_id, edited))
         return cursor.fetchone()[0]
     except Exception:
         raise GuaranteedCreationError
+
 
 def get_guaranteed(cursor, guaranteed_id):
     """
@@ -293,7 +312,7 @@ def get_guaranteed(cursor, guaranteed_id):
     Returns:
     - str: The UUID of the guaranteed.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -313,8 +332,9 @@ def get_guaranteed(cursor, guaranteed_id):
         return cursor.fetchone()
     except Exception:
         raise GuaranteedNotFoundError
-    
-def get_full_guaranteed(cursor,guaranteed):
+
+
+def get_full_guaranteed(cursor, guaranteed):
     """
     This function get the guaranteed in the database with the element.
 
@@ -325,7 +345,7 @@ def get_full_guaranteed(cursor,guaranteed):
     Returns:
     - str: The UUID of the guaranteed.
     """
-    
+
     try:
         query = """
             SELECT 
@@ -349,7 +369,8 @@ def get_full_guaranteed(cursor,guaranteed):
     except Exception:
         raise GuaranteedNotFoundError
 
-def get_all_guaranteeds(cursor,label_id):
+
+def get_all_guaranteeds(cursor, label_id):
     """
     This function get all the guaranteed in the database.
 
@@ -360,7 +381,7 @@ def get_all_guaranteeds(cursor,label_id):
     Returns:
     - str: The UUID of the guaranteed.
     """
-    
+
     try:
         query = """
             SELECT 

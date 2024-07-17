@@ -2,16 +2,25 @@
 This module represent the function for the sub table of label_information
 
 """
+
+
 class SubLabelCreationError(Exception):
     pass
+
+
 class SubLabelNotFoundError(Exception):
     pass
+
+
 class SubTypeCreationError(Exception):
     pass
+
+
 class SubTypeNotFoundError(Exception):
     pass
 
-def new_sub_label(cursor, text_fr,text_en,label_id, sub_type_id, edited=False):
+
+def new_sub_label(cursor, text_fr, text_en, label_id, sub_type_id, edited=False):
     """
     This function creates a new sub label in the database.
 
@@ -39,6 +48,7 @@ def new_sub_label(cursor, text_fr,text_en,label_id, sub_type_id, edited=False):
         return cursor.fetchone()[0]
     except Exception:
         raise SubLabelCreationError("Error: could not create the sub label")
+
 
 def get_sub_label(cursor, sub_label_id):
     """
@@ -68,6 +78,7 @@ def get_sub_label(cursor, sub_label_id):
         return cursor.fetchone()
     except Exception:
         raise SubLabelNotFoundError("Error: could not get the sub label")
+
 
 def get_full_sub_label(cursor, sub_label_id):
     """
@@ -102,6 +113,7 @@ def get_full_sub_label(cursor, sub_label_id):
         return cursor.fetchone()
     except Exception:
         raise SubLabelNotFoundError("Error: could not get the full sub label")
+
 
 def get_all_sub_label(cursor, label_id):
     """
@@ -139,7 +151,8 @@ def get_all_sub_label(cursor, label_id):
     except Exception:
         raise SubLabelNotFoundError("Error: could not get the sub label")
 
-def update_sub_label(cursor, sub_label_id, text_fr, text_en,edited=True):
+
+def update_sub_label(cursor, sub_label_id, text_fr, text_en, edited=True):
     """
     This function updates the sub label in the database.
 
@@ -149,7 +162,7 @@ def update_sub_label(cursor, sub_label_id, text_fr, text_en,edited=True):
     - text_fr (str): The text in french.
     - text_en (str): The text in english.
     - edited (bool): The edited status of the sub label.
-    
+
     Returns:
     - None
     """
@@ -167,6 +180,7 @@ def update_sub_label(cursor, sub_label_id, text_fr, text_en,edited=True):
         cursor.execute(query, (text_fr, text_en, edited, sub_label_id))
     except Exception:
         raise SubLabelNotFoundError("Error: could not update the sub label")
+
 
 def new_sub_type(cursor, type_fr, type_en):
     """
@@ -194,6 +208,7 @@ def new_sub_type(cursor, type_fr, type_en):
     except Exception:
         raise SubTypeCreationError("Error: could not create the sub type")
 
+
 def get_sub_type_id(cursor, type_name):
     """
     This function gets the sub type from the database.
@@ -214,7 +229,13 @@ def get_sub_type_id(cursor, type_name):
             WHERE 
                 type_fr ILIKE %s OR type_en ILIKE %s
         """
-        cursor.execute(query, (type_name, type_name,))
+        cursor.execute(
+            query,
+            (
+                type_name,
+                type_name,
+            ),
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise SubTypeNotFoundError("Error: could not get the sub type")
