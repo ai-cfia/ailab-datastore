@@ -157,16 +157,24 @@ sequenceDiagram
                 loop for each picture set
                     DS-->DS: get_pictures(user_id, picture_set_id)
                 end
-            DS-->>BE: List of picture_set with pictures name
+            DS-->>BE: List of picture_set with pictures data
         BE-->>FE: Response : List of picture_set with pictures name
     User->>FE: Select Folder
         FE->>BE: /get-folder-content
-            BE->>DS: get_picture_set_content(user_id, picture_set_id)
-                loop for each picture
-                    DS-->DS: get_picture_hash(user_id, picture_id)
-                    DS-->DS: get_picture_inference(user_id, picture_id)
-                end
+            BE->>DS: get_pictures_inferences(user_id, picture_set_id)
+                DS-->DS: get_pictures_with_inferencse(user_id, picture_set_id)
             DS-->>BE: Return pictures with inferences
-        BE-->>FE: Send pictures
+            BE->>DS: get_pictures_blobs(user_id, picture_set_id)
+                DS-->DS: get_blobs(user_id, picture_set_id)
+            DS-->>BE: Return pictures blobs
+        BE-->>BE: cache pictures and inferences
+        BE-->>FE: Response : True
     FE-->>User: Display folder content (list of pictures)
+    User->>FE: Select Picture
+        FE->>BE: /get-picture
+            BE->>BE: get_picture_from_cache(user_id, picture_id)
+        BE-->>FE: Response : Picture with hash and inference
+    FE-->>User: Display picture with inference if exist
+
+
 ```
