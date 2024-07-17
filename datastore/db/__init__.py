@@ -7,24 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-NACHET_DB_URL = os.environ.get("NACHET_DB_URL")
-if NACHET_DB_URL is None or NACHET_DB_URL == "":
-    raise ValueError("NACHET_DB_URL is not set")
-
-NACHET_SCHEMA = os.environ.get("NACHET_SCHEMA")
-if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
-    raise ValueError("NACHET_SCHEMA is not set")
-
-FERTISCAN_DB_URL = os.environ.get("FERTISCAN_DB_URL")
-if FERTISCAN_DB_URL is None or FERTISCAN_DB_URL == "":
-    # raise ValueError("FERTISCAN_DB_URL is not set")
-    print("Warning: FERTISCAN_DB_URL not set")
-
-FERTISCAN_SCHEMA = os.environ.get("FERTISCAN_SCHEMA")
-if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
-    # raise ValueError("FERTISCAN_SCHEMA is not set")
-    print("Warning: FERTISCAN_SCHEMA not set")
-
 # def connect_db():
 #     """Connect to the postgresql database and return the connection."""
 #     connection = psycopg.connect(
