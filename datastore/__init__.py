@@ -113,7 +113,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
 
 
 async def get_user_container_client(
-    user_id, tier="user", storage_url=NACHET_STORAGE_URL
+    user_id, storage_url, account, key, tier="user"
 ):
     """
     Get the container client of a user
@@ -123,7 +123,7 @@ async def get_user_container_client(
 
     Returns: ContainerClient object
     """
-    sas = blob.get_account_sas(NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
+    sas = blob.get_account_sas(account, key)
     # Get the container client
     container_client = await azure_storage.mount_container(
         storage_url, user_id, True, tier, sas

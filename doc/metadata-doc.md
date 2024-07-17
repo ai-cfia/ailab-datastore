@@ -45,7 +45,7 @@ process is complete, the upload process will come into play, enabling the
 distribution of the files between the BLOB storage and a PostgreSQL database.
 
  We are currently improving the process to make it more efficient across all our
- project. 
+ project.
 
 ``` mermaid
 

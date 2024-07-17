@@ -68,7 +68,9 @@ flowchart LR;
 ```
 
 ## Database Architecture
+
   For more detail on each app database architecture go check [Nachet Architecture](nachetArchitecture.md) and [Fertiscan Architecture](FertiscanArchitecture.md).
+  
 ### Global Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
@@ -78,4 +80,3 @@ flowchart LR;
 
 - A User can verify the result of a picture that went through the pipeline and
   the changes are saved for training.
-
