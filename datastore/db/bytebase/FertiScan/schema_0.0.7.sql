@@ -7,12 +7,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-        CREATE TABLE "fertiscan_0.0.7"."users" (
+    CREATE TABLE "fertiscan_0.0.7"."users" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "email" text NOT NULL UNIQUE,
     "registration_date" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" timestamp,
-    "default_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id)
+    "updated_at" timestamp
     );
 
     CREATE TABLE "fertiscan_0.0.7"."picture_set" (
@@ -23,6 +22,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "name" text
     );
         
+    alter table "fertiscan_0.0.7".users ADD "default_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id);
+
     CREATE TABLE "fertiscan_0.0.7"."picture" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
     "picture" json NOT NULL,
@@ -47,15 +48,22 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "name" text,
     "address" text NOT NULL,
     "region_id" uuid References "fertiscan_0.0.7".region(id)
+    );    
+    
+    CREATE TABLE "fertiscan_0.0.7"."organization_information" (
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "name" text NOT NULL,
+        "website" text,
+        "phone_number" text,
     );
 
     CREATE TABLE "fertiscan_0.0.7"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text NOT NULL,
-    "website" text,
-    "phone_number" text,
+    "information_id" uuid REFERENCES "fertiscan_0.0.7".organization_contact(id),
     "main_location_id" uuid REFERENCES "fertiscan_0.0.7".location(id)
     );
+
 
     Alter table "fertiscan_0.0.7".location ADD "owner_id" uuid REFERENCES "fertiscan_0.0.7".organization(id);
 
@@ -70,13 +78,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "unit" text NOT NULL,
     "to_si_unit" float
-    );
-
-    CREATE TABLE "fertiscan_0.0.7"."metric" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "value" float NOT NULL,
-    "unit_id" uuid REFERENCES "fertiscan_0.0.7".unit(id),
-    "edited" boolean
     );
 
     CREATE TABLE "fertiscan_0.0.7"."element_compound" (
@@ -95,9 +96,22 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "n" float,
     "p" float,
     "k" float,
-    "weight" uuid REFERENCES "fertiscan_0.0.7".metric(id),
-    "density" uuid REFERENCES "fertiscan_0.0.7".metric(id),
-    "volume" uuid REFERENCES "fertiscan_0.0.7".metric(id)
+    "company_info_id" uuid REFERENCES "fertiscan_0.0.7".organization_information(id),
+    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.7".organization_information(id)
+    );
+
+    CREATE TABLE "fertiscan_0.0.7"."metric_type" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "type" text NOT NULL
+    );
+
+    CREATE TABLE "fertiscan_0.0.7"."metric" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "value" float NOT NULL,
+    "edited" boolean,
+    "unit_id" uuid REFERENCES "fertiscan_0.0.7".unit(id),
+    "metric_type_id" uuid REFERENCES "fertiscan_0.0.7".metric_type(id),
+    label_id uuid REFERENCES "fertiscan_0.0.7".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.7"."sub_type" (
@@ -106,14 +120,20 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "type_en" text unique NOT NULL
     );
 
-    
+    -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
+    CREATE TYPE AS LANGUAGE (
+        "fr" text,
+        "en" text
+    );
+
     CREATE TABLE "fertiscan_0.0.7"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "humidity" float,
     "ph" float,
     "solubility" float,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id)
+    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
+    "language" LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.7"."sub_label" (
@@ -132,7 +152,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "unit" text NOT NULL,
     "element_id" int REFERENCES "fertiscan_0.0.7".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
-    "edited" boolean
+    "edited" boolean,
+    "language" LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.7"."guaranteed" (
@@ -149,8 +170,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "organic" boolean NOT NULL,
     "name" text NOT NULL,
+    "value" float,
+    "unit" text,
     "edited" boolean,
     "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id)
+    "language" LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.7"."inspection" (
@@ -161,8 +185,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "inspector_id" uuid REFERENCES "fertiscan_0.0.7".users(id),
     "label_info_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
     "sample_id" uuid REFERENCES "fertiscan_0.0.7".sample(id),
-    "company_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),
-    "manufacturer_id" uuid REFERENCES "fertiscan_0.0.7".organization(id),
     "picture_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id)
     );
 
