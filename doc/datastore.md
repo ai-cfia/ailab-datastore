@@ -46,7 +46,7 @@ your valuable data.
 ``` mermaid
 
 ---
-title: Nachet Layers
+title: Project Layers
 ---
 flowchart LR;
     FE(Frontend)
@@ -68,8 +68,12 @@ flowchart LR;
 ```
 
 ## Database Architecture
+
+  For more detail on each app database architecture go check [Nachet
+  Architecture](Nachet/nachet-architecture.md) and [Fertiscan
+  Architecture](FertiScan/fertiScan-architecture.md).
   
-### Needs
+### Global Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
   blob Storage.
@@ -78,6 +82,3 @@ flowchart LR;
 
 - A User can verify the result of a picture that went through the pipeline and
   the changes are saved for training.
-
-- A User can verify an inference by confirming the positive result, or entering
-  the right value.

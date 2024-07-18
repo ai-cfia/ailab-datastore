@@ -243,7 +243,7 @@ class TestGetFolderUUID(unittest.TestCase):
     
     def tearDown(self):
         self.container_client.delete_container()
-    0
+    
     def test_get_folder_uuid(self):
         result = asyncio.run(get_folder_uuid(self.container_client,self.folder_name))
         self.assertEqual(result, self.folder_uuid)
