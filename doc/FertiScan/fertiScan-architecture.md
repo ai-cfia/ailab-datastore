@@ -68,10 +68,15 @@ erDiagram
   }
   organization{
     uuid id PK
-    string name "unique"
+    uuid information_id FK
+    uuid main_location_id FK
+  }
+  organization_information{
+    uuid id PK
+    string name 
     string website
     string phone_number
-    uuid main_location_id FK
+    uuid location_id FK
   }
   location{
     uuid id PK
@@ -101,10 +106,8 @@ erDiagram
     float n
     float p
     float k
-
-    uuid weight_id FK
-    uuid density_id FK
-    uuid volume_id FK
+    uuid company_info_id FK
+    uuid manufacturer_info_id FK
   }
   sub_label{
     uuid id PK
@@ -132,6 +135,12 @@ erDiagram
     float value
     boolean edited
     uuid unit_id FK
+    uuid metric_type_id FK
+    uuid label_id FK
+  }
+  metric_type{
+    uuid id PK
+    text type
   }
   unit{
     uuid id PK
@@ -171,28 +180,28 @@ erDiagram
   }
   inspection ||--|| sample :has
   picture_set ||--|{picture : contains
-  inspection ||--o| organization: manufacturer
-  inspection ||--o| organization: company
   fertilizer ||--|| organization: responsable
-  location }|--|| organization: host
-  organization ||--|| location: HQ
+  organization_information ||--|| location: Hosts
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
   inspection }|--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
-  label_information ||--|o metric: weight
-  label_information ||--|o metric: density
-  label_information ||--|o metric: volume
+  label_information ||--|{ metric: has
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
   label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
+  label_information ||--o| organization_information: company
+  label_information ||--o| organization_information: manufacturer
+  organization_information ||--|| organization: defines
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
   metric ||--|| unit: defines
+  metric ||--|| metric_type: defines
+
   micronutrient ||--|| element_compound: is
   guaranteed ||--|| element_compound: is
 
