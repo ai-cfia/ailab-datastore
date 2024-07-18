@@ -805,6 +805,7 @@ async def get_seed_info(cursor):
 
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
+    This also retrieve for each picture in the picture set their name, if an inference exist and if the picture is validated.
 
     Args:
         user_id (str): id of the user
@@ -813,13 +814,33 @@ async def get_picture_sets_info(cursor, user_id: str):
     if not user.is_a_user_id(cursor=cursor, user_id=user_id):
         raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
 
-    result = {}
+    result = []
     picture_sets = picture.get_user_picture_sets(cursor, user_id)
     for picture_set in picture_sets:
+        picture_set_info = {}
         picture_set_id = picture_set[0]
         picture_set_name = picture_set[1]
-        nb_picture = picture.count_pictures(cursor, picture_set_id)
-        result[str(picture_set_id)] = [picture_set_name, nb_picture]
+        
+        picture_set_info["picture_set_id"] = picture_set_id
+        picture_set_info["folder_name"] = picture_set_name
+        
+        pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
+        picture_set_info["nb_pictures"] = len(pictures)
+        
+        picture_set_info["pictures"] = []
+        for pic in pictures :
+            picture_info = {}
+            picture_id = pic[0]
+            picture_info["picture_id"] = picture_id
+
+            is_validated = picture.is_picture_validated(cursor, picture_id)
+            inference_exist = picture.check_picture_inference_exist(cursor, picture_id)
+            picture_info["is_validated"] = is_validated
+            picture_info["inference_exist"] = inference_exist
+            
+            picture_set_info["pictures"].append(picture_info)
+        result.append(picture_set_info)
+    print(result)
     return result
 
 
