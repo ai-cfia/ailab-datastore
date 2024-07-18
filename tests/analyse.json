@@ -10,8 +10,17 @@
     "fertiliser_name": "SuperGrow 20-20-20",
     "registration_number": "F12345678",
     "lot_number": "L987654321",
-    "weight_kg": "25",
-    "weight_lb": "55",
+    "weight": [
+        {
+            "value": "25",
+            "unit": "kg"
+        },
+        {
+            "value": "55",
+            "unit": "lb"
+        }
+        
+    ],
     "density": "1.2 g/cm³",
     "volume": "20.8 L",
     "npk": "20-20-20",
