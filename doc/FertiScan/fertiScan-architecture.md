@@ -6,7 +6,7 @@
   blob Storage.
 
 - A User can do an analysis of a label during its inspection and must confirm
-  the digitalization of the label_ information.
+  the digitalization of the label_information.
 
 - A User must be able to store its inspection about fertilizers
 
@@ -16,7 +16,7 @@
 
 This is the doc about the FertiScan Database Architecture
 
-``` mermaid
+```mermaid
 
 ---
 title: FertiScan DB Structure
@@ -34,15 +34,14 @@ erDiagram
     string name
     json picture_set
     uuid owner_id FK
-    timestamp upload_date
+    date upload_date
   }
   picture{
     uuid id PK
     json picture
-    boolean used_for_digitalization
-    timestamp upload_date 
+    boolean verified
+    timestamp upload_date
     uuid picture_set_id FK
-    uuid parent_picture_id FK
   }
   inspection {
     uuid id PK
@@ -53,8 +52,6 @@ erDiagram
     uuid label_info_id Fk
     uuid fertilizer_id FK
     uuid sample_id FK
-    uuid company_id FK
-    uuid manufacturer_id FK
     uuid picture_set_id FK
   }
   fertilizer{
@@ -73,21 +70,22 @@ erDiagram
   }
   organization_information{
     uuid id PK
-    string name 
+    string name
     string website
     string phone_number
-    uuid location_id FK
   }
   location{
     uuid id PK
+    string name
     string address
-    uuid organization_id FK
     uuid region_id FK
+    uuid owner_id FK
   }
   sample{
     uuid id PK
     uuid number
-    Date collection_date
+    date collection_date
+    uuid location FK
   }
   province{
     int id PK
@@ -111,24 +109,25 @@ erDiagram
   }
   sub_label{
     uuid id PK
-    text content_fr
-    text content_en
+    text text_content_fr
+    text text_content_en
     boolean edited
     uuid label_id FK
     uuid sub_type_id FK
   }
   sub_type{
-    id uuid PK
+    uuid id PK
     text type_fr "unique"
     text type_en "unique"
   }
   specification{
-    id uuid PK
+    uuid id PK
     float humidity
     float ph
     float solubility
     boolean edited
     uuid label_id FK
+    language_type language
   }
   metric{
     uuid id PK
@@ -155,6 +154,7 @@ erDiagram
     boolean edited
     uuid label_id FK
     int element_id FK
+    language_type language
   }
   guaranteed{
     uuid id PK
@@ -169,11 +169,15 @@ erDiagram
     uuid id PK
     boolean organic
     string name
+    float value
+    string unit
     boolean edited
     uuid label_id FK
+    language_type language
   }
   element_compound{
     int id PK
+    int number
     string name_fr
     string name_en
     string symbol
@@ -206,3 +210,7 @@ erDiagram
   guaranteed ||--|| element_compound: is
 
 ```
+
+**Notes:**
+
+- `language_type` is a created enum of values `fr` and `en`

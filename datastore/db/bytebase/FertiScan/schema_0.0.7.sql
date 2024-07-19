@@ -54,13 +54,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "name" text NOT NULL,
         "website" text,
-        "phone_number" text,
+        "phone_number" text
     );
 
     CREATE TABLE "fertiscan_0.0.7"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "name" text NOT NULL,
-    "information_id" uuid REFERENCES "fertiscan_0.0.7".organization_contact(id),
+    "information_id" uuid REFERENCES "fertiscan_0.0.7".organization_information(id),
     "main_location_id" uuid REFERENCES "fertiscan_0.0.7".location(id)
     );
 
@@ -121,10 +120,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
     -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
-    CREATE TYPE AS LANGUAGE (
-        "fr" text,
-        "en" text
-    );
+    CREATE TYPE language_type AS ENUM ('fr', 'en');
 
     CREATE TABLE "fertiscan_0.0.7"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -133,7 +129,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "solubility" float,
     "edited" boolean,
     "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
-    "language" LANGUAGE
+    "language" language_type
     );
 
     CREATE TABLE "fertiscan_0.0.7"."sub_label" (
@@ -153,7 +149,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "element_id" int REFERENCES "fertiscan_0.0.7".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
     "edited" boolean,
-    "language" LANGUAGE
+    "language" language_type
     );
 
     CREATE TABLE "fertiscan_0.0.7"."guaranteed" (
@@ -173,8 +169,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float,
     "unit" text,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id)
-    "language" LANGUAGE
+    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
+    "language" language_type
     );
 
     CREATE TABLE "fertiscan_0.0.7"."inspection" (
