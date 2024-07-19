@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import uuid
 import datastore
 import datastore.db.queries.picture as picture
+import datastore.db.queries.inspection as inspection
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.inspection as data_inspection
 import datastore.blob as blob
@@ -50,8 +51,8 @@ async def register_analysis(
         #Register analysis in the database
         formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
         
-                
-        return None
+        analysis_db = inspection.new_inspection_with_label_info(cursor, user_id, picture_set_id, formatted_analysis)
+        return analysis_db
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore Unhandled Error")
