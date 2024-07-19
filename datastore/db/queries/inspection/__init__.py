@@ -41,6 +41,30 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
         return cursor.fetchone()[0]
     except Exception:
         raise InspectionCreationError("Datastore inspection unhandeled error")
+    
+def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
+    """
+    This function calls the new_inspection function within the database and adds the label information to the inspection.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user.
+    - picture_set_id (str): The UUID of the picture set.
+    - label_json (str): The label information in a json format.
+    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
+
+    Returns:
+    - The json with ids of the inspection and the label information.
+    """
+    try:
+        query = """
+            SELECT new_inspection(%s, %s, %s)
+            """
+        cursor.execute(query, (user_id, picture_set_id, label_json))
+        return cursor.fetchone()
+    except Exception as e:
+        raise InspectionCreationError(e.__str__())
+
 
 
 def is_inspection_verified(cursor, inspection_id):
