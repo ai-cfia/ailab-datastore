@@ -54,13 +54,13 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "name" text NOT NULL,
         "website" text,
-        "phone_number" text,
+        "phone_number" text
     );
 
     CREATE TABLE "fertiscan_0.0.7"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text NOT NULL,
-    "information_id" uuid REFERENCES "fertiscan_0.0.7".organization_contact(id),
+    "information_id" uuid REFERENCES "fertiscan_0.0.7".organization_information(id),
     "main_location_id" uuid REFERENCES "fertiscan_0.0.7".location(id)
     );
 
@@ -111,7 +111,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.7".unit(id),
     "metric_type_id" uuid REFERENCES "fertiscan_0.0.7".metric_type(id),
-    label_id uuid REFERENCES "fertiscan_0.0.7".label_information(id)
+    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.7"."sub_type" (
@@ -121,10 +121,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
     -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
-    CREATE TYPE AS LANGUAGE (
-        "fr" text,
-        "en" text
-    );
+    CREATE TYPE LANGUAGE AS ENUM ('fr', 'en');
 
     CREATE TABLE "fertiscan_0.0.7"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -173,7 +170,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float,
     "unit" text,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id)
+    "label_id" uuid REFERENCES "fertiscan_0.0.7".label_information(id),
     "language" LANGUAGE
     );
 
@@ -194,7 +191,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "registration_number" text,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "update_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.7".inspection,
+    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.7".inspection(id),
     "owner_id" uuid REFERENCES "fertiscan_0.0.7".organization(id)
     );
 
