@@ -70,9 +70,9 @@ BEGIN
 	RETURNING id INTO manufacturer_id;
 -- Manufacturer end
 
---LABEL INFORMATION
+-- LABEL INFORMATION
     INSERT INTO "fertiscan_0.0.7".label_information (
-        lot_number, npk, registration_number, n, p, k, weight, density, volume
+        lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
     ) VALUES (
         input_json->'product'->>'lot_number',
         input_json->'product'->>'npk',
@@ -80,6 +80,8 @@ BEGIN
         (input_json->'product'->>'n')::float,
         (input_json->'product'->>'p')::float,
         (input_json->'product'->>'k')::float,
+		company_id,
+		manufacturer_id
     )
     RETURNING id INTO label_info_id;
 
@@ -192,7 +194,7 @@ BEGIN
  			float_value := read_value::float
 	        INSERT INTO "fertiscan_0.0.7".ingredient (organic, name, value, unit, edited, label_id, language)
             VALUES (
-                TRUE,  -- Assuming all are organic ingredients
+                TRUE,  -- organic ingredients
                 record->>'nutrient',
                 float_value,
                 read_unit,
@@ -204,10 +206,10 @@ BEGIN
     END LOOP;
    -- INORGANIC
       -- Loop through each language ('en' and 'fr')
-    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'organic_ingredients')
+    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'inert_ingredients')
     LOOP
     	-- Loop through each ingredient in the current language
-        FOR read_value IN SELECT * FROM jsonb_array_elements_text(input_json->'organic_ingredients'->ingredient_language )
+        FOR read_value IN SELECT * FROM jsonb_array_elements_text(input_json->'inert_ingredients'->ingredient_language )
         LOOP
         	INSERT INTO "fertiscan_0.0.7".ingredient (organic, name, value, unit, edited, label_id, language)
             VALUES (
@@ -225,14 +227,14 @@ BEGIN
 
 -- SUB LABELS
 	-- Loop through each sub_type
-    FOR sub_type_rec IN SELECT type_en FROM sub_type
+    FOR sub_type_rec IN SELECT id,type_en FROM sub_type
     LOOP
     	-- Extract the French and English arrays for the current sub_type
         fr_values := input_json->sub_type_rec.type_en->'fr';
         en_values := input_json->sub_type_rec.type_en->'en';
         -- Ensure both arrays are of the same length
         IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-		  	FOR i IN 0..cardinality(jsonb_array_elements_text(fr_values)-1)
+		  	FOR i IN 0..(jsonb_array_length(fr_values) - 1)
 	   		LOOP
 	   			INSERT INTO "fertiscan_0.0.7".sub_label (text_content_fr,text_content_en, label_id, edited, sub_type_id)
 	            VALUES (
@@ -252,32 +254,31 @@ BEGIN
 	fr_values := input_json->sub_type_rec.type_en->'fr';
 	en_values := input_json->sub_type_rec.type_en->'en';
 	-- Ensure both arrays are of the same length
--- TODO: MIght not be the same!!!---------------------------------------------------
-    IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-		FOR record IN jsonb_array_elements(en_values)
-	   	LOOP
-	   		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
-			VALUES (
-				record->> 'nutrient',
-	            (record->> 'value')::float,
-	            record->> 'unit',
-				FALSE,
-				label_id,
-				'en'
-			);
-		END LOOP;
-		FOR read_value IN jsonb_array_elements(fr_values)
-			INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
-			VALUES (
-				record->> 'nutrient',
-	            (record->> 'value')::float,
-	            record->> 'unit',
-				FALSE,
-				label_id,
-				'fr'
-			);
-		END LOOP;
-	END IF;
+    --IF jsonb_array_length(fr_values) <> jsonb_array_length(en_values) THEN
+	--	RAISE EXCEPTION 'French and English micronutrient arrays must be of the same length';
+	FOR record IN jsonb_array_elements(en_values)
+	LOOP
+		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
+		VALUES (
+			record->> 'nutrient',
+	        (record->> 'value')::float,
+	        record->> 'unit',
+			FALSE,
+			label_id,
+			'en'
+		);
+	END LOOP;
+	FOR record IN jsonb_array_elements(fr_values)
+		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
+		VALUES (
+			record->> 'nutrient',
+	        (record->> 'value')::float,
+	        record->> 'unit',
+			FALSE,
+			label_id,
+			'fr'
+		);
+	END LOOP;
 --MICRONUTRIENTS ENDS
 
 -- GUARANTEED
