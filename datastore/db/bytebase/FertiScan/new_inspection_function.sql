@@ -1,5 +1,5 @@
 -- Function to register a new inspection
-CREATE FUNCTION "fertiscan_0.0.8".new_inspection(user_id uuid,picture_set_id uuid,input_json jsonb)
+CREATE OR replace FUNCTION "fertiscan_0.0.8".new_inspection(user_id uuid,picture_set_id uuid,input_json jsonb)
 RETURNS jsonb AS $$
 DECLARE
     label_id uuid;
@@ -31,13 +31,13 @@ BEGIN
     WHERE address ILIKE input_json->'company'->>'address'
     LIMIT 1;
    
-   IF location_id IS NULL THEN 
+	IF location_id IS NULL THEN 
         INSERT INTO "fertiscan_0.0.8".location (address)
         VALUES (
             input_json->'company'->>'address'
         )
         RETURNING id INTO location_id;
-       
+    END IF;   
 	INSERT INTO "fertiscan_0.0.8".organization_information (name,website,phone_number,location_id)
 	VALUES (
 	        input_json->'company'->>'name',
@@ -126,7 +126,7 @@ BEGIN
 	   	 -- Insert into metric for weight
 	    INSERT INTO "fertiscan_0.0.6".metric (value, unit_id, edited,metric_type_id,label_id)
 	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
-	END LOOP;
+	 END LOOP;
 -- Weight end
 	
 --DENSITY
@@ -333,5 +333,6 @@ BEGIN
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
 
 	RETURN input_json;
+
 END;
-$$language plpgsql;
+$$ LANGUAGE plpgsql;
