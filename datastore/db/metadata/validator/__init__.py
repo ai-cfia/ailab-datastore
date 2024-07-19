@@ -1,9 +1,8 @@
-from datetime import date
-from pydantic import BaseModel, ValidationError
-from typing import Optional
 import uuid
+from datetime import date
+from typing import Optional
 
-
+from pydantic import BaseModel, ValidationError
 
 
 class ClientData(BaseModel):
@@ -82,6 +81,42 @@ class ProcessedPicture(BaseModel):
 class ClientFeedback(BaseModel):
     correctIdentification: bool
     historicalComparison: str
+
+
+class AnalysisForm(BaseModel):
+    company_name: str | None = None
+    company_address: str | None = None
+    company_website: str | None = None
+    company_phone_number: str | None = None
+    manufacturer_name: str | None = None
+    manufacturer_address: str | None = None
+    manufacturer_website: str | None = None
+    manufacturer_phone_number: str | None = None
+    fertiliser_name: str | None = None
+    registration_number: str | None = None
+    lot_number: str | None = None
+    weight_kg: float | None = None
+    weight_lb: float | None = None
+    density: float | None = None
+    volume: float | None = None
+    npk: str | None = None
+    warranty: str | None = None
+    cautions_en: list[str] | None = None
+    instructions_en: list[str] | None = None
+    micronutrients_en: list[str] | None = None
+    organic_ingredients_en: list[str] | None = None
+    inert_ingredients_en: list[str] | None = None
+    specifications_en: list[str] | None = None
+    first_aid_en: list[str] | None = None
+    cautions_fr: list[str] | None = None
+    instructions_fr: list[str] | None = None
+    micronutrients_fr: list[str] | None = None
+    organic_ingredients_fr: list[str] | None = None
+    inert_ingredients_fr: list[str] | None = None
+    specifications_fr: list[str] | None = None
+    first_aid_fr: list[str] | None = None
+    guaranteed_analysis: list[str] | None = None
+    verified: bool = False
 
 
 def is_valid_uuid(val):

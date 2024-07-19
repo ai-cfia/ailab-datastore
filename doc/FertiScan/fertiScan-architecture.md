@@ -73,6 +73,7 @@ erDiagram
     string name
     string website
     string phone_number
+    string location_id FK
   }
   location{
     uuid id PK

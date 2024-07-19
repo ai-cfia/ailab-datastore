@@ -3,6 +3,8 @@ This module represent the function for the table inspection:
     
 """
 
+from psycopg import Cursor
+
 
 class InspectionCreationError(Exception):
     pass
@@ -12,35 +14,59 @@ class InspectionUpdateError(Exception):
     pass
 
 
-def new_inspection(cursor, user_id, picture_set_id, verified=False):
+def new_inspection(
+    cursor: Cursor, user_id: str, picture_set_id: str, input: str
+) -> str:
     """
-    This function uploads a new inspection to the database.
+    Calls the new_inspection function in the PostgreSQL database and returns the inspection ID.
 
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - user_id (str): The UUID of the user.
-    - picture_set_id (str): The UUID of the picture set.
-    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
+    Args:
+        cursor (Cursor): The database cursor for executing SQL queries.
+        user_id (str): The UUID of the user.
+        picture_set_id (str): The UUID of the picture set.
+        input (str): The input data as a JSON string.
 
     Returns:
-    - The UUID of the inspection.
+        str: The UUID of the created inspection.
     """
 
-    try:
-        query = """
-            INSERT INTO inspection (
-                inspector_id,
-                picture_set_id,
-                verified)
-            VALUES 
-                (%s, %s, %s)
-            RETURNING 
-                id
-            """
-        cursor.execute(query, (user_id, picture_set_id, verified))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise InspectionCreationError("Datastore inspection unhandeled error")
+    query = """
+    SELECT new_inspection(%s, %s, %s);
+    """
+    cursor.execute(query, (str(user_id), str(picture_set_id), input))
+    inspection_id = cursor.fetchone()[0]
+    return inspection_id
+
+
+# def new_inspection(cursor, user_id, picture_set_id, verified=False):
+#     """
+#     This function uploads a new inspection to the database.
+
+#     Parameters:
+#     - cursor (cursor): The cursor of the database.
+#     - user_id (str): The UUID of the user.
+#     - picture_set_id (str): The UUID of the picture set.
+#     - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
+
+#     Returns:
+#     - The UUID of the inspection.
+#     """
+
+#     try:
+#         query = """
+#             INSERT INTO inspection (
+#                 inspector_id,
+#                 picture_set_id,
+#                 verified)
+#             VALUES
+#                 (%s, %s, %s)
+#             RETURNING
+#                 id
+#             """
+#         cursor.execute(query, (user_id, picture_set_id, verified))
+#         return cursor.fetchone()[0]
+#     except Exception:
+#         raise InspectionCreationError("Datastore inspection unhandeled error")
 
 
 def is_inspection_verified(cursor, inspection_id):
