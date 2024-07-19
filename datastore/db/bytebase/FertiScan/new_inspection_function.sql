@@ -1,42 +1,44 @@
 -- Function to register a new inspection
-CREATE OR REPLACE FUNCTION new_inspection(user_id uuid,picture_set_id uuid,input_json jsonb)
-RETURNS uuid AS $$
+CREATE FUNCTION "fertiscan_0.0.8".new_inspection(user_id uuid,picture_set_id uuid,input_json jsonb)
+RETURNS jsonb AS $$
 DECLARE
-	label_id uuid;
-	sub_type_rec RECORD;
+    label_id uuid;
+    sub_type_rec RECORD;
     fr_values jsonb;
     en_values jsonb;
-	read_language text;
-	record jsonb;
+    read_language text;
+    record jsonb;
     inspection_id uuid;
     company_id uuid;
     location_id uuid;
+    manufacturer_location_id uuid;
     manufacturer_id uuid;
-    label_info_id uuid;
     read_value text;
     read_unit text;
     metric_type_id uuid;
     value_float float;
-   unit_id uuid;
-  org_id uuid;
-  i int;
+    unit_id uuid;
+    specification_id uuid;
+    sub_label_id uuid;
+    ingredient_language text;
+    result_json jsonb := '{}';
 BEGIN
 	
 -- COMPANY
 	-- Check if company location exists by address
     SELECT id INTO location_id
-    FROM "fertiscan_0.0.7".location
+    FROM "fertiscan_0.0.8".location
     WHERE address ILIKE input_json->'company'->>'address'
     LIMIT 1;
    
-   IF location_id NULL THEN 
-        INSERT INTO "fertiscan_0.0.7".location (address)
+   IF location_id IS NULL THEN 
+        INSERT INTO "fertiscan_0.0.8".location (address)
         VALUES (
             input_json->'company'->>'address'
         )
         RETURNING id INTO location_id;
        
-	INSERT INTO "fertiscan_0.0.7".organization_information (name,website,phone_number,location_id)
+	INSERT INTO "fertiscan_0.0.8".organization_information (name,website,phone_number,location_id)
 	VALUES (
 	        input_json->'company'->>'name',
             input_json->'company'->>'website',
@@ -44,23 +46,27 @@ BEGIN
             location_id
 	)
 	RETURNING id INTO company_id;
+	
+	-- Update input_json with company_id
+	input_json := jsonb_set(input_json, '{company,id}', to_jsonb(company_id));
+
 -- COMPANY END
 
 -- MANUFACTURER
 	-- Check if company location exists by address
     SELECT id INTO location_id
-    FROM "fertiscan_0.0.7".location
+    FROM "fertiscan_0.0.8".location
     WHERE address ILIKE input_json->'manufacturer'->>'address'
-    LIMIT 1;
+	LIMIT 1;
    
-   IF location_id NULL THEN 
-        INSERT INTO "fertiscan_0.0.7".location (address)
+	IF location_id IS NULL THEN 
+        INSERT INTO "fertiscan_0.0.8".location (address)
         VALUES (
             input_json->'manufacturer'->>'address'
         )
         RETURNING id INTO location_id;
-       
-	INSERT INTO "fertiscan_0.0.7".organization_information (name,website,phone_number,location_id)
+    END IF;
+	INSERT INTO "fertiscan_0.0.8".organization_information (name,website,phone_number,location_id)
 	VALUES (
 	        input_json->'manufacturer'->>'name',
             input_json->'manufacturer'->>'website',
@@ -68,10 +74,13 @@ BEGIN
             location_id
 	)
 	RETURNING id INTO manufacturer_id;
+	
+	-- Update input_json with company_id
+	input_json := jsonb_set(input_json, '{manufacturer,id}', to_jsonb(manufacturer_id));
 -- Manufacturer end
 
 -- LABEL INFORMATION
-    INSERT INTO "fertiscan_0.0.7".label_information (
+    INSERT INTO "fertiscan_0.0.8".label_information (
         lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
     ) VALUES (
         input_json->'product'->>'lot_number',
@@ -83,9 +92,11 @@ BEGIN
 		company_id,
 		manufacturer_id
     )
-    RETURNING id INTO label_info_id;
+    RETURNING id INTO label_id;
+		
+	-- Update input_json with company_id
+	input_json := jsonb_set(input_json, '{product,id}', to_jsonb(label_id));
 
-    RETURN label_id;
 --LABEL END
 
 --WEIGHT
@@ -115,14 +126,15 @@ BEGIN
 	   	 -- Insert into metric for weight
 	    INSERT INTO "fertiscan_0.0.6".metric (value, unit_id, edited,metric_type_id,label_id)
 	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	 END LOOP;
 -- Weight end
 	
 --DENSITY
- 	read_value := input_json -> 'product' -> 'density'->> 'value'
- 	read_unit := := input_json -> 'product' -> 'density'->> 'unit'
+ 	read_value := input_json -> 'product' -> 'density'->> 'value';
+ 	read_unit := input_json -> 'product' -> 'density'->> 'unit';
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
-		value_float = read_value::float
+		value_float = read_value::float;
 	    -- Check if the density_unit exists in the unit table
 	    SELECT id INTO unit_id FROM "fertiscan_0.0.6".unit WHERE unit = read_unit;
 	
@@ -143,11 +155,11 @@ BEGIN
 -- DENSITY END
 
 --VOLUME
- 	read_value := input_json -> 'product' -> 'volume'->> 'value'
- 	read_unit := := input_json -> 'product' -> 'volume'->> 'unit'
+ 	read_value := input_json -> 'product' -> 'volume'->> 'value';
+ 	read_unit := input_json -> 'product' -> 'volume'->> 'unit';
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
-		value_float = read_value::float
+		value_float = read_value::float;
 	    -- Check if the density_unit exists in the unit table
 	    SELECT id INTO unit_id FROM "fertiscan_0.0.6".unit WHERE unit = read_unit;
 	
@@ -176,7 +188,15 @@ BEGIN
    			FALSE,
    			'en',
    			label_id
-    )
+    ),
+    (
+		input_json->'specifications'->'fr'->>'humidity',
+		input_json->'specifications'->'fr'->>'ph',
+   		input_json->'specifications'->'fr'->>'solubility',
+   		FALSE,
+   		'fr',
+   		label_id
+	)
     RETURNING id INTO specification_id;
 -- SPECIFICATION END
 
@@ -189,14 +209,14 @@ BEGIN
         FOR record IN SELECT * FROM jsonb_array_elements(input_json->'organic_ingredients'->ingredient_language )
         LOOP
             -- Extract values from the current ingredient record
-	        read_value := record->> 'value'
- 			read_unit := := record ->> 'unit'
- 			float_value := read_value::float
-	        INSERT INTO "fertiscan_0.0.7".ingredient (organic, name, value, unit, edited, label_id, language)
+	        read_value := record->> 'value';
+ 			read_unit := record ->> 'unit';
+ 			value_float := read_value::float;
+	        INSERT INTO "fertiscan_0.0.8".ingredient (organic, name, value, unit, edited, label_id, language)
             VALUES (
                 TRUE,  -- organic ingredients
                 record->>'nutrient',
-                float_value,
+                value_float,
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
@@ -211,7 +231,7 @@ BEGIN
     	-- Loop through each ingredient in the current language
         FOR read_value IN SELECT * FROM jsonb_array_elements_text(input_json->'inert_ingredients'->ingredient_language )
         LOOP
-        	INSERT INTO "fertiscan_0.0.7".ingredient (organic, name, value, unit, edited, label_id, language)
+        	INSERT INTO "fertiscan_0.0.8".ingredient (organic, name, value, unit, edited, label_id, language)
             VALUES (
                 TRUE,  -- Assuming all are organic ingredients
                 read_value,
@@ -236,7 +256,7 @@ BEGIN
         IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
 		  	FOR i IN 0..(jsonb_array_length(fr_values) - 1)
 	   		LOOP
-	   			INSERT INTO "fertiscan_0.0.7".sub_label (text_content_fr,text_content_en, label_id, edited, sub_type_id)
+	   			INSERT INTO "fertiscan_0.0.8".sub_label (text_content_fr,text_content_en, label_id, edited, sub_type_id)
 	            VALUES (
 	                fr_values->>i,
 					en_values->>i,
@@ -256,9 +276,9 @@ BEGIN
 	-- Ensure both arrays are of the same length
     --IF jsonb_array_length(fr_values) <> jsonb_array_length(en_values) THEN
 	--	RAISE EXCEPTION 'French and English micronutrient arrays must be of the same length';
-	FOR record IN jsonb_array_elements(en_values)
+	FOR record IN SELECT * FROM jsonb_array_elements(en_values)
 	LOOP
-		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
+		INSERT INTO "fertiscan_0.0.8".micronutrient (read_name, value, unit, edited, label_id,language)
 		VALUES (
 			record->> 'nutrient',
 	        (record->> 'value')::float,
@@ -268,8 +288,9 @@ BEGIN
 			'en'
 		);
 	END LOOP;
-	FOR record IN jsonb_array_elements(fr_values)
-		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id,language)
+	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
+	LOOP
+		INSERT INTO "fertiscan_0.0.8".micronutrient (read_name, value, unit, edited, label_id,language)
 		VALUES (
 			record->> 'nutrient',
 	        (record->> 'value')::float,
@@ -282,9 +303,9 @@ BEGIN
 --MICRONUTRIENTS ENDS
 
 -- GUARANTEED
-	FOR record IN jsonb_array_elements(input_json->'guaranteed_analysis')
+	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		INSERT INTO "fertiscan_0.0.7".micronutrient (read_name, value, unit, edited, label_id)
+		INSERT INTO "fertiscan_0.0.8".micronutrient (read_name, value, unit, edited, label_id)
 			VALUES (
 				record->> 'nutrient',
 	            (record->> 'value')::float,
@@ -296,7 +317,7 @@ BEGIN
 -- GUARANTEED END	
 
 -- INSPECTION
-    INSERT INTO "fertiscan_0.0.7".inspection (
+    INSERT INTO "fertiscan_0.0.8".inspection (
         inspector_id, label_info_id, sample_id, company_id, manufacturer_id, picture_set_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
@@ -307,7 +328,10 @@ BEGIN
         picture_set_id  -- Assuming picture_set_id is handled separately
     )
     RETURNING id INTO inspection_id;
+   
+	-- Update input_json with company_id
+	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
 
-    RETURN inspection_id;
+	RETURN input_json;
 END;
-$$ LANGUAGE plpgsql;
+$$language plpgsql;
