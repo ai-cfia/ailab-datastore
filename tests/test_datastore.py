@@ -12,6 +12,7 @@ import uuid
 import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
+import datastore.Nachet as nachet_datastore
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed_query
 from copy import deepcopy
@@ -34,7 +35,7 @@ class test_ml_structure(unittest.TestCase):
     def setUp(self):
         with open("tests/ml_structure_exemple.json") as file:
             self.ml_dict= json.load(file)        
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         
@@ -86,7 +87,7 @@ class test_ml_structure(unittest.TestCase):
         
 class test_user(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.user_email="test@email"
@@ -163,7 +164,7 @@ class test_user(unittest.TestCase):
 
 class test_picture(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.connection_str=BLOB_CONNECTION_STRING
@@ -293,7 +294,7 @@ class test_picture(unittest.TestCase):
     
 class test_feedback(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.connection_str=BLOB_CONNECTION_STRING
@@ -487,7 +488,7 @@ class test_feedback(unittest.TestCase):
 
 class test_picture_set(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.connection_str=BLOB_CONNECTION_STRING
@@ -507,13 +508,13 @@ class test_picture_set(unittest.TestCase):
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name))
         self.pictures_id =[]
         for i in range(3) :
-            picture_id = asyncio.run(datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
+            picture_id = asyncio.run(nachet_datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
             self.pictures_id.append(picture_id)
         with open("tests/inference_result.json") as file:
             self.inference= json.load(file)
             
         self.dev_user_id=datastore.user.get_user_id(self.cursor, os.environ["DEV_USER_EMAIL"])
-        self.dev_container_client = asyncio.run(datastore.get_user_container_client(self.dev_user_id))
+        self.dev_container_client = asyncio.run(datastore.get_user_container_client(self.dev_user_id, BLOB_CONNECTION_STRING))
 
     def tearDown(self):
         self.con.rollback()
@@ -527,8 +528,18 @@ class test_picture_set(unittest.TestCase):
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 3)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name)
+        for picture_set in picture_sets_info :
+            if picture_set["picture_set_id"] == self.picture_set_id :
+                self.assertEqual(picture_set["picture_set_id"], self.picture_set_id)
+                self.assertEqual(picture_set["folder_name"], self.folder_name)
+                self.assertEqual(picture_set["nb_pictures"], 3)
+                self.assertTrue("pictures" in picture_set)
+                ids = [pic["picture_id"] for pic in picture_set["pictures"]]
+                self.assertEqual(set(ids), set(self.pictures_id))
+                for pic in picture_set["pictures"] :
+                    pic["is_verified"] = False
+                    pic["inference_exist"] = False
+        
         
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name + "2"))
         
@@ -761,7 +772,7 @@ class test_picture_set(unittest.TestCase):
 
 class test_analysis(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.connection_str=BLOB_CONNECTION_STRING
