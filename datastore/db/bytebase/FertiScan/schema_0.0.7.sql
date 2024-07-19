@@ -24,10 +24,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         
     alter table "fertiscan_0.0.7".users ADD "default_set_id" uuid REFERENCES "fertiscan_0.0.7".picture_set(id);
 
-    CREATE TABLE "fertiscan_0.0.7"."picture" (
+    CREATE TABLE "fertiscan_0.0.8"."picture" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
     "picture" json NOT NULL,
-    "picture_set_id" uuid NOT NULL REFERENCES "fertiscan_0.0.7".picture_set(id),
+    "nb_obj" int,
+    "picture_set_id" uuid NOT NULL REFERENCES "fertiscan_0.0.8".picture_set(id),
     "verified" boolean NOT NULL DEFAULT false,
     "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );

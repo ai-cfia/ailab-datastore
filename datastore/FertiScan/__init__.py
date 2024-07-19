@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-import uuid
+import asyncio
 import datastore
 import datastore.db.queries.picture as picture
 import datastore.db.queries.inspection as inspection
@@ -43,10 +43,11 @@ async def register_analysis(
     """
     try:
         #Create picture set for this analysis
-        picture_set_id = picture.new_picture_set(cursor, user_id)
+        picture_set_metadata= data_picture_set.build_picture_set(user_id, len(hashed_pictures))
+        picture_set_id = picture.new_picture_set(cursor,picture_set_metadata, user_id,"General")
 
         #Upload pictures to storage
-        picture_ids = datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
+        picture_ids = await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
         
         #Register analysis in the database
         formatted_analysis = data_inspection.build_inspection_import(analysis_dict)

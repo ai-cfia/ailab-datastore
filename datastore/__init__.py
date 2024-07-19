@@ -3,6 +3,7 @@ This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
+import json
 import datastore.db.queries.user as user
 import datastore.db.queries.picture as picture
 import datastore.db.metadata.picture_set as data_picture_set
@@ -292,6 +293,7 @@ async def upload_pictures(
             picture_id = picture.new_picture_unknown(
                 cursor=cursor,
                 picture=empty_picture,
+                nb_objects=len(hashed_pictures),
                 picture_set_id=picture_set_id,
             )
             # Upload the picture to the Blob Storage
