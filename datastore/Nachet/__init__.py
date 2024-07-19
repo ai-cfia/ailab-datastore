@@ -11,7 +11,6 @@ import datastore.db.queries.picture as picture
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob.azure_storage_api as azure_storage
 import json
-from azure.storage.blob import BlobServiceClient,ContainerClient
 from datastore import (
     get_user_container_client,
     BlobUploadError,

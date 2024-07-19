@@ -28,29 +28,10 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
 
-DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
-if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
-    raise ValueError("NACHET_DB_URL is not set")
-
-DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
-if DB_SCHEMA is None or DB_SCHEMA == "":
-    raise ValueError("NACHET_SCHEMA_TESTING is not set")
-
-
-DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
-if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
-    raise ValueError("NACHET_DB_URL is not set")
-
-DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
-if DB_SCHEMA is None or DB_SCHEMA == "":
-    raise ValueError("NACHET_SCHEMA_TESTING is not set")
-
-
 # --------------------  USER FUNCTIONS --------------------
 class test_user_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.email = "test@email.gouv.ca"
@@ -235,8 +216,7 @@ class test_user_functions(unittest.TestCase):
 # --------------------  SEED FUNCTIONS --------------------
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING)
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
         self.seed_name = "test-name"
@@ -340,8 +320,7 @@ class test_seed_functions(unittest.TestCase):
 class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db(DB_CONNECTION_STRING)
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
 
         # prepare the seed
@@ -800,8 +779,7 @@ class test_pictures_functions(unittest.TestCase):
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db(DB_CONNECTION_STRING)
-        self.con = db.connect_db(DB_CONNECTION_STRING)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
 
         # prepare the seed

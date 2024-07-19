@@ -6,6 +6,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 import json
 
+
 class MissingKeyError(Exception):
     pass
 
@@ -60,8 +61,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             if key not in analysis_form:
                 raise MissingKeyError(key)
         data = json.loads(analysis_form)
-        if npk is not None:
-            npk = extract_npk(data.get("npk"))
+        npk = extract_npk(data.get("npk"))
         output_json = {
         "company": {
             "name": data.get("company_name"),
@@ -125,6 +125,7 @@ def build_inspection_import(analysis_form: dict) -> str:
     except MissingKeyError as e:
         raise MissingKeyError(f"Missing key: {e}")
 
+
 def split_value_unit(value_unit: str) -> dict:
     """
     This function splits the value and unit from a string.
@@ -155,6 +156,8 @@ def split_value_unit(value_unit: str) -> dict:
         "value": value,
         "unit": unit
     }
+
+
 def extract_npk(npk:str):
     """
     This function extracts the npk values from the string npk.

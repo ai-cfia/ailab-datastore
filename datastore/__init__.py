@@ -3,15 +3,19 @@ This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
-import datastore.db.queries.user as user
-import datastore.db.queries.picture as picture
-import datastore.db.metadata.picture_set as data_picture_set
-import datastore.blob as blob
-import datastore.blob.azure_storage_api as azure_storage
+import json
+
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from dotenv import load_dotenv
 
+import datastore.blob as blob
+import datastore.blob.azure_storage_api as azure_storage
+import datastore.db.metadata.picture_set as data_picture_set
+import datastore.db.queries.picture as picture
+import datastore.db.queries.user as user
+
 load_dotenv()
+
 
 class UserAlreadyExistsError(Exception):
     pass
@@ -31,7 +35,6 @@ class ContainerCreationError(Exception):
 
 class FolderCreationError(Exception):
     pass
-
 
 
 class User:
@@ -112,9 +115,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(
-    user_id, storage_url, account, key, tier="user"
-):
+async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
     """
     Get the container client of a user
 
@@ -257,6 +258,7 @@ async def delete_picture_set_permanently(
         print(e)
         raise Exception("Datastore Unhandled Error")
 
+
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None
 ):
@@ -286,7 +288,7 @@ async def upload_pictures(
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
                 folder_name = picture_set_id
-        pic_ids=[]
+        pic_ids = []
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(

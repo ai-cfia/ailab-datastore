@@ -1,12 +1,10 @@
 import os
+
 from dotenv import load_dotenv
-import uuid
+
 import datastore
-import datastore.db.queries.picture as picture
-import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.inspection as data_inspection
-import datastore.blob as blob
-import datastore.blob.azure_storage_api as azure_storage
+import datastore.db.queries.picture as picture
 
 load_dotenv()
 
@@ -20,13 +18,18 @@ if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
     # raise ValueError("FERTISCAN_SCHEMA is not set")
     print("Warning: FERTISCAN_SCHEMA not set")
 
-FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
+FERTISCAN_STORAGE_URL = os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
 
+
 async def register_analysis(
-    cursor, container_client, user_id, hashed_pictures, analysis_dict,
+    cursor,
+    container_client,
+    user_id,
+    hashed_pictures,
+    analysis_dict,
 ):
     """
     Register an analysis in the database
@@ -41,16 +44,21 @@ async def register_analysis(
     - The analysis_dict with the analysis_id added.
     """
     try:
-        #Create picture set for this analysis
+        # Create picture set for this analysis
         picture_set_id = picture.new_picture_set(cursor, user_id)
 
-        #Upload pictures to storage
-        picture_ids = datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
-        
-        #Register analysis in the database
-        formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
-        
-                
+        # Upload pictures to storage
+        datastore.upload_pictures(
+            cursor=cursor,
+            user_id=user_id,
+            container_client=container_client,
+            picture_set_id=picture_set_id,
+            hashed_pictures=hashed_pictures,
+        )
+
+        # Register analysis in the database
+        data_inspection.build_inspection_import(analysis_dict)
+
         return None
     except Exception as e:
         print(e.__str__())

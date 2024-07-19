@@ -90,6 +90,7 @@ def upload_picture_set(
                 zoom=zoom_level,
                 description="upload_picture_set script",
             )
+            # TODO: fix picture_query.update_picture_metadataa missing nb_objects arg
             picture_query.update_picture_metadata(
                 cursor=cursor, picture_id=picture_id, metadata=picture
             )

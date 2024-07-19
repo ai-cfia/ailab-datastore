@@ -15,7 +15,7 @@ data are assured.
 ```Structure
 
 Storage account:
-│     
+│
 │  Container:
 └───user-8367cc4e-1b61-42c2-a061-ca8662aeac37
 |   | Folder:
@@ -43,7 +43,7 @@ registers metadata into a database server. This double-edged approach ensures
 not just efficient storage, but also the organization and easy accessibility of
 your valuable data.
 
-``` mermaid
+```mermaid
 
 ---
 title: Project Layers
@@ -57,7 +57,7 @@ flowchart LR;
     file ==> FE
     FE-->BE
     MD(Datastore)
-    DB[(Database)] 
+    DB[(Database)]
     blob[(Blob Storage)]
     ML[(Models)]
     BE --> MD
@@ -69,8 +69,10 @@ flowchart LR;
 
 ## Database Architecture
 
-  For more detail on each app database architecture go check [Nachet Architecture](nachetArchitecture.md) and [Fertiscan Architecture](FertiscanArchitecture.md).
-  
+For more detail on each app database architecture go check [Nachet
+Architecture](Nachet/nachet-architecture.md) and [Fertiscan
+Architecture](FertiScan/fertiScan-architecture.md).
+
 ### Global Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
