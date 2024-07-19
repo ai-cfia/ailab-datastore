@@ -85,6 +85,32 @@ def get_seed_id(cursor, seed_name: str) -> str:
     except Exception:
         raise Exception("unhandled error")
 
+def get_seed_name(cursor, seed_id:str) -> str :
+    """
+    This function retrieves the name of a seed from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - seed_id (str): The id of the seed.
+
+    Returns:
+    - The name of the seed.
+    """
+    try:
+        query = """
+            SELECT 
+                name 
+            FROM 
+                seed
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (seed_id,))
+        return cursor.fetchone()[0]
+    except TypeError:
+        raise SeedNotFoundError("Error: seed not found")
+    except Exception:
+        raise Exception("unhandled error")
 
 def new_seed(cursor, seed_name: str):
     """

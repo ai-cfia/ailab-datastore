@@ -31,6 +31,14 @@ BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
     raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
 
+BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT"]
+if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
+    raise ValueError("NACHET_BLOB_ACCOUNT is not set")
+
+BLOB_KEY = os.environ["NACHET_BLOB_KEY"]
+if BLOB_KEY is None or BLOB_KEY == "":
+    raise ValueError("NACHET_BLOB_KEY is not set")
+
 class test_ml_structure(unittest.TestCase):
     def setUp(self):
         with open("tests/ml_structure_exemple.json") as file:
@@ -501,7 +509,7 @@ class test_picture_set(unittest.TestCase):
         #self.picture_hash= asyncio.run(azure_storage.generate_hash(self.pic_encoded))
         self.container_name='test-container'
         self.user_id=datastore.User.get_id(self.user_obj)
-        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,'test-user'))
+        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cursor, self.seed_name)
         self.folder_name = "test_folder"
@@ -514,40 +522,59 @@ class test_picture_set(unittest.TestCase):
             self.inference= json.load(file)
             
         self.dev_user_id=datastore.user.get_user_id(self.cursor, os.environ["DEV_USER_EMAIL"])
-        self.dev_container_client = asyncio.run(datastore.get_user_container_client(self.dev_user_id, BLOB_CONNECTION_STRING))
+        self.dev_container_client = asyncio.run(datastore.get_user_container_client(self.dev_user_id, BLOB_CONNECTION_STRING, BLOB_ACCOUNT, BLOB_KEY))
 
     def tearDown(self):
         self.con.rollback()
         self.container_client.delete_container()
         db.end_query(self.con, self.cursor)
+        
+    def assert_picture_set_info(self, picture_set, expected_picture_set_id, expected_folder_name, expected_nb_pictures, expected_pictures_info):
+        self.assertEqual(picture_set["picture_set_id"], expected_picture_set_id)
+        self.assertEqual(picture_set["folder_name"], expected_folder_name)
+        self.assertEqual(picture_set["nb_pictures"], expected_nb_pictures)
+        for pic, expected_pic in zip(picture_set["pictures"], expected_pictures_info):
+            self.assert_picture_info(pic, expected_pic)
 
+    # Helper pour valider les informations des images individuelles
+    def assert_picture_info(self, picture_info, expected_pic_info):
+        self.assertEqual(picture_info["picture_id"], expected_pic_info["picture_id"])
+        self.assertEqual(picture_info["is_verified"], expected_pic_info["is_verified"])
+        self.assertEqual(picture_info["inference_exist"], expected_pic_info["inference_exist"])
+ 
     def test_get_picture_sets_info(self) :
         """
         Test the get_picture_sets_info function
         """
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
+        
         self.assertEqual(len(picture_sets_info), 2)
+        
         for picture_set in picture_sets_info :
             if picture_set["picture_set_id"] == self.picture_set_id :
-                self.assertEqual(picture_set["picture_set_id"], self.picture_set_id)
-                self.assertEqual(picture_set["folder_name"], self.folder_name)
-                self.assertEqual(picture_set["nb_pictures"], 3)
-                self.assertTrue("pictures" in picture_set)
-                ids = [pic["picture_id"] for pic in picture_set["pictures"]]
-                self.assertEqual(set(ids), set(self.pictures_id))
-                for pic in picture_set["pictures"] :
-                    pic["is_verified"] = False
-                    pic["inference_exist"] = False
-        
+                expected_pictures_info = [
+                {"picture_id": pid, "is_verified": False, "inference_exist": False}
+                for pid in self.pictures_id ]
+                self.assert_picture_set_info(picture_set, self.picture_set_id, self.folder_name, 3, expected_pictures_info)
         
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name + "2"))
+        picture_id = asyncio.run(nachet_datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
+        inference = asyncio.run(nachet_datastore.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
+        asyncio.run(nachet_datastore.new_perfect_inference_feeback(self.cursor, inference["inference_id"], self.user_id, [box["box_id"] for box in inference["boxes"]]))
         
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
-        self.assertEqual(len(picture_sets_info), 3)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 0)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name + "2")
         
+        self.assertEqual(len(picture_sets_info), 3)
+        
+        for picture_set in picture_sets_info :
+            if picture_set["picture_set_id"] == self.picture_set_id :
+                expected_pictures_info = [
+                {"picture_id": picture_id, "is_verified": True, "inference_exist": True}
+                ]
+                self.assert_picture_set_info(picture_set, self.picture_set_id, self.folder_name+"2", 1, expected_pictures_info)
+        
+
     def test_get_picture_sets_info_error_user_not_found(self):
         """
         This test checks if the get_picture_sets_info function correctly raise an exception if the user given doesn't exist in db
@@ -564,7 +591,14 @@ class test_picture_set(unittest.TestCase):
         with self.assertRaises(Exception):
             asyncio.run(datastore.get_picture_sets_info(mock_cursor, self.user_id))
     
-    
+    def test_get_pictures_inferences(self):
+        """
+        This test checks if the get_pictures_inferences function correctly returns the inferences of each pictures  a picture set
+        """
+        
+        picture_sets_info = asyncio.run(nachet_datastore.get_pictures_inferences(self.cursor, self.user_id, self.picture_set_id))
+        
+        
     def test_find_validated_pictures(self):
         """
         This test checks if the find_validated_pictures function correctly returns the validated pictures of a picture_set

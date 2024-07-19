@@ -519,3 +519,23 @@ def get_seed_object_id(cursor, seed_id: str, object_id:str):
         return res
     except Exception:
         raise Exception(f"Error: could not get seed_object_id for seed_id {seed_id} for object {object_id}")
+
+def get_seed_object_by_object_id(cursor, object_id: str):
+    try:
+        query = """
+            SELECT 
+                so.id,
+                so.seed_id,
+                so.score
+            FROM
+                seed_obj so 
+            WHERE 
+                so.object_id = %s
+            """
+        cursor.execute(query, (object_id,))
+        res = cursor.fetchall()
+        return res
+    except Exception:
+        raise Exception(f"Error: could not get seed_object for object {object_id}")
+
+    

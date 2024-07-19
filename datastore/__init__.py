@@ -203,7 +203,7 @@ async def get_picture_sets_info(cursor, user_id: str):
         picture_set_id = picture_set[0]
         picture_set_name = picture_set[1]
         
-        picture_set_info["picture_set_id"] = picture_set_id
+        picture_set_info["picture_set_id"] = str(picture_set_id)
         picture_set_info["folder_name"] = picture_set_name
         
         pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
@@ -213,7 +213,7 @@ async def get_picture_sets_info(cursor, user_id: str):
         for pic in pictures :
             picture_info = {}
             picture_id = pic[0]
-            picture_info["picture_id"] = picture_id
+            picture_info["picture_id"] = str(picture_id)
 
             is_validated = picture.is_picture_validated(cursor, picture_id)
             inference_exist = picture.check_picture_inference_exist(cursor, picture_id)
@@ -222,7 +222,6 @@ async def get_picture_sets_info(cursor, user_id: str):
             
             picture_set_info["pictures"].append(picture_info)
         result.append(picture_set_info)
-    print(result)
     return result
 
 

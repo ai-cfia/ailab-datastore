@@ -26,6 +26,7 @@ class GetPictureError(Exception):
 class PictureSetDeleteError(Exception):
     pass
 
+import json
 """
 This module contains all the queries related to the Picture and PictureSet tables.
 """
@@ -342,12 +343,14 @@ def is_picture_validated(cursor, picture_id: str):
     """
     try :
         query = """
-            SELECT 
-                1 
-            FROM 
-                picture_seed
-            WHERE 
-                picture_id = %s
+            SELECT EXISTS(
+                SELECT 
+                    1 
+                FROM 
+                    picture_seed
+                WHERE 
+                    picture_id = %s
+            )
             """
         cursor.execute(query, (picture_id,))
         result = cursor.fetchone()[0]
@@ -366,12 +369,14 @@ def check_picture_inference_exist(cursor, picture_id: str):
     """
     try :
         query = """
-            SELECT 
-                1 
-            FROM 
-                inference
-            WHERE 
-                picture_id = %s
+            SELECT EXISTS(
+                SELECT
+                    1 
+                FROM 
+                    inference
+                WHERE 
+                    picture_id = %s
+            )
             """
         cursor.execute(query, (picture_id,))
         result = cursor.fetchone()[0]
@@ -391,7 +396,7 @@ def get_picture_inference(cursor, picture_id: str):
     try :
         query = """
             SELECT 
-                *
+                id, inference
             FROM 
                 inference
             WHERE 
