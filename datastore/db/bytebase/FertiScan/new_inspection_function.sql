@@ -126,7 +126,7 @@ BEGIN
 	   	 -- Insert into metric for weight
 	    INSERT INTO "fertiscan_0.0.6".metric (value, unit_id, edited,metric_type_id,label_id)
 	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
-	 END LOOP;
+	END LOOP;
 -- Weight end
 	
 --DENSITY
