@@ -42,7 +42,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
+        print(DB_SCHEMA)
         self.user_email = 'test@email'
         self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,BLOB_CONNECTION_STRING,'test-user'))
         
@@ -70,5 +70,4 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def test_register_analysis(self):
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
-        print(analysis)
-        self.assertTrue(validator.is_valid_uuid(analysis.inspection_id))
+        self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
