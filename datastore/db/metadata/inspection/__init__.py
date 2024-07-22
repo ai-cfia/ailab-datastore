@@ -34,8 +34,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             "fertiliser_name",
             "registration_number",
             "lot_number",
-            "weight_kg",
-            "weight_lb",
+            "weight",
             "density",
             "volume",
             "npk",
@@ -60,8 +59,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             if key not in analysis_form:
                 raise MissingKeyError(key)
         data = json.loads(analysis_form)
-        if npk is not None:
-            npk = extract_npk(data.get("npk"))
+        npk = extract_npk(data.get("npk"))
         output_json = {
         "company": {
             "name": data.get("company_name"),
@@ -121,7 +119,7 @@ def build_inspection_import(analysis_form: dict) -> str:
         },
         "guaranteed_analysis": data.get("guaranteed_analysis", [])
     }
-        return (output_json)
+        return (json.dumps(output_json))
     except MissingKeyError as e:
         raise MissingKeyError(f"Missing key: {e}")
 
@@ -170,3 +168,26 @@ def extract_npk(npk:str):
         return [None,None,None]
     npk = npk.split("-")
     return [float(npk[0]),float(npk[1]),float(npk[2])]
+
+def extract_specifications(specifications: list) -> list:
+    """
+    This function extracts the specifications from the list of strings.
+    The strings must be in the format of "value unit".
+
+    Parameters:
+    - specifications: (list) The list of strings to split.
+
+    Returns:
+    - A list containing the specifications.
+    """
+    output = []
+    if specifications is None or specifications == []:
+        return output
+    for specification in specifications:
+        print(specification)
+        res = {}
+        res["humidity"] = float(specification["humidity"])
+        res["ph"] = float(specification["ph"])
+        res["solubility"] = float(specification["solubility"])
+        output.append(res)
+    return output
