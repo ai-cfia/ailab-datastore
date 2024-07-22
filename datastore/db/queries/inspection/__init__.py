@@ -61,7 +61,7 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
             SELECT new_inspection(%s, %s, %s)
             """
         cursor.execute(query, (user_id, picture_set_id, label_json))
-        return cursor.fetchone()
+        return cursor.fetchone()[0]
     except Exception as e:
         raise InspectionCreationError(e.__str__())
 

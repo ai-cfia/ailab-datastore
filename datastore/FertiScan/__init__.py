@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import asyncio
+import json
 import datastore
 import datastore.db.queries.picture as picture
 import datastore.db.queries.inspection as inspection
@@ -51,7 +52,7 @@ async def register_analysis(
         picture_ids = await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
         
         #Register analysis in the database
-        formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
+        formatted_analysis = data_inspection.build_inspection_import(json.dumps(analysis_dict))
         
         analysis_db = inspection.new_inspection_with_label_info(cursor, user_id, picture_set_id, formatted_analysis)
         return analysis_db
