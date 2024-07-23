@@ -14,9 +14,9 @@ import datastore.db.metadata.validator as validator
 from copy import deepcopy
 import os
 
-BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
+BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
-    raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
+    raise ValueError("FERTISCAN_STORAGE_URL_TESTING is not set")
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -26,11 +26,11 @@ DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
-BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT_TESTING"]
+BLOB_ACCOUNT = os.environ["FERTISCAN_BLOB_ACCOUNT"]
 if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
     raise ValueError("NACHET_BLOB_ACCOUNT is not set")
 
-BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
+BLOB_KEY = os.environ["FERTISCAN_BLOB_KEY"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
@@ -42,7 +42,6 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        print(DB_SCHEMA)
         self.user_email = 'test@email'
         self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,BLOB_CONNECTION_STRING,'test-user'))
         
@@ -68,6 +67,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         db.end_query(self.con, self.cursor)
 
     def test_register_analysis(self):
+        self.assertTrue(self.container_client.exists())
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
