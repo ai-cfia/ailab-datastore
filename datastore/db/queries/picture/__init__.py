@@ -403,7 +403,7 @@ def get_picture_inference(cursor, picture_id: str):
                 picture_id = %s
             """
         cursor.execute(query, (picture_id,))
-        result = cursor.fetchone()[0]
+        result = cursor.fetchone()
         return result
     except Exception:
         raise GetPictureError(
@@ -519,6 +519,53 @@ def is_a_picture_set_id(cursor, picture_set_id):
     except Exception:
         raise Exception("unhandled error")
 
+def is_a_picture_id(cursor, picture_id):
+    """
+    This function checks if a picture_id exists in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_id (str): The UUID of the picture to check.
+    """
+    try:
+        query = """
+            SELECT EXISTS(
+                SELECT 
+                    1 
+                FROM 
+                    picture
+                WHERE 
+                    id = %s
+            )
+                """
+        cursor.execute(query, (picture_id,))
+        res = cursor.fetchone()[0]
+        return res
+    except Exception:
+        raise Exception("unhandled error")
+
+def get_picture_picture_set_id(cursor, picture_id):
+    """
+    This function retrieves the picture_set_id of a picture in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_id (str): The UUID of the picture to retrieve the picture_set_id from.
+    """
+    try:
+        query = """
+            SELECT
+                picture_set_id
+            FROM
+                picture
+            WHERE
+                id = %s
+            """
+        cursor.execute(query, (picture_id,))
+        return str(cursor.fetchone()[0])
+    except Exception:
+        raise PictureNotFoundError(f"Error: Picture not found:{picture_id}")
+    
 def get_picture_set_owner_id(cursor, picture_set_id):
     """
     This function retrieves the owner_id of a picture_set.

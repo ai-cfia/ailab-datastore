@@ -633,9 +633,9 @@ async def get_seed_info(cursor):
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
 
-async def get_pictures_inferences(cursor, user_id: str, picture_set_id: str):
+async def get_picture_inference(cursor, user_id: str, picture_id: str):
     """
-    Retrieves inferences (if exist) of each picture in the given picture_set
+    Retrieves inference (if exist) of the given picture
 
     Args:
         cursor: The cursor object to interact with the database.
@@ -649,91 +649,37 @@ async def get_pictures_inferences(cursor, user_id: str, picture_set_id: str):
                 f"User not found based on the given id: {user_id}"
             )
         # Check if picture set exists
-        if not picture.is_a_picture_set_id(cursor, picture_set_id):
-            raise picture.PictureSetNotFoundError(
-                f"Picture set not found based on the given id: {picture_set_id}"
+        if not picture.is_a_picture_id(cursor, picture_id):
+            raise picture.PictureNotFoundError(
+                f"Picture not found based on the given id: {picture_id}"
             )
-        # Check user is owner of the picture set
-        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
+        # Check user is owner of the picture set where the picutre is
+        picture_set_id = picture.get_picture_picture_set_id(cursor, picture_id)
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != user_id:
             raise UserNotOwnerError(
-                f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
+                f"User can't access this picture, user uuid :{user_id}, picture : {picture_id}"
             )
-        result={}
-        pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
         
-        for pic in pictures:
-            picture_id = pic[0]
+        if picture.check_picture_inference_exist(cursor, picture_id):
+            inf = picture.get_picture_inference(cursor, picture_id)
             
-            if picture.check_picture_inference_exist(cursor, picture_id):
-                inference = picture.get_picture_inference(cursor, picture_id)
-                inference_id = inference[0]
-                inference_data = json.loads(inference[1])
-                boxes = inference.get_objects_by_inference(cursor, inference_id)
-                
-                print(boxes)
-                for object in boxes:
-                    box_id = object[0]
-                    
-                    box_metadata = object[1]
-                    json.loads(box_metadata)
-                    box = box_metadata.get("box")
-                    color = box_metadata.get("color")
-                    overlapping = box_metadata.get("overlapping")
-                    overlappingIndices = box_metadata.get("overlappingIndices")
-                    
-                    topN = inference.get_seed_object_by_object_id(cursor, box_id)
-                    print(json.dumps(topN, indent=4))
-                    for seed_obj in topN :
-                        object_id = seed_obj[0]
-                        seed_id = seed_obj[1]
-                        seed_name = seed.get_seed_name(cursor, seed_obj[1])
-                        score = seed_obj[2]
-                        seed_obj = {"label": seed_name, "object_id": object_id, "score": score}
-                        if seed_id == top_id:
-                            top_score = score
-
-                    print(json.dumps(topN, indent=4))
-                    top_id = inference.get_inference_object_top_id(cursor, box_id)
-                    top_label = seed.get_seed_name(cursor, top_id)
-                    if inference.is_object_verified(cursor, box_id):
-                        top_score = 1
-
-                    object = {"box" : box, 
-                              "box_id": box_id, 
-                              "color" : color, 
-                              "label" : top_label, 
-                              "object_type_id" : 1, 
-                              "overlapping" : overlapping, 
-                              "overlappingIndices" : overlappingIndices, 
-                              "score" : top_score, 
-                              "topN": topN, 
-                              "top_id" : top_id}
-
-                    print(boxes)
-                    
-                inference = {
-                    "boxes": boxes,
-                    "filename": inference_data.get("filename"),
-                    "inference_id": inference_id,
-                    "labelOccurence" : inference_data.get("labelOccurence"),
-                    "totalBoxes" : inference_data.get("totalBoxes"),
-                }
-                result[picture_id] = inference
-            else :
-                result[picture_id] = None
-        print(result)
-        return result
-    except(user.UserNotFoundError,picture.PictureSetNotFoundError,UserNotOwnerError) as e:
+            inf = inference_metadata.rebuild_inference(cursor, inf)
+            
+            return inf
+        else :
+            return None
+        
+    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
         raise e
 
-async def get_pictures_blobs(cursor, user_id: str, container_client, picture_set_id: str):
+async def get_picture_blob(cursor, user_id: str, container_client, picture_id: str):
     """
-    Retrieves blobs of each picture in the given picture_set
+    Retrieves blob of the given picture
 
     Args:
         cursor: The cursor object to interact with the database.
         user_id (str): id of the user
-        picture_set_id (str): id of the picture set
+        picture_id (str): id of the picture set
     """
     try:
         # Check if user exists
@@ -742,26 +688,21 @@ async def get_pictures_blobs(cursor, user_id: str, container_client, picture_set
                 f"User not found based on the given id: {user_id}"
             )
         # Check if picture set exists
-        if not picture.is_a_picture_set_id(cursor, picture_set_id):
-            raise picture.PictureSetNotFoundError(
-                f"Picture set not found based on the given id: {picture_set_id}"
+        if not picture.is_a_picture_id(cursor, picture_id):
+            raise picture.PictureNotFoundError(
+                f"Picture set not found based on the given id: {picture_id}"
             )
-        # Check user is owner of the picture set
-        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
+        # Check user is owner of the picture set where the picutre is
+        picture_set_id = picture.get_picture_picture_set_id(cursor, picture_id)
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != user_id:
             raise UserNotOwnerError(
-                f"User can't delete this folder, user uuid :{user_id}, folder name : {picture_set_id}"
+                f"User can't access this picture, user uuid :{user_id}, picture : {picture_id}"
             )
-        result=[]
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
-        for pic in pictures:
-            picture_id = pic[0]
-            blob_name = "{}/{}.png".format(folder_name, picture_id)
-            picture_hash = azure_storage.get_blob(container_client, blob_name)
-            result.append(picture_hash)
-        print(result)
-        return result
-    except(user.UserNotFoundError,picture.PictureSetNotFoundError,UserNotOwnerError) as e:
+        blob_name = "{}/{}.png".format(folder_name, picture_id)
+        picture_hash = await azure_storage.get_blob(container_client, blob_name)
+        return picture_hash
+    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
         raise e
 
 async def delete_picture_set_with_archive(

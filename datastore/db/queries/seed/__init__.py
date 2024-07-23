@@ -165,3 +165,30 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
         return res
     except Exception:
         raise Exception("Error: could not check if seed name is a seed")
+
+def get_seed_object_seed_id(cursor, seed_object_id: str) -> str:
+    """
+    This function retrieves the seed_id of a seed object.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - seed_object_id (str): The id of the seed object.
+
+    Returns:
+    - The seed_id of the seed object.
+    """
+    try:
+        query = """
+            SELECT 
+                seed_id 
+            FROM 
+                seed_obj
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (seed_object_id,))
+        return cursor.fetchone()[0]
+    except TypeError:
+        raise SeedNotFoundError("Error: seed not found")
+    except Exception:
+        raise Exception("unhandled error")
