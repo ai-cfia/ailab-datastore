@@ -396,7 +396,7 @@ def get_picture_inference(cursor, picture_id: str):
     try :
         query = """
             SELECT 
-                id, inference
+                id, inference, pipeline_id
             FROM 
                 inference
             WHERE 

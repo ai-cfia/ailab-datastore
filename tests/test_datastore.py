@@ -307,10 +307,6 @@ class test_picture(unittest.TestCase):
         picture_id = asyncio.run(nachet_datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
         inference = asyncio.run(nachet_datastore.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
 
-        # delete models in the registered inference result because it's not retrieved by the get_picture_inference function
-        if 'models' in inference:
-            del inference['models']
-
         picture_inference = asyncio.run(nachet_datastore.get_picture_inference(self.cursor, str(self.user_id), str(picture_id)))
         
         self.assertDictEqual(picture_inference,inference)
