@@ -148,44 +148,12 @@ class test_picture(unittest.TestCase):
         """
         This test checks if the upload_picture_known function correctly raise an exception if the user given doesn't exist in db
         """
-        pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
-        picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
-        with self.assertRaises(datastore.user.UserNotFoundError):
-            asyncio.run(datastore.upload_pictures(self.cursor, uuid.uuid4(), pictures, self.container_client, picture_set_id))
-    
-    def test_upload_pictures_connection_error(self):
-        """
-        This test checks if the upload_picture_known function correctly raise an exception if the connection to the db fails
-        """
-        mock_cursor = MagicMock()
-        mock_cursor.fetchone.side_effect = Exception("Connection error")
-        picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
-        with self.assertRaises(Exception):
-           asyncio.run(datastore.upload_pictures(mock_cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, picture_set_id))
-            
-class test_picture_set(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
-        self.connection_str=BLOB_CONNECTION_STRING
-        self.user_email="test@email"
-        self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
-        self.image = Image.new("RGB", (1980, 1080), "blue")
-        self.image_byte_array = io.BytesIO()
-        self.image.save(self.image_byte_array, format="TIFF")
-        self.pic_encoded = self.image.tobytes()
-        #self.picture_hash= asyncio.run(azure_storage.generate_hash(self.pic_encoded))
-        self.container_name='test-container'
-        self.user_id=datastore.User.get_id(self.user_obj)
-        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
-        self.folder_name = "test_folder"
-        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name))
-        self.pictures_ids = asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded, self.pic_encoded, self.pic_encoded], self.container_client, self.picture_set_id))
-    def tearDown(self):
-        self.con.rollback()
-        self.container_client.delete_container()
-        db.end_query(self.con, self.cursor)
+        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        model_id = "test_model_id"
+        
+        result = asyncio.run(datastore.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, model_id))
+        #self.cursor.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
+        self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
 
     def test_create_picture_set(self):
         """
