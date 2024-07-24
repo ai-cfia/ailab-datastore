@@ -191,7 +191,7 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				FALSE,
-				ingredient_language,
+				ingredient_language::LANGUAGE,
 				label_id
 			);
 		END LOOP;
@@ -218,7 +218,7 @@ BEGIN
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language
+                ingredient_language::LANGUAGE
             );
         END LOOP;
     END LOOP;
@@ -237,7 +237,7 @@ BEGIN
                 NULL,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language
+                ingredient_language::LANGUAGE
             );
         END LOOP;
     END LOOP;
@@ -283,7 +283,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'en'
+			'en'::LANGUAGE
 		);
 	END LOOP;
 	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
@@ -295,7 +295,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'fr'
+			'fr'::LANGUAGE
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
@@ -316,13 +316,11 @@ BEGIN
 
 -- INSPECTION
     INSERT INTO inspection (
-        inspector_id, label_info_id, sample_id, company_id, manufacturer_id, picture_set_id
+        inspector_id, label_info_id, sample_id, picture_set_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_id,
         NULL, -- NOT handled yet
-        NULL, -- Updated once the org info ARE confirmed
-        NULL, -- Updated once the org info ARE confirmed
         picture_set_id  -- Assuming picture_set_id is handled separately
     )
     RETURNING id INTO inspection_id;

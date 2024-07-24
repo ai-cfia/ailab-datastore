@@ -2,7 +2,7 @@ import json
 import hashlib
 import os
 import datetime
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, ContainerClient
 
 class GenerateHashError(Exception):
     pass
@@ -333,13 +333,14 @@ async def get_image_count(container_client, folder_name):
         return False
 
 
-async def get_directories(container_client):
+async def get_directories(container_client: ContainerClient):
     """
     returns a list of folder names in the user's container
     """
     try:
         directories = {}
         blob_list = container_client.list_blobs()
+        print("type(container_client)", type(container_client))
         for blob in blob_list:
             if (
                 blob.name.split(".")[-1] == "json"
@@ -353,6 +354,7 @@ async def get_directories(container_client):
                         container_client, folder_json["folder_name"]
                     )
                     directories[folder_json["folder_name"]] = image_count
+        print("directories", directories)
         return directories
     except FolderListError as error:
         raise error

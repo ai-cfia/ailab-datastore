@@ -58,66 +58,65 @@ def build_inspection_import(analysis_form: dict) -> str:
         for key in requiered_keys:
             if key not in analysis_form:
                 raise MissingKeyError(key)
-        data = json.loads(analysis_form)
-        npk = extract_npk(data.get("npk"))
+        npk = extract_npk(analysis_form.get("npk"))
         output_json = {
         "company": {
-            "name": data.get("company_name"),
-            "address": data.get("company_address"),
-            "website": data.get("company_website"),
-            "phone_number": data.get("company_phone_number")
+            "name": analysis_form.get("company_name"),
+            "address": analysis_form.get("company_address"),
+            "website": analysis_form.get("company_website"),
+            "phone_number": analysis_form.get("company_phone_number")
         },
         "manufacturer": {
-            "name": data.get("manufacturer_name"),
-            "address": data.get("manufacturer_address"),
-            "website": data.get("manufacturer_website"),
-            "phone_number": data.get("manufacturer_phone_number")
+            "name": analysis_form.get("manufacturer_name"),
+            "address": analysis_form.get("manufacturer_address"),
+            "website": analysis_form.get("manufacturer_website"),
+            "phone_number": analysis_form.get("manufacturer_phone_number")
         },
         "product": {
-            "name": data.get("fertiliser_name"),
-            "registration_number": data.get("registration_number"),
-            "lot_number": data.get("lot_number"),
+            "name": analysis_form.get("fertiliser_name"),
+            "registration_number": analysis_form.get("registration_number"),
+            "lot_number": analysis_form.get("lot_number"),
             "weight": {
-                "kg": data.get("weight_kg"),
-                "lb": data.get("weight_lb")
+                "kg": analysis_form.get("weight_kg"),
+                "lb": analysis_form.get("weight_lb")
             },
-            "density": data.get("density"),
-            "volume": data.get("volume"),
-            "npk": data.get("npk"),
+            "density": analysis_form.get("density"),
+            "volume": analysis_form.get("volume"),
+            "npk": analysis_form.get("npk"),
             "n":npk[0],
             "p":npk[1],
             "k":npk[2],
-            "warranty": data.get("warranty")
+            "warranty": analysis_form.get("warranty")
         },
         "cautions": {
-            "en": data.get("cautions_en", []),
-            "fr": data.get("cautions_fr", [])
+            "en": analysis_form.get("cautions_en", []),
+            "fr": analysis_form.get("cautions_fr", [])
         },
         "instructions": {
-            "en": data.get("instructions_en", []),
-            "fr": data.get("instructions_fr", [])
+            "en": analysis_form.get("instructions_en", []),
+            "fr": analysis_form.get("instructions_fr", [])
         },
         "micronutrients": {
-            "en": data.get("micronutrients_en", []),
-            "fr": data.get("micronutrients_fr", [])
+            "en": analysis_form.get("micronutrients_en", []),
+            "fr": analysis_form.get("micronutrients_fr", [])
         },
         "organic_ingredients": {
-            "en": data.get("organic_ingredients_en", []),
-            "fr": data.get("organic_ingredients_fr", [])
+            "en": analysis_form.get("organic_ingredients_en", []),
+            "fr": analysis_form.get("organic_ingredients_fr", [])
         },
         "inert_ingredients": {
-            "en": data.get("inert_ingredients_en", []),
-            "fr": data.get("inert_ingredients_fr", [])
+            "en": analysis_form.get("inert_ingredients_en", []),
+            "fr": analysis_form.get("inert_ingredients_fr", [])
         },
         "specifications": {
-            "en": data.get("specifications_en", []),
-            "fr": data.get("specifications_fr", [])
+            "en": analysis_form.get("specifications_en", []),
+            "fr": analysis_form.get("specifications_fr", [])
         },
         "first_aid": {
-            "en": data.get("first_aid_en", []),
-            "fr": data.get("first_aid_fr", [])
+            "en": analysis_form.get("first_aid_en", []),
+            "fr": analysis_form.get("first_aid_fr", [])
         },
-        "guaranteed_analysis": data.get("guaranteed_analysis", [])
+        "guaranteed_analysis": analysis_form.get("guaranteed_analysis", [])
     }
         return (json.dumps(output_json))
     except MissingKeyError as e:
