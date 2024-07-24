@@ -59,6 +59,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "user_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
         "feedback_user_id" uuid,
         "verified" boolean DEFAULT false NOT NULL,
+        "pipeline_id" uuid NOT NULL REFERENCES "nachet_0.0.11"."pipeline"(id),
         FOREIGN KEY ("picture_id") REFERENCES "nachet_0.0.11"."picture"(id) ON DELETE CASCADE
     );
 
