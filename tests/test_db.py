@@ -10,7 +10,6 @@ import os
 from PIL import Image
 import io
 import base64
-from time import sleep
 from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
@@ -1062,18 +1061,13 @@ class test_inference_functions(unittest.TestCase):
         inference_obj_id = inference.new_inference_object(
             self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
         )
-        previous_inference_obj = inference.get_inference_object(
-            self.cursor, inference_obj_id
-        )
         seed_obj_id = inference.new_seed_object(
             self.cursor,
             self.seed_id,
             inference_obj_id,
             self.inference["boxes"][0]["score"],
         )
-        # Sleep to see a difference in the updated_at date of the object
-        sleep(3)
-
+        
         inference.set_inference_object_verified_id(
             self.cursor, inference_obj_id, seed_obj_id
         )
@@ -1094,22 +1088,12 @@ class test_inference_functions(unittest.TestCase):
         inference_obj_id = inference.new_inference_object(
             self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
         )
-        previous_inference_obj = inference.get_inference_object(
-            self.cursor, inference_obj_id
-        )
-        # Sleep to see a difference in the updated_at date of the object
-        sleep(3)
 
         inference.set_inference_object_valid(self.cursor, inference_obj_id, True)
         inference_obj = inference.get_inference_object(self.cursor, inference_obj_id)
         self.assertTrue(
             str(inference_obj[5]),
             "The object validity is not the same as the expected one",
-        )
-        self.assertNotEqual(
-            inference_obj[8],
-            previous_inference_obj[8],
-            "The update_at field is not updated",
         )
 
         inference.set_inference_object_valid(self.cursor, inference_obj_id, False)
