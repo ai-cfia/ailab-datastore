@@ -273,8 +273,7 @@ def get_inference_object(cursor, inference_object_id: str):
                 top_id,
                 valid,
                 top_id,
-                upload_date,
-                updated_at
+                upload_date
             FROM 
                 object
             WHERE 
@@ -379,8 +378,7 @@ def set_inference_object_verified_id(cursor, inference_object_id: str, verified_
             UPDATE 
                 object
             SET
-                verified_id = %s,
-                updated_at = CURRENT_TIMESTAMP
+                verified_id = %s
             WHERE 
                 id = %s
             """

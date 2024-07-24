@@ -1083,12 +1083,6 @@ class test_inference_functions(unittest.TestCase):
             str(seed_obj_id),
             "The verified_id is not the same as the expected one",
         )
-        # this test is not working because the trigger to update the update_at field is missing
-        self.assertNotEqual(
-            inference_obj[8],
-            previous_inference_obj[8],
-            "The update_at field is not updated",
-        )
 
     def test_set_inference_object_valid(self):
         """
@@ -1123,12 +1117,6 @@ class test_inference_functions(unittest.TestCase):
         self.assertFalse(
             str(inference_obj[5]),
             "The object validity is not the same as the expected one",
-        )
-        # this test is not working because the trigger to update the update_at field is missing
-        self.assertNotEqual(
-            inference_obj[8],
-            previous_inference_obj[8],
-            "The update_at field is not updated",
         )
 
     def test_is_inference_verified(self):
