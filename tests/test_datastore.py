@@ -204,7 +204,7 @@ class test_picture(unittest.TestCase):
         
         result = asyncio.run(datastore.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, model_id))
         #self.cursor.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
-        self.assertTrue(validator.is_valid_uuid(result["inferenceId"]))
+        self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
 
     def test_create_picture_set(self):
         """

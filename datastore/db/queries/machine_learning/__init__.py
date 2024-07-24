@@ -240,7 +240,40 @@ def new_pipeline_model(cursor,pipeline_id,model_id):
         return pipeline_model_id
     except(Exception):
         raise PipelineCreationError("Error: pipeline model not uploaded")
-    
+
+def get_pipeline_by_model_id(cursor,model_id:str):
+    """
+    This function gets the pipeline from the model id.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - model_id (str): The UUID of the model.
+
+    Returns:
+    - The UUID of the pipeline.
+    """
+    try:
+        query = """
+            SELECT 
+                pm.pipeline_id
+            FROM
+                pipeline_model as pm
+            WHERE
+                pm.model_id = %s
+            """
+        cursor.execute(
+            query,
+            (
+                model_id,
+            )
+        )
+        pipeline_id=cursor.fetchone()[0]
+        return pipeline_id
+    except(ValueError):
+        raise NonExistingTaskEWarning(f"Warning: the given model '{model_id}' was not found")
+    except(Exception):
+        raise PipelineCreationError("Error: pipeline not found")
+
 def new_model(cursor, model,name,endpoint_name,task_id:int):
     """
     This function creates a new model in the database.

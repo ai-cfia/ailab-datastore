@@ -23,7 +23,7 @@ INFERENCE TABLE QUERIES
 
 """
 
-def new_inference(cursor, inference, user_id: str, picture_id:str,type):
+def new_inference(cursor, inference, user_id: str, picture_id:str,type, pipeline_id:str):
     """
     This function uploads a new inference to the database.
 
@@ -42,10 +42,11 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type):
                 inference(
                     inference,
                     picture_id,
-                    user_id
+                    user_id,
+                    pipeline_id
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -54,6 +55,7 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type):
                 inference,
                 picture_id,
                 user_id,
+                pipeline_id,
             ),
         )
         inference_id=cursor.fetchone()[0]

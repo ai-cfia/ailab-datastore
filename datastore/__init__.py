@@ -450,11 +450,19 @@ async def register_inference_result(
     """
     try:
         trimmed_inference = inference_metadata.build_inference_import(inference_dict)
+            
+        model_name = inference_dict["models"][0]["name"]
+        model_id = machine_learning.get_model_id_from_name(cursor, model_name)
+        pipeline_id = machine_learning.get_pipeline_by_model_id(cursor, model_id)
+        inference_dict["pipeline_id"] = str(pipeline_id)
+        
         inference_id = inference.new_inference(
-            cursor, trimmed_inference, user_id, picture_id, type
+            cursor, trimmed_inference, user_id, picture_id, type, pipeline_id
         )
         nb_object = int(inference_dict["totalBoxes"])
         inference_dict["inference_id"] = str(inference_id)
+
+        
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
