@@ -342,14 +342,14 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
     TODO: doc
     """
     try:
-        if "inferenceId" in inference_dict.keys():
-            inference_id = inference_dict["inferenceId"]
+        if "inference_id" in inference_dict.keys():
+            inference_id = inference_dict["inference_id"]
         else:
             raise InferenceFeedbackError(
                 "Error: inference_id not found in the given infence_dict"
             )
-        if "userId" in inference_dict.keys():
-            user_id = inference_dict["userId"]
+        if "user_id" in inference_dict.keys():
+            user_id = inference_dict["user_id"]
             if not (user.is_a_user_id(cursor, user_id)):
                 raise InferenceFeedbackError(
                     f"Error: user_id {user_id} not found in the database"
@@ -370,7 +370,7 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
                 f"Error: Inference {inference_id} is already verified"
             )
         for object in inference_dict["boxes"]:
-            box_id = object["boxId"]
+            box_id = object["box_id"]
             seed_name = object["label"]
             seed_id = object["classId"]
             # flag_seed = False
@@ -673,8 +673,11 @@ async def delete_picture_set_with_archive(
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
-        dev_container_client = await get_user_container_client(dev_user_id)
-
+        dev_container_client = await get_user_container_client(dev_user_id, NACHET_STORAGE_URL,NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY)
+        if not dev_container_client.exists():
+            raise BlobUploadError(
+                f"Error while connecting to the dev container: {dev_user_id}"
+            )
         if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
 
@@ -699,6 +702,7 @@ async def delete_picture_set_with_archive(
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
             blob_name = f"{folder_name}/{str(picture_id)}.png"
+            print("Nachet: " + blob_name)
             # change the link in the metadata
             picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
             picture.update_picture_metadata(
@@ -709,14 +713,18 @@ async def delete_picture_set_with_archive(
                 cursor, picture_id, dev_picture_set_id
             )
             # move the picture to the dev container
-            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
-            await azure_storage.move_blob(
+            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, str(picture_id))
+            print("Nachet new: " + new_blob_name)
+            if not (await azure_storage.move_blob(
                 blob_name,
                 new_blob_name,
                 dev_picture_set_id,
                 container_client,
                 dev_container_client,
-            )
+            )):
+                raise BlobUploadError(
+                    f"Error while moving the picture : {picture_id} to the dev container"
+                )
 
         if len(picture.get_validated_pictures(cursor, picture_set_id)) > 0:
             raise picture.PictureSetDeleteError(
@@ -776,8 +784,8 @@ async def find_validated_pictures(cursor, user_id, picture_set_id):
         user.UserNotFoundError,
         picture.PictureSetNotFoundError,
         UserNotOwnerError,
-    ) as e:
-        raise e
+    ):
+        raise
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")

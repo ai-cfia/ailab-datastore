@@ -3,6 +3,7 @@ This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
+import json
 import datastore.db.queries.user as user
 import datastore.db.queries.picture as picture
 import datastore.db.metadata.picture_set as data_picture_set
@@ -184,7 +185,6 @@ async def create_picture_set(
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
 
-
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -203,7 +203,6 @@ async def get_picture_sets_info(cursor, user_id: str):
         nb_picture = picture.count_pictures(cursor, picture_set_id)
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
-
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
@@ -253,6 +252,68 @@ async def delete_picture_set_permanently(
         UserNotOwnerError,
     ) as e:
         raise e
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
+
+async def upload_pictures(
+    cursor, user_id, hashed_pictures, container_client, picture_set_id=None
+):
+    """
+    Upload a picture that we don't know the seed to the user container
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - user_id (str): The UUID of the user.
+    - hashed_pictures ([str]): The images to upload.
+    - container_client: The container client of the user.
+    """
+    try:
+
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+
+        empty_picture = json.dumps([])
+
+        default_picture_set = str(user.get_default_picture_set(cursor, user_id))
+        if picture_set_id is None or str(picture_set_id) == default_picture_set:
+            picture_set_id = default_picture_set
+            folder_name = "General"
+        else:
+            folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+            if folder_name is None:
+                folder_name = picture_set_id
+        pic_ids=[]
+        for picture_hash in hashed_pictures:
+            # Create picture instance in DB
+            picture_id = picture.new_picture_unknown(
+                cursor=cursor,
+                picture=empty_picture,
+                nb_objects=len(hashed_pictures),
+                picture_set_id=picture_set_id,
+            )
+            # Upload the picture to the Blob Storage
+            response = await azure_storage.upload_image(
+                container_client, folder_name, picture_set_id, picture_hash, picture_id
+            )
+            # Update the picture metadata in the DB
+            data = {
+                "link": f"{folder_name}/" + str(picture_id),
+                "description": "Uploaded through the API",
+            }
+
+            if not response:
+                raise BlobUploadError("Error uploading the picture")
+
+            picture.update_picture_metadata(cursor, picture_id, json.dumps(data), 0)
+            pic_ids.append(picture_id)
+        return pic_ids
+    except BlobUploadError or azure_storage.UploadImageError:
+        raise BlobUploadError("Error uploading the picture")
+    except user.UserNotFoundError:
+        raise
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
