@@ -531,7 +531,6 @@ class test_picture_set(unittest.TestCase):
                 self.container_client,
             )
         )
-        print("moved")
         # Check there is the right number of picture sets in db for each user after moving
         self.assertEqual(
             len(
@@ -559,7 +558,6 @@ class test_picture_set(unittest.TestCase):
             blob_name = "{}/{}/{}.png".format(
                 str(self.user_id), self.folder_name, str(picture_id)
             )
-            print("test: " + blob_name)
             blob = asyncio.run(
                 datastore.azure_storage.get_blob(self.dev_container_client, blob_name)
             )

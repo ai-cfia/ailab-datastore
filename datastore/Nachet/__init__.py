@@ -705,7 +705,6 @@ async def delete_picture_set_with_archive(
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
             blob_name = f"{folder_name}/{str(picture_id)}.png"
-            print("Nachet: " + blob_name)
             # change the link in the metadata
             picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
             picture.update_picture_metadata(
@@ -717,7 +716,6 @@ async def delete_picture_set_with_archive(
             )
             # move the picture to the dev container
             new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, str(picture_id))
-            print("Nachet new: " + new_blob_name)
             if not (
                 await azure_storage.move_blob(
                     blob_name,
