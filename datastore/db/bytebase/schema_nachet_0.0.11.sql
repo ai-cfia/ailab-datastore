@@ -56,6 +56,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "inference" json NOT NULL,
         "picture_id" uuid NOT NULL,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "update_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "user_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
         "feedback_user_id" uuid,
         "verified" boolean DEFAULT false NOT NULL,
@@ -164,6 +165,41 @@ AFTER UPDATE ON inference
 FOR EACH ROW 
 WHEN (NEW.verified = true)
 EXECUTE FUNCTION verified_inference();
+
+
+    -- Trigger function for the `inference` table
+    CREATE OR REPLACE FUNCTION "nachet_0.0.11".update_inference_timestamp()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    NEW.update_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- Trigger for the `inference` table
+    CREATE TRIGGER inference_update_before
+    BEFORE UPDATE ON  "nachet_0.0.11".inference
+    FOR EACH ROW
+    EXECUTE FUNCTION "nachet_0.0.11".update_inference_timestamp();
+
+    -- Trigger function for the `object` table
+    CREATE OR REPLACE FUNCTION "nachet_0.0.11".update_object_timestamp()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    NEW.update_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    updated_at
+
+    -- Trigger for the `inference` table
+    CREATE TRIGGER object_update_before
+    BEFORE UPDATE ON  "nachet_0.0.11".object
+    FOR EACH ROW
+    EXECUTE FUNCTION "nachet_0.0.11".update_object_timestamp();
+
+    
 
     INSERT INTO "nachet_0.0.11".seed(name) VALUES
     ('Brassica napus'),
