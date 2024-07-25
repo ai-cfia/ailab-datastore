@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import validator
-from datastore.db.queries import  seed
+from datastore.db.queries import seed
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -19,12 +19,13 @@ DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
+
 # --------------------  SEED FUNCTIONS --------------------
 class test_seed_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.seed_name = "test-name"
 
     def tearDown(self):

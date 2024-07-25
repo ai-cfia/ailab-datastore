@@ -5,19 +5,17 @@ It tests the functions in the user, seed and picture modules.
 
 import unittest
 import uuid
-import json
 import os
 from PIL import Image
 import io
 import base64
-from time import sleep
 from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
-from datastore.db.queries import inference, picture, seed, user
+from datastore.db.queries import picture, seed, user
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -27,13 +25,14 @@ DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
+
 # --------------------  PICTURE FUNCTIONS --------------------
 class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         # prepare the seed
         self.seed_name = "test seed"
@@ -60,7 +59,6 @@ class test_pictures_functions(unittest.TestCase):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
-    
     def test_new_picture(self):
         """
         This test checks if the new_picture function returns a valid UUID

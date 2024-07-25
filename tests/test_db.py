@@ -10,14 +10,13 @@ import os
 from PIL import Image
 import io
 import base64
-from time import sleep
 from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
-from datastore.db.queries import inference, picture, seed, user
+from datastore.db.queries import picture, user
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -27,12 +26,13 @@ DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
+
 # --------------------  USER FUNCTIONS --------------------
 class test_user_functions(unittest.TestCase):
     def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.email = "test@email.gouv.ca"
 
     def tearDown(self):
@@ -216,9 +216,9 @@ class test_user_functions(unittest.TestCase):
 class test_pictures_functions(unittest.TestCase):
     def setUp(self):
         # prepare the connection and cursor
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.con)
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         # prepare the user
         self.user_id = user.register_user(self.cursor, "test@email")
@@ -326,7 +326,9 @@ class test_pictures_functions(unittest.TestCase):
         )
 
         # prepare picture
-        picture_id = picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
+        picture_id = picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
 
         # test the function
         picture_data = picture.get_picture(self.cursor, picture_id)
@@ -344,8 +346,10 @@ class test_pictures_functions(unittest.TestCase):
         )
 
         # prepare picture
-        picture_id = picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
-        
+        picture_id = picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
+
         new_picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", 6, 1.0, ""
         )
@@ -501,8 +505,12 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
 
-        picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
-        picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
+        picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
+        picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
 
         count = picture.count_pictures(self.cursor, picture_set_id)
         self.assertEqual(count, 2, "The number of pictures is not the expected one")
@@ -515,7 +523,9 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
 
-        picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
+        picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
 
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
@@ -537,9 +547,12 @@ class test_pictures_functions(unittest.TestCase):
             "The number of pictures is not the expected one",
         )
 
-
-        pictureId1 = picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
-        pictureId2 = picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
+        pictureId1 = picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
+        pictureId2 = picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
 
         pictures = picture.get_picture_set_pictures(self.cursor, picture_set_id)
         self.assertEqual(
@@ -559,9 +572,10 @@ class test_pictures_functions(unittest.TestCase):
         picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        
-        picture.new_picture_unknown(self.cursor, self.picture, picture_set_id, self.nb_seed)
 
+        picture.new_picture_unknown(
+            self.cursor, self.picture, picture_set_id, self.nb_seed
+        )
 
         mock_cursor = MagicMock()
         mock_cursor.fetchall.side_effect = Exception("Connection error")
@@ -574,30 +588,57 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
 
-        picture.new_picture_unknown(self.cursor, self.picture, old_picture_set_id, self.nb_seed)
-        picture.new_picture_unknown(self.cursor, self.picture, old_picture_set_id, self.nb_seed)
+        picture.new_picture_unknown(
+            self.cursor, self.picture, old_picture_set_id, self.nb_seed
+        )
+        picture.new_picture_unknown(
+            self.cursor, self.picture, old_picture_set_id, self.nb_seed
+        )
 
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
-        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
-        self.assertEqual(len(old_picture_set), 2, "The number of pictures is not the expected one")
-        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
-        self.assertEqual(len(new_picture_set), 0, "The number of pictures is not the expected one")
-        
-        picture.change_picture_set_id(self.cursor, str(self.user_id), str(old_picture_set_id), str(new_picture_set_id))
+        old_picture_set = picture.get_picture_set_pictures(
+            self.cursor, old_picture_set_id
+        )
+        self.assertEqual(
+            len(old_picture_set), 2, "The number of pictures is not the expected one"
+        )
+        new_picture_set = picture.get_picture_set_pictures(
+            self.cursor, new_picture_set_id
+        )
+        self.assertEqual(
+            len(new_picture_set), 0, "The number of pictures is not the expected one"
+        )
 
-        old_picture_set = picture.get_picture_set_pictures(self.cursor, old_picture_set_id)
-        self.assertEqual(len(old_picture_set), 0, "The number of pictures is not the expected one")
-        new_picture_set = picture.get_picture_set_pictures(self.cursor, new_picture_set_id)
-        self.assertEqual(len(new_picture_set), 2, "The number of pictures is not the expected one")
+        picture.change_picture_set_id(
+            self.cursor,
+            str(self.user_id),
+            str(old_picture_set_id),
+            str(new_picture_set_id),
+        )
+
+        old_picture_set = picture.get_picture_set_pictures(
+            self.cursor, old_picture_set_id
+        )
+        self.assertEqual(
+            len(old_picture_set), 0, "The number of pictures is not the expected one"
+        )
+        new_picture_set = picture.get_picture_set_pictures(
+            self.cursor, new_picture_set_id
+        )
+        self.assertEqual(
+            len(new_picture_set), 2, "The number of pictures is not the expected one"
+        )
 
     def test_change_picture_set_id_error(self):
         old_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
 
-        picture.new_picture_unknown(self.cursor, self.picture, old_picture_set_id, self.nb_seed)
+        picture.new_picture_unknown(
+            self.cursor, self.picture, old_picture_set_id, self.nb_seed
+        )
 
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
@@ -616,7 +657,9 @@ class test_pictures_functions(unittest.TestCase):
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )
 
-        picture.new_picture_unknown(self.cursor, self.picture, old_picture_set_id, self.nb_seed)
+        picture.new_picture_unknown(
+            self.cursor, self.picture, old_picture_set_id, self.nb_seed
+        )
 
         new_picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
@@ -626,7 +669,6 @@ class test_pictures_functions(unittest.TestCase):
             picture.change_picture_set_id(
                 self.cursor, str(uuid.uuid4()), old_picture_set_id, new_picture_set_id
             )
-
 
 
 if __name__ == "__main__":

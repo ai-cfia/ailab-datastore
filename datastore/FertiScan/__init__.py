@@ -14,10 +14,11 @@ if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
     # raise ValueError("FERTISCAN_SCHEMA is not set")
     print("Warning: FERTISCAN_SCHEMA not set")
 
-FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
+FERTISCAN_STORAGE_URL = os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
+
 
 async def register_analysis(
     cursor, container_client, analysis_dict, picture_id: str, picture, folder="General"
@@ -41,7 +42,7 @@ async def register_analysis(
         #     azure_storage.create_folder(container_client, folder)
         # azure_storage.upload_image(container_client, folder, picture, picture_id)
         # analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
-        #analysis_dict["analysis_id"] = str(analysis_id)
+        # analysis_dict["analysis_id"] = str(analysis_id)
         return None
     except Exception as e:
         print(e.__str__())

@@ -27,6 +27,7 @@ DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
+
 # --------------------  INFERENCE FUNCTIONS --------------------
 class test_inference_functions(unittest.TestCase):
     def setUp(self):
@@ -293,7 +294,7 @@ class test_inference_functions(unittest.TestCase):
         inference_obj_id = inference.new_inference_object(
             self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
         )
-        previous_inference_obj = inference.get_inference_object(
+        inference.get_inference_object(
             self.cursor, inference_obj_id
         )
         # print(previous_inference_obj)
@@ -327,7 +328,7 @@ class test_inference_functions(unittest.TestCase):
         inference_obj_id = inference.new_inference_object(
             self.cursor, inference_id, json.dumps(self.inference["boxes"][0]), self.type
         )
-        previous_inference_obj = inference.get_inference_object(
+        inference.get_inference_object(
             self.cursor, inference_obj_id
         )
         # Sleep to see a difference in the updated_at date of the object
@@ -438,5 +439,9 @@ class test_inference_functions(unittest.TestCase):
             self.inference["boxes"][0]["score"],
         )
         mock_seed_id = str(uuid.uuid4())
-        fetched_seed_obj_id = inference.get_seed_object_id(self.cursor,mock_seed_id, inference_obj_id)
-        self.assertTrue(fetched_seed_obj_id is None, "The fetched seed object id should be None")
+        fetched_seed_obj_id = inference.get_seed_object_id(
+            self.cursor, mock_seed_id, inference_obj_id
+        )
+        self.assertTrue(
+            fetched_seed_obj_id is None, "The fetched seed object id should be None"
+        )

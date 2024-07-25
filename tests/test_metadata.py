@@ -2,8 +2,6 @@ import unittest
 import uuid
 import datastore.db.metadata.picture_set as picture_set_data
 import datastore.db.metadata.picture as picture_data
-import datastore.db.metadata.inference as inference
-import datastore.db.metadata.machine_learning as ml_data
 import io
 from PIL import Image
 from datetime import date

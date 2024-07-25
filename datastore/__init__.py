@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class UserAlreadyExistsError(Exception):
     pass
 
@@ -32,7 +33,6 @@ class ContainerCreationError(Exception):
 
 class FolderCreationError(Exception):
     pass
-
 
 
 class User:
@@ -113,9 +113,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(
-    user_id, storage_url, account, key, tier="user"
-):
+async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
     """
     Get the container client of a user
 
@@ -185,6 +183,7 @@ async def create_picture_set(
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
 
+
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -203,6 +202,7 @@ async def get_picture_sets_info(cursor, user_id: str):
         nb_picture = picture.count_pictures(cursor, picture_set_id)
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
+
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
@@ -256,6 +256,7 @@ async def delete_picture_set_permanently(
         print(e)
         raise Exception("Datastore Unhandled Error")
 
+
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None
 ):
@@ -285,7 +286,7 @@ async def upload_pictures(
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
                 folder_name = picture_set_id
-        pic_ids=[]
+        pic_ids = []
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(

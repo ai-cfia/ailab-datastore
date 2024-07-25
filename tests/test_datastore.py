@@ -7,14 +7,11 @@ import os
 import unittest
 from unittest.mock import MagicMock, patch
 from PIL import Image
-import json
 import uuid
 import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.db.metadata.validator as validator
-import datastore.db.queries.seed as seed_query
-from copy import deepcopy
 
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
