@@ -56,6 +56,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "inference" json NOT NULL,
         "picture_id" uuid NOT NULL,
         "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "update_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "user_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
         "feedback_user_id" uuid,
         "verified" boolean DEFAULT false NOT NULL,
@@ -108,7 +109,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "is_default" boolean NOT NULL default false,
         "data" json NOT NULL
     );
-   
+    
+    Alter table "nachet_0.0.11"."inference" ADD "pipeline_id" uuid REFERENCES "nachet_0.0.11"."pipeline"(id);
+
     CREATE TRIGGER "pipeline_default_trigger" BEFORE insert OR UPDATE ON "nachet_0.0.11"."pipeline"
     FOR EACH ROW EXECUTE FUNCTION "nachet_0.0.11".pipeline_default_trigger();
 

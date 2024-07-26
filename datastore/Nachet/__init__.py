@@ -16,8 +16,8 @@ from datastore import (
     BlobUploadError,
     FolderCreationError,
     UserNotOwnerError,
-
 )
+
 load_dotenv()
 
 NACHET_BLOB_ACCOUNT = os.environ.get("NACHET_BLOB_ACCOUNT")
@@ -31,7 +31,6 @@ if NACHET_BLOB_KEY is None or NACHET_BLOB_KEY == "":
 NACHET_STORAGE_URL = os.environ.get("NACHET_STORAGE_URL")
 if NACHET_STORAGE_URL is None or NACHET_STORAGE_URL == "":
     raise ValueError("NACHET_STORAGE_URL is not set")
-    
 DEV_USER_EMAIL = os.environ.get("DEV_USER_EMAIL")
 if DEV_USER_EMAIL is None or DEV_USER_EMAIL == "":
     # raise ValueError("DEV_USER_EMAIL is not set")
@@ -45,8 +44,10 @@ NACHET_SCHEMA = os.environ.get("NACHET_SCHEMA")
 if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA is not set")
 
+
 class InferenceCreationError(Exception):
     pass
+
 
 class InferenceFeedbackError(Exception):
     pass
@@ -54,7 +55,6 @@ class InferenceFeedbackError(Exception):
 
 class MLRetrievalError(Exception):
     pass
-
 
 
 async def upload_picture_unknown(
@@ -279,11 +279,18 @@ async def register_inference_result(
     """
     try:
         trimmed_inference = inference_metadata.build_inference_import(inference_dict)
+            
+        model_name = inference_dict["models"][0]["name"]
+        pipeline_id = machine_learning.get_pipeline_id_from_model_name(cursor, model_name)
+        inference_dict["pipeline_id"] = str(pipeline_id)
+        
         inference_id = inference.new_inference(
-            cursor, trimmed_inference, user_id, picture_id, type
+            cursor, trimmed_inference, user_id, picture_id, type, pipeline_id
         )
         nb_object = int(inference_dict["totalBoxes"])
         inference_dict["inference_id"] = str(inference_id)
+
+        
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
@@ -746,8 +753,13 @@ async def delete_picture_set_with_archive(
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
-        dev_container_client = await get_user_container_client(dev_user_id)
-
+        dev_container_client = await get_user_container_client(
+            dev_user_id, NACHET_STORAGE_URL, NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY
+        )
+        if not dev_container_client.exists():
+            raise BlobUploadError(
+                f"Error while connecting to the dev container: {dev_user_id}"
+            )
         if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
 
@@ -782,14 +794,19 @@ async def delete_picture_set_with_archive(
                 cursor, picture_id, dev_picture_set_id
             )
             # move the picture to the dev container
-            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
-            await azure_storage.move_blob(
-                blob_name,
-                new_blob_name,
-                dev_picture_set_id,
-                container_client,
-                dev_container_client,
-            )
+            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, str(picture_id))
+            if not (
+                await azure_storage.move_blob(
+                    blob_name,
+                    new_blob_name,
+                    dev_picture_set_id,
+                    container_client,
+                    dev_container_client,
+                )
+            ):
+                raise BlobUploadError(
+                    f"Error while moving the picture : {picture_id} to the dev container"
+                )
 
         if len(picture.get_validated_pictures(cursor, picture_set_id)) > 0:
             raise picture.PictureSetDeleteError(

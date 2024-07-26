@@ -23,7 +23,7 @@ INFERENCE TABLE QUERIES
 
 """
 
-def new_inference(cursor, inference, user_id: str, picture_id:str,type):
+def new_inference(cursor, inference, user_id: str, picture_id:str,type, pipeline_id:str):
     """
     This function uploads a new inference to the database.
 
@@ -42,10 +42,11 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type):
                 inference(
                     inference,
                     picture_id,
-                    user_id
+                    user_id,
+                    pipeline_id
                     )
             VALUES
-                (%s,%s,%s)
+                (%s,%s,%s,%s)
             RETURNING id    
             """
         cursor.execute(
@@ -54,6 +55,7 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type):
                 inference,
                 picture_id,
                 user_id,
+                pipeline_id,
             ),
         )
         inference_id=cursor.fetchone()[0]
@@ -107,7 +109,8 @@ def set_inference_feedback_user_id(cursor, inference_id, user_id):
                 id = %s
             """
         cursor.execute(query, (user_id,inference_id))
-    except Exception:
+    except Exception as e:
+        print(e)
         raise Exception(f"Error: could not set feedback_user_id {user_id} for inference {inference_id}")
     
 
@@ -274,7 +277,7 @@ def get_inference_object(cursor, inference_object_id: str):
                 valid,
                 top_id,
                 upload_date,
-                updated_at
+                update_at
             FROM 
                 object
             WHERE 
@@ -330,7 +333,8 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
             UPDATE 
                 object
             SET
-                top_id = %s
+                top_id = %s,
+                update_at = now()
             WHERE 
                 id = %s
             """
@@ -379,8 +383,7 @@ def set_inference_object_verified_id(cursor, inference_object_id: str, verified_
             UPDATE 
                 object
             SET
-                verified_id = %s,
-                updated_at = CURRENT_TIMESTAMP
+                verified_id = %s
             WHERE 
                 id = %s
             """
