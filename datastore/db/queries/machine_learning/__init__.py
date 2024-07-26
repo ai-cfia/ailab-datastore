@@ -243,36 +243,38 @@ def new_pipeline_model(cursor,pipeline_id,model_id):
     except(Exception):
         raise PipelineCreationError("Error: pipeline model not uploaded")
 
-def get_pipeline_by_model_id(cursor,model_id:str):
+def get_pipeline_id_from_model_name(cursor,model_name:str):
     """
-    This function gets the pipeline from the model id.
+    This function gets the pipeline id from the model name.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - model_id (str): The UUID of the model.
+    - model_name (str): The name of the model.
 
     Returns:
-    - The UUID of the pipeline.
+    - The UUID of the model.
     """
     try:
         query = """
             SELECT 
                 pm.pipeline_id
-            FROM
-                pipeline_model as pm
-            WHERE
-                pm.model_id = %s
+            FROM  
+                pipeline_model as pm  
+            LEFT JOIN  
+                model as m on m.id=pm.model_id  
+            WHERE  
+                m.name= %s  
             """
         cursor.execute(
             query,
             (
-                model_id,
-            )
+                model_name,
+            ),
         )
-        pipeline_id=cursor.fetchone()[0]
-        return pipeline_id
+        model_id=cursor.fetchone()[0]
+        return model_id
     except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{model_id}' was not found")
+        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
     except(Exception):
         raise PipelineCreationError("Error: pipeline not found")
 
@@ -378,34 +380,6 @@ def is_a_model(cursor,model_id:str):
         return False
     except(Exception):
         raise PipelineCreationError("Error: model not found")
-    
-def get_model_id_from_name(cursor,model_name:str):
-    """
-    This function gets the model id from the model name.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - model_name (str): The name of the model.
-
-    Returns:
-    - The UUID of the model.
-    """
-    try:
-        query = """
-            SELECT id
-            FROM model
-            WHERE name = %s
-            """
-        cursor.execute(
-            query,
-            (
-                model_name,
-            ),
-        )
-        model_id=cursor.fetchone()[0]
-        return model_id
-    except(Exception):
-        raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
     
 def get_model_id_from_endpoint(cursor,endpoint_name:str):
     """
