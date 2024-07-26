@@ -1,5 +1,5 @@
 """
-This module is responsible for handling the user data in the database 
+This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
@@ -11,6 +11,7 @@ import datastore.blob as blob
 import datastore.blob.azure_storage_api as azure_storage
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -82,6 +83,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
+        # TODO: the container naming logic should probably be exported
         container_client = blob_service_client.create_container(f"{tier}-{user_uuid}")
 
         if not container_client.exists():
@@ -113,7 +115,9 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
+async def get_user_container_client(
+    user_id, connection_string, account_name, key, tier="user"
+):
     """
     Get the container client of a user
 
@@ -122,10 +126,10 @@ async def get_user_container_client(user_id, storage_url, account, key, tier="us
 
     Returns: ContainerClient object
     """
-    sas = blob.get_account_sas(account, key)
+    sas = blob.get_account_sas(account_name, key)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        storage_url, user_id, True, tier, sas
+        connection_string, user_id, True, tier, sas
     )
     if isinstance(container_client, ContainerClient):
         return container_client
@@ -149,7 +153,6 @@ async def create_picture_set(
         picture_set_id : uuid of the new picture set
     """
     try:
-
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
@@ -270,7 +273,6 @@ async def upload_pictures(
     - container_client: The container client of the user.
     """
     try:
-
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"

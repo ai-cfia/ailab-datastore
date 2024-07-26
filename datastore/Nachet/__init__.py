@@ -1,21 +1,23 @@
+import json
 import os
+
 from dotenv import load_dotenv
+
+import datastore.blob.azure_storage_api as azure_storage
+import datastore.db.metadata.inference as inference_metadata
+import datastore.db.metadata.machine_learning as ml_metadata
+import datastore.db.metadata.picture_set as data_picture_set
+import datastore.db.metadata.validator as validator
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
-import datastore.db.metadata.machine_learning as ml_metadata
-import datastore.db.metadata.inference as inference_metadata
-import datastore.db.metadata.validator as validator
+import datastore.db.queries.picture as picture
 import datastore.db.queries.seed as seed
 import datastore.db.queries.user as user
-import datastore.db.queries.picture as picture
-import datastore.db.metadata.picture_set as data_picture_set
-import datastore.blob.azure_storage_api as azure_storage
-import json
 from datastore import (
-    get_user_container_client,
     BlobUploadError,
     FolderCreationError,
     UserNotOwnerError,
+    get_user_container_client,
 )
 
 load_dotenv()
@@ -71,7 +73,6 @@ async def upload_picture_unknown(
     - container_client: The container client of the user.
     """
     try:
-
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
@@ -141,7 +142,6 @@ async def upload_picture_known(
     - zoom_level: The zoom level of the picture.
     """
     try:
-
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
@@ -227,7 +227,6 @@ async def upload_pictures(
         array of the new pictures UUID
     """
     try:
-
         if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
             raise seed.SeedNotFoundError(
                 f"Seed not found based on the given name: {seed_name}"
@@ -284,7 +283,7 @@ async def register_inference_result(
             cursor, trimmed_inference, user_id, picture_id, type
         )
         nb_object = int(inference_dict["totalBoxes"])
-        inference_dict["inference_id"] = str(inference_id)
+        inference_dict["inferenceId"] = str(inference_id)
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
@@ -302,12 +301,11 @@ async def register_inference_result(
             object_inference_id = inference.new_inference_object(
                 cursor, inference_id, box, type, False
             )
-            inference_dict["boxes"][box_index]["box_id"] = str(object_inference_id)
+            inference_dict["boxes"][box_index]["boxId"] = str(object_inference_id)
             # loop through the topN Prediction
             top_score = -1
             if "topN" in inference_dict["boxes"][box_index]:
                 for topN in inference_dict["boxes"][box_index]["topN"]:
-
                     # Retrieve the right seed_id
                     seed_id = seed.get_seed_id(cursor, topN["label"])
                     id = inference.new_seed_object(
@@ -343,14 +341,14 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
     TODO: doc
     """
     try:
-        if "inference_id" in inference_dict.keys():
-            inference_id = inference_dict["inference_id"]
+        if "inferenceId" in inference_dict.keys():
+            inference_id = inference_dict["inferenceId"]
         else:
             raise InferenceFeedbackError(
                 "Error: inference_id not found in the given infence_dict"
             )
-        if "user_id" in inference_dict.keys():
-            user_id = inference_dict["user_id"]
+        if "userId" in inference_dict.keys():
+            user_id = inference_dict["userId"]
             if not (user.is_a_user_id(cursor, user_id)):
                 raise InferenceFeedbackError(
                     f"Error: user_id {user_id} not found in the database"
@@ -371,7 +369,7 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
                 f"Error: Inference {inference_id} is already verified"
             )
         for object in inference_dict["boxes"]:
-            box_id = object["box_id"]
+            box_id = object["boxId"]
             seed_name = object["label"]
             seed_id = object["classId"]
             # flag_seed = False
@@ -674,13 +672,8 @@ async def delete_picture_set_with_archive(
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
-        dev_container_client = await get_user_container_client(
-            dev_user_id, NACHET_STORAGE_URL, NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY
-        )
-        if not dev_container_client.exists():
-            raise BlobUploadError(
-                f"Error while connecting to the dev container: {dev_user_id}"
-            )
+        dev_container_client = await get_user_container_client(dev_user_id)
+
         if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
 
@@ -715,19 +708,14 @@ async def delete_picture_set_with_archive(
                 cursor, picture_id, dev_picture_set_id
             )
             # move the picture to the dev container
-            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, str(picture_id))
-            if not (
-                await azure_storage.move_blob(
-                    blob_name,
-                    new_blob_name,
-                    dev_picture_set_id,
-                    container_client,
-                    dev_container_client,
-                )
-            ):
-                raise BlobUploadError(
-                    f"Error while moving the picture : {picture_id} to the dev container"
-                )
+            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, picture_id)
+            await azure_storage.move_blob(
+                blob_name,
+                new_blob_name,
+                dev_picture_set_id,
+                container_client,
+                dev_container_client,
+            )
 
         if len(picture.get_validated_pictures(cursor, picture_set_id)) > 0:
             raise picture.PictureSetDeleteError(
@@ -787,8 +775,8 @@ async def find_validated_pictures(cursor, user_id, picture_set_id):
         user.UserNotFoundError,
         picture.PictureSetNotFoundError,
         UserNotOwnerError,
-    ):
-        raise
+    ) as e:
+        raise e
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
