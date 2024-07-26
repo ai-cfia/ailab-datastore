@@ -200,7 +200,7 @@ erDiagram
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
-  inspection }|--|| users :inspect
+  inspection }o--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
   label_information ||--|{ metric: has
