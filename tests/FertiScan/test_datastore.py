@@ -71,3 +71,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
+
+    def test_register_analysis_invalid_user(self):
+        with self.assertRaises(Exception):
+            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, "invalid_user_id", [self.pic_encoded,self.pic_encoded], self.analysis_json))

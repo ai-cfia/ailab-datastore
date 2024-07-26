@@ -5,9 +5,71 @@ The metadata is generated in a json format and is used to store the metadata in 
 """
 
 import json
+from typing import List
+from pydantic import BaseModel, ValidationError
 
 class MissingKeyError(Exception):
     pass
+
+class NPKError(Exception):
+    pass
+
+class MetadataFormattingError(Exception):
+    pass
+
+class OrganizationInformation(BaseModel):
+    name: str
+    address: str
+    website: str
+    phone_number: str
+    
+class Value(BaseModel):
+    value: float
+    unit: str
+    name: str
+
+class ValuesObjects(BaseModel):
+    en: List[Value]
+    fr: List[Value]
+
+class SubLabel(BaseModel):
+    en: List[str]
+    fr: List[str]
+
+class ProductInformation(BaseModel):
+    name: str
+    registration_number: str
+    lot_number: str
+    weight: Value
+    density: Value
+    volume: Value
+    npk: str
+    warranty: str
+    n: float
+    p: float
+    k: float
+
+class Specification(BaseModel):
+    humidity: float
+    ph: float
+    solubility: float
+
+class Specifications(BaseModel):
+    en: List[Specification]
+    fr: List[Specification]
+
+class Inspection(BaseModel):
+    company: OrganizationInformation
+    manufacturer: OrganizationInformation
+    product: ProductInformation
+    cautions: SubLabel
+    instructions: SubLabel
+    micronutrients: SubLabel
+    organic_ingredients: ValuesObjects
+    inert_ingredients: ValuesObjects
+    specifications: Specifications
+    first_aid: SubLabel
+    guaranteed_analysis: ValuesObjects
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -58,70 +120,94 @@ def build_inspection_import(analysis_form: dict) -> str:
         for key in requiered_keys:
             if key not in analysis_form:
                 raise MissingKeyError(key)
-        data = json.loads(analysis_form)
-        npk = extract_npk(data.get("npk"))
-        output_json = {
-        "company": {
-            "name": data.get("company_name"),
-            "address": data.get("company_address"),
-            "website": data.get("company_website"),
-            "phone_number": data.get("company_phone_number")
-        },
-        "manufacturer": {
-            "name": data.get("manufacturer_name"),
-            "address": data.get("manufacturer_address"),
-            "website": data.get("manufacturer_website"),
-            "phone_number": data.get("manufacturer_phone_number")
-        },
-        "product": {
-            "name": data.get("fertiliser_name"),
-            "registration_number": data.get("registration_number"),
-            "lot_number": data.get("lot_number"),
-            "weight": {
-                "kg": data.get("weight_kg"),
-                "lb": data.get("weight_lb")
-            },
-            "density": data.get("density"),
-            "volume": data.get("volume"),
-            "npk": data.get("npk"),
-            "n":npk[0],
-            "p":npk[1],
-            "k":npk[2],
-            "warranty": data.get("warranty")
-        },
-        "cautions": {
-            "en": data.get("cautions_en", []),
-            "fr": data.get("cautions_fr", [])
-        },
-        "instructions": {
-            "en": data.get("instructions_en", []),
-            "fr": data.get("instructions_fr", [])
-        },
-        "micronutrients": {
-            "en": data.get("micronutrients_en", []),
-            "fr": data.get("micronutrients_fr", [])
-        },
-        "organic_ingredients": {
-            "en": data.get("organic_ingredients_en", []),
-            "fr": data.get("organic_ingredients_fr", [])
-        },
-        "inert_ingredients": {
-            "en": data.get("inert_ingredients_en", []),
-            "fr": data.get("inert_ingredients_fr", [])
-        },
-        "specifications": {
-            "en": data.get("specifications_en", []),
-            "fr": data.get("specifications_fr", [])
-        },
-        "first_aid": {
-            "en": data.get("first_aid_en", []),
-            "fr": data.get("first_aid_fr", [])
-        },
-        "guaranteed_analysis": data.get("guaranteed_analysis", [])
-    }
-        return (json.dumps(output_json))
+        #data = json.loads(analysis_form)
+        npk = extract_npk(analysis_form.get("npk"))
+        company = OrganizationInformation(
+            name=analysis_form.get("company_name"),
+            address=analysis_form["company_address"],
+            website=analysis_form["company_website"],
+            phone_number=analysis_form["company_phone_number"]
+        )
+        manufacturer = OrganizationInformation(
+            name=analysis_form["manufacturer_name"],
+            address=analysis_form["manufacturer_address"],
+            website=analysis_form["manufacturer_website"],
+            phone_number=analysis_form["manufacturer_phone_number"]
+        )
+        product = ProductInformation(
+            name=analysis_form["fertiliser_name"],
+            registration_number=analysis_form["registration_number"],
+            lot_number=analysis_form["lot_number"],
+            weight=split_value_unit(analysis_form["weight"]),
+            density=split_value_unit(analysis_form["density"]),
+            volume=split_value_unit(analysis_form["volume"]),
+            npk=analysis_form["npk"],
+            warranty=analysis_form["warranty"],
+            n=npk[0],
+            p=npk[1],
+            k=npk[2]
+        )
+
+        cautions = SubLabel(
+            en=analysis_form["cautions_en"],
+            fr=analysis_form["cautions_fr"]
+        )
+
+        instructions = SubLabel(
+            en=analysis_form["instructions_en"],
+            fr=analysis_form["instructions_fr"]
+        )
+
+        micronutrients = SubLabel(
+            en=analysis_form["micronutrients_en"],
+            fr=analysis_form["micronutrients_fr"]
+        )
+
+        organic_ingredients = ValuesObjects(
+            en=analysis_form["organic_ingredients_en"],
+            fr=analysis_form["organic_ingredients_fr"]
+        )
+
+        inert_ingredients = ValuesObjects(
+            en=analysis_form["inert_ingredients_en"],
+            fr=analysis_form["inert_ingredients_fr"]
+        )
+
+        specifications = Specifications(
+            en=extract_specifications(analysis_form["specifications_en"]),
+            fr=extract_specifications(analysis_form["specifications_fr"])
+        )
+
+        first_aid = SubLabel(
+            en=analysis_form["first_aid_en"],
+            fr=analysis_form["first_aid_fr"]
+        )
+
+        guaranteed_analysis = ValuesObjects(
+            en=analysis_form["guaranteed_analysis"],
+            fr=analysis_form["guaranteed_analysis"]
+        )
+
+        inspection_formatted = Inspection(
+            company=company,
+            manufacturer=manufacturer,
+            product=product,
+            cautions=cautions,
+            instructions=instructions,
+            micronutrients=micronutrients,
+            organic_ingredients=organic_ingredients,
+            inert_ingredients=inert_ingredients,
+            specifications=specifications,
+            first_aid=first_aid,
+            guaranteed_analysis=guaranteed_analysis
+        )
+        Inspection(**inspection_formatted.model_dump())
     except MissingKeyError as e:
         raise MissingKeyError(f"Missing key: {e}")
+    except ValidationError as e:
+        raise MetadataFormattingError("Error InspectionCreationError not created:"+ str(e)) from None
+    return inspection_formatted.model_dump_json()
+
 
 def split_value_unit(value_unit: str) -> dict:
     """
@@ -141,7 +227,7 @@ def split_value_unit(value_unit: str) -> dict:
     }
     # loop through the string and split the value and unit
     for i in range(len(value_unit)):
-        if not (value_unit[i].isnumeric() or value_unit[i] == "." or value_unit[i] == ","):
+         if not (value_unit[i].isnumeric() or value_unit[i] == "." or value_unit[i] == ","):
             value = value_unit[:i]
             unit = value_unit[i:]
             break
@@ -166,8 +252,14 @@ def extract_npk(npk:str):
     """
     if npk is None or npk == "" or len(npk)<5:
         return [None,None,None]
-    npk = npk.split("-")
-    return [float(npk[0]),float(npk[1]),float(npk[2])]
+    npk_formated=npk.replace("N","-")
+    npk_formated=npk_formated.replace("P","-")
+    npk_formated=npk_formated.replace("K","-")
+    npk_reformated = npk.split("-")
+    for i in range(len(npk_reformated)):
+        if not npk_reformated[i].isnumeric():
+            NPKError("NPK values must be numeric. Issue with: "+npk_reformated[i] + "in the NPK string: "+npk)
+    return [float(npk_reformated[0]),float(npk_reformated[1]),float(npk_reformated[2])]
 
 def extract_specifications(specifications: list) -> list:
     """
