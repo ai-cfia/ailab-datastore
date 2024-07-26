@@ -280,11 +280,18 @@ async def register_inference_result(
     """
     try:
         trimmed_inference = inference_metadata.build_inference_import(inference_dict)
+            
+        model_name = inference_dict["models"][0]["name"]
+        pipeline_id = machine_learning.get_pipeline_id_from_model_name(cursor, model_name)
+        inference_dict["pipeline_id"] = str(pipeline_id)
+        
         inference_id = inference.new_inference(
-            cursor, trimmed_inference, user_id, picture_id, type
+            cursor, trimmed_inference, user_id, picture_id, type, pipeline_id
         )
         nb_object = int(inference_dict["totalBoxes"])
         inference_dict["inference_id"] = str(inference_id)
+
+        
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
@@ -343,14 +350,14 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
     TODO: doc
     """
     try:
-        if "inference_id" in inference_dict.keys():
-            inference_id = inference_dict["inference_id"]
+        if "inferenceId" in inference_dict.keys():
+            inference_id = inference_dict["inferenceId"]
         else:
             raise InferenceFeedbackError(
                 "Error: inference_id not found in the given infence_dict"
             )
-        if "user_id" in inference_dict.keys():
-            user_id = inference_dict["user_id"]
+        if "userId" in inference_dict.keys():
+            user_id = inference_dict["userId"]
             if not (user.is_a_user_id(cursor, user_id)):
                 raise InferenceFeedbackError(
                     f"Error: user_id {user_id} not found in the database"
@@ -371,7 +378,7 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
                 f"Error: Inference {inference_id} is already verified"
             )
         for object in inference_dict["boxes"]:
-            box_id = object["box_id"]
+            box_id = object["boxId"]
             seed_name = object["label"]
             seed_id = object["classId"]
             # flag_seed = False

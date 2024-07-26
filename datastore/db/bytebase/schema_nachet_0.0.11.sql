@@ -60,7 +60,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "user_id" uuid NOT NULL REFERENCES "nachet_0.0.11".users(id),
         "feedback_user_id" uuid,
         "verified" boolean DEFAULT false NOT NULL,
-        "pipeline_id" uuid NOT NULL REFERENCES "nachet_0.0.11"."pipeline"(id),
         FOREIGN KEY ("picture_id") REFERENCES "nachet_0.0.11"."picture"(id) ON DELETE CASCADE
     );
 
@@ -110,7 +109,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'nache
         "is_default" boolean NOT NULL default false,
         "data" json NOT NULL
     );
-   
+    
+    Alter table "nachet_0.0.11"."inference" ADD "pipeline_id" uuid REFERENCES "nachet_0.0.11"."pipeline"(id);
+
     CREATE TRIGGER "pipeline_default_trigger" BEFORE insert OR UPDATE ON "nachet_0.0.11"."pipeline"
     FOR EACH ROW EXECUTE FUNCTION "nachet_0.0.11".pipeline_default_trigger();
 
@@ -166,41 +167,6 @@ AFTER UPDATE ON inference
 FOR EACH ROW 
 WHEN (NEW.verified = true)
 EXECUTE FUNCTION verified_inference();
-
-
-    -- Trigger function for the `inference` table
-    CREATE OR REPLACE FUNCTION "nachet_0.0.11".update_inference_timestamp()
-    RETURNS TRIGGER AS $$
-    BEGIN
-    NEW.update_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    -- Trigger for the `inference` table
-    CREATE TRIGGER inference_update_before
-    BEFORE UPDATE ON  "nachet_0.0.11".inference
-    FOR EACH ROW
-    EXECUTE FUNCTION "nachet_0.0.11".update_inference_timestamp();
-
-    -- Trigger function for the `object` table
-    CREATE OR REPLACE FUNCTION "nachet_0.0.11".update_object_timestamp()
-    RETURNS TRIGGER AS $$
-    BEGIN
-    NEW.update_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
-
-    updated_at
-
-    -- Trigger for the `inference` table
-    CREATE TRIGGER object_update_before
-    BEFORE UPDATE ON  "nachet_0.0.11".object
-    FOR EACH ROW
-    EXECUTE FUNCTION "nachet_0.0.11".update_object_timestamp();
-
-    
 
     INSERT INTO "nachet_0.0.11".seed(name) VALUES
     ('Brassica napus'),
