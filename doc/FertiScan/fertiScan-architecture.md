@@ -151,6 +151,7 @@ erDiagram
     float value
     string unit
     boolean edited
+    enum language
     uuid label_id FK
     int element_id FK
   }
@@ -203,7 +204,7 @@ erDiagram
   users ||--o{ picture_set: owns
   metric }o--|| unit: defines
 
-  micronutrient ||--|| element_compound: is
-  guaranteed ||--|| element_compound: is
+  micronutrient }o--|| element_compound: is
+  guaranteed }o--|| element_compound: is
 
 ```
