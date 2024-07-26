@@ -1,192 +1,267 @@
 """
-This module contains the function to generate the metadata necessary to interact with the database and the other layers of Fertiscan for all the inspection related objects. 
-The metadata is generated in a json format and is used to store the metadata in the database.
-
+This module represent the function for the table inspection:
+    
 """
 
-import json
 
-class MissingKeyError(Exception):
+class InspectionCreationError(Exception):
     pass
 
 
-def build_inspection_import(analysis_form: dict) -> str:
+class InspectionUpdateError(Exception):
+    pass
+
+
+def new_inspection(cursor, user_id, picture_set_id, verified=False):
     """
-    This funtion build an inspection json object from the pipeline of digitalization analysis.
-    This serves as the metadata for the inspection object in the database.
+    This function uploads a new inspection to the database.
 
     Parameters:
-    - analysis_form: (dict) The digitalization of the label.
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user.
+    - picture_set_id (str): The UUID of the picture set.
+    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
 
     Returns:
-    - The inspection db object in a string format.
+    - The UUID of the inspection.
+    """
+
+    try:
+        query = """
+            INSERT INTO inspection (
+                inspector_id,
+                picture_set_id,
+                verified)
+            VALUES 
+                (%s, %s, %s)
+            RETURNING 
+                id
+            """
+        cursor.execute(query, (user_id, picture_set_id, verified))
+        return cursor.fetchone()[0]
+    except Exception:
+        raise InspectionCreationError("Datastore inspection unhandeled error")
+    
+def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
+    """
+    This function calls the new_inspection function within the database and adds the label information to the inspection.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user.
+    - picture_set_id (str): The UUID of the picture set.
+    - label_json (str): The label information in a json format.
+    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
+
+    Returns:
+    - The json with ids of the inspection and the label information.
     """
     try:
-        requiered_keys = [
-            "company_name",
-            "company_address",
-            "company_website",
-            "company_phone_number",
-            "manufacturer_name",
-            "manufacturer_address",
-            "manufacturer_website",
-            "manufacturer_phone_number",
-            "fertiliser_name",
-            "registration_number",
-            "lot_number",
-            "weight",
-            "density",
-            "volume",
-            "npk",
-            "warranty",
-            "cautions_en",
-            "instructions_en",
-            "micronutrients_en",
-            "organic_ingredients_en",
-            "inert_ingredients_en",
-            "specifications_en",
-            "first_aid_en",
-            "cautions_fr",
-            "instructions_fr",
-            "micronutrients_fr",
-            "organic_ingredients_fr",
-            "inert_ingredients_fr",
-            "specifications_fr",
-            "first_aid_fr",
-            "guaranteed_analysis"
-        ]
-        for key in requiered_keys:
-            if key not in analysis_form:
-                raise MissingKeyError(key)
-        npk = extract_npk(analysis_form.get("npk"))
-        output_json = {
-        "company": {
-            "name": analysis_form.get("company_name"),
-            "address": analysis_form.get("company_address"),
-            "website": analysis_form.get("company_website"),
-            "phone_number": analysis_form.get("company_phone_number")
-        },
-        "manufacturer": {
-            "name": analysis_form.get("manufacturer_name"),
-            "address": analysis_form.get("manufacturer_address"),
-            "website": analysis_form.get("manufacturer_website"),
-            "phone_number": analysis_form.get("manufacturer_phone_number")
-        },
-        "product": {
-            "name": analysis_form.get("fertiliser_name"),
-            "registration_number": analysis_form.get("registration_number"),
-            "lot_number": analysis_form.get("lot_number"),
-            "weight": {
-                "kg": analysis_form.get("weight_kg"),
-                "lb": analysis_form.get("weight_lb")
-            },
-            "density": analysis_form.get("density"),
-            "volume": analysis_form.get("volume"),
-            "npk": analysis_form.get("npk"),
-            "n":npk[0],
-            "p":npk[1],
-            "k":npk[2],
-            "warranty": analysis_form.get("warranty")
-        },
-        "cautions": {
-            "en": analysis_form.get("cautions_en", []),
-            "fr": analysis_form.get("cautions_fr", [])
-        },
-        "instructions": {
-            "en": analysis_form.get("instructions_en", []),
-            "fr": analysis_form.get("instructions_fr", [])
-        },
-        "micronutrients": {
-            "en": analysis_form.get("micronutrients_en", []),
-            "fr": analysis_form.get("micronutrients_fr", [])
-        },
-        "organic_ingredients": {
-            "en": analysis_form.get("organic_ingredients_en", []),
-            "fr": analysis_form.get("organic_ingredients_fr", [])
-        },
-        "inert_ingredients": {
-            "en": analysis_form.get("inert_ingredients_en", []),
-            "fr": analysis_form.get("inert_ingredients_fr", [])
-        },
-        "specifications": {
-            "en": analysis_form.get("specifications_en", []),
-            "fr": analysis_form.get("specifications_fr", [])
-        },
-        "first_aid": {
-            "en": analysis_form.get("first_aid_en", []),
-            "fr": analysis_form.get("first_aid_fr", [])
-        },
-        "guaranteed_analysis": analysis_form.get("guaranteed_analysis", [])
-    }
-        return (json.dumps(output_json))
-    except MissingKeyError as e:
-        raise MissingKeyError(f"Missing key: {e}")
+        query = """
+            SELECT new_inspection(%s, %s, %s)
+            """
+        cursor.execute(query, (user_id, picture_set_id, label_json))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise InspectionCreationError(e.__str__())
 
-def split_value_unit(value_unit: str) -> dict:
+
+
+def is_inspection_verified(cursor, inspection_id):
     """
-    This function splits the value and unit from a string.
-    The string must be in the format of "value unit".
+    This function checks if the inspection has been verified.
 
     Parameters:
-    - value_unit: (str) The string to split.
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
 
     Returns:
-    - A dictionary containing the value and unit.
+    - The value if the inspection has been verified.
     """
-    if value_unit is None or value_unit == "" or len(value_unit)<2:
-        return {
-        "value": None,
-        "unit": None
-    }
-    # loop through the string and split the value and unit
-    for i in range(len(value_unit)):
-        if not (value_unit[i].isnumeric() or value_unit[i] == "." or value_unit[i] == ","):
-            value = value_unit[:i]
-            unit = value_unit[i:]
-            break
-    # trim the unit of any leading or trailing whitespaces
-    unit = unit.strip()
-    if unit == "":
-        unit = None
-    return {
-        "value": value,
-        "unit": unit
-    }
-def extract_npk(npk:str):
+
+    try:
+        query = """
+            SELECT 
+                verified
+            FROM 
+                inspection
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_inspection(cursor, inspection_id):
     """
-    This function extracts the npk values from the string npk.
-    The string must be in the format of "N-P-K".
+    This function gets the inspection from the database.
 
     Parameters:
-    - npk: (str) The string to split.
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
 
     Returns:
-    - A list containing the npk values.
+    - The inspection.
     """
-    if npk is None or npk == "" or len(npk)<5:
-        return [None,None,None]
-    npk = npk.split("-")
-    return [float(npk[0]),float(npk[1]),float(npk[2])]
 
-def extract_specifications(specifications: list) -> list:
+    try:
+        query = """
+            SELECT 
+                verified,
+                upload_date,
+                updated_at,
+                inspector_id,
+                label_info_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id,
+                fertilizer_id
+            FROM 
+                inspection
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_all_user_inspection(cursor, user_id):
     """
-    This function extracts the specifications from the list of strings.
-    The strings must be in the format of "value unit".
+    This function gets all the inspection of a user from the database.
 
     Parameters:
-    - specifications: (list) The list of strings to split.
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user.
 
     Returns:
-    - A list containing the specifications.
+    - The inspection.
     """
-    output = []
-    if specifications is None or specifications == []:
-        return output
-    for specification in specifications:
-        print(specification)
-        res = {}
-        res["humidity"] = float(specification["humidity"])
-        res["ph"] = float(specification["ph"])
-        res["solubility"] = float(specification["solubility"])
-        output.append(res)
-    return output
+
+    try:
+        query = """
+            SELECT 
+                id,
+                verified,
+                upload_date,
+                updated_at,
+                label_info_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id,
+                fertilizer_id
+            FROM 
+                inspection
+            WHERE 
+                inspector_id = %s
+            """
+        cursor.execute(query, (user_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_all_organization_inspection(cursor, org_id):
+    """
+    This function gets all the inspection of an organization from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - org_id (str): The UUID of the organization.
+
+    Returns:
+    - The inspection.
+    """
+
+    try:
+        query = """
+            SELECT 
+                id,
+                verified,
+                upload_date,
+                updated_at,
+                inspector_id,
+                label_info_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id,
+                fertilizer_id
+            FROM 
+                inspection
+            WHERE 
+                company_id = %s OR manufacturer_id = %s
+            """
+        cursor.execute(query, (org_id, org_id))
+        return cursor.fetchall()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def update_inspection(
+    cursor,
+    inspection_id,
+    verified=None,
+    label_info_id=None,
+    sample_id=None,
+    company_id=None,
+    manufacturer_id=None,
+    picture_set_id=None,
+    fertilizer_id=None,
+):
+    """
+    This function updates the inspection in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is None.
+    - label_info_id (str, optional): The UUID of the label information. Default is None.
+    - sample_id (str, optional): The UUID of the sample. Default is None.
+    - company_id (str, optional): The UUID of the company. Default is None.
+    - manufacturer_id (str, optional): The UUID of the manufacturer. Default is None.
+    - picture_set_id (str, optional): The UUID of the picture set. Default is None.
+    - fertilizer_id (str, optional): The UUID of the fertilizer. Default is None.
+
+    Returns:
+    - The UUID of the inspection.
+    """
+
+    try:
+        query = """
+            UPDATE inspection
+            SET 
+                verified = COALESCE(%s, verified),
+                label_info_id = COALESCE(%s, label_info_id),
+                sample_id = COALESCE(%s, sample_id),
+                company_id = COALESCE(%s, company_id),
+                manufacturer_id = COALESCE(%s, manufacturer_id),
+                picture_set_id = COALESCE(%s, picture_set_id),
+                fertilizer_id = COALESCE(%s, fertilizer_id),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE 
+                id = %s
+            RETURNING 
+                id
+            """
+        cursor.execute(
+            query,
+            (
+                verified,
+                label_info_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id,
+                fertilizer_id,
+                inspection_id,
+            ),
+        )
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise InspectionUpdateError(e.__str__())

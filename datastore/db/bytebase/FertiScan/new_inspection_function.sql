@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.8".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -22,6 +22,7 @@ DECLARE
     specification_id uuid;
     sub_label_id uuid;
     ingredient_language text;
+    result_json jsonb := '{}';
 BEGIN
 	
 -- COMPANY
@@ -121,11 +122,9 @@ BEGIN
 	        RETURNING id INTO unit_id;
 	    END IF;
 	   
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'weight';
-	   
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'weight'::metric_type,label_id);
 	 END LOOP;
 -- Weight end
 	
@@ -145,12 +144,10 @@ BEGIN
 	        VALUES (read_unit, null) -- Adjust to_si_unit value as necessary
 	        RETURNING id INTO unit_id;
 	    END IF;
-	
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'density';
 	  
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'density'::metric_type,label_id);
 	END IF;
 -- DENSITY END
 
@@ -170,12 +167,10 @@ BEGIN
 	        VALUES (read_unit, null) -- Adjust to_si_unit value as necessary
 	        RETURNING id INTO unit_id;
 	    END IF;
-	
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'volume';
-	  
+
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'volume'::metric_type,label_id);
 	END IF;
 -- Volume end
    
@@ -190,7 +185,7 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				FALSE,
-				ingredient_language::LANGUAGE,
+				ingredient_language::"fertiscan_0.0.9".language,
 				label_id
 			);
 		END LOOP;
@@ -198,48 +193,30 @@ BEGIN
 -- SPECIFICATION END
 
 -- INGREDIENTS
-   --ORGANIC
-   -- Loop through each language ('en' and 'fr')
-    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'organic_ingredients')
-    LOOP
+
+	-- Loop through each language ('en' and 'fr')
+    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'ingredients')
+	LOOP
         -- Loop through each ingredient in the current language
-        FOR record IN SELECT * FROM jsonb_array_elements(input_json->'organic_ingredients'->ingredient_language )
+        FOR record IN SELECT * FROM jsonb_array_elements(input_json->'ingredients'->ingredient_language )
         LOOP
-            -- Extract values from the current ingredient record
+ -- Extract values from the current ingredient record
 	        read_value := record->> 'value';
  			read_unit := record ->> 'unit';
  			value_float := read_value::float;
-	        INSERT INTO ingredient (organic, name, value, unit, edited, label_id, language)
+	        INSERT INTO ingredient (organic, active, name, value, unit, edited, label_id, language)
             VALUES (
-                TRUE,  -- organic ingredients
-                record->>'nutrient',
+                Null,  -- we cant tell
+				Null,  -- We cant tell
+                record->>'name',
                 value_float,
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language::LANGUAGE
+                ingredient_language::"fertiscan_0.0.9".language
             );
-        END LOOP;
-    END LOOP;
-   -- INORGANIC
-      -- Loop through each language ('en' and 'fr')
-    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'inert_ingredients')
-    LOOP
-    	-- Loop through each ingredient in the current language
-        FOR read_value IN SELECT * FROM jsonb_array_elements_text(input_json->'inert_ingredients'->ingredient_language )
-        LOOP
-        	INSERT INTO ingredient (organic, name, value, unit, edited, label_id, language)
-            VALUES (
-                TRUE,  -- Assuming all are organic ingredients
-                read_value,
-                NULL,
-                NULL,
-                FALSE, -- Assuming edited status
-                label_id,  
-                ingredient_language::LANGUAGE
-            );
-        END LOOP;
-    END LOOP;
+		END LOOP;
+	END LOOP;
 --INGREDIENTS ENDS
 
 -- SUB LABELS
@@ -277,24 +254,24 @@ BEGIN
 	LOOP
 		INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language)
 		VALUES (
-			record->> 'nutrient',
+			record->> 'name',
 	        (record->> 'value')::float,
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'en'::LANGUAGE
+			'en':: "fertiscan_0.0.9".language
 		);
 	END LOOP;
 	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
 	LOOP
 		INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language)
 		VALUES (
-			record->> 'nutrient',
+			record->> 'name',
 	        (record->> 'value')::float,
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'fr'::LANGUAGE
+			'fr'::"fertiscan_0.0.9".language
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
@@ -304,7 +281,7 @@ BEGIN
 	LOOP
 		INSERT INTO micronutrient (read_name, value, unit, edited, label_id)
 			VALUES (
-				record->> 'nutrient',
+				record->> 'name',
 	            (record->> 'value')::float,
 	            record->> 'unit',
 				FALSE,

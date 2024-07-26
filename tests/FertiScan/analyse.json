@@ -1,11 +1,11 @@
 {
   "company_name": "GreenGrow Fertilizers Inc.",
   "company_address": "123 Greenway Blvd, Springfield IL 62701 USA",
-  "company_website": "http://www.greengrowfertilizers.com",
+  "company_website": "www.greengrowfertilizers.com",
   "company_phone_number": "+1 800 555 0199",
   "manufacturer_name": "AgroTech Industries Ltd.",
   "manufacturer_address": "456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
-  "manufacturer_website": "http://www.agrotechindustries.com",
+  "manufacturer_website": "www.agrotechindustries.com",
   "manufacturer_phone_number": "+1 416 555 0123",
   "fertiliser_name": "SuperGrow 20-20-20",
   "registration_number": "F12345678",
@@ -56,7 +56,7 @@
       "unit": "%"
     }
   ],
-  "organic_ingredients_en": [
+  "ingredients_en": [
     {
       "nutrient": "Bone meal",
       "value": "5",
@@ -71,12 +71,22 @@
       "nutrient": "Humic acid",
       "value": "2",
       "unit": "%"
+    },
+    {
+      "nutrient": "Clay",
+      "value": "",
+      "unit": ""
+    },
+    {
+      "nutrient": "Sand",
+      "value": "",
+      "unit": ""
+    },
+    {
+      "nutrient": "Perlite",
+      "value": "",
+      "unit": ""
     }
-  ],
-  "inert_ingredients_en": [
-    "Clay",
-    "Sand",
-    "Perlite"
   ],
   "specifications_en": [
     {
@@ -114,7 +124,7 @@
       "unit": "%"
     }
   ],
-  "organic_ingredients_fr": [
+  "ingredients_fr": [
     {
       "nutrient": "Farine d'os",
       "value": "5",
@@ -129,12 +139,22 @@
       "nutrient": "Acide humique",
       "value": "2",
       "unit": "%"
+    },
+    {
+      "nutrient": "Argile",
+      "value": "",
+      "unit": ""
+    },
+    {
+      "nutrient": "Sable",
+      "value": "",
+      "unit": ""
+    },
+    {
+      "nutrient": "Perlite",
+      "value": "",
+      "unit": ""
     }
-  ],
-  "inert_ingredients_fr": [
-    "Argile",
-    "Sable",
-    "Perlite"
   ],
   "specifications_fr": [
     {

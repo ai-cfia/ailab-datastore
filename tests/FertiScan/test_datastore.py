@@ -11,7 +11,6 @@ import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.FertiScan as FertiScan
 import datastore.db.metadata.validator as validator
-from copy import deepcopy
 import os
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -71,3 +70,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
+
+        # print(analysis)
+
+    def test_register_analysis_invalid_user(self):
+        with self.assertRaises(Exception):
+            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, "invalid_user_id", [self.pic_encoded,self.pic_encoded], self.analysis_json))
+
+    def test_register_analysy_missing_key(self):
+        self.analysis_json.pop("specification_en",None)
+        with self.assertRaises(FertiScan.data_inspection.MissingKeyError):
+            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id, [self.pic_encoded,self.pic_encoded], {}))

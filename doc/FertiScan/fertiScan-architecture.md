@@ -66,7 +66,6 @@ erDiagram
   }
   organization {
     uuid id PK
-    string name
     uuid information_id FK
     uuid main_location_id FK
   }
@@ -180,6 +179,19 @@ erDiagram
     string name_fr
     string name_en
     string symbol "Unique"
+  }
+    metric{
+    uuid id PK
+    float value
+    boolean edited
+    ENUM metric_type 
+    uuid unit_id FK
+    uuid label_id FK
+  }
+  unit{
+    uuid id PK
+    string unit
+    float to_si_unit
   }
   inspection ||--|| sample :has
   picture_set ||--|{picture : contains
