@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.8".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -122,11 +122,9 @@ BEGIN
 	        RETURNING id INTO unit_id;
 	    END IF;
 	   
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'weight';
-	   
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'weight'::metric_type,label_id);
 	 END LOOP;
 -- Weight end
 	
@@ -146,12 +144,10 @@ BEGIN
 	        VALUES (read_unit, null) -- Adjust to_si_unit value as necessary
 	        RETURNING id INTO unit_id;
 	    END IF;
-	
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'density';
 	  
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'density'::metric_type,label_id);
 	END IF;
 -- DENSITY END
 
@@ -171,12 +167,10 @@ BEGIN
 	        VALUES (read_unit, null) -- Adjust to_si_unit value as necessary
 	        RETURNING id INTO unit_id;
 	    END IF;
-	
-	   SELECT id INTO metric_type_id FROM metric_type WHERE type ILIKE 'volume';
-	  
+
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type_id,label_id);
+	    VALUES (value_float, unit_id, FALSE,'volume'::metric_type,label_id);
 	END IF;
 -- Volume end
    
