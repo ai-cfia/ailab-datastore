@@ -181,6 +181,25 @@ async def create_picture_set(
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
+    
+async def get_picture_sets_info(cursor, user_id: str):
+    """This function retrieves the picture sets names and number of pictures from the database.
+
+    Args:
+        user_id (str): id of the user
+    """
+    # Check if user exists
+    if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+        raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
+
+    result = {}
+    picture_sets = picture.get_user_picture_sets(cursor, user_id)
+    for picture_set in picture_sets:
+        picture_set_id = picture_set[0]
+        picture_set_name = picture_set[1]
+        nb_picture = picture.count_pictures(cursor, picture_set_id)
+        result[str(picture_set_id)] = [picture_set_name, nb_picture]
+    return result
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
