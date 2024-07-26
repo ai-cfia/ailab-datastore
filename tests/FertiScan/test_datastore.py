@@ -11,7 +11,6 @@ import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.FertiScan as FertiScan
 import datastore.db.metadata.validator as validator
-from copy import deepcopy
 import os
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -71,8 +70,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
-        with open('tests/FertiScan/analyse_formtted.json', 'w') as file:
-            json.dump(analysis, file, indent=4)
+
         # print(analysis)
 
     def test_register_analysis_invalid_user(self):

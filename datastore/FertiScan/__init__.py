@@ -1,7 +1,5 @@
 import os
 from dotenv import load_dotenv
-import asyncio
-import json
 import datastore
 import datastore.db.queries.picture as picture
 import datastore.db.queries.inspection as inspection
@@ -9,7 +7,6 @@ import datastore.db.queries.user as user
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.inspection as data_inspection
 import datastore.blob as blob
-import datastore.blob.azure_storage_api as azure_storage
 
 load_dotenv()
 
@@ -59,14 +56,14 @@ async def register_analysis(
         picture_set_id = picture.new_picture_set(cursor,picture_set_metadata, user_id,"General")
 
         #Upload pictures to storage
-        picture_ids = await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
+        await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
         
         #Register analysis in the database
         formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
         
         analysis_db = inspection.new_inspection_with_label_info(cursor, user_id, picture_set_id, formatted_analysis)
         return analysis_db
-    except inspection.InspectionCreationError as e:
+    except inspection.InspectionCreationError:
         raise Exception("Datastore Inspection Creation Error")
     except data_inspection.MissingKeyError:
         raise
