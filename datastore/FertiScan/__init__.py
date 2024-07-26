@@ -1,6 +1,14 @@
 import os
 from dotenv import load_dotenv
-import uuid
+import asyncio
+import json
+import datastore
+import datastore.db.queries.picture as picture
+import datastore.db.queries.inspection as inspection
+import datastore.db.metadata.picture_set as data_picture_set
+import datastore.db.metadata.inspection as data_inspection
+import datastore.blob as blob
+import datastore.blob.azure_storage_api as azure_storage
 
 load_dotenv()
 
@@ -14,14 +22,13 @@ if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
     # raise ValueError("FERTISCAN_SCHEMA is not set")
     print("Warning: FERTISCAN_SCHEMA not set")
 
-FERTISCAN_STORAGE_URL = os.environ.get("FERTISCAN_STORAGE_URL")
+FERTISCAN_STORAGE_URL =  os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
     # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
 
-
 async def register_analysis(
-    cursor, container_client, analysis_dict, picture_id: str, picture, folder="General"
+    cursor, container_client, user_id, hashed_pictures, analysis_dict,
 ):
     """
     Register an analysis in the database
@@ -36,14 +43,18 @@ async def register_analysis(
     - The analysis_dict with the analysis_id added.
     """
     try:
-        if picture_id is None or picture_id == "":
-            picture_id = str(uuid.uuid4())
-        # if not azure_storage.is_a_folder(container_client, folder):
-        #     azure_storage.create_folder(container_client, folder)
-        # azure_storage.upload_image(container_client, folder, picture, picture_id)
-        # analysis_id = analysis.new_analysis(cursor, json.dumps(analysis_dict))
-        # analysis_dict["analysis_id"] = str(analysis_id)
-        return None
+        #Create picture set for this analysis
+        picture_set_metadata= data_picture_set.build_picture_set(user_id, len(hashed_pictures))
+        picture_set_id = picture.new_picture_set(cursor,picture_set_metadata, user_id,"General")
+
+        #Upload pictures to storage
+        picture_ids = await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
+        
+        #Register analysis in the database
+        formatted_analysis = data_inspection.build_inspection_import(json.dumps(analysis_dict))
+        
+        analysis_db = inspection.new_inspection_with_label_info(cursor, user_id, picture_set_id, formatted_analysis)
+        return analysis_db
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore Unhandled Error")

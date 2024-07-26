@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class UserAlreadyExistsError(Exception):
     pass
 
@@ -113,7 +112,9 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
+async def get_user_container_client(
+    user_id, storage_url, account, key, tier="user"
+):
     """
     Get the container client of a user
 
@@ -256,7 +257,6 @@ async def delete_picture_set_permanently(
         print(e)
         raise Exception("Datastore Unhandled Error")
 
-
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None
 ):
@@ -286,7 +286,7 @@ async def upload_pictures(
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
                 folder_name = picture_set_id
-        pic_ids = []
+        pic_ids=[]
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(
@@ -313,8 +313,6 @@ async def upload_pictures(
         return pic_ids
     except BlobUploadError or azure_storage.UploadImageError:
         raise BlobUploadError("Error uploading the picture")
-    except user.UserNotFoundError:
-        raise
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
