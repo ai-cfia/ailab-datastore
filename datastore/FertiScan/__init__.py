@@ -68,6 +68,8 @@ async def register_analysis(
         return analysis_db
     except inspection.InspectionCreationError as e:
         raise Exception("Datastore Inspection Creation Error")
+    except data_inspection.MissingKeyError:
+        raise
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore unhandeled error")
