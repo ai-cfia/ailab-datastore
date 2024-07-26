@@ -13,17 +13,19 @@
         "id": "256b8516-1563-4466-8294-7b654109a770",
         "npk": "20-20-20",
         "name": "SuperGrow 20-20-20",
-        "volume": {
+        "metrics" : {
+            "volume": {
             "unit": "L",
             "value": "20.8"
-        },
-        "weight": {
-            "kg": null,
-            "lb": null
-        },
-        "density": {
-            "unit": "g/cm\u00b3",
-            "value": "1.2"
+            },
+            "weight": {
+                "kg": null,
+                "lb": null
+            },
+            "density": {
+                "unit": "g/cm\u00b3",
+                "value": "1.2"
+            }
         },
         "warranty": "Guaranteed analysis of nutrients.",
         "lot_number": "L987654321",
