@@ -247,7 +247,7 @@ def get_default_picture_set(cursor, user_id: str):
     - user_id (str): The UUID of the user
 
     Returns:
-    - The default picture set of the user.
+    - The default picture set id of the user.
     """
     try:
         if not is_a_user_id(cursor=cursor, user_id=user_id):
