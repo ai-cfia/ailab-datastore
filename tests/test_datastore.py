@@ -11,7 +11,6 @@ import uuid
 import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
-import datastore.Nachet as nachet_datastore
 import datastore.db.metadata.validator as validator
 
 

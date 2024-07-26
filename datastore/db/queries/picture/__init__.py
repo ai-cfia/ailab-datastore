@@ -26,7 +26,6 @@ class GetPictureError(Exception):
 class PictureSetDeleteError(Exception):
     pass
 
-import json
 """
 This module contains all the queries related to the Picture and PictureSet tables.
 """

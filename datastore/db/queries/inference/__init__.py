@@ -540,5 +540,3 @@ def get_seed_object_by_object_id(cursor, object_id: str):
         return res
     except Exception:
         raise Exception(f"Error: could not get seed_object for object {object_id}")
-
-    
