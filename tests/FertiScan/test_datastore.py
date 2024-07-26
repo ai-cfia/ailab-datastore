@@ -78,3 +78,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
             asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, "invalid_user_id", [self.pic_encoded,self.pic_encoded], self.analysis_json))
+
+    def test_register_analysy_missing_key(self):
+        self.analysis_json.pop("specification_en",None)
+        with self.assertRaises(FertiScan.data_inspection.MissingKeyError):
+            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id, [self.pic_encoded,self.pic_encoded], {}))
