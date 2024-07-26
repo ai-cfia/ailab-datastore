@@ -112,6 +112,7 @@ def rebuild_inference(cursor, inf) :
         "labelOccurrence" : inference_data.get("labelOccurrence"),
         "totalBoxes" : inference_data.get("totalBoxes"),
         "models" : models,
+        "pipeline_id" : pipeline_id,
     }
     return inf
 
