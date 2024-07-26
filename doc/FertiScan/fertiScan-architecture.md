@@ -130,23 +130,6 @@ erDiagram
     boolean edited
     uuid label_id FK
   }
-  metric{
-    uuid id PK
-    float value
-    boolean edited
-    uuid unit_id FK
-    uuid metric_type_id FK
-    uuid label_id FK
-  }
-  metric_type{
-    uuid id PK
-    text type
-  }
-  unit{
-    uuid id PK
-    string unit
-    float to_si_unit
-  }
   micronutrient{
     uuid id PK
     string read_name
@@ -178,6 +161,19 @@ erDiagram
     string name_en
     string symbol
   }
+    metric{
+    uuid id PK
+    float value
+    boolean edited
+    ENUM metric_type 
+    uuid unit_id FK
+    uuid label_id FK
+  }
+  unit{
+    uuid id PK
+    string unit
+    float to_si_unit
+  }
   inspection ||--|| sample :has
   picture_set ||--|{picture : contains
   fertilizer ||--|| organization: responsable
@@ -188,7 +184,6 @@ erDiagram
   inspection }|--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
-  label_information ||--|{ metric: has
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
@@ -197,6 +192,7 @@ erDiagram
   label_information ||--o| organization_information: company
   label_information ||--o| organization_information: manufacturer
   organization_information ||--|| organization: defines
+  label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
   metric ||--|| unit: defines

@@ -4,10 +4,79 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
-import json
+from typing import List
+from pydantic import BaseModel, ValidationError
+from typing import Optional
 
 class MissingKeyError(Exception):
     pass
+
+class NPKError(Exception):
+    pass
+
+class MetadataFormattingError(Exception):
+    pass
+
+class OrganizationInformation(BaseModel):
+    name: str
+    address: str
+    website: str
+    phone_number: str
+    
+class Value(BaseModel):
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    name: str
+
+class ValuesObjects(BaseModel):
+    en: List[Value]
+    fr: List[Value]
+
+class SubLabel(BaseModel):
+    en: List[str]
+    fr: List[str]
+    
+class Metric(BaseModel):
+    value: float
+    unit: str
+
+class Metrics(BaseModel):
+    weight: List[Metric]
+    volume: Metric
+    density: Metric
+
+class ProductInformation(BaseModel):
+    name: str
+    registration_number: str
+    lot_number: str
+    metrics: Metrics
+    npk: str
+    warranty: str
+    n: float
+    p: float
+    k: float
+
+
+class Specification(BaseModel):
+    humidity: float
+    ph: float
+    solubility: float
+
+class Specifications(BaseModel):
+    en: List[Specification]
+    fr: List[Specification]
+
+class Inspection(BaseModel):
+    company: OrganizationInformation
+    manufacturer: OrganizationInformation
+    product: ProductInformation
+    cautions: SubLabel
+    instructions: SubLabel
+    micronutrients: ValuesObjects
+    ingredients: ValuesObjects
+    specifications: Specifications
+    first_aid: SubLabel
+    guaranteed_analysis: List[Value]
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -42,86 +111,122 @@ def build_inspection_import(analysis_form: dict) -> str:
             "cautions_en",
             "instructions_en",
             "micronutrients_en",
-            "organic_ingredients_en",
-            "inert_ingredients_en",
+            "ingredients_en",
             "specifications_en",
             "first_aid_en",
             "cautions_fr",
             "instructions_fr",
             "micronutrients_fr",
-            "organic_ingredients_fr",
-            "inert_ingredients_fr",
+            "ingredients_fr",
             "specifications_fr",
             "first_aid_fr",
             "guaranteed_analysis"
         ]
+        missing_keys = []
         for key in requiered_keys:
             if key not in analysis_form:
-                raise MissingKeyError(key)
-        data = json.loads(analysis_form)
-        npk = extract_npk(data.get("npk"))
-        output_json = {
-        "company": {
-            "name": data.get("company_name"),
-            "address": data.get("company_address"),
-            "website": data.get("company_website"),
-            "phone_number": data.get("company_phone_number")
-        },
-        "manufacturer": {
-            "name": data.get("manufacturer_name"),
-            "address": data.get("manufacturer_address"),
-            "website": data.get("manufacturer_website"),
-            "phone_number": data.get("manufacturer_phone_number")
-        },
-        "product": {
-            "name": data.get("fertiliser_name"),
-            "registration_number": data.get("registration_number"),
-            "lot_number": data.get("lot_number"),
-            "weight": {
-                "kg": data.get("weight_kg"),
-                "lb": data.get("weight_lb")
-            },
-            "density": data.get("density"),
-            "volume": data.get("volume"),
-            "npk": data.get("npk"),
-            "n":npk[0],
-            "p":npk[1],
-            "k":npk[2],
-            "warranty": data.get("warranty")
-        },
-        "cautions": {
-            "en": data.get("cautions_en", []),
-            "fr": data.get("cautions_fr", [])
-        },
-        "instructions": {
-            "en": data.get("instructions_en", []),
-            "fr": data.get("instructions_fr", [])
-        },
-        "micronutrients": {
-            "en": data.get("micronutrients_en", []),
-            "fr": data.get("micronutrients_fr", [])
-        },
-        "organic_ingredients": {
-            "en": data.get("organic_ingredients_en", []),
-            "fr": data.get("organic_ingredients_fr", [])
-        },
-        "inert_ingredients": {
-            "en": data.get("inert_ingredients_en", []),
-            "fr": data.get("inert_ingredients_fr", [])
-        },
-        "specifications": {
-            "en": data.get("specifications_en", []),
-            "fr": data.get("specifications_fr", [])
-        },
-        "first_aid": {
-            "en": data.get("first_aid_en", []),
-            "fr": data.get("first_aid_fr", [])
-        },
-        "guaranteed_analysis": data.get("guaranteed_analysis", [])
-    }
-        return (json.dumps(output_json))
+                missing_keys.append(key)
+        if len(missing_keys) > 0:
+            raise MissingKeyError(missing_keys)
+        #data = json.loads(analysis_form)
+        npk = extract_npk(analysis_form.get("npk"))
+        company = OrganizationInformation(
+            name=analysis_form.get("company_name"),
+            address=analysis_form["company_address"],
+            website=analysis_form["company_website"],
+            phone_number=analysis_form["company_phone_number"]
+        )
+        manufacturer = OrganizationInformation(
+            name=analysis_form["manufacturer_name"],
+            address=analysis_form["manufacturer_address"],
+            website=analysis_form["manufacturer_website"],
+            phone_number=analysis_form["manufacturer_phone_number"]
+        )
+        weights : List[Metric] = []
+        for i in range(len(analysis_form["weight"])):
+            weights.append(Metric(unit=analysis_form["weight"][i]["unit"], value=analysis_form["weight"][i]["value"]))
+        metrics = Metrics(
+            weight=weights,
+            volume=Metric(unit=analysis_form["volume"]["unit"], value=analysis_form["volume"]["value"]),
+            density=Metric(unit=analysis_form["density"]["unit"], value=analysis_form["density"]["value"])
+        )
+        product = ProductInformation(
+            name=analysis_form["fertiliser_name"],
+            registration_number=analysis_form["registration_number"],
+            lot_number=analysis_form["lot_number"],
+            metrics=metrics,
+            npk=analysis_form["npk"],
+            warranty=analysis_form["warranty"],
+            n=npk[0],
+            p=npk[1],
+            k=npk[2]
+        )
+
+        cautions = SubLabel(
+            en=analysis_form["cautions_en"],
+            fr=analysis_form["cautions_fr"]
+        )
+
+        instructions = SubLabel(
+            en=analysis_form["instructions_en"],
+            fr=analysis_form["instructions_fr"]
+        )
+        micro_en: List[Value] = []
+        micro_fr: List[Value] = []
+        for i in range(len(analysis_form["micronutrients_en"])):
+                micro_en.append(Value(unit= None if analysis_form["micronutrients_en"][i]["unit"] == "" else analysis_form["micronutrients_en"][i]["unit"], value = None if analysis_form["micronutrients_fr"][i]["value"] == "" else analysis_form["micronutrients_fr"][i]["value"], name=analysis_form["micronutrients_en"][i]["nutrient"]))
+        for i in range(len(analysis_form["micronutrients_fr"])):
+                micro_fr.append(Value(unit= None if analysis_form["micronutrients_fr"][i]["unit"] == "" else analysis_form["micronutrients_fr"][i]["unit"], value = None if analysis_form["micronutrients_fr"][i]["value"] == "" else analysis_form["micronutrients_fr"][i]["value"], name=analysis_form["micronutrients_fr"][i]["nutrient"]))
+        micronutrients = ValuesObjects(
+            en=micro_en,
+            fr=micro_fr
+        )
+        ingredients_en : List[Value] = []
+        ingredients_fr : List[Value] = []
+        for i in range(len(analysis_form["ingredients_en"])):
+            ingredients_en.append(Value(unit=None if analysis_form["ingredients_en"][i]["unit"] == "" else analysis_form["ingredients_en"][i]["unit"], value=None if analysis_form["ingredients_en"][i]["value"] == "" else analysis_form["ingredients_en"][i]["value"], name=analysis_form["ingredients_en"][i]["nutrient"]))
+        for i in range(len(analysis_form["ingredients_fr"])):
+            ingredients_fr.append(Value(unit=None if analysis_form["ingredients_fr"][i]["unit"] == "" else analysis_form["ingredients_fr"][i]["unit"], value=None if analysis_form["ingredients_fr"][i]["value"] == "" else analysis_form["ingredients_fr"][i]["value"], name=analysis_form["ingredients_fr"][i]["nutrient"]))
+        ingredients = ValuesObjects(
+            en=ingredients_en,
+            fr=ingredients_fr
+        )
+
+        specifications = Specifications(
+            en=extract_specifications(analysis_form["specifications_en"]),
+            fr=extract_specifications(analysis_form["specifications_fr"])
+        )
+
+        first_aid = SubLabel(
+            en=analysis_form["first_aid_en"],
+            fr=analysis_form["first_aid_fr"]
+        )
+
+        guaranteed : List[Value] = []
+        for i in range(len(analysis_form["guaranteed_analysis"])):
+            guaranteed.append(Value(unit=None if analysis_form["guaranteed_analysis"][i]["unit"] == "" else analysis_form["guaranteed_analysis"][i]["unit"], value=None if analysis_form["guaranteed_analysis"][i]["value"] == "" else analysis_form["guaranteed_analysis"][i]["value"], name=analysis_form["guaranteed_analysis"][i]["nutrient"]))
+
+
+        inspection_formatted = Inspection(
+            company=company,
+            manufacturer=manufacturer,
+            product=product,
+            cautions=cautions,
+            instructions=instructions,
+            micronutrients=micronutrients,
+            ingredients=ingredients,
+            specifications=specifications,
+            first_aid=first_aid,
+            guaranteed_analysis=guaranteed
+        )
+        Inspection(**inspection_formatted.model_dump())
     except MissingKeyError as e:
-        raise MissingKeyError(f"Missing key: {e}")
+        raise MissingKeyError(f"Missing keys: {e}")
+    except ValidationError as e:
+        raise MetadataFormattingError("Error InspectionCreationError not created: "+ str(e)) from None
+    # print(inspection_formatted.model_dump_json())
+    return inspection_formatted.model_dump_json()
+
 
 def split_value_unit(value_unit: str) -> dict:
     """
@@ -141,7 +246,7 @@ def split_value_unit(value_unit: str) -> dict:
     }
     # loop through the string and split the value and unit
     for i in range(len(value_unit)):
-        if not (value_unit[i].isnumeric() or value_unit[i] == "." or value_unit[i] == ","):
+         if not (value_unit[i].isnumeric() or value_unit[i] == "." or value_unit[i] == ","):
             value = value_unit[:i]
             unit = value_unit[i:]
             break
@@ -166,8 +271,14 @@ def extract_npk(npk:str):
     """
     if npk is None or npk == "" or len(npk)<5:
         return [None,None,None]
-    npk = npk.split("-")
-    return [float(npk[0]),float(npk[1]),float(npk[2])]
+    npk_formated=npk.replace("N","-")
+    npk_formated=npk_formated.replace("P","-")
+    npk_formated=npk_formated.replace("K","-")
+    npk_reformated = npk.split("-")
+    for i in range(len(npk_reformated)):
+        if not npk_reformated[i].isnumeric():
+            NPKError("NPK values must be numeric. Issue with: "+npk_reformated[i] + "in the NPK string: "+npk)
+    return [float(npk_reformated[0]),float(npk_reformated[1]),float(npk_reformated[2])]
 
 def extract_specifications(specifications: list) -> list:
     """
@@ -184,10 +295,6 @@ def extract_specifications(specifications: list) -> list:
     if specifications is None or specifications == []:
         return output
     for specification in specifications:
-        print(specification)
-        res = {}
-        res["humidity"] = float(specification["humidity"])
-        res["ph"] = float(specification["ph"])
-        res["solubility"] = float(specification["solubility"])
+        res = Specification(humidity=specification["humidity"], ph=specification["ph"], solubility=specification["solubility"])
         output.append(res)
     return output
