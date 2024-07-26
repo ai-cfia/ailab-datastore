@@ -379,6 +379,36 @@ def is_a_model(cursor,model_id:str):
     except(Exception):
         raise PipelineCreationError("Error: model not found")
     
+def get_model_id_from_name(cursor,model_name:str):
+    """
+    This function gets the model id from the model name.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - model_name (str): The name of the model.
+
+    Returns:
+    - The UUID of the model.
+    """
+    try:
+        query = """
+            SELECT id
+            FROM model
+            WHERE name = %s
+            """
+        cursor.execute(
+            query,
+            (
+                model_name,
+            ),
+        )
+        model_id=cursor.fetchone()[0]
+        return model_id
+    except(ValueError):
+        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
+    except(Exception):
+        raise PipelineCreationError("Error: model not found")
+    
 def get_model_id_from_endpoint(cursor,endpoint_name:str):
     """
     This function gets the model id from the endpoint name.
