@@ -225,7 +225,7 @@ def build_inspection_import(analysis_form: dict) -> str:
         raise MissingKeyError(f"Missing keys: {e}")
     except ValidationError as e:
         raise MetadataFormattingError("Error InspectionCreationError not created: "+ str(e)) from None
-    print(inspection_formatted.model_dump_json())
+    # print(inspection_formatted.model_dump_json())
     return inspection_formatted.model_dump_json()
 
 

@@ -71,7 +71,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
-        print(analysis)
+        with open('tests/FertiScan/analyse_formtted.json', 'w') as file:
+            json.dump(analysis, file, indent=4)
+        # print(analysis)
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
