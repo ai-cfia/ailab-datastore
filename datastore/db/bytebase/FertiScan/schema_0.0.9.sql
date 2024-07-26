@@ -102,7 +102,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.9".organization_information(id)
     );
 
-    CREATE TYPE metric_type as ENUM ('volume', 'weight','density');
+    CREATE TYPE "fertiscan_0.0.9".metric_type as ENUM ('volume', 'weight','density');
 
     CREATE TABLE "fertiscan_0.0.9"."metric" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -120,7 +120,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
     -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
-    CREATE TYPE LANGUAGE AS ENUM ('fr', 'en');
+    CREATE TYPE "fertiscan_0.0.9".LANGUAGE AS ENUM ('fr', 'en');
 
     CREATE TABLE "fertiscan_0.0.9"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),

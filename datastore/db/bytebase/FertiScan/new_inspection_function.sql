@@ -185,7 +185,7 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				FALSE,
-				ingredient_language::public.language,
+				ingredient_language::"fertiscan_0.0.9".language,
 				label_id
 			);
 		END LOOP;
@@ -213,7 +213,7 @@ BEGIN
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language::public.language
+                ingredient_language::"fertiscan_0.0.9".language
             );
 		END LOOP;
 	END LOOP;
@@ -259,7 +259,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'en':: public.language
+			'en':: "fertiscan_0.0.9".language
 		);
 	END LOOP;
 	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
@@ -271,7 +271,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'fr'::public.language
+			'fr'::"fertiscan_0.0.9".language
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
