@@ -6,7 +6,7 @@
   blob Storage.
 
 - A User can do an analysis of a label during its inspection and must confirm
-  the digitalization of the label_ information.
+  the digitalization of the label_information.
 
 - A User must be able to store its inspection about fertilizers
 
@@ -16,7 +16,7 @@
 
 This is the doc about the FertiScan Database Architecture
 
-``` mermaid
+```mermaid
 
 ---
 title: FertiScan DB Structure
@@ -72,7 +72,7 @@ erDiagram
   }
   organization_information {
     uuid id PK
-    string name 
+    string name
     string website
     string phone_number
     uuid location_id FK
@@ -136,13 +136,9 @@ erDiagram
     uuid id PK
     float value
     boolean edited
+    enum metric_type
     uuid unit_id FK
-    uuid metric_type_id FK
     uuid label_id FK
-  }
-  metric_type {
-    uuid id PK
-    text type
   }
   unit {
     uuid id PK
@@ -205,8 +201,7 @@ erDiagram
   organization_information ||--|| organization: defines
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
-  metric ||--|| unit: defines
-  metric ||--|| metric_type: defines
+  metric }o--|| unit: defines
 
   micronutrient ||--|| element_compound: is
   guaranteed ||--|| element_compound: is

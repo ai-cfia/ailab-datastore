@@ -102,18 +102,19 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.8".organization_information(id)
     );
 
-    CREATE TABLE "fertiscan_0.0.8"."metric_type" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "type" text NOT NULL
+    CREATE TYPE "fertiscan_0.0.8".metric_type_enum AS ENUM (
+        'weight',
+        'density',
+        'volume'
     );
 
-    CREATE TABLE "fertiscan_0.0.8"."metric" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "value" float NOT NULL,
-    "edited" boolean,
-    "unit_id" uuid REFERENCES "fertiscan_0.0.8".unit(id),
-    "metric_type_id" uuid REFERENCES "fertiscan_0.0.8".metric_type(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.8".label_information(id)
+    CREATE TABLE "fertiscan_0.0.8".metric (
+        id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        value float NOT NULL,
+        edited boolean,
+        unit_id uuid REFERENCES "fertiscan_0.0.8".unit(id),
+        metric_type "fertiscan_0.0.8".metric_type_enum NOT NULL,
+        label_id uuid REFERENCES "fertiscan_0.0.8".label_information(id)
     );
 
     CREATE TABLE "fertiscan_0.0.8"."sub_type" (

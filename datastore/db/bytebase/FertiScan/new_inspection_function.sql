@@ -22,7 +22,6 @@ DECLARE
     specification_id uuid;
     sub_label_id uuid;
     ingredient_language text;
-    result_json jsonb := '{}';
 BEGIN
 	
 -- COMPANY
