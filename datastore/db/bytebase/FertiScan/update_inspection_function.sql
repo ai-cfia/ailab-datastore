@@ -397,6 +397,42 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function to upsert fertilizer information based on unique fertilizer name
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".upsert_fertilizer(
+    p_name text,
+    p_registration_number text,
+    p_owner_id uuid,
+    p_latest_inspection_id uuid
+)
+RETURNS uuid AS $$
+DECLARE
+    fertilizer_id uuid;
+BEGIN
+    -- Upsert fertilizer information
+    INSERT INTO "fertiscan_0.0.9".fertilizer (
+        name, registration_number, upload_date, update_at, owner_id, latest_inspection_id
+    )
+    VALUES (
+        p_name,
+        p_registration_number,
+        CURRENT_TIMESTAMP,  -- Set upload date to current timestamp
+        CURRENT_TIMESTAMP,  -- Set update date to current timestamp
+        p_owner_id,
+        p_latest_inspection_id
+    )
+    ON CONFLICT (name) DO UPDATE
+    SET
+        registration_number = EXCLUDED.registration_number,
+        update_at = CURRENT_TIMESTAMP,  -- Update the update_at timestamp
+        owner_id = EXCLUDED.owner_id,
+        latest_inspection_id = EXCLUDED.latest_inspection_id
+    RETURNING id INTO fertilizer_id;
+
+    RETURN fertilizer_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
 -- Function to update inspection data and related entities, returning an updated JSON
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".update_inspection(
     p_inspection_id uuid,
@@ -410,7 +446,11 @@ DECLARE
     company_info_id uuid;
     manufacturer_info_id uuid;
     label_info_id uuid;
+    organization_id uuid;
     updated_json jsonb := p_input_json;
+    fertilizer_name text;
+    registration_number text;
+    verified boolean;
 BEGIN
     -- Check if the provided inspection_id matches the one in the input JSON
     json_inspection_id := (p_input_json->>'inspection_id')::uuid;
@@ -465,7 +505,27 @@ BEGIN
     -- Update the inspection ID in the output JSON
     updated_json := jsonb_set(updated_json, '{inspection_id}', to_jsonb(inspection_id));
 
-    -- Return the updated JSON
+    -- Check if the verified field is true, and upsert fertilizer if so
+    verified := (p_input_json->>'verified')::boolean;
+    IF verified THEN
+        fertilizer_name := p_input_json->'product'->>'name';
+        registration_number := p_input_json->'product'->>'registration_number';
+
+        -- Insert organization and get the organization_id
+        INSERT INTO "fertiscan_0.0.9".organization (name, information_id, main_location_id)
+        VALUES (p_input_json->'company'->>'name', company_info_id, NULL) -- main_location_id not yet handled
+        RETURNING id INTO organization_id;
+
+        -- Upsert the fertilizer record
+        PERFORM "fertiscan_0.0.9".upsert_fertilizer(
+            fertilizer_name,
+            registration_number,
+            organization_id,
+            inspection_id
+        );
+    END IF;
+
+    -- Return the updated JSON without fertilizer_id
     RETURN updated_json;
 
 END;

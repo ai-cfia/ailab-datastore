@@ -1,6 +1,6 @@
-# Updating an inspection record
+# Updating an Inspection Record
 
-## Sequence diagram
+## Sequence Diagram
 
 **Preconditions:**
 
@@ -9,14 +9,15 @@
 **Postconditions:**
 
 - Records for organizations, labels, metrics, specifications, ingredients,
-  micronutrients, guaranteed analysis, and sub-labels are created or updated.
+  micronutrients, guaranteed analysis, sub-labels, and fertilizers are created
+  or updated.
 - The existing inspection record is updated with the latest information.
 
 ```mermaid
 sequenceDiagram
     participant Client
     participant DB as Database
-    participant OrganizationTable as Organization_Table
+    participant OrganizationInfoTable as Organization_Info_Table
     participant LabelTable as Label_Table
     participant MetricsTable as Metrics_Table
     participant SpecificationsTable as Specifications_Table
@@ -25,14 +26,16 @@ sequenceDiagram
     participant GuaranteedTable as Guaranteed_Table
     participant SubLabelsTable as Sub_Labels_Table
     participant InspectionTable as Inspection_Table
+    participant OrganizationTable as Organization_Table
+    participant FertilizerTable as Fertilizer_Table
 
     Client->>+DB: update_inspection(inspection_id, inspector_id, input_data)
 
-    DB->>+OrganizationTable: upsert_organization_info(company_data)
-    OrganizationTable-->>DB: company_info_id
+    DB->>+OrganizationInfoTable: upsert_organization_info(company_data)
+    OrganizationInfoTable-->>DB: company_info_id
 
-    DB->>+OrganizationTable: upsert_organization_info(manufacturer_data)
-    OrganizationTable-->>DB: manufacturer_info_id
+    DB->>+OrganizationInfoTable: upsert_organization_info(manufacturer_data)
+    OrganizationInfoTable-->>DB: manufacturer_info_id
 
     DB->>+LabelTable: upsert_label_information(product_data, company_info_id, manufacturer_info_id)
     LabelTable-->>DB: label_info_id
@@ -58,13 +61,24 @@ sequenceDiagram
     DB->>+InspectionTable: update_inspection_record(inspection_id, label_info_id, inspector_id, sample_id, picture_set_id, verified)
     InspectionTable-->>DB: Inspection record updated
 
+    alt verified is true
+        DB->>+OrganizationTable: insert_organization(name, company_info_id, location_id)
+        OrganizationTable-->>DB: organization_id
+
+        DB->>+FertilizerTable: upsert_fertilizer(fertilizer_name, registration_number, organization_id, inspection_id)
+        FertilizerTable-->>DB: Fertilizer record updated
+    end
+
     DB-->>-Client: Return updated inspection data
+
 ```
 
 ## Input and Output JSON Format
 
 The input and output JSON formats for the `update_inspection` function are as
 follows:
+
+### Input JSON Format
 
 ```json
 {
@@ -83,43 +97,64 @@ follows:
     "npk": "20-20-20",
     "name": "SuperGrow 20-20-20",
     "metrics": {
-      "volume": {"unit": "L", "value": 20.8},
-      "weight": [{"unit": "kg", "value": 25.0}, {"unit": "lb", "value": 55.0}],
-      "density": {"unit": "g/cm³", "value": 1.2}
+      "volume": { "unit": "L", "value": 20.8 },
+      "weight": [
+        { "unit": "kg", "value": 25.0 },
+        { "unit": "lb", "value": 55.0 }
+      ],
+      "density": { "unit": "g/cm³", "value": 1.2 }
     },
     "warranty": "Guaranteed analysis of nutrients.",
     "lot_number": "L987654321",
     "registration_number": "F12345678"
   },
   "cautions": {
-    "en": ["Keep out of reach of children.", "Avoid contact with skin and eyes."],
-    "fr": ["Tenir hors de portée des enfants.", "Éviter le contact avec la peau et les yeux."]
+    "en": [
+      "Keep out of reach of children.",
+      "Avoid contact with skin and eyes."
+    ],
+    "fr": [
+      "Tenir hors de portée des enfants.",
+      "Éviter le contact avec la peau et les yeux."
+    ]
   },
   "first_aid": {
-    "en": ["In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."],
-    "fr": ["En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."]
+    "en": [
+      "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
+    ],
+    "fr": [
+      "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."
+    ]
   },
   "ingredients": {
     "en": [
-      {"name": "Bone meal", "unit": "%", "value": 5.0},
-      {"name": "Seaweed extract", "unit": "%", "value": 3.0},
-      {"name": "Humic acid", "unit": "%", "value": 2.0},
-      {"name": "Clay", "unit": null, "value": null},
-      {"name": "Sand", "unit": null, "value": null},
-      {"name": "Perlite", "unit": null, "value": null}
+      { "name": "Bone meal", "unit": "%", "value": 5.0 },
+      { "name": "Seaweed extract", "unit": "%", "value": 3.0 },
+      { "name": "Humic acid", "unit": "%", "value": 2.0 },
+      { "name": "Clay", "unit": null, "value": null },
+      { "name": "Sand", "unit": null, "value": null },
+      { "name": "Perlite", "unit": null, "value": null }
     ],
     "fr": [
-      {"name": "Farine d'os", "unit": "%", "value": 5.0},
-      {"name": "Extrait d'algues", "unit": "%", "value": 3.0},
-      {"name": "Acide humique", "unit": "%", "value": 2.0},
-      {"name": "Argile", "unit": null, "value": null},
-      {"name": "Sable", "unit": null, "value": null},
-      {"name": "Perlite", "unit": null, "value": null}
+      { "name": "Farine d'os", "unit": "%", "value": 5.0 },
+      { "name": "Extrait d'algues", "unit": "%", "value": 3.0 },
+      { "name": "Acide humique", "unit": "%", "value": 2.0 },
+      { "name": "Argile", "unit": null, "value": null },
+      { "name": "Sable", "unit": null, "value": null },
+      { "name": "Perlite", "unit": null, "value": null }
     ]
   },
   "instructions": {
-    "en": ["1. Dissolve 50g in 10L of water.", "2. Apply every 2 weeks.", "3. Store in a cool, dry place."],
-    "fr": ["1. Dissoudre 50g dans 10L d'eau.", "2. Appliquer toutes les 2 semaines.", "3. Conserver dans un endroit frais et sec."]
+    "en": [
+      "1. Dissolve 50g in 10L of water.",
+      "2. Apply every 2 weeks.",
+      "3. Store in a cool, dry place."
+    ],
+    "fr": [
+      "1. Dissoudre 50g dans 10L d'eau.",
+      "2. Appliquer toutes les 2 semaines.",
+      "3. Conserver dans un endroit frais et sec."
+    ]
   },
   "manufacturer": {
     "id": "0f2fe699-3484-4c77-b920-33c3716bcfe3",
@@ -129,26 +164,27 @@ follows:
     "phone_number": "+1 416 555 0123"
   },
   "inspection_id": "72437b2d-8f1e-4ad2-96f0-8a6b5e77f176",
+  "verified": true,
   "micronutrients": {
     "en": [
-      {"name": "Iron (Fe)", "unit": "%", "value": 0.1},
-      {"name": "Zinc (Zn)", "unit": "%", "value": 0.05},
-      {"name": "Manganese (Mn)", "unit": "%", "value": 0.05}
+      { "name": "Iron (Fe)", "unit": "%", "value": 0.1 },
+      { "name": "Zinc (Zn)", "unit": "%", "value": 0.05 },
+      { "name": "Manganese (Mn)", "unit": "%", "value": 0.05 }
     ],
     "fr": [
-      {"name": "Fer (Fe)", "unit": "%", "value": 0.1},
-      {"name": "Zinc (Zn)", "unit": "%", "value": 0.05},
-      {"name": "Manganèse (Mn)", "unit": "%", "value": 0.05}
+      { "name": "Fer (Fe)", "unit": "%", "value": 0.1 },
+      { "name": "Zinc (Zn)", "unit": "%", "value": 0.05 },
+      { "name": "Manganèse (Mn)", "unit": "%", "value": 0.05 }
     ]
   },
   "specifications": {
-    "en": [{"ph": 6.5, "humidity": 10.0, "solubility": 100.0}],
-    "fr": [{"ph": 6.5, "humidity": 10.0, "solubility": 100.0}]
+    "en": [{ "ph": 6.5, "humidity": 10.0, "solubility": 100.0 }],
+    "fr": [{ "ph": 6.5, "humidity": 10.0, "solubility": 100.0 }]
   },
   "guaranteed_analysis": [
-    {"name": "Total Nitrogen (N)", "unit": "%", "value": 20.0},
-    {"name": "Available Phosphate (P2O5)", "unit": "%", "value": 20.0},
-    {"name": "Soluble Potash (K2O)", "unit": "%", "value": 20.0}
+    { "name": "Total Nitrogen (N)", "unit": "%", "value": 20.0 },
+    { "name": "Available Phosphate (P2O5)", "unit": "%", "value": 20.0 },
+    { "name": "Soluble Potash (K2O)", "unit": "%", "value": 20.0 }
   ]
 }
 ```

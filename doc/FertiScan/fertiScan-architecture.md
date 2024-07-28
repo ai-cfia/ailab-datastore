@@ -66,6 +66,7 @@ erDiagram
   }
   organization {
     uuid id PK
+    string name
     uuid information_id FK
     uuid main_location_id FK
   }
@@ -200,7 +201,7 @@ erDiagram
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
-  inspection }o--|| users :inspect
+  inspection }|--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
   label_information ||--|{ metric: has

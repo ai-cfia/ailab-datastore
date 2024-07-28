@@ -14,7 +14,6 @@ if not DB_SCHEMA:
 
 INPUT_JSON_PATH = "tests/FertiScan/analysis_returned.json"
 
-
 class TestUpdateInspectionFunction(unittest.TestCase):
     def setUp(self):
         # Set up database connection and cursor
@@ -48,7 +47,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         self.cursor.close()
         self.conn.close()
 
-    def test_update_inspection(self):
+    def test_update_inspection_with_verified_false(self):
         # Update the JSON data for testing the update function
         updated_input_json = self.created_data.copy()
         updated_input_json["company"]["name"] = "Updated Company Name"
@@ -57,6 +56,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         updated_input_json["specifications"]["en"][0]["ph"] = 6.8
         updated_input_json["ingredients"]["en"][0]["value"] = 5.5
         updated_input_json["guaranteed_analysis"][0]["value"] = 21.0
+        updated_input_json["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)
 
@@ -81,13 +81,20 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         self.assertEqual(
             updated_inspection[2],
             self.inspector_id,
-            "The inspector ID should be None as expected.",
+            "The inspector ID should match the expected value.",
         )
-        self.assertEqual(
+        self.assertFalse(
             updated_inspection[3],
-            None,
-            "The verified status should initially be None.",
+            "The verified status should be False as updated.",
         )
+
+        # Verify that no fertilizer record was created
+        self.cursor.execute(
+            f'SELECT COUNT(*) FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
+            (self.inspection_id,)
+        )
+        fertilizer_count = self.cursor.fetchone()[0]
+        self.assertEqual(fertilizer_count, 0, "No fertilizer should be created when verified is false.")
 
         # Verify the company name was updated in the database
         self.cursor.execute(
@@ -158,6 +165,78 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             updated_nitrogen_value,
             21.0,
             "The guaranteed analysis value for Total Nitrogen (N) should reflect the updated amount.",
+        )
+
+    def test_update_inspection_with_verified_true(self):
+        # Update the JSON data for testing the update function
+        updated_input_json = self.created_data.copy()
+        updated_input_json["verified"] = True  # Set verified to true
+
+        updated_input_json_str = json.dumps(updated_input_json)
+
+        # Invoke the update_inspection function
+        self.cursor.execute(
+            f'SELECT "{DB_SCHEMA}".update_inspection(%s, %s, %s);',
+            (self.inspection_id, self.inspector_id, updated_input_json_str),
+        )
+
+        # Verify the inspection record was updated in the database
+        self.cursor.execute(
+            f'SELECT id, label_info_id, inspector_id, verified FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            (self.inspection_id,),
+        )
+        updated_inspection = self.cursor.fetchone()
+        self.assertIsNotNone(updated_inspection, "The inspection record should exist.")
+        self.assertEqual(
+            str(updated_inspection[0]),
+            str(self.inspection_id),
+            "The inspection ID should match the expected value.",
+        )
+        self.assertEqual(
+            updated_inspection[2],
+            self.inspector_id,
+            "The inspector ID should match the expected value.",
+        )
+        self.assertTrue(
+            updated_inspection[3],
+            "The verified status should be True as updated.",
+        )
+
+        # Verify that a fertilizer record was created
+        self.cursor.execute(
+            f'SELECT id FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
+            (self.inspection_id,)
+        )
+        fertilizer_id = self.cursor.fetchone()[0]
+        self.assertIsNotNone(fertilizer_id, "A fertilizer record should have been created.")
+
+        # Verify the fertilizer details are correct
+        self.cursor.execute(
+            f'SELECT name, registration_number, owner_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
+            (fertilizer_id,)
+        )
+        fertilizer_data = self.cursor.fetchone()
+        self.assertEqual(
+            fertilizer_data[0],
+            updated_input_json["product"]["name"],
+            "The fertilizer name should match the product name in the input JSON.",
+        )
+        self.assertEqual(
+            fertilizer_data[1],
+            updated_input_json["product"]["registration_number"],
+            "The registration number should match the input JSON.",
+        )
+
+        # Check if the owner_id matches the organization created for the company
+        self.cursor.execute(
+            f'SELECT id FROM "{DB_SCHEMA}".organization WHERE name = %s;',
+            (updated_input_json["company"]["name"],)
+        )
+        organization_id = self.cursor.fetchone()[0]
+        self.assertEqual(
+            fertilizer_data[2],
+            organization_id,
+            "The fertilizer's owner_id should match the organization's ID.",
         )
 
 
