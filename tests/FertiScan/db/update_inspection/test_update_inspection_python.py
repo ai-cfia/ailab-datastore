@@ -2,8 +2,9 @@ import json
 import os
 import unittest
 
-import psycopg
+from psycopg import connect
 
+from datastore.db.metadata.inspection import Inspection
 from datastore.db.queries.inspection import InspectionUpdateError, update_inspection
 
 # Constants for test configuration
@@ -21,7 +22,7 @@ TEST_INPUT_JSON_PATH = "tests/FertiScan/analysis_returned.json"
 class TestInspectionUpdatePythonFunction(unittest.TestCase):
     def setUp(self):
         # Set up database connection and cursor
-        self.conn = psycopg.connect(
+        self.conn = connect(
             TEST_DB_CONNECTION_STRING, options=f"-c search_path={TEST_DB_SCHEMA},public"
         )
         self.conn.autocommit = False
@@ -68,12 +69,13 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         updated_input_json["verified"] = False
 
         try:
+            updated_data = Inspection(**updated_input_json)
             updated_result = update_inspection(
                 self.cursor,
                 self.inspection_id,
                 self.inspector_id,
-                updated_input_json,
-            )
+                updated_data,
+            ).model_dump()
         except InspectionUpdateError as e:
             self.fail(f"update_inspection raised an unexpected error: {str(e)}")
 
@@ -113,12 +115,13 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         updated_input_json["verified"] = True
 
         try:
+            updated_data = Inspection(**updated_input_json)
             updated_result = update_inspection(
                 self.cursor,
                 self.inspection_id,
                 self.inspector_id,
-                updated_input_json,
-            )
+                updated_data,
+            ).model_dump()
         except InspectionUpdateError as e:
             self.fail(f"update_inspection raised an unexpected error: {str(e)}")
 

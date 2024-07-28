@@ -4,10 +4,13 @@ This module represent the function for the table inspection:
 """
 
 import json
-import uuid
+from uuid import UUID
 
 from psycopg import Cursor, DatabaseError, Error, OperationalError
 from psycopg.sql import SQL
+from pydantic_core import ValidationError
+
+from datastore.db.metadata.inspection import Inspection
 
 
 class InspectionCreationError(Exception):
@@ -210,37 +213,32 @@ def get_all_organization_inspection(cursor, org_id):
 
 
 def update_inspection(
-    cursor: Cursor, inspection_id: str, user_id: str, updated_data: dict
-) -> dict:
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    user_id: str | UUID,
+    updated_data: Inspection,
+) -> Inspection:
     """
     Update inspection data in the database.
 
     Parameters:
     - cursor (Cursor): Database cursor for executing queries.
-    - inspection_id (str): UUID of the inspection to update.
-    - user_id (str): UUID of the user performing the update.
-    - updated_data (dict): Dictionary containing updated inspection data.
+    - inspection_id (str | UUID): UUID of the inspection to update.
+    - user_id (str | UUID): UUID of the user performing the update.
+    - updated_data (Inspection): Updated inspection data as an Inspection object.
 
     Returns:
-    - dict: A JSON object with updated inspection information.
+    - Inspection: An Inspection object with updated inspection information.
 
     Raises:
     - InspectionUpdateError: Custom error for handling specific update issues.
     """
     try:
-        # Validate and convert input IDs
-        inspection_uuid = uuid.UUID(inspection_id)
-        user_uuid = uuid.UUID(user_id)
-
-        # Ensure updated_data is a valid dictionary
-        if not isinstance(updated_data, dict):
-            raise ValueError("Invalid data format: updated_data must be a dictionary")
+        updated_data_dict = updated_data.model_dump()
 
         # Prepare and execute the SQL function call
-        query = SQL("""SELECT update_inspection(%s, %s, %s)""")
-        cursor.execute(
-            query, (inspection_uuid, user_uuid, json.dumps(updated_data))
-        )
+        query = SQL("SELECT update_inspection(%s, %s, %s)")
+        cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
         result = cursor.fetchone()
 
         if result is None:
@@ -248,17 +246,14 @@ def update_inspection(
                 "Failed to update inspection. No data returned."
             )
 
-        return result[0]
+        # Convert the JSON result back to an Inspection object
+        return Inspection.model_validate(result[0])
 
-    except (
-        Error,
-        DatabaseError,
-        OperationalError,
-    ) as db_err:
-        raise InspectionUpdateError(
-            f"Database error occurred: {str(db_err)}"
-        ) from db_err
-    except (ValueError, TypeError) as val_err:
-        raise InspectionUpdateError(f"Invalid input: {str(val_err)}") from val_err
-    except Exception as ex:
-        raise InspectionUpdateError(f"Unexpected error: {str(ex)}") from ex
+    except (Error, DatabaseError, OperationalError) as e:
+        raise InspectionUpdateError(f"Database error occurred: {str(e)}") from e
+    except ValidationError as e:
+        raise InspectionUpdateError(f"Validation failed: {str(e)}") from e
+    except (ValueError, TypeError) as e:
+        raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
+    except Exception as e:
+        raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e

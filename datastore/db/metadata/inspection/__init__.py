@@ -77,6 +77,7 @@ class Inspection(BaseModel):
     specifications: Specifications
     first_aid: SubLabel
     guaranteed_analysis: List[Value]
+    verified: bool = False
 
 
 def build_inspection_import(analysis_form: dict) -> str:
