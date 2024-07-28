@@ -1,7 +1,13 @@
 """
 This module represent the function for the table inspection:
-    
+
 """
+
+import json
+import uuid
+
+from psycopg import Cursor, DatabaseError, Error, OperationalError
+from psycopg.sql import SQL
 
 
 class InspectionCreationError(Exception):
@@ -41,7 +47,8 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
         return cursor.fetchone()[0]
     except Exception:
         raise InspectionCreationError("Datastore inspection unhandeled error")
-    
+
+
 def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
     """
     This function calls the new_inspection function within the database and adds the label information to the inspection.
@@ -64,7 +71,6 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
         return cursor.fetchone()[0]
     except Exception as e:
         raise InspectionCreationError(e.__str__())
-
 
 
 def is_inspection_verified(cursor, inspection_id):
@@ -204,64 +210,55 @@ def get_all_organization_inspection(cursor, org_id):
 
 
 def update_inspection(
-    cursor,
-    inspection_id,
-    verified=None,
-    label_info_id=None,
-    sample_id=None,
-    company_id=None,
-    manufacturer_id=None,
-    picture_set_id=None,
-    fertilizer_id=None,
-):
+    cursor: Cursor, inspection_id: str, user_id: str, updated_data: dict
+) -> dict:
     """
-    This function updates the inspection in the database.
+    Update inspection data in the database.
 
     Parameters:
-    - cursor (cursor): The cursor of the database.
-    - inspection_id (str): The UUID of the inspection.
-    - verified (boolean, optional): The value if the inspection has been verified by the user. Default is None.
-    - label_info_id (str, optional): The UUID of the label information. Default is None.
-    - sample_id (str, optional): The UUID of the sample. Default is None.
-    - company_id (str, optional): The UUID of the company. Default is None.
-    - manufacturer_id (str, optional): The UUID of the manufacturer. Default is None.
-    - picture_set_id (str, optional): The UUID of the picture set. Default is None.
-    - fertilizer_id (str, optional): The UUID of the fertilizer. Default is None.
+    - cursor (Cursor): Database cursor for executing queries.
+    - inspection_id (str): UUID of the inspection to update.
+    - user_id (str): UUID of the user performing the update.
+    - updated_data (dict): Dictionary containing updated inspection data.
 
     Returns:
-    - The UUID of the inspection.
-    """
+    - dict: A JSON object with updated inspection information.
 
+    Raises:
+    - InspectionUpdateError: Custom error for handling specific update issues.
+    """
     try:
-        query = """
-            UPDATE inspection
-            SET 
-                verified = COALESCE(%s, verified),
-                label_info_id = COALESCE(%s, label_info_id),
-                sample_id = COALESCE(%s, sample_id),
-                company_id = COALESCE(%s, company_id),
-                manufacturer_id = COALESCE(%s, manufacturer_id),
-                picture_set_id = COALESCE(%s, picture_set_id),
-                fertilizer_id = COALESCE(%s, fertilizer_id),
-                updated_at = CURRENT_TIMESTAMP
-            WHERE 
-                id = %s
-            RETURNING 
-                id
-            """
+        # Validate and convert input IDs
+        inspection_uuid = uuid.UUID(inspection_id)
+        user_uuid = uuid.UUID(user_id)
+
+        # Ensure updated_data is a valid dictionary
+        if not isinstance(updated_data, dict):
+            raise ValueError("Invalid data format: updated_data must be a dictionary")
+
+        # Prepare and execute the SQL function call
+        query = SQL("""SELECT update_inspection(%s, %s, %s)""")
         cursor.execute(
-            query,
-            (
-                verified,
-                label_info_id,
-                sample_id,
-                company_id,
-                manufacturer_id,
-                picture_set_id,
-                fertilizer_id,
-                inspection_id,
-            ),
+            query, (inspection_uuid, user_uuid, json.dumps(updated_data))
         )
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise InspectionUpdateError(e.__str__())
+        result = cursor.fetchone()
+
+        if result is None:
+            raise InspectionUpdateError(
+                "Failed to update inspection. No data returned."
+            )
+
+        return result[0]
+
+    except (
+        Error,
+        DatabaseError,
+        OperationalError,
+    ) as db_err:
+        raise InspectionUpdateError(
+            f"Database error occurred: {str(db_err)}"
+        ) from db_err
+    except (ValueError, TypeError) as val_err:
+        raise InspectionUpdateError(f"Invalid input: {str(val_err)}") from val_err
+    except Exception as ex:
+        raise InspectionUpdateError(f"Unexpected error: {str(ex)}") from ex

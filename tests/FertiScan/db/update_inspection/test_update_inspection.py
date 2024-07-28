@@ -1,6 +1,7 @@
 import json
 import os
 import unittest
+
 import psycopg
 
 # Database connection and schema settings
@@ -13,6 +14,7 @@ if not DB_SCHEMA:
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
 INPUT_JSON_PATH = "tests/FertiScan/analysis_returned.json"
+
 
 class TestUpdateInspectionFunction(unittest.TestCase):
     def setUp(self):
@@ -91,10 +93,14 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify that no fertilizer record was created
         self.cursor.execute(
             f'SELECT COUNT(*) FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
-            (self.inspection_id,)
+            (self.inspection_id,),
         )
         fertilizer_count = self.cursor.fetchone()[0]
-        self.assertEqual(fertilizer_count, 0, "No fertilizer should be created when verified is false.")
+        self.assertEqual(
+            fertilizer_count,
+            0,
+            "No fertilizer should be created when verified is false.",
+        )
 
         # Verify the company name was updated in the database
         self.cursor.execute(
@@ -205,15 +211,17 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify that a fertilizer record was created
         self.cursor.execute(
             f'SELECT id FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
-            (self.inspection_id,)
+            (self.inspection_id,),
         )
         fertilizer_id = self.cursor.fetchone()[0]
-        self.assertIsNotNone(fertilizer_id, "A fertilizer record should have been created.")
+        self.assertIsNotNone(
+            fertilizer_id, "A fertilizer record should have been created."
+        )
 
         # Verify the fertilizer details are correct
         self.cursor.execute(
             f'SELECT name, registration_number, owner_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
-            (fertilizer_id,)
+            (fertilizer_id,),
         )
         fertilizer_data = self.cursor.fetchone()
         self.assertEqual(
@@ -230,7 +238,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Check if the owner_id matches the organization created for the company
         self.cursor.execute(
             f'SELECT id FROM "{DB_SCHEMA}".organization WHERE name = %s;',
-            (updated_input_json["company"]["name"],)
+            (updated_input_json["company"]["name"],),
         )
         organization_id = self.cursor.fetchone()[0]
         self.assertEqual(
