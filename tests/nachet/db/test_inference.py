@@ -61,7 +61,9 @@ class test_inference_functions(unittest.TestCase):
         self.picture_id = picture.new_picture(
             self.cursor, self.picture, self.picture_set_id, self.seed_id, self.nb_seed
         )
-        with open("tests/Nachet/inference_example.json", "r") as f:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_example.json")
+        with open(file_path, "r") as f:
             self.inference = json.loads(f.read())
         self.inference_trim = (
             '{"filename": "inference_example", "totalBoxes": 1, "totalBoxes": 1}'

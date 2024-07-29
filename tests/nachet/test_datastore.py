@@ -47,7 +47,9 @@ if DEV_USER_EMAIL is None or DEV_USER_EMAIL == "":
 
 class test_ml_structure(unittest.TestCase):
     def setUp(self):
-        with open("tests/Nachet/ml_structure_exemple.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "ml_structure_exemple.json")
+        with open(file_path) as file:
             self.ml_dict = json.load(file)
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
@@ -144,7 +146,9 @@ class test_picture(unittest.TestCase):
         )
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cursor, self.seed_name)
-        with open("tests/Nachet/inference_result.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_result.json")
+        with open(file_path) as file:
             self.inference = json.load(file)
         self.folder_name = "test_folder"
 
@@ -294,7 +298,9 @@ class test_picture_set(unittest.TestCase):
                 self.picture_set_id,
             )
         )
-        with open("tests/Nachet/inference_result.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_result.json")
+        with open(file_path) as file:
             self.inference = json.load(file)
 
         self.dev_user_id = datastore.user.get_user_id(

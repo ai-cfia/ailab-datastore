@@ -1,3 +1,4 @@
+import os
 import datastore.db.metadata.inference as inference
 import datastore.db.metadata.machine_learning as ml_data
 import json
@@ -14,7 +15,11 @@ class test_inference_functions(unittest.TestCase):
         self.overlapping = False
         self.overlapping_indices = 0
         self.total_boxes = 1
-        with open("tests/Nachet/inference_example.json") as f:
+        # Get actual path
+
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_example.json")
+        with open(file_path) as f:
             self.inference_exemple = json.load(f)
         self.filename = self.inference_exemple["filename"]
         self.labelOccurrence = self.inference_exemple["labelOccurrence"]
@@ -68,7 +73,9 @@ class test_inference_functions(unittest.TestCase):
 
 class test_machine_learning_functions(unittest.TestCase):
     def setUp(self):
-        with open("tests/Nachet/ml_structure_exemple.json", "r") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "ml_structure_exemple.json")
+        with open(file_path, "r") as file:
             self.ml_structure = json.load(file)
             self.model_name = "that_model_name"
             self.model_id = "48efe646-5210-4761-908e-a06f95f0c344"

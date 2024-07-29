@@ -35,7 +35,10 @@ if BLOB_KEY is None or BLOB_KEY == "":
 
 class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        with open('tests/fertiscan/analyse.json', 'r') as file:
+        
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "analyse.json")
+        with open(file_path, 'r') as file:
             self.analysis_json = json.load(file)
 
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
