@@ -1,7 +1,11 @@
+import json
 import os
 import unittest
+
 import psycopg
-import json
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -11,6 +15,7 @@ if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
 DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
+
 
 class TestUpdateIngredientsFunction(unittest.TestCase):
     def setUp(self):
@@ -22,49 +27,59 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Set up test data for ingredients
-        self.sample_organic_ingredients = json.dumps({
-            "en": [
-                {"name": "Bone meal", "value": "5", "unit": "%"},
-                {"name": "Seaweed extract", "value": "3", "unit": "%"}
-            ],
-            "fr": [
-                {"name": "Farine d'os", "value": "5", "unit": "%"},
-                {"name": "Extrait d'algues", "value": "3", "unit": "%"}
-            ]
-        })
+        self.sample_organic_ingredients = json.dumps(
+            {
+                "en": [
+                    {"name": "Bone meal", "value": "5", "unit": "%"},
+                    {"name": "Seaweed extract", "value": "3", "unit": "%"},
+                ],
+                "fr": [
+                    {"name": "Farine d'os", "value": "5", "unit": "%"},
+                    {"name": "Extrait d'algues", "value": "3", "unit": "%"},
+                ],
+            }
+        )
 
-        self.updated_organic_ingredients = json.dumps({
-            "en": [
-                {"name": "Bone meal", "value": "6", "unit": "%"},
-                {"name": "Seaweed extract", "value": "4", "unit": "%"}
-            ],
-            "fr": [
-                {"name": "Farine d'os", "value": "6", "unit": "%"},
-                {"name": "Extrait d'algues", "value": "4", "unit": "%"}
-            ]
-        })
+        self.updated_organic_ingredients = json.dumps(
+            {
+                "en": [
+                    {"name": "Bone meal", "value": "6", "unit": "%"},
+                    {"name": "Seaweed extract", "value": "4", "unit": "%"},
+                ],
+                "fr": [
+                    {"name": "Farine d'os", "value": "6", "unit": "%"},
+                    {"name": "Extrait d'algues", "value": "4", "unit": "%"},
+                ],
+            }
+        )
 
         # Insert test data to obtain a valid label_id
-        sample_org_info = json.dumps({
-            "name": "Test Company",
-            "address": "123 Test Address",
-            "website": "http://www.testcompany.com",
-            "phone_number": "+1 800 555 0123"
-        })
-        self.cursor.execute(f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,))
+        sample_org_info = json.dumps(
+            {
+                "name": "Test Company",
+                "address": "123 Test Address",
+                "website": "http://www.testcompany.com",
+                "phone_number": "+1 800 555 0123",
+            }
+        )
+        self.cursor.execute(
+            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
+        )
         self.company_info_id = self.cursor.fetchone()[0]
 
-        sample_label_info = json.dumps({
-            "lot_number": "L123456789",
-            "npk": "10-20-30",
-            "registration_number": "R123456",
-            "n": 10.0,
-            "p": 20.0,
-            "k": 30.0
-        })
+        sample_label_info = json.dumps(
+            {
+                "lot_number": "L123456789",
+                "npk": "10-20-30",
+                "registration_number": "R123456",
+                "n": 10.0,
+                "p": 20.0,
+                "k": 30.0,
+            }
+        )
         self.cursor.execute(
             f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
-            (sample_label_info, self.company_info_id, self.company_info_id)
+            (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
 
@@ -78,44 +93,57 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
         # Insert initial organic ingredients
         self.cursor.execute(
             f'SELECT "{DB_SCHEMA}".update_ingredients(%s, %s);',
-            (self.label_id, self.sample_organic_ingredients)
+            (self.label_id, self.sample_organic_ingredients),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
             f'SELECT name, value, unit, language FROM "{DB_SCHEMA}".ingredient WHERE label_id = %s;',
-            (self.label_id,)
+            (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
         expected_data = [
-            ("Bone meal", 5.0, "%", 'en'),
-            ("Seaweed extract", 3.0, "%", 'en'),
-            ("Farine d'os", 5.0, "%", 'fr'),
-            ("Extrait d'algues", 3.0, "%", 'fr')
+            ("Bone meal", 5.0, "%", "en"),
+            ("Seaweed extract", 3.0, "%", "en"),
+            ("Farine d'os", 5.0, "%", "fr"),
+            ("Extrait d'algues", 3.0, "%", "fr"),
         ]
-        self.assertEqual(len(saved_data), 4, "There should be four organic ingredients inserted")
-        self.assertListEqual(saved_data, expected_data, "Saved data should match the expected values")
+        self.assertEqual(
+            len(saved_data), 4, "There should be four organic ingredients inserted"
+        )
+        self.assertListEqual(
+            saved_data, expected_data, "Saved data should match the expected values"
+        )
 
         # Update organic ingredients
         self.cursor.execute(
             f'SELECT "{DB_SCHEMA}".update_ingredients(%s, %s);',
-            (self.label_id, self.updated_organic_ingredients)
+            (self.label_id, self.updated_organic_ingredients),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
             f'SELECT name, value, unit, language FROM "{DB_SCHEMA}".ingredient WHERE label_id = %s;',
-            (self.label_id,)
+            (self.label_id,),
         )
         updated_data = self.cursor.fetchall()
         expected_updated_data = [
-            ("Bone meal", 6.0, "%", 'en'),
-            ("Seaweed extract", 4.0, "%", 'en'),
-            ("Farine d'os", 6.0, "%", 'fr'),
-            ("Extrait d'algues", 4.0, "%", 'fr')
+            ("Bone meal", 6.0, "%", "en"),
+            ("Seaweed extract", 4.0, "%", "en"),
+            ("Farine d'os", 6.0, "%", "fr"),
+            ("Extrait d'algues", 4.0, "%", "fr"),
         ]
-        self.assertEqual(len(updated_data), 4, "There should be four organic ingredients after update")
-        self.assertListEqual(updated_data, expected_updated_data, "Updated data should match the new values")
+        self.assertEqual(
+            len(updated_data),
+            4,
+            "There should be four organic ingredients after update",
+        )
+        self.assertListEqual(
+            updated_data,
+            expected_updated_data,
+            "Updated data should match the new values",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

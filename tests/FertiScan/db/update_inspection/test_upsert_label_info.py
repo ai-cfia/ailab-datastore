@@ -1,7 +1,11 @@
 import json
 import os
 import unittest
+
 import psycopg
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -32,7 +36,8 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (self.sample_org_info,)
+            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);',
+            (self.sample_org_info,),
         )
         self.organization_info_id = self.cursor.fetchone()[0]
 
@@ -67,18 +72,42 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
         # Verify that the data is correctly saved
         self.cursor.execute(
             f'SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM "{DB_SCHEMA}".label_information WHERE id = %s;',
-            (label_info_id,)
+            (label_info_id,),
         )
         saved_label_data = self.cursor.fetchone()
         self.assertIsNotNone(saved_label_data, "Saved label data should not be None")
-        self.assertEqual(saved_label_data[0], "L123456789", "Lot number should match the inserted value")
-        self.assertEqual(saved_label_data[1], "10-20-30", "NPK should match the inserted value")
-        self.assertEqual(saved_label_data[2], "R123456", "Registration number should match the inserted value")
-        self.assertEqual(saved_label_data[3], 10.0, "N value should match the inserted value")
-        self.assertEqual(saved_label_data[4], 20.0, "P value should match the inserted value")
-        self.assertEqual(saved_label_data[5], 30.0, "K value should match the inserted value")
-        self.assertEqual(saved_label_data[6], self.organization_info_id, "Company info ID should match")
-        self.assertEqual(saved_label_data[7], self.organization_info_id, "Manufacturer info ID should match")
+        self.assertEqual(
+            saved_label_data[0],
+            "L123456789",
+            "Lot number should match the inserted value",
+        )
+        self.assertEqual(
+            saved_label_data[1], "10-20-30", "NPK should match the inserted value"
+        )
+        self.assertEqual(
+            saved_label_data[2],
+            "R123456",
+            "Registration number should match the inserted value",
+        )
+        self.assertEqual(
+            saved_label_data[3], 10.0, "N value should match the inserted value"
+        )
+        self.assertEqual(
+            saved_label_data[4], 20.0, "P value should match the inserted value"
+        )
+        self.assertEqual(
+            saved_label_data[5], 30.0, "K value should match the inserted value"
+        )
+        self.assertEqual(
+            saved_label_data[6],
+            self.organization_info_id,
+            "Company info ID should match",
+        )
+        self.assertEqual(
+            saved_label_data[7],
+            self.organization_info_id,
+            "Manufacturer info ID should match",
+        )
 
     def test_update_existing_label_information(self):
         sample_label_info = json.dumps(
@@ -120,23 +149,53 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
         updated_label_info_id = self.cursor.fetchone()[0]
 
         # Assertions to verify update
-        self.assertEqual(label_info_id, updated_label_info_id, "Label info ID should remain the same after update")
+        self.assertEqual(
+            label_info_id,
+            updated_label_info_id,
+            "Label info ID should remain the same after update",
+        )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
             f'SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM "{DB_SCHEMA}".label_information WHERE id = %s;',
-            (updated_label_info_id,)
+            (updated_label_info_id,),
         )
         updated_label_data = self.cursor.fetchone()
-        self.assertIsNotNone(updated_label_data, "Updated label data should not be None")
-        self.assertEqual(updated_label_data[0], "L987654321", "Lot number should match the updated value")
-        self.assertEqual(updated_label_data[1], "15-25-35", "NPK should match the updated value")
-        self.assertEqual(updated_label_data[2], "R654321", "Registration number should match the updated value")
-        self.assertEqual(updated_label_data[3], 15.0, "N value should match the updated value")
-        self.assertEqual(updated_label_data[4], 25.0, "P value should match the updated value")
-        self.assertEqual(updated_label_data[5], 35.0, "K value should match the updated value")
-        self.assertEqual(updated_label_data[6], self.organization_info_id, "Company info ID should match")
-        self.assertEqual(updated_label_data[7], self.organization_info_id, "Manufacturer info ID should match")
+        self.assertIsNotNone(
+            updated_label_data, "Updated label data should not be None"
+        )
+        self.assertEqual(
+            updated_label_data[0],
+            "L987654321",
+            "Lot number should match the updated value",
+        )
+        self.assertEqual(
+            updated_label_data[1], "15-25-35", "NPK should match the updated value"
+        )
+        self.assertEqual(
+            updated_label_data[2],
+            "R654321",
+            "Registration number should match the updated value",
+        )
+        self.assertEqual(
+            updated_label_data[3], 15.0, "N value should match the updated value"
+        )
+        self.assertEqual(
+            updated_label_data[4], 25.0, "P value should match the updated value"
+        )
+        self.assertEqual(
+            updated_label_data[5], 35.0, "K value should match the updated value"
+        )
+        self.assertEqual(
+            updated_label_data[6],
+            self.organization_info_id,
+            "Company info ID should match",
+        )
+        self.assertEqual(
+            updated_label_data[7],
+            self.organization_info_id,
+            "Manufacturer info ID should match",
+        )
 
 
 if __name__ == "__main__":

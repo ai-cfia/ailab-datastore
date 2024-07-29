@@ -2,10 +2,13 @@ import json
 import os
 import unittest
 
+from dotenv import load_dotenv
 from psycopg import connect
 
 from datastore.db.metadata.inspection import Inspection
 from datastore.db.queries.inspection import InspectionUpdateError, update_inspection
+
+load_dotenv()
 
 # Constants for test configuration
 TEST_DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")

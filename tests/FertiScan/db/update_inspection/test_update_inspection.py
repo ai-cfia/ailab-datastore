@@ -3,6 +3,9 @@ import os
 import unittest
 
 import psycopg
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Database connection and schema settings
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")

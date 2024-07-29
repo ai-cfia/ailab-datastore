@@ -1,6 +1,10 @@
 import os
 import unittest
+
 import psycopg
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -24,24 +28,28 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         # Prepopulate organization_information table
         self.cursor.execute(
             f'INSERT INTO "{DB_SCHEMA}".organization_information (name, website, phone_number) '
-            f'VALUES (%s, %s, %s) RETURNING id;',
-            ("Test Organization Information", "http://www.testorginfo.com", "+1 800 555 0101")
+            f"VALUES (%s, %s, %s) RETURNING id;",
+            (
+                "Test Organization Information",
+                "http://www.testorginfo.com",
+                "+1 800 555 0101",
+            ),
         )
         self.organization_info_id = self.cursor.fetchone()[0]
 
         # Prepopulate location table
         self.cursor.execute(
             f'INSERT INTO "{DB_SCHEMA}".location (name, address) '
-            f'VALUES (%s, %s) RETURNING id;',
-            ("Test Location", "123 Test Address, Test City")
+            f"VALUES (%s, %s) RETURNING id;",
+            ("Test Location", "123 Test Address, Test City"),
         )
         self.location_id = self.cursor.fetchone()[0]
 
         # Prepopulate organization table with references to organization_information and location
         self.cursor.execute(
             f'INSERT INTO "{DB_SCHEMA}".organization (name, information_id, main_location_id) '
-            f'VALUES (%s, %s, %s) RETURNING id;',
-            ("Test Organization", self.organization_info_id, self.location_id)
+            f"VALUES (%s, %s, %s) RETURNING id;",
+            ("Test Organization", self.organization_info_id, self.location_id),
         )
         self.organization_id = self.cursor.fetchone()[0]
 
@@ -92,14 +100,32 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         # Verify that the data is correctly saved
         self.cursor.execute(
             f'SELECT name, registration_number, owner_id, latest_inspection_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
-            (fertilizer_id,)
+            (fertilizer_id,),
         )
         saved_fertilizer_data = self.cursor.fetchone()
-        self.assertIsNotNone(saved_fertilizer_data, "Saved fertilizer data should not be None")
-        self.assertEqual(saved_fertilizer_data[0], fertilizer_name, "Name should match the inserted value")
-        self.assertEqual(saved_fertilizer_data[1], registration_number, "Registration number should match the inserted value")
-        self.assertEqual(saved_fertilizer_data[2], owner_id, "Owner ID should match the inserted value")
-        self.assertEqual(saved_fertilizer_data[3], latest_inspection_id, "Latest inspection ID should match the inserted value")
+        self.assertIsNotNone(
+            saved_fertilizer_data, "Saved fertilizer data should not be None"
+        )
+        self.assertEqual(
+            saved_fertilizer_data[0],
+            fertilizer_name,
+            "Name should match the inserted value",
+        )
+        self.assertEqual(
+            saved_fertilizer_data[1],
+            registration_number,
+            "Registration number should match the inserted value",
+        )
+        self.assertEqual(
+            saved_fertilizer_data[2],
+            owner_id,
+            "Owner ID should match the inserted value",
+        )
+        self.assertEqual(
+            saved_fertilizer_data[3],
+            latest_inspection_id,
+            "Latest inspection ID should match the inserted value",
+        )
 
     def test_update_existing_fertilizer(self):
         fertilizer_name = "Test Fertilizer"
@@ -119,22 +145,41 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         self.cursor.execute(
             f'SELECT "{DB_SCHEMA}".upsert_fertilizer(%s, %s, %s, %s);',
-            (fertilizer_name, updated_registration_number, owner_id, latest_inspection_id),
+            (
+                fertilizer_name,
+                updated_registration_number,
+                owner_id,
+                latest_inspection_id,
+            ),
         )
         updated_fertilizer_id = self.cursor.fetchone()[0]
 
         # Assertions to verify update
-        self.assertEqual(fertilizer_id, updated_fertilizer_id, "Fertilizer ID should remain the same after update")
+        self.assertEqual(
+            fertilizer_id,
+            updated_fertilizer_id,
+            "Fertilizer ID should remain the same after update",
+        )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
             f'SELECT name, registration_number, owner_id, latest_inspection_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
-            (updated_fertilizer_id,)
+            (updated_fertilizer_id,),
         )
         updated_fertilizer_data = self.cursor.fetchone()
-        self.assertIsNotNone(updated_fertilizer_data, "Updated fertilizer data should not be None")
-        self.assertEqual(updated_fertilizer_data[1], updated_registration_number, "Registration number should match the updated value")
-        self.assertEqual(updated_fertilizer_data[3], latest_inspection_id, "Latest inspection ID should remain unchanged")
+        self.assertIsNotNone(
+            updated_fertilizer_data, "Updated fertilizer data should not be None"
+        )
+        self.assertEqual(
+            updated_fertilizer_data[1],
+            updated_registration_number,
+            "Registration number should match the updated value",
+        )
+        self.assertEqual(
+            updated_fertilizer_data[3],
+            latest_inspection_id,
+            "Latest inspection ID should remain unchanged",
+        )
 
 
 if __name__ == "__main__":
