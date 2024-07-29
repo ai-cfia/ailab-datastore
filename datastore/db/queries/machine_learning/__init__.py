@@ -6,6 +6,8 @@ class NonExistingTaskEWarning(UserWarning):
     pass
 class PipelineCreationError(Exception):
     pass
+class NonExistingModelError(Exception):
+    pass
 
 def new_pipeline(cursor, pipeline,pipeline_name, model_ids, active:bool=False):
     """
@@ -272,7 +274,7 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
         model_id=cursor.fetchone()[0]
         return model_id
     except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
+        raise NonExistingModelError(f"Warning: the given model '{model_name}' was not found")
     except(Exception):
         raise PipelineCreationError("Error: pipeline not found")
 
@@ -405,7 +407,7 @@ def get_model_id_from_name(cursor,model_name:str):
         model_id=cursor.fetchone()[0]
         return model_id
     except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
+        raise NonExistingModelError(f"Error: the given model '{model_name}' was not found")
     except(Exception):
         raise PipelineCreationError("Error: model not found")
     
