@@ -712,14 +712,19 @@ class test_feedback(unittest.TestCase):
                 self.cursor, self.user_id, self.inference, picture_id, model_id
             )
         )
-        self.registered_inference["user_id"] = self.user_id
+        # to match frontend field names :
+        self.registered_inference["inferenceId"] = self.registered_inference["inference_id"]
+        self.registered_inference.pop("inference_id")
+        self.registered_inference["userId"] = self.user_id
         self.mock_box = {"topX": 123, "topY": 456, "bottomX": 789, "bottomY": 123}
-        self.inference_id = self.registered_inference.get("inference_id")
+        self.inference_id = self.registered_inference.get("inferenceId")
         self.boxes_id = []
         self.top_id = []
         self.unreal_seed_id = Nachet.seed.new_seed(self.cursor, "unreal_seed")
         for box in self.registered_inference["boxes"]:
-            self.boxes_id.append(box["box_id"])
+            box["boxId"] = box["box_id"]
+            box.pop("box_id")
+            self.boxes_id.append(box["boxId"])
             self.top_id.append(box["top_id"])
             box["classId"] = Nachet.seed.get_seed_id(self.cursor, box["label"])
 
@@ -872,7 +877,7 @@ class test_feedback(unittest.TestCase):
         )
         for box in self.registered_inference["boxes"]:
             object_db = Nachet.inference.get_inference_object(
-                self.cursor, box["box_id"]
+                self.cursor, box["boxId"]
             )
             # The new box metadata must be updated
             self.assertDictEqual(object_db[1], self.mock_box)
@@ -950,3 +955,6 @@ class test_feedback(unittest.TestCase):
             self.assertTrue(validator.is_valid_uuid(str(object_db[4])))
             # valid column must be true
             self.assertTrue(object_db[6])
+
+if __name__ == "__main__":
+    unittest.main()
