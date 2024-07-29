@@ -195,8 +195,7 @@ erDiagram
   label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
-  metric ||--|| unit: defines
-  metric ||--|| metric_type: defines
+  metric }|--|| unit: defines
 
   micronutrient ||--|| element_compound: is
   guaranteed ||--|| element_compound: is

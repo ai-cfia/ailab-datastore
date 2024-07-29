@@ -6,7 +6,6 @@ import datastore.db.queries.inspection as inspection
 import datastore.db.queries.user as user
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.inspection as data_inspection
-import datastore.blob as blob
 
 load_dotenv()
 
@@ -47,7 +46,7 @@ async def register_analysis(
                 f"User not found based on the given id: {user_id}"
             )
         if not container_client.exists():
-            raise blob.ContainerNotFoundError(
+            raise datastore.ContainerCreationError(
                 f"Container not found based on the given user_id: {user_id}"
             )
         

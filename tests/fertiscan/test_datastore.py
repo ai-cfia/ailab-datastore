@@ -9,7 +9,7 @@ import unittest
 import json
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
-import datastore.FertiScan as FertiScan
+import datastore.fertiscan as fertiscan
 import datastore.db.metadata.validator as validator
 import os
 
@@ -35,7 +35,7 @@ if BLOB_KEY is None or BLOB_KEY == "":
 
 class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-        with open('tests/FertiScan/analyse.json', 'r') as file:
+        with open('tests/fertiscan/analyse.json', 'r') as file:
             self.analysis_json = json.load(file)
 
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
@@ -67,7 +67,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_register_analysis(self):
         self.assertTrue(self.container_client.exists())
-        analysis = asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
+        analysis = asyncio.run(fertiscan.register_analysis(self.cursor, self.container_client, self.user_id,[self.pic_encoded,self.pic_encoded] ,self.analysis_json))
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
 
@@ -75,9 +75,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
-            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, "invalid_user_id", [self.pic_encoded,self.pic_encoded], self.analysis_json))
+            asyncio.run(fertiscan.register_analysis(self.cursor, self.container_client, "invalid_user_id", [self.pic_encoded,self.pic_encoded], self.analysis_json))
 
     def test_register_analysy_missing_key(self):
         self.analysis_json.pop("specification_en",None)
-        with self.assertRaises(FertiScan.data_inspection.MissingKeyError):
-            asyncio.run(FertiScan.register_analysis(self.cursor, self.container_client, self.user_id, [self.pic_encoded,self.pic_encoded], {}))
+        with self.assertRaises(fertiscan.data_inspection.MissingKeyError):
+            asyncio.run(fertiscan.register_analysis(self.cursor, self.container_client, self.user_id, [self.pic_encoded,self.pic_encoded], {}))
