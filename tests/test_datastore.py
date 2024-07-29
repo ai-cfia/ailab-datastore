@@ -128,6 +128,7 @@ class test_picture(unittest.TestCase):
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
         self.folder_name = "test_folder"
+        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 3, self.user_id, self.folder_name))
     
     def tearDown(self):
         self.con.rollback()
@@ -143,17 +144,14 @@ class test_picture(unittest.TestCase):
         picture_ids = asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, pictures, self.container_client, picture_set_id))
         self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
         self.assertEqual(len(pictures), asyncio.run(datastore.azure_storage.get_image_count(self.container_client, str(picture_set_id))))
+        self.assertTrue(len(pictures),(datastore.picture.count_pictures(self.cursor, picture_set_id)))
         
     def test_upload_pictures_error_user_not_found(self):
         """
         This test checks if the upload_picture_known function correctly raise an exception if the user given doesn't exist in db
         """
-        picture_id = asyncio.run(datastore.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
-        model_id = "test_model_id"
-        
-        result = asyncio.run(datastore.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, model_id))
-        #self.cursor.execute("SELECT result FROM inference WHERE picture_id=%s AND model_id=%s",(picture_id,model_id,))
-        self.assertTrue(validator.is_valid_uuid(result["inference_id"]))
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.upload_pictures(self.cursor, str(uuid.uuid4()), self.pic_encoded,self.container_client))
 
     def test_create_picture_set(self):
         """
@@ -182,10 +180,10 @@ class test_picture(unittest.TestCase):
         """
         Test the get_picture_sets_info function
         """
-        
+        picture_ids=asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, self.picture_set_id))
         picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
         self.assertEqual(len(picture_sets_info), 2)
-        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 3)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], len(picture_ids))
         self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name)
         
         self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name + "2"))
@@ -226,6 +224,7 @@ class test_picture(unittest.TestCase):
         """
         This test checks if the delete_picture_set_permanently function correctly raise an exception if the user given doesn't exist in db
         """
+
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cursor, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
     
