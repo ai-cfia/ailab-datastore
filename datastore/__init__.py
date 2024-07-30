@@ -113,7 +113,9 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         raise Exception("Datastore Unhandled Error")
 
 
-async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
+async def get_user_container_client(
+    user_id, storage_url, account, key, tier="user"
+):
     """
     Get the container client of a user
 
@@ -308,7 +310,7 @@ async def upload_pictures(
             if not response:
                 raise BlobUploadError("Error uploading the picture")
 
-            picture.update_picture_metadata(cursor, picture_id, json.dumps(data), 0)
+            picture.update_picture_metadata(cursor, picture_id, json.dumps(data), len(hashed_pictures))
             pic_ids.append(picture_id)
         return pic_ids
     except BlobUploadError or azure_storage.UploadImageError:
