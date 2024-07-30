@@ -56,7 +56,6 @@ class InferenceFeedbackError(Exception):
 class MLRetrievalError(Exception):
     pass
 
-
 async def upload_picture_unknown(
     cursor, user_id, picture_hash, container_client, picture_set_id=None
 ):
@@ -647,37 +646,42 @@ async def get_picture_sets_info(cursor, user_id: str):
     Args:
         user_id (str): id of the user
     """
-    # Check if user exists
-    if not user.is_a_user_id(cursor=cursor, user_id=user_id):
-        raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
+    try :
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
 
-    result = []
-    picture_sets = picture.get_user_picture_sets(cursor, user_id)
-    for picture_set in picture_sets:
-        picture_set_info = {}
-        picture_set_id = picture_set[0]
-        picture_set_name = picture_set[1]
-        
-        picture_set_info["picture_set_id"] = str(picture_set_id)
-        picture_set_info["folder_name"] = picture_set_name
-        
-        pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
-        picture_set_info["nb_pictures"] = len(pictures)
-        
-        picture_set_info["pictures"] = []
-        for pic in pictures :
-            picture_info = {}
-            picture_id = pic[0]
-            picture_info["picture_id"] = str(picture_id)
-
-            is_validated = picture.is_picture_validated(cursor, picture_id)
-            inference_exist = picture.check_picture_inference_exist(cursor, picture_id)
-            picture_info["is_validated"] = is_validated
-            picture_info["inference_exist"] = inference_exist
+        result = []
+        picture_sets = picture.get_user_picture_sets(cursor, user_id)
+        for picture_set in picture_sets:
+            picture_set_info = {}
+            picture_set_id = picture_set[0]
+            picture_set_name = picture_set[1]
             
-            picture_set_info["pictures"].append(picture_info)
-        result.append(picture_set_info)
-    return result
+            picture_set_info["picture_set_id"] = str(picture_set_id)
+            picture_set_info["folder_name"] = picture_set_name
+            
+            pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
+            picture_set_info["nb_pictures"] = len(pictures)
+            
+            picture_set_info["pictures"] = []
+            for pic in pictures :
+                picture_info = {}
+                picture_id = pic[0]
+                picture_info["picture_id"] = str(picture_id)
+
+                is_validated = picture.is_picture_validated(cursor, picture_id)
+                inference_exist = picture.check_picture_inference_exist(cursor, picture_id)
+                picture_info["is_validated"] = is_validated
+                picture_info["inference_exist"] = inference_exist
+                
+                picture_set_info["pictures"].append(picture_info)
+            result.append(picture_set_info)
+        return result
+    except (user.UserNotFoundError, picture.GetPictureSetError, picture.GetPictureError ) as e :
+        raise e
+    except Exception as e:
+        raise  picture.GetPictureSetError("An error occured while retrieving the picture sets")
 
 
 async def get_picture_inference(cursor, user_id: str, picture_id: str):
