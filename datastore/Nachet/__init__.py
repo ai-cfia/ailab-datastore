@@ -745,10 +745,13 @@ async def get_picture_blob(cursor, user_id: str, container_client, picture_id: s
             raise UserNotOwnerError(
                 f"User can't access this picture, user uuid :{user_id}, picture : {picture_id}"
             )
-        folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        if str(user.get_default_picture_set(cursor, user_id)) == str(picture_set_id):
+            folder_name = "General"
+        else:
+            folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         blob_name = "{}/{}.png".format(folder_name, picture_id)
-        picture_hash = await azure_storage.get_blob(container_client, blob_name)
-        return picture_hash
+        picture_blob = await azure_storage.get_blob(container_client, blob_name)
+        return picture_blob
     except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
         raise e
 
