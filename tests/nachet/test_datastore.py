@@ -825,7 +825,11 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_correction_inference_feeback function correctly
         """
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
-
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
@@ -850,6 +854,11 @@ class test_feedback(unittest.TestCase):
             box["label"] = box["topN"][1]["label"]
             box["classId"] = nachet.seed.get_seed_id(self.cursor, box["label"])
             new_top_ids.append(box["topN"][1]["object_id"])
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
@@ -871,6 +880,11 @@ class test_feedback(unittest.TestCase):
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
         for box in self.registered_inference["boxes"]:
             box["box"] = self.mock_box
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
@@ -895,6 +909,11 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = "unreal_seed"
             box["classId"] = self.unreal_seed_id
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
@@ -921,6 +940,11 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = ""
             box["classId"] = ""
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
@@ -943,6 +967,11 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = "unknown_seed"
             box["classId"] = ""
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
             nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
