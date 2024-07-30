@@ -4,7 +4,7 @@ This module represent the function for the table label_information
 
 
 def new_label_information(
-    cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume
+    cursor, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
 ):
     """
     This function create a new label_information in the database.
@@ -17,9 +17,8 @@ def new_label_information(
     - n (float): The n of the label_information.
     - p (float): The p of the label_information.
     - k (float): The k of the label_information.
-    - weight (uuid): The weight of the label_information.
-    - density (uuid): The density of the label_information.
-    - volume (uuid): The volume of the label_information.
+    - company_info_id (str): The UUID of the company.
+    - manufacturer_info_id (str): The UUID of the manufacturer.
 
     Returns:
     - str: The UUID of the label_information
@@ -33,10 +32,12 @@ def new_label_information(
                     registration_number, 
                     n, 
                     p, 
-                    k 
+                    k,
+                    company_info_id,
+                    manufacturer_info_id
                     )
             VALUES 
-                (%s, %s, %s, %s, %s, %s)
+                (%s, %s, %s, %s, %s, %s,%s,%s)
             RETURNING 
                 id
             """
@@ -49,6 +50,8 @@ def new_label_information(
                 n,
                 p,
                 k,
+                company_info_id,
+                manufacturer_info_id,
             ),
         )
         return cursor.fetchone()[0]
@@ -83,9 +86,8 @@ def get_label_information(cursor, label_information_id):
                 n, 
                 p, 
                 k, 
-                weight_id, 
-                density_id, 
-                volume_id
+                company_info_id,
+                manufacturer_info_id
             FROM 
                 label_information
             WHERE 
