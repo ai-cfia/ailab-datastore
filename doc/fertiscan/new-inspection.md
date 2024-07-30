@@ -1,7 +1,11 @@
 # Inspection registration Documentation
 
-## Context:
-The User wants to digitalize a label picture on FertiScan. Therefore, the BE uses it's models to digitalize the content and sends over a JSON with all the information taken from the pictures. We need to parse the JSON, saves correctly the information into the DB linked to the pictures received.
+## Context
+
+The User wants to digitalize a label picture on FertiScan. Therefore, the BE
+uses it's models to digitalize the content and sends over a JSON with all the
+information taken from the pictures. We need to parse the JSON, saves correctly
+the information into the DB linked to the pictures received.
 
 ## Prerequisites
 
