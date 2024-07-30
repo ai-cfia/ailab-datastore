@@ -177,21 +177,21 @@ sequenceDiagram
     FE ->> BE: Analysis label (user_id,[pictures])
     BE ->> BE: Digitalize label(pictures)
     BE ->> DS: register_analysis(cursor,user_id,pictures,form.json)
-    DS ->> DS: Manage pictures
-    activate DS
+    
     DS ->> DB: new_picture_set(user_id)
+    activate DS
     DB --> DS: picture_set_id
-    DB ->>blob: new_folder(picture_set_id)
+    DS ->>blob: new_folder(picture_set_id)
     DS ->> DS: upload_pictures(user_id,pictures,picture_set_id,container_client)
     DS ->> DB: register all pictures
     DB --> DS: picture_ids
-    DB ->> blob: container_client.upload_pictures(pictures,picture_set_id)
+    DS ->> blob: container_client.upload_pictures(pictures,picture_set_id)
     deactivate DS
     DS ->> DS: formatted_form = build_inspection_import(form)
     DS ->> DB: new_inspection(user_id,picture_set_id,formatted_form.json)
-    DB --> DS: formatted_form_with_ids
+    DB --> DS: formatted_form_with_ids.json
 
-    DS --> BE: reworked_form_with_ids.json
+    DS --> BE: formatted_form_with_ids.json
     BE ->> FE: Display_result(reworked_form_with_ids.json)
     FE --> C: Build HTML page based on the received json for confirmation
 
