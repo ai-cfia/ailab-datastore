@@ -276,7 +276,7 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
     except(ValueError):
         raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
     except(Exception):
-        raise PipelineCreationError("Error: pipeline not found")
+        raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
 
 def new_model(cursor, model,name,endpoint_name,task_id:int):
     """
@@ -409,7 +409,7 @@ def get_model_id_from_name(cursor,model_name:str):
     except(ValueError):
         raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
     except(Exception):
-        raise PipelineCreationError("Error: model not found")
+        raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
     
 def get_model_id_from_endpoint(cursor,endpoint_name:str):
     """
