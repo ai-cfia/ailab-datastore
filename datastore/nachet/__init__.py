@@ -546,8 +546,7 @@ async def new_perfect_inference_feeback(cursor, inference_id, user_id, boxes_id)
     except Exception as e:
         print(e)
         raise Exception(f"Datastore Unhandled Error : {e}")
-
-
+    
 async def import_ml_structure_from_json_version(cursor, ml_version: dict):
     """
     TODO: build tests
@@ -576,7 +575,6 @@ async def import_ml_structure_from_json_version(cursor, ml_version: dict):
                 raise ValueError(f"Model {name_model} not found")
         machine_learning.new_pipeline(cursor, pipeline_db, pipeline_name, model_ids)
 
-
 async def get_ml_structure(cursor):
     """
     This function retrieves the machine learning structure from the database.
@@ -586,7 +584,7 @@ async def get_ml_structure(cursor):
     try:
         ml_structure = {"pipelines": [], "models": []}
         pipelines = machine_learning.get_active_pipeline(cursor)
-        if len(pipelines) == 0:
+        if len(pipelines)==0:
             raise MLRetrievalError("No Active pipelines found in the database.")
         model_list = []
         for pipeline in pipelines:
@@ -623,7 +621,6 @@ async def get_ml_structure(cursor):
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
-
 
 async def get_seed_info(cursor):
     """
@@ -793,7 +790,7 @@ async def delete_picture_set_with_archive(
             raise picture.PictureSetDeleteError(
                 f"User can't delete the default picture set, user uuid :{user_id}"
             )
-
+        
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         if folder_name is None:
             folder_name = picture_set_id

@@ -128,6 +128,7 @@ class test_picture(unittest.TestCase):
         self.user_id=datastore.User.get_id(self.user_obj)
         self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
         self.folder_name = "test_folder"
+        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 3, self.user_id, self.folder_name))
     
     def tearDown(self):
         self.con.rollback()
@@ -143,49 +144,14 @@ class test_picture(unittest.TestCase):
         picture_ids = asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, pictures, self.container_client, picture_set_id))
         self.assertTrue(all([validator.is_valid_uuid(picture_id) for picture_id in picture_ids]))
         self.assertEqual(len(pictures), asyncio.run(datastore.azure_storage.get_image_count(self.container_client, str(picture_set_id))))
+        self.assertTrue(len(pictures),(datastore.picture.count_pictures(self.cursor, picture_set_id)))
         
     def test_upload_pictures_error_user_not_found(self):
         """
         This test checks if the upload_picture_known function correctly raise an exception if the user given doesn't exist in db
         """
-        pictures = [self.pic_encoded,self.pic_encoded,self.pic_encoded]
-        picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
         with self.assertRaises(datastore.user.UserNotFoundError):
-            asyncio.run(datastore.upload_pictures(self.cursor, uuid.uuid4(), pictures, self.container_client, picture_set_id))
-    
-    def test_upload_pictures_connection_error(self):
-        """
-        This test checks if the upload_picture_known function correctly raise an exception if the connection to the db fails
-        """
-        mock_cursor = MagicMock()
-        mock_cursor.fetchone.side_effect = Exception("Connection error")
-        picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id))
-        with self.assertRaises(Exception):
-           asyncio.run(datastore.upload_pictures(mock_cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, picture_set_id))
-            
-class test_picture_set(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor,DB_SCHEMA)
-        self.connection_str=BLOB_CONNECTION_STRING
-        self.user_email="test@email"
-        self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,self.connection_str,'test-user'))
-        self.image = Image.new("RGB", (1980, 1080), "blue")
-        self.image_byte_array = io.BytesIO()
-        self.image.save(self.image_byte_array, format="TIFF")
-        self.pic_encoded = self.image.tobytes()
-        #self.picture_hash= asyncio.run(azure_storage.generate_hash(self.pic_encoded))
-        self.container_name='test-container'
-        self.user_id=datastore.User.get_id(self.user_obj)
-        self.container_client = asyncio.run(datastore.get_user_container_client(self.user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
-        self.folder_name = "test_folder"
-        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name))
-        self.pictures_ids = asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded, self.pic_encoded, self.pic_encoded], self.container_client, self.picture_set_id))
-    def tearDown(self):
-        self.con.rollback()
-        self.container_client.delete_container()
-        db.end_query(self.con, self.cursor)
+            asyncio.run(datastore.upload_pictures(self.cursor, str(uuid.uuid4()), self.pic_encoded,self.container_client))
 
     def test_create_picture_set(self):
         """
@@ -209,12 +175,39 @@ class test_picture_set(unittest.TestCase):
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, uuid.uuid4()))
+        
+    def test_get_picture_sets_info(self) :
+        """
+        Test the get_picture_sets_info function
+        """
+        picture_ids=asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, self.picture_set_id))
+        picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
+        self.assertEqual(len(picture_sets_info), 2)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], len(picture_ids))
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name)
+        
+        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name + "2"))
+        
+        picture_sets_info = asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
+        self.assertEqual(len(picture_sets_info), 3)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[1], 0)
+        self.assertEqual(picture_sets_info.get(str(self.picture_set_id))[0], self.folder_name + "2")
+        
+    def test_get_picture_sets_info_error_user_not_found(self):
+        """
+        This test checks if the get_picture_sets_info function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.get_picture_sets_info(self.cursor, uuid.uuid4()))
 
-    # Helper pour valider les informations des images individuelles
-    def assert_picture_info(self, picture_info, expected_pic_info):
-        self.assertEqual(picture_info["picture_id"], expected_pic_info["picture_id"])
-        self.assertEqual(picture_info["is_verified"], expected_pic_info["is_verified"])
-        self.assertEqual(picture_info["inference_exist"], expected_pic_info["inference_exist"])
+    def test_get_picture_sets_info_error_connection_error(self):
+        """
+        This test checks if the get_picture_sets_info function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.get_picture_sets_info(mock_cursor, self.user_id))
 
     def test_delete_picture_set_permanently(self):
         """
@@ -231,6 +224,7 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set_permanently function correctly raise an exception if the user given doesn't exist in db
         """
+
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cursor, str(uuid.uuid4()), str(self.picture_set_id), self.container_client))
     

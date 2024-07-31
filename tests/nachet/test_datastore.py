@@ -13,7 +13,7 @@ import uuid
 import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
-import datastore.Nachet.__init__ as Nachet
+import datastore.nachet.__init__ as nachet
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed_query
 from copy import deepcopy
@@ -47,7 +47,9 @@ if DEV_USER_EMAIL is None or DEV_USER_EMAIL == "":
 
 class test_ml_structure(unittest.TestCase):
     def setUp(self):
-        with open("tests/Nachet/ml_structure_exemple.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "ml_structure_exemple.json")
+        with open(file_path) as file:
             self.ml_dict = json.load(file)
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
@@ -62,7 +64,7 @@ class test_ml_structure(unittest.TestCase):
         Test the import function.
         """
         asyncio.run(
-            Nachet.import_ml_structure_from_json_version(self.cursor, self.ml_dict)
+            nachet.import_ml_structure_from_json_version(self.cursor, self.ml_dict)
         )
         self.cursor.execute("SELECT id FROM model WHERE name='that_model_name'")
         model_id = self.cursor.fetchone()[0]
@@ -85,7 +87,7 @@ class test_ml_structure(unittest.TestCase):
         """
 
         # asyncio.run(datastore.import_ml_structure_from_json_version(self.cursor,self.ml_dict))
-        ml_structure = asyncio.run(Nachet.get_ml_structure(self.cursor))
+        ml_structure = asyncio.run(nachet.get_ml_structure(self.cursor))
         # self.assertDictEqual(ml_structure,self.ml_dict)
         for pipeline in self.ml_dict["pipelines"]:
             for key in pipeline:
@@ -109,8 +111,8 @@ class test_ml_structure(unittest.TestCase):
         """
         mock_cursor = MagicMock()
         mock_cursor.fetchall.return_value = []
-        with self.assertRaises(Nachet.MLRetrievalError):
-            asyncio.run(Nachet.get_ml_structure(mock_cursor))
+        with self.assertRaises(nachet.MLRetrievalError):
+            asyncio.run(nachet.get_ml_structure(mock_cursor))
 
 
 class test_picture(unittest.TestCase):
@@ -144,7 +146,9 @@ class test_picture(unittest.TestCase):
         )
         self.seed_name = "test-name"
         self.seed_id = seed_query.new_seed(self.cursor, self.seed_name)
-        with open("tests/Nachet/inference_result.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_result.json")
+        with open(file_path) as file:
             self.inference = json.load(file)
         self.folder_name = "test_folder"
 
@@ -158,7 +162,7 @@ class test_picture(unittest.TestCase):
         Test the upload picture function.
         """
         picture_id = asyncio.run(
-            Nachet.upload_picture_unknown(
+            nachet.upload_picture_unknown(
                 self.cursor, self.user_id, self.pic_encoded, self.container_client
             )
         )
@@ -169,14 +173,14 @@ class test_picture(unittest.TestCase):
         Test the register inference result function.
         """
         picture_id = asyncio.run(
-            Nachet.upload_picture_unknown(
+            nachet.upload_picture_unknown(
                 self.cursor, self.user_id, self.pic_encoded, self.container_client
             )
         )
         model_id = "test_model_id"
 
         result = asyncio.run(
-            Nachet.register_inference_result(
+            nachet.register_inference_result(
                 self.cursor, self.user_id, self.inference, picture_id, model_id
             )
         )
@@ -193,7 +197,7 @@ class test_picture(unittest.TestCase):
             )
         )
         picture_id = asyncio.run(
-            Nachet.upload_picture_known(
+            nachet.upload_picture_known(
                 self.cursor,
                 self.user_id,
                 self.pic_encoded,
@@ -213,9 +217,9 @@ class test_picture(unittest.TestCase):
                 self.cursor, self.container_client, 0, self.user_id
             )
         )
-        with self.assertRaises(Nachet.user.UserNotFoundError):
+        with self.assertRaises(nachet.user.UserNotFoundError):
             asyncio.run(
-                Nachet.upload_picture_known(
+                nachet.upload_picture_known(
                     self.cursor,
                     uuid.uuid4(),
                     self.pic_encoded,
@@ -238,7 +242,7 @@ class test_picture(unittest.TestCase):
         )
         with self.assertRaises(Exception):
             asyncio.run(
-                Nachet.upload_picture_known(
+                nachet.upload_picture_known(
                     mock_cursor,
                     self.user_id,
                     self.pic_encoded,
@@ -396,7 +400,9 @@ class test_picture_set(unittest.TestCase):
                 self.picture_set_id,
             )
         )
-        with open("tests/Nachet/inference_result.json") as file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(base_dir, "inference_result.json")
+        with open(file_path) as file:
             self.inference = json.load(file)
 
         self.dev_user_id = datastore.user.get_user_id(
@@ -470,7 +476,7 @@ class test_picture_set(unittest.TestCase):
         self.assertEqual(
             len(
                 asyncio.run(
-                    Nachet.find_validated_pictures(
+                    nachet.find_validated_pictures(
                         self.cursor, str(self.user_id), str(self.picture_set_id)
                     )
                 )
@@ -484,7 +490,7 @@ class test_picture_set(unittest.TestCase):
             # Using deepcopy to ensure each inference is a unique object without shared references
             inference_copy = deepcopy(self.inference)
             inference = asyncio.run(
-                Nachet.register_inference_result(
+                nachet.register_inference_result(
                     self.cursor,
                     self.user_id,
                     inference_copy,
@@ -495,7 +501,7 @@ class test_picture_set(unittest.TestCase):
             inferences.append(inference)
 
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor,
                 inferences[0]["inference_id"],
                 self.user_id,
@@ -506,7 +512,7 @@ class test_picture_set(unittest.TestCase):
         self.assertEqual(
             len(
                 asyncio.run(
-                    Nachet.find_validated_pictures(
+                    nachet.find_validated_pictures(
                         self.cursor, str(self.user_id), str(self.picture_set_id)
                     )
                 )
@@ -516,7 +522,7 @@ class test_picture_set(unittest.TestCase):
         )
 
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor,
                 inferences[1]["inference_id"],
                 self.user_id,
@@ -524,7 +530,7 @@ class test_picture_set(unittest.TestCase):
             )
         )
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor,
                 inferences[2]["inference_id"],
                 self.user_id,
@@ -535,7 +541,7 @@ class test_picture_set(unittest.TestCase):
         self.assertEqual(
             len(
                 asyncio.run(
-                    Nachet.find_validated_pictures(
+                    nachet.find_validated_pictures(
                         self.cursor, str(self.user_id), str(self.picture_set_id)
                     )
                 )
@@ -551,7 +557,7 @@ class test_picture_set(unittest.TestCase):
         pictures_id = []
         for i in range(3):
             picture_id = asyncio.run(
-                Nachet.upload_picture_unknown(
+                nachet.upload_picture_unknown(
                     self.cursor,
                     self.user_id,
                     self.pic_encoded,
@@ -561,9 +567,9 @@ class test_picture_set(unittest.TestCase):
             )
             pictures_id.append(picture_id)
 
-        with self.assertRaises(Nachet.user.UserNotFoundError):
+        with self.assertRaises(nachet.user.UserNotFoundError):
             asyncio.run(
-                Nachet.find_validated_pictures(
+                nachet.find_validated_pictures(
                     self.cursor, str(uuid.uuid4()), str(self.picture_set_id)
                 )
             )
@@ -576,7 +582,7 @@ class test_picture_set(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(
-                Nachet.find_validated_pictures(
+                nachet.find_validated_pictures(
                     mock_cursor, str(self.user_id), str(self.picture_set_id)
                 )
             )
@@ -585,9 +591,9 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the find_validated_pictures function correctly raise an exception if the picture set given doesn't exist in db
         """
-        with self.assertRaises(Nachet.picture.PictureSetNotFoundError):
+        with self.assertRaises(nachet.picture.PictureSetNotFoundError):
             asyncio.run(
-                Nachet.find_validated_pictures(
+                nachet.find_validated_pictures(
                     self.cursor, str(self.user_id), str(uuid.uuid4())
                 )
             )
@@ -603,9 +609,9 @@ class test_picture_set(unittest.TestCase):
         )
         not_owner_user_id = datastore.User.get_id(not_owner_user_obj)
 
-        with self.assertRaises(Nachet.UserNotOwnerError):
+        with self.assertRaises(nachet.UserNotOwnerError):
             asyncio.run(
-                Nachet.find_validated_pictures(
+                nachet.find_validated_pictures(
                     self.cursor, str(not_owner_user_id), str(self.picture_set_id)
                 )
             )
@@ -631,7 +637,7 @@ class test_picture_set(unittest.TestCase):
             # Using deepcopy to ensure each inference is a unique object without shared references
             inference_copy = deepcopy(self.inference)
             inference = asyncio.run(
-                Nachet.register_inference_result(
+                nachet.register_inference_result(
                     self.cursor,
                     self.user_id,
                     inference_copy,
@@ -642,7 +648,7 @@ class test_picture_set(unittest.TestCase):
             inferences.append(inference)
         # Validate 2 of 3 pictures in the picture set
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor,
                 inferences[1]["inference_id"],
                 self.user_id,
@@ -650,7 +656,7 @@ class test_picture_set(unittest.TestCase):
             )
         )
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor,
                 inferences[2]["inference_id"],
                 self.user_id,
@@ -658,7 +664,7 @@ class test_picture_set(unittest.TestCase):
             )
         )
         validated_pictures = asyncio.run(
-            Nachet.find_validated_pictures(
+            nachet.find_validated_pictures(
                 self.cursor, str(self.user_id), str(self.picture_set_id)
             )
         )
@@ -675,7 +681,7 @@ class test_picture_set(unittest.TestCase):
         )
 
         dev_picture_set_id = asyncio.run(
-            Nachet.delete_picture_set_with_archive(
+            nachet.delete_picture_set_with_archive(
                 self.cursor,
                 str(self.user_id),
                 str(self.picture_set_id),
@@ -731,9 +737,9 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set_with_archive function correctly raise an exception if the user given doesn't exist in db
         """
-        with self.assertRaises(Nachet.user.UserNotFoundError):
+        with self.assertRaises(nachet.user.UserNotFoundError):
             asyncio.run(
-                Nachet.delete_picture_set_with_archive(
+                nachet.delete_picture_set_with_archive(
                     self.cursor,
                     str(uuid.uuid4()),
                     str(self.picture_set_id),
@@ -749,7 +755,7 @@ class test_picture_set(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(
-                Nachet.delete_picture_set_with_archive(
+                nachet.delete_picture_set_with_archive(
                     mock_cursor,
                     str(self.user_id),
                     str(self.picture_set_id),
@@ -761,9 +767,9 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set_with_archive function correctly raise an exception if the picture set given doesn't exist in db
         """
-        with self.assertRaises(Nachet.picture.PictureSetNotFoundError):
+        with self.assertRaises(nachet.picture.PictureSetNotFoundError):
             asyncio.run(
-                Nachet.delete_picture_set_with_archive(
+                nachet.delete_picture_set_with_archive(
                     self.cursor,
                     str(self.user_id),
                     str(uuid.uuid4()),
@@ -782,9 +788,9 @@ class test_picture_set(unittest.TestCase):
         )
         not_owner_user_id = datastore.User.get_id(not_owner_user_obj)
 
-        with self.assertRaises(Nachet.UserNotOwnerError):
+        with self.assertRaises(nachet.UserNotOwnerError):
             asyncio.run(
-                Nachet.delete_picture_set_with_archive(
+                nachet.delete_picture_set_with_archive(
                     self.cursor,
                     str(not_owner_user_id),
                     str(self.picture_set_id),
@@ -810,9 +816,9 @@ class test_picture_set(unittest.TestCase):
         general_folder_id = datastore.user.get_default_picture_set(
             self.cursor, self.user_id
         )
-        with self.assertRaises(Nachet.picture.PictureSetDeleteError):
+        with self.assertRaises(nachet.picture.PictureSetDeleteError):
             asyncio.run(
-                Nachet.delete_picture_set_with_archive(
+                nachet.delete_picture_set_with_archive(
                     self.cursor,
                     str(self.user_id),
                     str(general_folder_id),
@@ -853,31 +859,26 @@ class test_feedback(unittest.TestCase):
         with open(file_path) as file:
             self.inference = json.load(file)
         picture_id = asyncio.run(
-            Nachet.upload_picture_unknown(
+            nachet.upload_picture_unknown(
                 self.cursor, self.user_id, self.pic_encoded, self.container_client
             )
         )
         model_id = "test_model_id"
         self.registered_inference = asyncio.run(
-            Nachet.register_inference_result(
+            nachet.register_inference_result(
                 self.cursor, self.user_id, self.inference, picture_id, model_id
             )
         )
-        # to match frontend field names :
-        self.registered_inference["inferenceId"] = self.registered_inference["inference_id"]
-        self.registered_inference.pop("inference_id")
-        self.registered_inference["userId"] = self.user_id
+        self.registered_inference["user_id"] = self.user_id
         self.mock_box = {"topX": 123, "topY": 456, "bottomX": 789, "bottomY": 123}
-        self.inference_id = self.registered_inference.get("inferenceId")
+        self.inference_id = self.registered_inference.get("inference_id")
         self.boxes_id = []
         self.top_id = []
-        self.unreal_seed_id = Nachet.seed.new_seed(self.cursor, "unreal_seed")
+        self.unreal_seed_id = nachet.seed.new_seed(self.cursor, "unreal_seed")
         for box in self.registered_inference["boxes"]:
-            box["boxId"] = box["box_id"]
-            box.pop("box_id")
-            self.boxes_id.append(box["boxId"])
+            self.boxes_id.append(box["box_id"])
             self.top_id.append(box["top_id"])
-            box["classId"] = Nachet.seed.get_seed_id(self.cursor, box["label"])
+            box["classId"] = nachet.seed.get_seed_id(self.cursor, box["label"])
 
     def tearDown(self):
         self.con.rollback()
@@ -889,12 +890,12 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_perfect_inference_feeback function correctly updates the inference object after a perfect feedback is given
         """
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor, self.inference_id, self.user_id, self.boxes_id
             )
         )
         for i in range(len(self.boxes_id)):
-            object = Nachet.inference.get_inference_object(
+            object = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must be equal to top_id
@@ -907,16 +908,16 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_perfect_inference_feeback function correctly raise an exception if the inference given is already verified
         """
         asyncio.run(
-            Nachet.new_perfect_inference_feeback(
+            nachet.new_perfect_inference_feeback(
                 self.cursor, self.inference_id, self.user_id, self.boxes_id
             )
         )
         self.assertTrue(
-            Nachet.inference.is_inference_verified(self.cursor, self.inference_id)
+            nachet.inference.is_inference_verified(self.cursor, self.inference_id)
         )
-        with self.assertRaises(Nachet.inference.InferenceAlreadyVerifiedError):
+        with self.assertRaises(nachet.inference.InferenceAlreadyVerifiedError):
             asyncio.run(
-                Nachet.new_perfect_inference_feeback(
+                nachet.new_perfect_inference_feeback(
                     self.cursor, self.inference_id, self.user_id, self.boxes_id
                 )
             )
@@ -925,9 +926,9 @@ class test_feedback(unittest.TestCase):
         """
         This test checks if the new_perfect_inference_feeback function correctly raise an exception if the inference given doesn't exist in db
         """
-        with self.assertRaises(Nachet.inference.InferenceNotFoundError):
+        with self.assertRaises(nachet.inference.InferenceNotFoundError):
             asyncio.run(
-                Nachet.new_perfect_inference_feeback(
+                nachet.new_perfect_inference_feeback(
                     self.cursor, str(uuid.uuid4()), self.user_id, self.boxes_id
                 )
             )
@@ -936,9 +937,9 @@ class test_feedback(unittest.TestCase):
         """
         This test checks if the new_perfect_inference_feeback function correctly raise an exception if one of the inference object given doesn't exist in db
         """
-        with self.assertRaises(Nachet.inference.InferenceObjectNotFoundError):
+        with self.assertRaises(nachet.inference.InferenceObjectNotFoundError):
             asyncio.run(
-                Nachet.new_perfect_inference_feeback(
+                nachet.new_perfect_inference_feeback(
                     self.cursor,
                     self.inference_id,
                     self.user_id,
@@ -950,9 +951,9 @@ class test_feedback(unittest.TestCase):
         """
         This test checks if the new_perfect_inference_feeback function correctly raise an exception if the user given doesn't exist in db
         """
-        with self.assertRaises(Nachet.user.UserNotFoundError):
+        with self.assertRaises(nachet.user.UserNotFoundError):
             asyncio.run(
-                Nachet.new_perfect_inference_feeback(
+                nachet.new_perfect_inference_feeback(
                     self.cursor, self.inference_id, str(uuid.uuid4()), self.boxes_id
                 )
             )
@@ -965,7 +966,7 @@ class test_feedback(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(
-                Nachet.new_perfect_inference_feeback(
+                nachet.new_perfect_inference_feeback(
                     mock_cursor, self.inference_id, self.user_id, self.boxes_id
                 )
             )
@@ -975,14 +976,18 @@ class test_feedback(unittest.TestCase):
         This test checks if the new_correction_inference_feeback function correctly
         """
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
-
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for i in range(len(self.boxes_id)):
-            object = Nachet.inference.get_inference_object(
+            object = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must be equal to top_id
@@ -998,15 +1003,20 @@ class test_feedback(unittest.TestCase):
         new_top_ids = []
         for box in self.registered_inference["boxes"]:
             box["label"] = box["topN"][1]["label"]
-            box["classId"] = Nachet.seed.get_seed_id(self.cursor, box["label"])
+            box["classId"] = nachet.seed.get_seed_id(self.cursor, box["label"])
             new_top_ids.append(box["topN"][1]["object_id"])
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for i in range(len(self.boxes_id)):
-            object_db = Nachet.inference.get_inference_object(
+            object_db = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must be equal to top_id
@@ -1021,14 +1031,19 @@ class test_feedback(unittest.TestCase):
         self.assertTrue(validator.is_valid_uuid(self.inference_id))
         for box in self.registered_inference["boxes"]:
             box["box"] = self.mock_box
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for box in self.registered_inference["boxes"]:
-            object_db = Nachet.inference.get_inference_object(
-                self.cursor, box["boxId"]
+            object_db = nachet.inference.get_inference_object(
+                self.cursor, box["box_id"]
             )
             # The new box metadata must be updated
             self.assertDictEqual(object_db[1], self.mock_box)
@@ -1045,17 +1060,22 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = "unreal_seed"
             box["classId"] = self.unreal_seed_id
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for i in range(len(self.boxes_id)):
-            object_db = Nachet.inference.get_inference_object(
+            object_db = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must be equal to the new_top_id
-            new_top_id = Nachet.inference.get_seed_object_id(
+            new_top_id = nachet.inference.get_seed_object_id(
                 self.cursor, self.unreal_seed_id, object_db[0]
             )
             self.assertTrue(validator.is_valid_uuid(new_top_id))
@@ -1071,13 +1091,18 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = ""
             box["classId"] = ""
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for i in range(len(self.boxes_id)):
-            object_db = Nachet.inference.get_inference_object(
+            object_db = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must not be an id
@@ -1093,19 +1118,21 @@ class test_feedback(unittest.TestCase):
         for box in self.registered_inference["boxes"]:
             box["label"] = "unknown_seed"
             box["classId"] = ""
+        #temporary fix until we fix FE
+        self.registered_inference["inferenceId"]=self.inference_id
+        self.registered_inference["userId"] = self.user_id
+        for box in self.registered_inference["boxes"]:
+            box["boxId"] = box["box_id"]
         asyncio.run(
-            Nachet.new_correction_inference_feedback(
+            nachet.new_correction_inference_feedback(
                 self.cursor, self.registered_inference, 1
             )
         )
         for i in range(len(self.boxes_id)):
-            object_db = Nachet.inference.get_inference_object(
+            object_db = nachet.inference.get_inference_object(
                 self.cursor, self.boxes_id[i]
             )
             # verified_id must be equal to an id
             self.assertTrue(validator.is_valid_uuid(str(object_db[4])))
             # valid column must be true
             self.assertTrue(object_db[6])
-
-if __name__ == "__main__":
-    unittest.main()

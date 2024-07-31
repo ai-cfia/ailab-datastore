@@ -167,7 +167,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.7"."ingredient" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "organic" boolean NOT NULL,
+    "organic" boolean,
+    "active" boolean,
     "name" text NOT NULL,
     "value" float,
     "unit" text,

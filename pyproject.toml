@@ -25,7 +25,7 @@ license = { file = "LICENSE" }
 keywords = ["Nachet","ailab"]
 
 [tool.setuptools]
-packages = ["datastore", "datastore.Nachet", "datastore.db", "datastore.bin",
+packages = ["datastore", "datastore.nachet", "datastore.db", "datastore.bin",
 "datastore.db.queries", "datastore.db.queries.picture",
 "datastore.db.queries.seed", "datastore.db.queries.user",
 "datastore.db.queries.machine_learning","datastore.db.queries.inference",
@@ -42,6 +42,6 @@ dependencies = {file = ["requirements.txt"]}
 # where = ["ailab"]
 
 [project.urls]
-"Homepage" = "https://github.com/ai-cfia/nachet-datastore"
-"Bug Tracker" = "https://github.com/ai-cfia/nachet-datastore/issues"
-Repository = "https://github.com/ai-cfia/nachet-datastore"  
+"Homepage" = "https://github.com/ai-cfia/ailab-datastore"
+"Bug Tracker" = "https://github.com/ai-cfia/ailab-datastore/issues"
+Repository = "https://github.com/ai-cfia/ailab-datastore"  
