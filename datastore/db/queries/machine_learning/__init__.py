@@ -141,6 +141,28 @@ def get_pipeline(cursor,pipeline_id:str):
     except(Exception):
         raise PipelineCreationError("Error: pipeline not found")
     
+def set_active_pipeline(cursor, pipeline_id):
+    """
+    This function sets a pipeline active in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    """
+    try:
+        query = """
+            UPDATE pipeline
+            SET active = True
+            WHERE id = %s
+            """
+        cursor.execute(
+            query,
+            (
+                pipeline_id,
+            ),
+        )
+    except(Exception):
+        raise PipelineCreationError("Error: pipeline not found")
+
 def get_active_pipeline(cursor):
     """
     This function gets all the active pipeline from the database.
@@ -157,11 +179,13 @@ def get_active_pipeline(cursor):
                 p.*,
                 array_agg(pm.model_id) 
             FROM 
-                "nachet_0.0.10"."pipeline" as p 
+                pipeline as p 
             LEFT JOIN
-                "nachet_0.0.10"."pipeline_model" as pm 
+                pipeline_model as pm 
             ON 
                 p.id=pm.pipeline_id 
+            WHERE
+                p.active is True
             GROUP BY
                 p.id ;
             """
@@ -311,9 +335,6 @@ def new_model(cursor, model,name,endpoint_name,task_id:int):
             ),
         )
         model_id=cursor.fetchone()[0]
-        version = '0.0.1'
-        model_version_id=new_model_version(cursor,model_id,version,model)
-        set_active_model(cursor,model_id,str(model_version_id))
         return model_id
     except(Exception):
         raise PipelineCreationError("Error: model not uploaded")

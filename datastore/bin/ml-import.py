@@ -1,5 +1,5 @@
 import datastore.db.__init__ as db
-import datastore.__init__ as datastore
+import datastore.nachet as datastore
 import json
 import sys
 import asyncio
