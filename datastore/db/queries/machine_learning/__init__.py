@@ -302,7 +302,7 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
     except(Exception):
         raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
 
-def new_model(cursor, model,name,endpoint_name,task_id:int):
+def new_model(cursor,name,endpoint_name,task_id:int):
     """
     This function creates a new model in the database.
 
@@ -482,13 +482,13 @@ def get_model(cursor,model_id:str):
                 v.data,
                 v.version
             FROM
-                "nachet_0.0.10"."model" as m
+                model as m
             LEFT JOIN
-                "nachet_0.0.10".task as t 
+                task as t 
             ON 
                 m.task_id=t.id 
             LEFT JOIN
-                "nachet_0.0.10".model_version as v
+                model_version as v
             ON
                 m.active_version=v.id
             WHERE m.id = %s

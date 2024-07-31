@@ -3,7 +3,15 @@ import datastore.nachet as datastore
 import json
 import sys
 import asyncio
+import os
 
+NACHET_DB_URL = os.environ.get("NACHET_DB_URL")
+if NACHET_DB_URL is None or NACHET_DB_URL == "":
+    raise ValueError("NACHET_DB_URL is not set")
+
+NACHET_SCHEMA = os.environ.get("NACHET_SCHEMA")
+if NACHET_SCHEMA is None or NACHET_SCHEMA == "":
+    raise ValueError("NACHET_SCHEMA is not set")
 
 def getFile(path: str):
     """
@@ -51,9 +59,9 @@ if __name__ == "__main__":
         file_path = sys.argv[1]
     else:
         raise Exception("Error: No file path provided as argument")
-    connection = db.connect_db()
+    connection = db.connect_db(NACHET_DB_URL, NACHET_SCHEMA)
     cur = db.cursor(connection)
-    db.create_search_path(connection, cur)
+    db.create_search_path(connection, cur, NACHET_SCHEMA)
     file = getFile(file_path)
     print("Importing ML structure from JSON file...")
     # for key in file.keys():
