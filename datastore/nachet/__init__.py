@@ -678,7 +678,7 @@ async def get_picture_sets_info(cursor, user_id: str):
     except (user.UserNotFoundError, picture.GetPictureSetError, picture.GetPictureError ) as e :
         raise e
     except Exception as e:
-        raise  picture.GetPictureSetError("An error occured while retrieving the picture sets")
+        raise  picture.GetPictureSetError(f"An error occured while retrieving the picture sets : {e}")
 
 
 async def get_picture_inference(cursor, user_id: str, picture_id: str):
