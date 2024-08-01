@@ -204,6 +204,7 @@ async def upload_pictures(
     container_client,
     pictures,
     seed_name: str,
+    seed_id: str,
     zoom_level: float = None,
     nb_seeds: int = None,
 ):
@@ -217,6 +218,7 @@ async def upload_pictures(
     - container_client: The container client of the user.
     - pictures array: array of images to upload
     - seed_name: The name of the seed on the images.
+    - seed_id: The id of the seed on the images.
     - picture_set_id: The UUID of the picture set where to add the pictures.
     - nb_seeds: The number of seeds on the picture.
     - zoom_level: The zoom level of the picture.
@@ -225,12 +227,15 @@ async def upload_pictures(
         array of the new pictures UUID
     """
     try:
-
-        if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
-            raise seed.SeedNotFoundError(
-                f"Seed not found based on the given name: {seed_name}"
-            )
-        seed_id = seed.get_seed_id(cursor=cursor, seed_name=seed_name)
+        if not seed_id and not seed_name:
+            raise seed.SeedNotFoundError("Error: seed_name and seed_id not found in the new box. We don't know what to do with it and this should not happen.")
+        if not seed_id and seed_name :
+            if seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
+                # mistake from the front end, this seed is known in the db
+                seed_id = str(seed.get_seed_id(cursor=cursor, seed_name=seed_name))
+            else:
+                # create the seed
+                seed_id = str(seed.new_seed(cursor=cursor, seed_name=seed_name))
 
         pictures_id = []
         for picture_encoded in pictures:
