@@ -493,20 +493,20 @@ BEGIN
     PERFORM "fertiscan_0.0.9".update_sub_labels(label_info_id, p_input_json->'sub_labels');
 
     -- Update the inspection record
+    verified := (p_input_json->'product'->>'verified')::boolean;
     inspection_id := "fertiscan_0.0.9".upsert_inspection(
         p_inspection_id,
         label_info_id,
         p_inspector_id,
         COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
-        (p_input_json->>'verified')::boolean
+        verified
     );
 
     -- Update the inspection ID in the output JSON
     updated_json := jsonb_set(updated_json, '{inspection_id}', to_jsonb(inspection_id));
 
     -- Check if the verified field is true, and upsert fertilizer if so
-    verified := (p_input_json->>'verified')::boolean;
     IF verified THEN
         fertilizer_name := p_input_json->'product'->>'name';
         registration_number := p_input_json->'product'->>'registration_number';

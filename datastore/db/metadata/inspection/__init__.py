@@ -55,6 +55,7 @@ class ProductInformation(BaseModel):
     n: float
     p: float
     k: float
+    verified: bool
 
 
 class Specification(BaseModel):
@@ -77,7 +78,6 @@ class Inspection(BaseModel):
     specifications: Specifications
     first_aid: SubLabel
     guaranteed_analysis: List[Value]
-    verified: bool = False
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -160,7 +160,8 @@ def build_inspection_import(analysis_form: dict) -> str:
             warranty=analysis_form["warranty"],
             n=npk[0],
             p=npk[1],
-            k=npk[2]
+            k=npk[2],
+            verified=False
         )
 
         cautions = SubLabel(

@@ -32,8 +32,8 @@ from dotenv import load_dotenv
 from psycopg import connect
 
 from datastore import get_user, new_user
-from datastore.FertiScan import register_analysis, update_inspection
 from datastore.db.metadata.inspection import Inspection
+from datastore.fertiscan import register_analysis, update_inspection
 
 load_dotenv()
 
@@ -47,21 +47,26 @@ STORAGE_CONNECTION_STRING = os.getenv("FERTISCAN_AZURE_STORAGE_CONNECTION_STRING
 if not STORAGE_CONNECTION_STRING:
     raise ValueError("FERTISCAN_AZURE_STORAGE_CONNECTION_STRING is not set")
 
+
 # Load JSON data from file
 def load_json_from_file(file_path):
     with open(file_path, "r") as f:
         return json.load(f)
+
 
 # Load a single image from file and return its binary data
 def load_image(image_path):
     with open(image_path, "rb") as image_file:
         return image_file.read()
 
+
 # Define the main testing function
 async def main():
     try:
         # Create a real database connection
-        conn = connect(DB_CONNECTION_STRING, options=f"-c search_path={DB_SCHEMA},public")
+        conn = connect(
+            DB_CONNECTION_STRING, options=f"-c search_path={DB_SCHEMA},public"
+        )
         conn.autocommit = False
         cursor = conn.cursor()
 
@@ -70,11 +75,13 @@ async def main():
         hashed_pictures = [load_image(path) for path in image_paths]
 
         # Create a sample analysis form from JSON
-        analysis_dict = load_json_from_file("tests/FertiScan/analyse.json")
+        analysis_dict = load_json_from_file("tests/fertiscan/analyse.json")
 
         # Sample user ID and hashed pictures
         email = "example1@mail.com"
-        await new_user(cursor=cursor, email=email, connection_string=STORAGE_CONNECTION_STRING)
+        await new_user(
+            cursor=cursor, email=email, connection_string=STORAGE_CONNECTION_STRING
+        )
         user = await get_user(cursor, email)
         user_id = user.id
 
@@ -90,18 +97,18 @@ async def main():
             hashed_pictures=hashed_pictures,
             analysis_dict=analysis_dict,
         )
-        
+
         print(f"Returned Data: {returned_data}")
 
-        inspection_id = returned_data['inspection_id']  # Extract inspection ID
+        inspection_id = returned_data["inspection_id"]  # Extract inspection ID
         print(f"Inspection ID: {inspection_id}")
         print(f"User ID: {user_id}")
 
         # Modify the returned data to simulate an update
         updated_data = returned_data.copy()
-        updated_data['company']['name'] = "Updated Company Name"
-        updated_data['product']['metrics']['weight'][0]['value'] = 26.0
-        updated_data['verified'] = True
+        updated_data["company"]["name"] = "Updated Company Name"
+        updated_data["product"]["metrics"]["weight"][0]["value"] = 26.0
+        updated_data["verified"] = True
 
         # Convert to Inspection object if needed
         updated_data_model = Inspection(**updated_data)
@@ -122,6 +129,7 @@ async def main():
         conn.rollback()
         cursor.close()
         conn.close()
+
 
 # Run the testing function
 asyncio.run(main())

@@ -69,7 +69,9 @@ flowchart LR;
 
 ## Database Architecture
 
-  For more detail on each app database architecture go check [Nachet Architecture](nachetArchitecture.md) and [Fertiscan Architecture](FertiscanArchitecture.md).
+  For more detail on each app database architecture go check [Nachet
+  Architecture](nachet/nachet-architecture.md) and [Fertiscan
+  Architecture](fertiscan/fertiScan-architecture.md).
   
 ### Global Needs
 

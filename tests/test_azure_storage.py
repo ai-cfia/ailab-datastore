@@ -62,13 +62,12 @@ class TestMountContainerFunction(unittest.TestCase):
         tests when a container does not exists and create_container flag is set to True,
         should create a new container and return the container client
         """
-        not_uuid = "notuuid"
+        not_uuid = "notauuid"
         container_client = asyncio.run(
             mount_container(
                 self.storage_url, not_uuid, True, self.tier, self.credential
             )
         )
-
         self.assertTrue(container_client.exists())
         container_client.delete_container()
 

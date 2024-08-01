@@ -179,7 +179,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "verified" boolean DEFAULT false,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "inspector_id" uuid REFERENCES "fertiscan_0.0.9".users(id),
+    "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.9".users(id),
     "label_info_id" uuid REFERENCES "fertiscan_0.0.9".label_information(id),
     "sample_id" uuid REFERENCES "fertiscan_0.0.9".sample(id),
     "picture_set_id" uuid REFERENCES "fertiscan_0.0.9".picture_set(id)

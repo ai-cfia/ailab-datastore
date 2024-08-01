@@ -1,16 +1,13 @@
 import os
 from uuid import UUID
-
 from dotenv import load_dotenv
 from psycopg import Cursor
-
 import datastore
-import datastore.blob as blob
-import datastore.db.metadata.inspection as data_inspection
-import datastore.db.metadata.picture_set as data_picture_set
-import datastore.db.queries.inspection as inspection
 import datastore.db.queries.picture as picture
+import datastore.db.queries.inspection as inspection
 import datastore.db.queries.user as user
+import datastore.db.metadata.picture_set as data_picture_set
+import datastore.db.metadata.inspection as data_inspection
 
 load_dotenv()
 
@@ -31,11 +28,7 @@ if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
 
 
 async def register_analysis(
-    cursor,
-    container_client,
-    user_id,
-    hashed_pictures,
-    analysis_dict,
+    cursor, container_client, user_id, hashed_pictures, analysis_dict,
 ):
     """
     Register an analysis in the database
@@ -55,33 +48,21 @@ async def register_analysis(
                 f"User not found based on the given id: {user_id}"
             )
         if not container_client.exists():
-            raise blob.ContainerNotFoundError(
+            raise datastore.ContainerCreationError(
                 f"Container not found based on the given user_id: {user_id}"
             )
+        
+        #Create picture set for this analysis
+        picture_set_metadata= data_picture_set.build_picture_set(user_id, len(hashed_pictures))
+        picture_set_id = picture.new_picture_set(cursor,picture_set_metadata, user_id,"General")
 
-        # Create picture set for this analysis
-        picture_set_metadata = data_picture_set.build_picture_set(
-            user_id, len(hashed_pictures)
-        )
-        picture_set_id = picture.new_picture_set(
-            cursor, picture_set_metadata, user_id, "General"
-        )
-
-        # Upload pictures to storage
-        await datastore.upload_pictures(
-            cursor=cursor,
-            user_id=user_id,
-            container_client=container_client,
-            picture_set_id=picture_set_id,
-            hashed_pictures=hashed_pictures,
-        )
-
-        # Register analysis in the database
+        #Upload pictures to storage
+        await datastore.upload_pictures(cursor=cursor,user_id=user_id, container_client=container_client, picture_set_id=picture_set_id, hashed_pictures=hashed_pictures)
+        
+        #Register analysis in the database
         formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
-
-        analysis_db = inspection.new_inspection_with_label_info(
-            cursor, user_id, picture_set_id, formatted_analysis
-        )
+        
+        analysis_db = inspection.new_inspection_with_label_info(cursor, user_id, picture_set_id, formatted_analysis)
         return analysis_db
     except inspection.InspectionCreationError:
         raise Exception("Datastore Inspection Creation Error")

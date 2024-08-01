@@ -66,9 +66,15 @@ erDiagram
   }
   organization {
     uuid id PK
-    string name
     uuid information_id FK
     uuid main_location_id FK
+  }
+  organization_information{
+    uuid id PK
+    string name 
+    string website
+    string phone_number
+    uuid location_id FK
   }
   organization_information {
     uuid id PK
@@ -132,30 +138,16 @@ erDiagram
     uuid label_id FK
     enum language
   }
-  metric {
-    uuid id PK
-    float value
-    boolean edited
-    enum metric_type
-    uuid unit_id FK
-    uuid label_id FK
-  }
-  unit {
-    uuid id PK
-    string unit
-    float to_si_unit
-  }
-  micronutrient {
+  micronutrient{
     uuid id PK
     string read_name
     float value
     string unit
     boolean edited
-    enum language
     uuid label_id FK
     int element_id FK
   }
-  guaranteed {
+  guaranteed{
     uuid id PK
     string read_name
     float value
@@ -164,28 +156,24 @@ erDiagram
     int element_id FK
     uuid label_id FK
   }
-  ingredient {
+  ingredient{
     uuid id PK
     boolean organic
     string name
-    float value
-    string unit
     boolean edited
     uuid label_id FK
-    enum language
   }
-  element_compound {
+  element_compound{
     int id PK
-    int number
     string name_fr
     string name_en
-    string symbol "Unique"
+    string symbol
   }
     metric{
     uuid id PK
     float value
     boolean edited
-    ENUM metric_type
+    ENUM metric_type 
     uuid unit_id FK
     uuid label_id FK
   }
@@ -204,7 +192,6 @@ erDiagram
   inspection }|--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
-  label_information ||--|{ metric: has
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
@@ -213,11 +200,12 @@ erDiagram
   label_information ||--o| organization_information: company
   label_information ||--o| organization_information: manufacturer
   organization_information ||--|| organization: defines
+  label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
-  metric }o--|| unit: defines
+  metric }|--|| unit: defines
 
-  micronutrient }o--|| element_compound: is
-  guaranteed }o--|| element_compound: is
+  micronutrient ||--|| element_compound: is
+  guaranteed ||--|| element_compound: is
 
 ```

@@ -16,7 +16,7 @@ DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if not DB_SCHEMA:
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
-INPUT_JSON_PATH = "tests/FertiScan/analysis_returned.json"
+INPUT_JSON_PATH = "tests/fertiscan/analysis_returned.json"
 
 
 class TestUpdateInspectionFunction(unittest.TestCase):
@@ -179,7 +179,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
     def test_update_inspection_with_verified_true(self):
         # Update the JSON data for testing the update function
         updated_input_json = self.created_data.copy()
-        updated_input_json["verified"] = True  # Set verified to true
+        updated_input_json["product"]["verified"] = True  # Set verified to true
 
         updated_input_json_str = json.dumps(updated_input_json)
 

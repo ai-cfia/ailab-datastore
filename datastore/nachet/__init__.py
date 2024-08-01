@@ -11,7 +11,6 @@ import datastore.db.queries.picture as picture
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.blob.azure_storage_api as azure_storage
 import json
-from azure.storage.blob import BlobServiceClient,ContainerClient
 from datastore import (
     get_user_container_client,
     BlobUploadError,
@@ -279,11 +278,18 @@ async def register_inference_result(
     """
     try:
         trimmed_inference = inference_metadata.build_inference_import(inference_dict)
+            
+        model_name = inference_dict["models"][0]["name"]
+        pipeline_id = machine_learning.get_pipeline_id_from_model_name(cursor, model_name)
+        inference_dict["pipeline_id"] = str(pipeline_id)
+        
         inference_id = inference.new_inference(
-            cursor, trimmed_inference, user_id, picture_id, type
+            cursor, trimmed_inference, user_id, picture_id, type, pipeline_id
         )
         nb_object = int(inference_dict["totalBoxes"])
-        inference_dict["inferenceId"] = str(inference_id)
+        inference_dict["inference_id"] = str(inference_id)
+
+        
         # loop through the boxes
         for box_index in range(nb_object):
             # TODO: adapt for multiple types of objects
