@@ -559,7 +559,12 @@ async def import_ml_structure_from_json_version(cursor, ml_version: dict):
         task_id = machine_learning.get_task_id(cursor, model["task"])
         model_name = model["model_name"]
         endpoint_name = model["endpoint_name"]
-        machine_learning.new_model(cursor, model_db, model_name, endpoint_name, task_id)
+        model_id = machine_learning.new_model(cursor, model_name, endpoint_name, task_id)
+        # set active_version if not the test model
+        if model_name != "test_model1":
+            version = '0.0.1'
+            model_version_id=machine_learning.new_model_version(cursor,model_id,version,model_db)
+            machine_learning.set_active_model(cursor,str(model_id),str(model_version_id))
     # Create the pipelines
     for pipeline in pipelines:
         pipeline_db = ml_metadata.build_pipeline_import(pipeline)
@@ -573,7 +578,10 @@ async def import_ml_structure_from_json_version(cursor, ml_version: dict):
                 model_ids.append(model_id)
             else:
                 raise ValueError(f"Model {name_model} not found")
-        machine_learning.new_pipeline(cursor, pipeline_db, pipeline_name, model_ids)
+        pipeline_id = machine_learning.new_pipeline(cursor, pipeline_db, pipeline_name, model_ids)
+        # set the pipeline active if not the test pipeline
+        if pipeline_name != "test_pipeline":
+            machine_learning.set_active_pipeline(cursor,str(pipeline_id))
 
 async def get_ml_structure(cursor):
     """
@@ -584,6 +592,7 @@ async def get_ml_structure(cursor):
     try:
         ml_structure = {"pipelines": [], "models": []}
         pipelines = machine_learning.get_active_pipeline(cursor)
+        print(pipelines)
         if len(pipelines)==0:
             raise MLRetrievalError("No Active pipelines found in the database.")
         model_list = []

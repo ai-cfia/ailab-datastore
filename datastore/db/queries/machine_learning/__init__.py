@@ -141,6 +141,28 @@ def get_pipeline(cursor,pipeline_id:str):
     except(Exception):
         raise PipelineCreationError("Error: pipeline not found")
     
+def set_active_pipeline(cursor, pipeline_id):
+    """
+    This function sets a pipeline active in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    """
+    try:
+        query = """
+            UPDATE pipeline
+            SET active = True
+            WHERE id = %s
+            """
+        cursor.execute(
+            query,
+            (
+                pipeline_id,
+            ),
+        )
+    except(Exception):
+        raise PipelineCreationError("Error: pipeline not found")
+
 def get_active_pipeline(cursor):
     """
     This function gets all the active pipeline from the database.
@@ -157,11 +179,13 @@ def get_active_pipeline(cursor):
                 p.*,
                 array_agg(pm.model_id) 
             FROM 
-                "nachet_0.0.10"."pipeline" as p 
+                pipeline as p 
             LEFT JOIN
-                "nachet_0.0.10"."pipeline_model" as pm 
+                pipeline_model as pm 
             ON 
                 p.id=pm.pipeline_id 
+            WHERE
+                p.active is True
             GROUP BY
                 p.id ;
             """
@@ -278,7 +302,7 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
     except(Exception):
         raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
 
-def new_model(cursor, model,name,endpoint_name,task_id:int):
+def new_model(cursor,name,endpoint_name,task_id:int):
     """
     This function creates a new model in the database.
 
@@ -311,9 +335,6 @@ def new_model(cursor, model,name,endpoint_name,task_id:int):
             ),
         )
         model_id=cursor.fetchone()[0]
-        version = '0.0.1'
-        model_version_id=new_model_version(cursor,model_id,version,model)
-        set_active_model(cursor,model_id,str(model_version_id))
         return model_id
     except(Exception):
         raise PipelineCreationError("Error: model not uploaded")
@@ -461,13 +482,13 @@ def get_model(cursor,model_id:str):
                 v.data,
                 v.version
             FROM
-                "nachet_0.0.10"."model" as m
+                model as m
             LEFT JOIN
-                "nachet_0.0.10".task as t 
+                task as t 
             ON 
                 m.task_id=t.id 
             LEFT JOIN
-                "nachet_0.0.10".model_version as v
+                model_version as v
             ON
                 m.active_version=v.id
             WHERE m.id = %s
