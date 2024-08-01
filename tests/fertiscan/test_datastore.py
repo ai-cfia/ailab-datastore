@@ -44,7 +44,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        self.user_email = 'test@email'
+        self.user_email = 'tester@email'
         self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,BLOB_CONNECTION_STRING,'test-user'))
         
 
