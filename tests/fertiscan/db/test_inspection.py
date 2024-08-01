@@ -24,7 +24,7 @@ class test_inspection(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
-        self.user_email = "tester@email"
+        self.user_email = "testessr@email"
         self.user_id = user.register_user(self.cursor, self.user_email)
         self.folder_name = "test-folder"
         self.picture_set = picture_set.build_picture_set(self.user_id, 1)

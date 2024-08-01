@@ -39,7 +39,7 @@ class test_user(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
-        self.user_email="test@email"
+        self.user_email="testssssss@email"
         self.user_id=None
         self.connection_str=BLOB_CONNECTION_STRING
 

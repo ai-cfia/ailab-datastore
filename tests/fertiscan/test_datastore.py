@@ -40,13 +40,11 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         file_path = os.path.join(base_dir, "analyse.json")
         with open(file_path, 'r') as file:
             self.analysis_json = json.load(file)
-
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        self.user_email = 'tester@email'
+        self.user_email = 'testesss@email'
         self.user_obj= asyncio.run(datastore.new_user(self.cursor,self.user_email,BLOB_CONNECTION_STRING,'test-user'))
-        
 
         self.user_id=datastore.User.get_id(self.user_obj) 
         self.container_client = asyncio.run(datastore.get_user_container_client(
