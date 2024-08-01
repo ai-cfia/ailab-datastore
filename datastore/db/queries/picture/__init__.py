@@ -385,30 +385,6 @@ def check_picture_inference_exist(cursor, picture_id: str):
         raise GetPictureError(
             f"Error: could not check if the picture {picture_id} has an existing inference")
 
-def get_picture_inference(cursor, picture_id: str):
-    """
-    This functions retrieve inference of a given picture
-    
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - picture_id (str): The UUID of the picture.
-    """
-    try :
-        query = """
-            SELECT 
-                id, inference, pipeline_id
-            FROM 
-                inference
-            WHERE 
-                picture_id = %s
-            """
-        cursor.execute(query, (picture_id,))
-        result = cursor.fetchone()
-        return result
-    except Exception:
-        raise GetPictureError(
-            f"Error: could not get inference for the picture {picture_id}")
-    
 def change_picture_set_id(cursor, user_id, old_picture_set_id, new_picture_set_id):
     """
     This function change picture_set_id of all pictures in a picture_set to a new one.

@@ -709,7 +709,7 @@ async def get_picture_inference(cursor, user_id: str, picture_id: str):
             )
         
         if picture.check_picture_inference_exist(cursor, picture_id):
-            inf = picture.get_picture_inference(cursor, picture_id)
+            inf = inference.get_inference_by_picture_id(cursor, picture_id)
             
             inf = inference_metadata.rebuild_inference(cursor, inf)
             

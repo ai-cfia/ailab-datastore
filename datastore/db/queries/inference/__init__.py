@@ -17,6 +17,7 @@ class InferenceObjectNotFoundError(Exception):
 
 class InferenceAlreadyVerifiedError(Exception):
     pass
+
 """
 
 INFERENCE TABLE QUERIES
@@ -89,6 +90,30 @@ def get_inference(cursor, inference_id: str):
         return res
     except Exception:
         raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")
+
+def get_inference_by_picture_id(cursor, picture_id: str):
+    """
+    This functions retrieve inference of a given picture
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_id (str): The UUID of the picture.
+    """
+    try :
+        query = """
+            SELECT 
+                id, inference, pipeline_id
+            FROM 
+                inference
+            WHERE 
+                picture_id = %s
+            """
+        cursor.execute(query, (picture_id,))
+        result = cursor.fetchone()
+        return result
+    except Exception:
+        raise InferenceNotFoundError(
+            f"Error: could not get inference for the picture {picture_id}")
 
 def set_inference_feedback_user_id(cursor, inference_id, user_id):
     """
