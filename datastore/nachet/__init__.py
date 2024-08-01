@@ -597,7 +597,6 @@ async def get_ml_structure(cursor):
     try:
         ml_structure = {"pipelines": [], "models": []}
         pipelines = machine_learning.get_active_pipeline(cursor)
-        print(pipelines)
         if len(pipelines)==0:
             raise MLRetrievalError("No Active pipelines found in the database.")
         model_list = []
