@@ -61,7 +61,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.9"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "name" text NOT NULL,
     "information_id" uuid REFERENCES "fertiscan_0.0.9".organization_information(id),
     "main_location_id" uuid REFERENCES "fertiscan_0.0.9".location(id)
     );
