@@ -259,7 +259,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'en':: public.language
+			'en'::"fertiscan_0.0.10".language
 		);
 	END LOOP;
 	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)

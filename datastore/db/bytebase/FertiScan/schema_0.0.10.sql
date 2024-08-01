@@ -14,6 +14,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "updated_at" timestamp
     );
 
+    -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
+    CREATE TYPE "fertiscan_0.0.10".LANGUAGE AS ENUM ('fr', 'en');
+
     CREATE TABLE "fertiscan_0.0.10"."picture_set" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
     "picture_set" json NOT NULL,
@@ -118,8 +121,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "type_en" text unique NOT NULL
     );
 
-    -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
-    CREATE TYPE "fertiscan_0.0.10".LANGUAGE AS ENUM ('fr', 'en');
 
     CREATE TABLE "fertiscan_0.0.10"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -128,7 +129,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "solubility" float,
     "edited" boolean,
     "label_id" uuid REFERENCES "fertiscan_0.0.10".label_information(id),
-    "language" LANGUAGE
+    "language" "fertiscan_0.0.10".LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.10"."sub_label" (
@@ -148,7 +149,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "element_id" int REFERENCES "fertiscan_0.0.10".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.10".label_information(id),
     "edited" boolean,
-    "language" LANGUAGE
+    "language" "fertiscan_0.0.10".LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.10"."guaranteed" (
@@ -170,7 +171,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "unit" text,
     "edited" boolean,
     "label_id" uuid REFERENCES "fertiscan_0.0.10".label_information(id),
-    "language" LANGUAGE
+    "language" "fertiscan_0.0.10".LANGUAGE
     );
 
     CREATE TABLE "fertiscan_0.0.10"."inspection" (
@@ -248,7 +249,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     ('Premier soin','First aid'),
     ('Garantie','Warranty');
 
- CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+ CREATE OR REPLACE FUNCTION "fertiscan_0.0.10".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -374,7 +375,7 @@ BEGIN
 	   
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'weight'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'weight'::"fertiscan_0.0.10".metric_type,label_id);
 	 END LOOP;
 -- Weight end
 	
@@ -397,7 +398,7 @@ BEGIN
 	  
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'density'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'density'::"fertiscan_0.0.10".metric_type,label_id);
 	END IF;
 -- DENSITY END
 
@@ -420,7 +421,7 @@ BEGIN
 
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'volume'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'volume'::"fertiscan_0.0.10".metric_type,label_id);
 	END IF;
 -- Volume end
    
@@ -435,7 +436,7 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				FALSE,
-				ingredient_language::"nachet_0.0.9".language,
+				ingredient_language::"nachet_0.0.10".language,
 				label_id
 			);
 		END LOOP;
@@ -463,7 +464,7 @@ BEGIN
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language::"nachet_0.0.9".language
+                ingredient_language::"nachet_0.0.10".language
             );
 		END LOOP;
 	END LOOP;
@@ -509,7 +510,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'en':: public.language
+			'en':: "fertiscan_0.0.10".language
 		);
 	END LOOP;
 	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
@@ -521,7 +522,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'fr'::"nachet_0.0.9".language
+			'fr'::"nachet_0.0.10".language
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
