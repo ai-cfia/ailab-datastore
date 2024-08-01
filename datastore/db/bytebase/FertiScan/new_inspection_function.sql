@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.9".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.10".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -124,7 +124,7 @@ BEGIN
 	   
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'weight'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'weight'::"fertiscan_0.0.10".metric_type,label_id);
 	 END LOOP;
 -- Weight end
 	
@@ -147,7 +147,7 @@ BEGIN
 	  
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'density'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'density'::"fertiscan_0.0.10".metric_type,label_id);
 	END IF;
 -- DENSITY END
 
@@ -170,7 +170,7 @@ BEGIN
 
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,'volume'::"fertiscan_0.0.9".metric_type,label_id);
+	    VALUES (value_float, unit_id, FALSE,'volume'::"fertiscan_0.0.10".metric_type,label_id);
 	END IF;
 -- Volume end
    
@@ -185,7 +185,7 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				FALSE,
-				ingredient_language::"nachet_0.0.9".language,
+				ingredient_language::"fertiscan_0.0.10".language,
 				label_id
 			);
 		END LOOP;
@@ -213,7 +213,7 @@ BEGIN
                 read_unit,
                 FALSE, -- Assuming edited status
                 label_id,  
-                ingredient_language::"nachet_0.0.9".language
+                ingredient_language::"fertiscan_0.0.10".language
             );
 		END LOOP;
 	END LOOP;
@@ -271,7 +271,7 @@ BEGIN
 	        record->> 'unit',
 			FALSE,
 			label_id,
-			'fr'::"nachet_0.0.9".language
+			'fr'::"fertiscan_0.0.10".language
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
