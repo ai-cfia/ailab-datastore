@@ -278,16 +278,14 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
     except(Exception):
         raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
 
-def new_model(cursor, model,name,endpoint_name,task_id):
+def new_model(cursor, model,name,endpoint_name,task_id:int):
     """
     This function creates a new model in the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
     - model (str): The model to upload. Must be formatted as a json
-    - name (str): The name of the model.
-    - enpoint_name (str): The name of the endpoint.
-    - task_id (str): The UUID of the task.
+    - user_id (str): The UUID of the user uploading.
 
     Returns:
     - The UUID of the model.
