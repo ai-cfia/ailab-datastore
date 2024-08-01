@@ -59,7 +59,7 @@ class test_inspection(unittest.TestCase):
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[0], False)
         self.assertEqual(inspection_data[3], self.user_id)
-        self.assertEqual(inspection_data[8], self.picture_set_id)
+        self.assertEqual(inspection_data[6], self.picture_set_id)
         self.assertIsNone(inspection_data[4])
 
     def test_get_all_user_inspection(self):
@@ -80,30 +80,25 @@ class test_inspection(unittest.TestCase):
         )
         verified = True
         inspection.update_inspection(
-            self.cursor, inspection_id, verified, None, None, None, None, None, None
+            self.cursor, inspection_id, verified, None, None, None, None,
         )
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[0], verified)
 
-    def test_get_all_organization_inspection(self):
-        company_id = organization.new_organization(
-            self.cursor, "test-company", "test.website.com", "0123456789", None
-        )
-        inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
-        )
-        inspection_id2 = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, True
-        )
-        inspection.update_inspection(
-            self.cursor, inspection_id=inspection_id, company_id=company_id
-        )
-        inspection.update_inspection(
-            self.cursor, inspection_id=inspection_id2, manufacturer_id=company_id
-        )
-        inspection_data = inspection.get_all_organization_inspection(
-            self.cursor, company_id
-        )
-        self.assertEqual(len(inspection_data), 2)
-        self.assertEqual(inspection_data[0][0], inspection_id)
-        self.assertEqual(inspection_data[1][0], inspection_id2)
+    # Deprecated function at the moment
+    # def test_get_all_organization_inspection(self):
+    #     company_id = organization.new_organization(
+    #         self.cursor, "test-company", "test.website.com", "0123456789", None
+    #     )
+    #     inspection_id = inspection.new_inspection(
+    #         self.cursor, self.user_id, self.picture_set_id, False
+    #     )
+    #     inspection_id2 = inspection.new_inspection(
+    #         self.cursor, self.user_id, self.picture_set_id, True
+    #     )
+    #     inspection_data = inspection.get_all_organization_inspection(
+    #         self.cursor, company_id
+    #     )
+    #     self.assertEqual(len(inspection_data), 2)
+    #     self.assertEqual(inspection_data[0][0], inspection_id)
+    #     self.assertEqual(inspection_data[1][0], inspection_id2)

@@ -115,8 +115,6 @@ def get_inspection(cursor, inspection_id):
                 inspector_id,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 
@@ -151,8 +149,6 @@ def get_all_user_inspection(cursor, user_id):
                 updated_at,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 
@@ -165,7 +161,7 @@ def get_all_user_inspection(cursor, user_id):
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
-
+# Deprecated
 def get_all_organization_inspection(cursor, org_id):
     """
     This function gets all the inspection of an organization from the database.
@@ -188,8 +184,6 @@ def get_all_organization_inspection(cursor, org_id):
                 inspector_id,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 
@@ -209,8 +203,6 @@ def update_inspection(
     verified=None,
     label_info_id=None,
     sample_id=None,
-    company_id=None,
-    manufacturer_id=None,
     picture_set_id=None,
     fertilizer_id=None,
 ):
@@ -223,8 +215,6 @@ def update_inspection(
     - verified (boolean, optional): The value if the inspection has been verified by the user. Default is None.
     - label_info_id (str, optional): The UUID of the label information. Default is None.
     - sample_id (str, optional): The UUID of the sample. Default is None.
-    - company_id (str, optional): The UUID of the company. Default is None.
-    - manufacturer_id (str, optional): The UUID of the manufacturer. Default is None.
     - picture_set_id (str, optional): The UUID of the picture set. Default is None.
     - fertilizer_id (str, optional): The UUID of the fertilizer. Default is None.
 
@@ -239,8 +229,6 @@ def update_inspection(
                 verified = COALESCE(%s, verified),
                 label_info_id = COALESCE(%s, label_info_id),
                 sample_id = COALESCE(%s, sample_id),
-                company_id = COALESCE(%s, company_id),
-                manufacturer_id = COALESCE(%s, manufacturer_id),
                 picture_set_id = COALESCE(%s, picture_set_id),
                 fertilizer_id = COALESCE(%s, fertilizer_id),
                 updated_at = CURRENT_TIMESTAMP
@@ -255,8 +243,6 @@ def update_inspection(
                 verified,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id,
                 inspection_id,
