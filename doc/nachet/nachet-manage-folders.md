@@ -66,6 +66,10 @@ training purposes. Our solution is to request confirmation from the user, who
 can decide to delete pictures from his container but let us save them, or he can
 delete everything anyway, for example if there has been a missed click.
 
+Users have asked to be able to access the pictures of folders in the directory
+section on frontend. We want them to be able to see each pictures name. Then a
+user can select a folder this will get all pictures and their inferences.
+
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
@@ -135,5 +139,42 @@ note left of FE : "Are you sure ? Everything in this folder will be deleted and 
         
         end
     end
+
+```
+
+### Get folder content user case
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant FE as Frontend
+    participant BE as Backend
+    participant DS as Datastore
+
+    User->>FE: ApplicationStart()
+        FE-->>BE:  /directories
+            BE->>DS: get_picture_sets_info(user_id)
+                loop for each picture set
+                    DS-->DS: get_pictures(user_id, picture_set_id)
+                end
+            DS-->>BE: List of picture_set with pictures data
+        BE-->>FE: Response : List of picture_set with pictures name
+    User->>FE: Select Folder
+        FE->>BE: /get-folder-content
+            BE->>DS: get_pictures_inferences(user_id, picture_set_id)
+                DS-->DS: get_pictures_with_inferencse(user_id, picture_set_id)
+            DS-->>BE: Return pictures with inferences
+            BE->>DS: get_pictures_blobs(user_id, picture_set_id)
+                DS-->DS: get_blobs(user_id, picture_set_id)
+            DS-->>BE: Return pictures blobs
+        BE-->>BE: cache pictures and inferences
+        BE-->>FE: Response : True
+    FE-->>User: Display folder content (list of pictures)
+    User->>FE: Select Picture
+        FE->>BE: /get-picture
+            BE->>BE: get_picture_from_cache(user_id, picture_id)
+        BE-->>FE: Response : Picture with hash and inference
+    FE-->>User: Display picture with inference if exist
+
 
 ```

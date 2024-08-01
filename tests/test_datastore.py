@@ -175,7 +175,7 @@ class test_picture(unittest.TestCase):
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, uuid.uuid4()))
-
+        
     def test_get_picture_sets_info(self) :
         """
         Test the get_picture_sets_info function
@@ -208,7 +208,7 @@ class test_picture(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(datastore.get_picture_sets_info(mock_cursor, self.user_id))
-       
+
     def test_delete_picture_set_permanently(self):
         """
         This test checks the delete_picture_set_permanently function 

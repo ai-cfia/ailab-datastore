@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class UserAlreadyExistsError(Exception):
     pass
 
@@ -184,8 +183,7 @@ async def create_picture_set(
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
-
-
+    
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -204,7 +202,6 @@ async def get_picture_sets_info(cursor, user_id: str):
         nb_picture = picture.count_pictures(cursor, picture_set_id)
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
-
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
@@ -257,7 +254,6 @@ async def delete_picture_set_permanently(
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
-
 
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None

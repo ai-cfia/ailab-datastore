@@ -5,7 +5,9 @@ The metadata is generated in a json format and is used to store the metadata in 
 """
 
 import json
-
+import datastore.db.queries.seed as seed
+import datastore.db.queries.inference as inference
+import datastore.db.queries.machine_learning as machine_learning
 
 class MissingKeyError(Exception):
     pass
@@ -74,3 +76,116 @@ def compare_object_metadata(object1:dict , object2:dict) -> bool:
         if object1[key] != object2[key]:
             return False
     return True
+
+def rebuild_inference(cursor, inf) :
+    """
+    This function rebuilds the inference object from the database.
+
+    Parameters:
+    - inference: The inference from the database to convert into inference result.
+
+    Returns:
+    - The inference object as a dict.
+    """
+    inference_id = str(inf[0])
+    inference_data = json.loads(json.dumps(inf[1]))
+    pipeline_id = str(inf[2])
+    
+    models = []
+    if pipeline_id is not None :
+        pipeline = machine_learning.get_pipeline(cursor, pipeline_id)
+        models_data = pipeline["models"]
+        version = pipeline["version"]
+        for model_name in models_data :
+            model = {}
+            model["name"] = model_name
+            model["version"] = version
+            models.append(model)
+    
+    objects = inference.get_objects_by_inference(cursor, inference_id)
+    boxes = rebuild_boxes_export(cursor, objects)
+    
+    inf = {
+        "boxes": boxes,
+        "filename": inference_data.get("filename"),
+        "inference_id": inference_id,
+        "labelOccurrence" : inference_data.get("labelOccurrence"),
+        "totalBoxes" : inference_data.get("totalBoxes"),
+        "models" : models,
+        "pipeline_id" : pipeline_id,
+    }
+    return inf
+
+
+def rebuild_boxes_export(cursor, objects) :
+    """
+    This function rebuilds the boxes object from the database.
+
+    Parameters:
+    - objects: The objects of an inference from the database to convert into boxes.
+
+    Returns:
+    - The boxes object as an array of dict.
+    """
+    boxes = []
+    for object in objects:
+        box_id = str(object[0])
+        
+        box_metadata = object[1]
+        box_metadata = json.loads(json.dumps(box_metadata))
+        
+        box = box_metadata.get("box")
+        color = box_metadata.get("color")
+        overlapping = box_metadata.get("overlapping")
+        overlappingIndices = box_metadata.get("overlappingIndices")
+        
+        top_id = str(inference.get_inference_object_top_id(cursor, box_id))
+        top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
+        
+        seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
+        topN = rebuild_topN_export(cursor, seed_objects)
+        
+        top_score = 0
+        if inference.is_object_verified(cursor, box_id):
+            top_score = 1
+        else :
+            for seed_object in seed_objects:
+                score = seed_object[2]
+                seed_id = str(seed_object[1])
+                if seed_id == top_seed_id:
+                    top_score = score
+        top_label = seed.get_seed_name(cursor, top_seed_id)
+
+        object = {"box" : box, 
+                    "box_id": box_id, 
+                    "color" : color, 
+                    "label" : top_label, 
+                    "object_type_id" : 1, 
+                    "overlapping" : overlapping, 
+                    "overlappingIndices" : overlappingIndices, 
+                    "score" : top_score, 
+                    "topN": topN, 
+                    "top_id" : top_id}
+
+        boxes.append(object)
+    return boxes
+
+
+def rebuild_topN_export(cursor, seed_objects) :
+    """
+    This function rebuilds the topN object from the database.
+
+    Parameters:
+    - seed_objects: The seed_objects from the database to convert into topN.
+
+    Returns:
+    - The topN object as an array of dict.
+    """
+    topN = []
+    for seed_obj in seed_objects :
+        seed_obj = {
+            "label": seed.get_seed_name(cursor, str(seed_obj[1])), 
+            "object_id": str(seed_obj[0]), 
+            "score": seed_obj[2]}
+        topN.append(seed_obj)
+    return topN

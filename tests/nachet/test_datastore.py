@@ -7,7 +7,7 @@ import io
 import os
 import unittest
 from unittest.mock import MagicMock
-from PIL import Image
+from PIL import Image, ImageChops
 import json
 import uuid
 import asyncio
@@ -252,6 +252,108 @@ class test_picture(unittest.TestCase):
                 )
             )
 
+    def test_get_picture_inference(self):
+        """
+        This test checks if the get_picture_inference function correctly returns the inference of a picture
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        inference = asyncio.run(nachet.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
+
+        picture_inference = asyncio.run(nachet.get_picture_inference(self.cursor, str(self.user_id), str(picture_id)))
+        
+        self.assertDictEqual(picture_inference,inference)
+    
+    def test_get_picture_inference_error_user_not_found(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the user given doesn't exist in db
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(nachet.get_picture_inference(self.cursor, str(uuid.uuid4()), str(picture_id)))
+    
+    def test_get_picture_inference_error_connection_error(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the connection to the db fails
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(nachet.get_picture_inference(mock_cursor, str(self.user_id), str(picture_id)))
+        
+    def test_get_picture_inference_error_picture_not_found(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the picture given doesn't exist in db
+        """
+        with self.assertRaises(datastore.picture.PictureNotFoundError):
+            asyncio.run(nachet.get_picture_inference(self.cursor, str(self.user_id), str(uuid.uuid4())))
+    
+    def test_get_picture_inference_error_not_owner(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the user is not the owner of the picture set
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        
+        not_owner_user_obj= asyncio.run(datastore.new_user(self.cursor,"notowner@email",self.connection_str,'test-user'))
+        not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
+        
+        with self.assertRaises(nachet.UserNotOwnerError):
+            asyncio.run(nachet.get_picture_inference(self.cursor, str(not_owner_user_id), str(picture_id)))
+            
+        container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
+        container_client.delete_container()
+
+    def test_get_picture_blob(self):
+        """
+        This test checks if the get_picture_blob function correctly returns the blob of a picture
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        blob = asyncio.run(nachet.get_picture_blob(self.cursor, str(self.user_id), self.container_client, str(picture_id)))
+        blob_image = Image.frombytes("RGB", (1980, 1080), blob)
+        
+        difference = ImageChops.difference(blob_image, self.image)
+        self.assertTrue(difference.getbbox() is None)
+
+    def test_get_picture_blob_error_user_not_found(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the user given doesn't exist in db
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(nachet.get_picture_blob(self.cursor, str(uuid.uuid4()), self.container_client, str(picture_id)))
+    
+    def test_get_picture_blob_error_connection_error(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the connection to the db fails
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(nachet.get_picture_blob(mock_cursor, str(self.user_id), self.container_client, str(picture_id)))
+        
+    def test_get_picture_blob_error_picture_set_not_found(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the picture set given doesn't exist in db
+        """
+        with self.assertRaises(datastore.picture.PictureNotFoundError):
+            asyncio.run(nachet.get_picture_blob(self.cursor, str(self.user_id), self.container_client, str(uuid.uuid4())))
+    
+    def test_get_picture_blob_error_not_owner(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if the user is not the owner of the picture set
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        
+        not_owner_user_obj= asyncio.run(datastore.new_user(self.cursor,"notowner@email",self.connection_str,'test-user'))
+        not_owner_user_id=datastore.User.get_id(not_owner_user_obj)
+        
+        with self.assertRaises(nachet.UserNotOwnerError):
+            asyncio.run(nachet.get_picture_blob(self.cursor, str(not_owner_user_id), self.container_client, str(picture_id)))
+            
+        container_client = asyncio.run(datastore.get_user_container_client(not_owner_user_id,BLOB_CONNECTION_STRING,BLOB_ACCOUNT,BLOB_KEY,'test-user'))
+        container_client.delete_container()
+
 
 class test_picture_set(unittest.TestCase):
     def setUp(self):
@@ -317,6 +419,55 @@ class test_picture_set(unittest.TestCase):
         self.container_client.delete_container()
         db.end_query(self.con, self.cursor)
 
+    def test_get_picture_sets_info(self) :
+        """
+        Test the get_picture_sets_info function
+        """
+        
+        picture_sets_info = asyncio.run(nachet.get_picture_sets_info(self.cursor, self.user_id))
+        
+        self.assertEqual(len(picture_sets_info), 2)
+        
+        for picture_set in picture_sets_info :
+            if picture_set["picture_set_id"] == self.picture_set_id :
+                expected_pictures_info = [
+                {"picture_id": pid, "is_verified": False, "inference_exist": False}
+                for pid in self.pictures_id ]
+                self.assert_picture_set_info(picture_set, self.picture_set_id, self.folder_name, 3, expected_pictures_info)
+        
+        self.picture_set_id = asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, self.user_id, self.folder_name + "2"))
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client, self.picture_set_id))
+        inference = asyncio.run(nachet.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
+        asyncio.run(nachet.new_perfect_inference_feeback(self.cursor, inference["inference_id"], self.user_id, [box["box_id"] for box in inference["boxes"]]))
+        
+        picture_sets_info = asyncio.run(nachet.get_picture_sets_info(self.cursor, self.user_id))
+        
+        self.assertEqual(len(picture_sets_info), 3)
+        
+        for picture_set in picture_sets_info :
+            if picture_set["picture_set_id"] == self.picture_set_id :
+                expected_pictures_info = [
+                {"picture_id": picture_id, "is_verified": True, "inference_exist": True}
+                ]
+                self.assert_picture_set_info(picture_set, self.picture_set_id, self.folder_name+"2", 1, expected_pictures_info)
+        
+
+    def test_get_picture_sets_info_error_user_not_found(self):
+        """
+        This test checks if the get_picture_sets_info function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(nachet.get_picture_sets_info(self.cursor, uuid.uuid4()))
+
+    def test_get_picture_sets_info_error_connection_error(self):
+        """
+        This test checks if the get_picture_sets_info function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(nachet.get_picture_sets_info(mock_cursor, self.user_id))
+       
     def test_find_validated_pictures(self):
         """
         This test checks if the find_validated_pictures function correctly returns the validated pictures of a picture_set
@@ -519,12 +670,12 @@ class test_picture_set(unittest.TestCase):
         )
 
         dev_nb_folders = len(
-            asyncio.run(datastore.get_picture_sets_info(self.cursor, self.dev_user_id))
+            asyncio.run(nachet.get_picture_sets_info(self.cursor, self.dev_user_id))
         )
         # Check there is the right number of picture sets in db for each user
         self.assertEqual(
             len(
-                asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
+                asyncio.run(nachet.get_picture_sets_info(self.cursor, self.user_id))
             ),
             2,
         )
@@ -540,14 +691,14 @@ class test_picture_set(unittest.TestCase):
         # Check there is the right number of picture sets in db for each user after moving
         self.assertEqual(
             len(
-                asyncio.run(datastore.get_picture_sets_info(self.cursor, self.user_id))
+                asyncio.run(nachet.get_picture_sets_info(self.cursor, self.user_id))
             ),
             1,
         )
         self.assertEqual(
             len(
                 asyncio.run(
-                    datastore.get_picture_sets_info(self.cursor, self.dev_user_id)
+                    nachet.get_picture_sets_info(self.cursor, self.dev_user_id)
                 )
             ),
             dev_nb_folders + 1,
