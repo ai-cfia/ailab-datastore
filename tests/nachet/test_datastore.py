@@ -27,15 +27,15 @@ DB_SCHEMA = os.environ.get("NACHET_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("NACHET_SCHEMA_TESTING is not set")
 
-BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
+BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
     raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
 
-BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT_TESTING"]
+BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT"]
 if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
     raise ValueError("NACHET_BLOB_ACCOUNT is not set")
 
-BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
+BLOB_KEY = os.environ["NACHET_BLOB_KEY"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
@@ -121,7 +121,7 @@ class test_picture(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.connection_str = BLOB_CONNECTION_STRING
-        self.user_email = "test@email"
+        self.user_email = "testing@email"
         self.user_obj = asyncio.run(
             datastore.new_user(
                 self.cursor, self.user_email, self.connection_str, "test-user"
@@ -259,7 +259,7 @@ class test_picture_set(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.connection_str = BLOB_CONNECTION_STRING
-        self.user_email = "test@email"
+        self.user_email = "testingss@email"
         self.user_obj = asyncio.run(
             datastore.new_user(
                 self.cursor, self.user_email, self.connection_str, "test-user"
@@ -480,6 +480,7 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set_with_archive function correctly archive the picture set in dev container and delete it from user container
         """
+        print(self.connection_str)
         # Create inferences for pictures in the picture set
         inferences = []
         for picture_id in self.pictures_ids:
