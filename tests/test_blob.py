@@ -30,10 +30,13 @@ class TestGetBlobServiceClient(unittest.TestCase):
 class TestCreateContainerClient(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
-        self.container_name = str(uuid.uuid4())
+        self.container_name = "test-" + str(uuid.uuid4())
         self.blob_service_client = BlobServiceClient.from_connection_string(
             self.storage_url
         )
+    
+    def tearDown(self):
+        self.blob_service_client.delete_container(self.container_name)
 
     def test_create_container_client(self):
 
