@@ -126,3 +126,12 @@ async def update_inspection(
         cursor, inspection_id, user_id, updated_data
     )
     return updated_result
+
+async def get_user_unverified_analysis(cursor,user_id):
+    """
+    This function fetch all the unverified inspection of a user
+
+    Parameters:
+    - cursor: The cursor object to interact with the database.
+    - user_id: The user id of the user. 
+    """

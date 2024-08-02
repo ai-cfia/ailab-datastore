@@ -135,6 +135,44 @@ def get_inspection(cursor, inspection_id):
         return cursor.fetchone()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    
+def get_all_user_unverified_inspection(cursor, user_id):
+    """
+    This function gets all the unverified inspection of a user from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - user_id (str): The UUID of the user.
+
+    Returns:
+    - The inspection.
+    """
+
+    try:
+        query = """
+            SELECT 
+                inspection.id,
+                inspection.upload_date,
+                inspection.updated_at,
+                inspection.sample_id,
+                inspection.picture_set_id,
+                label_info.id as label_info_id,
+                label_info.product_name,
+                label_info.company_info_id,
+                label_info.manufacturer_info_id
+            FROM 
+                inspection
+            LEFT JOIN 
+                label_information as label_info
+            ON
+                inspection.label_info_id = label_information.id
+            WHERE 
+                inspector_id = %s AND verified = FALSE
+            """
+        cursor.execute(query, (user_id,))
+        return cursor.fetchall()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 
 def get_all_user_inspection(cursor, user_id):
