@@ -42,10 +42,10 @@ class test_specification(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.weight,
-            self.density,
-            self.volume,
+            None,
+            None
         )
+        self.language = "fr"
 
         self.humidity = 10.0
         self.ph = 20.0

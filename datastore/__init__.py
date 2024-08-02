@@ -76,7 +76,6 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         if user.is_user_registered(cursor, email):
             raise UserAlreadyExistsError("User already exists")
         user_uuid = user.register_user(cursor, email)
-
         # Create the user container in the blob storage
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string

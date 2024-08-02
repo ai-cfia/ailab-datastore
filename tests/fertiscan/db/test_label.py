@@ -26,9 +26,8 @@ class test_label(unittest.TestCase):
         self.n = 10.0
         self.p = 20.0
         self.k = 30.0
-        self.weight = None
-        self.density = None
-        self.volume = None
+        self.company_info_id = None
+        self.manufacturer_info_id= None
 
     def tearDown(self):
         self.con.rollback()
@@ -43,9 +42,8 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.weight,
-            self.density,
-            self.volume,
+            self.company_info_id,
+            self.manufacturer_info_id,
         )
         self.assertTrue(validator.is_valid_uuid(label_information_id))
 
@@ -58,9 +56,8 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.weight,
-            self.density,
-            self.volume,
+            self.company_info_id,
+            self.manufacturer_info_id
         )
         label_data = label.get_label_information(self.cursor, label_information_id)
 
@@ -72,4 +69,3 @@ class test_label(unittest.TestCase):
         self.assertEqual(label_data[5], self.k)
         self.assertIsNone(label_data[6])
         self.assertIsNone(label_data[7])
-        self.assertIsNone(label_data[8])
