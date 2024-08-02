@@ -94,6 +94,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.10"."label_information" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "product_name" text,
     "lot_number" text,
     "npk" text,
     "registration_number" text,

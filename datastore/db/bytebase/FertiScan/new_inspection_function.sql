@@ -82,8 +82,9 @@ BEGIN
 
 -- LABEL INFORMATION
     INSERT INTO label_information (
-        lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
+        product_name,lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
     ) VALUES (
+		input_json ->'product'->>'name',
         input_json->'product'->>'lot_number',
         input_json->'product'->>'npk',
         input_json->'product'->>'registration_number',
