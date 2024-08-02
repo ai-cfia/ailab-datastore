@@ -133,5 +133,31 @@ async def get_user_unverified_analysis(cursor,user_id):
 
     Parameters:
     - cursor: The cursor object to interact with the database.
-    - user_id: The user id of the user. 
+    - user_id: The user id of the user.
+
+    Returns:
+    - List of unverified analysis.
+    [
+        inspection.id,
+        inspection.upload_date,
+        inspection.updated_at,
+        inspection.sample_id,  -- Not used at the moment
+        inspection.picture_set_id,
+        label_info.id as label_info_id,
+        label_info.product_name,
+        label_info.company_info_id,
+        label_info.manufacturer_info_id
+    ]
     """
+
+    try:
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        return inspection.get_all_user_unverified_inspection(cursor, user_id)
+    except user.UserNotFoundError:
+        raise
+    except Exception as e:
+        print(e.__str__())
+        raise Exception("Datastore unhandeled error")
