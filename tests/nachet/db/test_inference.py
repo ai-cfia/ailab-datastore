@@ -69,7 +69,7 @@ class test_inference_functions(unittest.TestCase):
             '{"filename": "inference_example", "totalBoxes": 1, "totalBoxes": 1}'
         )
         self.type = 1
-        self.model_id = machine_learning.new_model(self.cursor, json.dumps({}), "test_model",'test-endpoint',1)
+        self.model_id = machine_learning.new_model(self.cursor, "test_model",'test-endpoint',1)
         self.pipeline_id = machine_learning.new_pipeline(self.cursor, json.dumps({}),"test_pipeline",[self.model_id],False)
 
     def tearDown(self):
