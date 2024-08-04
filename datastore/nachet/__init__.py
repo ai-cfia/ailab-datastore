@@ -55,7 +55,6 @@ class InferenceFeedbackError(Exception):
 class MLRetrievalError(Exception):
     pass
 
-
 async def upload_picture_unknown(
     cursor, user_id, picture_hash, container_client, picture_set_id=None
 ):
@@ -204,6 +203,7 @@ async def upload_pictures(
     container_client,
     pictures,
     seed_name: str,
+    seed_id: str,
     zoom_level: float = None,
     nb_seeds: int = None,
 ):
@@ -217,6 +217,7 @@ async def upload_pictures(
     - container_client: The container client of the user.
     - pictures array: array of images to upload
     - seed_name: The name of the seed on the images.
+    - seed_id: The id of the seed on the images.
     - picture_set_id: The UUID of the picture set where to add the pictures.
     - nb_seeds: The number of seeds on the picture.
     - zoom_level: The zoom level of the picture.
@@ -225,12 +226,15 @@ async def upload_pictures(
         array of the new pictures UUID
     """
     try:
-
-        if not seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
-            raise seed.SeedNotFoundError(
-                f"Seed not found based on the given name: {seed_name}"
-            )
-        seed_id = seed.get_seed_id(cursor=cursor, seed_name=seed_name)
+        if not seed_id and not seed_name:
+            raise seed.SeedNotFoundError("Error: seed_name and seed_id not found in the new box. We don't know what to do with it and this should not happen.")
+        if not seed_id and seed_name :
+            if seed.is_seed_registered(cursor=cursor, seed_name=seed_name):
+                # mistake from the front end, this seed is known in the db
+                seed_id = str(seed.get_seed_id(cursor=cursor, seed_name=seed_name))
+            else:
+                # create the seed
+                seed_id = str(seed.new_seed(cursor=cursor, seed_name=seed_name))
 
         pictures_id = []
         for picture_encoded in pictures:
@@ -451,7 +455,9 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
                             inference.set_inference_object_verified_id(
                                 cursor, object_id, seed_object_id
                             )
-                else:
+                
+                # If a seed is selected by the user or if it is a known seed that the FE has not recognized
+                if seed_id != "":
                     # Box is still valid
                     valid = True
                     # Check if a new seed has been selected
@@ -557,7 +563,12 @@ async def import_ml_structure_from_json_version(cursor, ml_version: dict):
         task_id = machine_learning.get_task_id(cursor, model["task"])
         model_name = model["model_name"]
         endpoint_name = model["endpoint_name"]
-        machine_learning.new_model(cursor, model_db, model_name, endpoint_name, task_id)
+        model_id = machine_learning.new_model(cursor, model_name, endpoint_name, task_id)
+        # set active_version if not the test model
+        if model_name != "test_model1":
+            version = '0.0.1'
+            model_version_id=machine_learning.new_model_version(cursor,model_id,version,model_db)
+            machine_learning.set_active_model(cursor,str(model_id),str(model_version_id))
     # Create the pipelines
     for pipeline in pipelines:
         pipeline_db = ml_metadata.build_pipeline_import(pipeline)
@@ -571,7 +582,10 @@ async def import_ml_structure_from_json_version(cursor, ml_version: dict):
                 model_ids.append(model_id)
             else:
                 raise ValueError(f"Model {name_model} not found")
-        machine_learning.new_pipeline(cursor, pipeline_db, pipeline_name, model_ids)
+        pipeline_id = machine_learning.new_pipeline(cursor, pipeline_db, pipeline_name, model_ids)
+        # set the pipeline active if not the test pipeline
+        if pipeline_name != "test_pipeline":
+            machine_learning.set_active_pipeline(cursor,str(pipeline_id))
 
 async def get_ml_structure(cursor):
     """
@@ -634,6 +648,125 @@ async def get_seed_info(cursor):
         seed_dict["seeds"].append({"seed_id": seed_id, "seed_name": seed_name})
     return seed_dict
 
+async def get_picture_sets_info(cursor, user_id: str):
+    """This function retrieves the picture sets names and number of pictures from the database.
+    This also retrieve for each picture in the picture set their name, if an inference exist and if the picture is validated.
+
+    Args:
+        user_id (str): id of the user
+    """
+    try :
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
+
+        result = []
+        picture_sets = picture.get_user_picture_sets(cursor, user_id)
+        for picture_set in picture_sets:
+            picture_set_info = {}
+            picture_set_id = picture_set[0]
+            picture_set_name = picture_set[1]
+            
+            picture_set_info["picture_set_id"] = str(picture_set_id)
+            picture_set_info["folder_name"] = picture_set_name
+            
+            pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
+            picture_set_info["nb_pictures"] = len(pictures)
+            
+            picture_set_info["pictures"] = []
+            for pic in pictures :
+                picture_info = {}
+                picture_id = pic[0]
+                picture_info["picture_id"] = str(picture_id)
+
+                is_validated = picture.is_picture_validated(cursor, picture_id)
+                inference_exist = picture.check_picture_inference_exist(cursor, picture_id)
+                picture_info["is_validated"] = is_validated
+                picture_info["inference_exist"] = inference_exist
+                
+                picture_set_info["pictures"].append(picture_info)
+            result.append(picture_set_info)
+        return result
+    except (user.UserNotFoundError, picture.GetPictureSetError, picture.GetPictureError ) as e :
+        raise e
+    except Exception as e:
+        raise  picture.GetPictureSetError(f"An error occured while retrieving the picture sets : {e}")
+
+
+async def get_picture_inference(cursor, user_id: str, picture_id: str):
+    """
+    Retrieves inference (if exist) of the given picture
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        user_id (str): id of the user
+        picture_set_id (str): id of the picture set
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_id(cursor, picture_id):
+            raise picture.PictureNotFoundError(
+                f"Picture not found based on the given id: {picture_id}"
+            )
+        # Check user is owner of the picture set where the picutre is
+        picture_set_id = picture.get_picture_picture_set_id(cursor, picture_id)
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != user_id:
+            raise UserNotOwnerError(
+                f"User can't access this picture, user uuid :{user_id}, picture : {picture_id}"
+            )
+        
+        if picture.check_picture_inference_exist(cursor, picture_id):
+            inf = inference.get_inference_by_picture_id(cursor, picture_id)
+            
+            inf = inference_metadata.rebuild_inference(cursor, inf)
+            
+            return inf
+        else :
+            return None
+        
+    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
+        raise e
+
+async def get_picture_blob(cursor, user_id: str, container_client, picture_id: str):
+    """
+    Retrieves blob of the given picture
+
+    Args:
+        cursor: The cursor object to interact with the database.
+        user_id (str): id of the user
+        picture_id (str): id of the picture set
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_id(cursor, picture_id):
+            raise picture.PictureNotFoundError(
+                f"Picture set not found based on the given id: {picture_id}"
+            )
+        # Check user is owner of the picture set where the picutre is
+        picture_set_id = picture.get_picture_picture_set_id(cursor, picture_id)
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != user_id:
+            raise UserNotOwnerError(
+                f"User can't access this picture, user uuid :{user_id}, picture : {picture_id}"
+            )
+        if str(user.get_default_picture_set(cursor, user_id)) == str(picture_set_id):
+            folder_name = "General"
+        else:
+            folder_name = picture.get_picture_set_name(cursor, picture_set_id)
+        blob_name = "{}/{}.png".format(folder_name, picture_id)
+        picture_blob = await azure_storage.get_blob(container_client, blob_name)
+        return picture_blob
+    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
+        raise e
 
 async def delete_picture_set_with_archive(
     cursor, user_id, picture_set_id, container_client

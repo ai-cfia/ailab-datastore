@@ -39,7 +39,7 @@ class test_user(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING,DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor,DB_SCHEMA)
-        self.user_email="test@email"
+        self.user_email="testssssss@email"
         self.user_id=None
         self.connection_str=BLOB_CONNECTION_STRING
 
@@ -175,7 +175,7 @@ class test_picture(unittest.TestCase):
         """
         with self.assertRaises(datastore.user.UserNotFoundError):
             asyncio.run(datastore.create_picture_set(self.cursor, self.container_client, 0, uuid.uuid4()))
-
+        
     def test_get_picture_sets_info(self) :
         """
         Test the get_picture_sets_info function
@@ -208,7 +208,7 @@ class test_picture(unittest.TestCase):
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
             asyncio.run(datastore.get_picture_sets_info(mock_cursor, self.user_id))
-       
+
     def test_delete_picture_set_permanently(self):
         """
         This test checks the delete_picture_set_permanently function 

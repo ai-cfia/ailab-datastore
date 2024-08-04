@@ -76,7 +76,6 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         if user.is_user_registered(cursor, email):
             raise UserAlreadyExistsError("User already exists")
         user_uuid = user.register_user(cursor, email)
-
         # Create the user container in the blob storage
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
@@ -183,8 +182,7 @@ async def create_picture_set(
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
-
-
+    
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -203,7 +201,6 @@ async def get_picture_sets_info(cursor, user_id: str):
         nb_picture = picture.count_pictures(cursor, picture_set_id)
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
-
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client

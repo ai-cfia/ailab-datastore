@@ -124,8 +124,6 @@ def get_inspection(cursor, inspection_id):
                 inspector_id,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 
@@ -160,8 +158,6 @@ def get_all_user_inspection(cursor, user_id):
                 updated_at,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 
@@ -174,7 +170,7 @@ def get_all_user_inspection(cursor, user_id):
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
-
+# Deprecated
 def get_all_organization_inspection(cursor, org_id):
     """
     This function gets all the inspection of an organization from the database.
@@ -197,8 +193,6 @@ def get_all_organization_inspection(cursor, org_id):
                 inspector_id,
                 label_info_id,
                 sample_id,
-                company_id,
-                manufacturer_id,
                 picture_set_id,
                 fertilizer_id
             FROM 

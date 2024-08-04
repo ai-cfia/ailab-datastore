@@ -45,7 +45,7 @@ class TestMountContainerFunction(unittest.TestCase):
         self.account_name = BLOB_ACCOUNT
         self.account_key = BLOB_KEY
         self.credential = blob.get_account_sas(self.account_name, self.account_key)
-        self.tier = "testuser"
+        self.tier = "test-user"
         self.container_uuid = str(uuid.uuid4())
 
     def test_mount_existing_container(self):
@@ -274,7 +274,6 @@ class TestGetFolderUUID(unittest.TestCase):
 
     def tearDown(self):
         self.container_client.delete_container()
-
     def test_get_folder_uuid(self):
         result = asyncio.run(get_folder_uuid(self.container_client, self.folder_name))
         self.assertEqual(result, self.folder_uuid)

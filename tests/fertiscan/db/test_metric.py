@@ -58,6 +58,7 @@ class test_metric(unittest.TestCase):
         self.metric_value = 1.0
         self.metric_unit = "milli-unite"
         self.metric_edited = False
+        self.metric_type = "volume"
 
     def tearDown(self):
         self.con.rollback()
@@ -65,22 +66,23 @@ class test_metric(unittest.TestCase):
 
     def test_new_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_edited
+            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
         )
         self.assertTrue(validator.is_valid_uuid(metric_id))
 
     def test_get_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_edited
+            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
         )
         metric_data = metric.get_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], self.metric_value)
         self.assertEqual(metric_data[1], self.unit_id)
         self.assertEqual(metric_data[2], self.metric_edited)
+        self.assertEqual(metric_data[3], self.metric_type)
 
     def test_get_full_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_edited
+            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
         )
         metric_data = metric.get_full_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], metric_id)
@@ -88,3 +90,4 @@ class test_metric(unittest.TestCase):
         self.assertEqual(metric_data[2], self.metric_unit)
         self.assertEqual(metric_data[3], self.unit_to_si_unit)
         self.assertEqual(metric_data[4], self.metric_edited)
+        self.assertEqual(metric_data[5], self.metric_type)

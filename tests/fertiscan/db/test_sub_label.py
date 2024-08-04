@@ -76,10 +76,10 @@ class test_sub_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.weight,
-            self.density,
-            self.volume,
+            None,
+            None
         )
+        self.language = "fr"
 
         self.type_fr = "test-type-fr"
         self.type_en = "test-type-en"

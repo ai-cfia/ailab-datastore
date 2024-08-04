@@ -144,6 +144,7 @@ erDiagram
     float value
     string unit
     boolean edited
+    language language
     uuid label_id FK
     int element_id FK
   }
@@ -162,6 +163,7 @@ erDiagram
     string name
     boolean edited
     uuid label_id FK
+    language language
   }
   element_compound{
     int id PK
