@@ -41,32 +41,24 @@ sequenceDiagram
     LabelTable-->>DB: label_info_id
 
     DB->>+MetricsTable: update_metrics(label_info_id, metrics_data)
-    MetricsTable-->>DB: Metrics updated
 
     DB->>+SpecificationsTable: update_specifications(label_info_id, specifications_data)
-    SpecificationsTable-->>DB: Specifications updated
 
     DB->>+IngredientsTable: update_ingredients(label_info_id, ingredients_data)
-    IngredientsTable-->>DB: Ingredients updated
 
     DB->>+MicronutrientsTable: update_micronutrients(label_info_id, micronutrients_data)
-    MicronutrientsTable-->>DB: Micronutrients updated
 
     DB->>+GuaranteedTable: update_guaranteed(label_info_id, guaranteed_data)
-    GuaranteedTable-->>DB: Guaranteed analysis updated
 
     DB->>+SubLabelsTable: update_sub_labels(label_info_id, sub_labels_data)
-    SubLabelsTable-->>DB: Sub labels updated
 
     DB->>+InspectionTable: update_inspection_record(inspection_id, label_info_id, inspector_id, sample_id, picture_set_id, verified)
-    InspectionTable-->>DB: Inspection record updated
 
     alt verified is true
         DB->>+OrganizationTable: insert_organization(name, company_info_id, location_id)
         OrganizationTable-->>DB: organization_id
 
         DB->>+FertilizerTable: upsert_fertilizer(fertilizer_name, registration_number, organization_id, inspection_id)
-        FertilizerTable-->>DB: Fertilizer record updated
     end
 
     DB-->>-Client: Return updated inspection data
@@ -95,6 +87,7 @@ follows:
     "p": 20.0,
     "id": "0dcab2ce-206a-4763-a7bb-838a30e227da",
     "npk": "20-20-20",
+    "verified": false,
     "name": "SuperGrow 20-20-20",
     "metrics": {
       "volume": { "unit": "L", "value": 20.8 },
@@ -164,7 +157,6 @@ follows:
     "phone_number": "+1 416 555 0123"
   },
   "inspection_id": "72437b2d-8f1e-4ad2-96f0-8a6b5e77f176",
-  "verified": true,
   "micronutrients": {
     "en": [
       { "name": "Iron (Fe)", "unit": "%", "value": 0.1 },
