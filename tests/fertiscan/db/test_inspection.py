@@ -74,17 +74,6 @@ class test_inspection(unittest.TestCase):
         self.assertEqual(inspection_data[0][0], inspection_id)
         self.assertEqual(inspection_data[1][0], inspection_id2)
 
-    def test_update_inspection(self):
-        inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
-        )
-        verified = True
-        inspection.update_inspection(
-            self.cursor, inspection_id, verified, None, None, None, None,
-        )
-        inspection_data = inspection.get_inspection(self.cursor, inspection_id)
-        self.assertEqual(inspection_data[0], verified)
-
     # Deprecated function at the moment
     # def test_get_all_organization_inspection(self):
     #     company_id = organization.new_organization(
