@@ -46,9 +46,9 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Prepopulate organization table with references to organization_information and location
         self.cursor.execute(
-            "INSERT INTO organization (name, information_id, main_location_id) "
-            "VALUES (%s, %s, %s) RETURNING id;",
-            ("Test Organization", self.organization_info_id, self.location_id),
+            "INSERT INTO organization (information_id, main_location_id) "
+            "VALUES (%s, %s) RETURNING id;",
+            (self.organization_info_id, self.location_id),
         )
         self.organization_id = self.cursor.fetchone()[0]
 

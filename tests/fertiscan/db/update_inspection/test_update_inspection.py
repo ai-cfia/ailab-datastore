@@ -248,16 +248,23 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             "The registration number should match the input JSON.",
         )
 
-        # Check if the owner_id matches the organization created for the company
+        # Check if the owner_id matches the organization information created for the company
         self.cursor.execute(
-            "SELECT id FROM organization WHERE name = %s;",
-            (updated_input_json["company"]["name"],),
+            "SELECT information_id FROM organization WHERE id = %s;",
+            (fertilizer_data[2],),
         )
-        organization_id = self.cursor.fetchone()[0]
+        organization_information_id = self.cursor.fetchone()[0]
+
+        self.cursor.execute(
+            "SELECT name FROM organization_information WHERE id = %s;",
+            (organization_information_id,),
+        )
+        organization_name = self.cursor.fetchone()[0]
+
         self.assertEqual(
-            fertilizer_data[2],
-            organization_id,
-            "The fertilizer's owner_id should match the organization's ID.",
+            organization_name,
+            updated_input_json["company"]["name"],
+            "The organization's name should match the company's name in the input JSON.",
         )
 
     def test_update_inspection_unauthorized_user(self):
