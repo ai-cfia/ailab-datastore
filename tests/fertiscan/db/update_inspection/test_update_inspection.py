@@ -28,6 +28,17 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         self.conn.autocommit = False  # Control transaction manually
         self.cursor = self.conn.cursor()
 
+        # Create users for the test
+        self.cursor.execute(
+            "INSERT INTO users (email) VALUES ('inspector@example.com') RETURNING id;"
+        )
+        self.inspector_id = self.cursor.fetchone()[0]
+
+        self.cursor.execute(
+            "INSERT INTO users (email) VALUES ('other_user@example.com') RETURNING id;"
+        )
+        self.other_user_id = self.cursor.fetchone()[0]
+
         # Load the JSON data for creating a new inspection
         with open(INPUT_JSON_PATH, "r") as file:
             create_input_json = json.load(file)
@@ -35,7 +46,6 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         create_input_json_str = json.dumps(create_input_json)
 
         # Create initial inspection data in the database
-        self.inspector_id = None  # No inspector ID for this test case
         self.picture_set_id = None  # No picture set ID for this test case
         self.cursor.execute(
             "SELECT new_inspection(%s, %s, %s);",
@@ -248,6 +258,29 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             fertilizer_data[2],
             organization_id,
             "The fertilizer's owner_id should match the organization's ID.",
+        )
+
+    def test_update_inspection_unauthorized_user(self):
+        # Update the JSON data for testing the update function
+        updated_input_json = self.created_data.copy()
+        updated_input_json["company"]["name"] = "Unauthorized Update"
+
+        updated_input_json_str = json.dumps(updated_input_json)
+
+        # Use a different inspector_id that is not associated with the inspection
+        unauthorized_inspector_id = self.other_user_id
+
+        # Attempt to invoke the update_inspection function with an unauthorized inspector_id
+        with self.assertRaises(psycopg.errors.RaiseException) as context:
+            self.cursor.execute(
+                "SELECT update_inspection(%s, %s, %s);",
+                (self.inspection_id, unauthorized_inspector_id, updated_input_json_str),
+            )
+
+        # Verify that the exception message indicates an authorization issue
+        self.assertIn(
+            "Unauthorized: Inspector ID mismatch or inspection not found",
+            str(context.exception),
         )
 
 

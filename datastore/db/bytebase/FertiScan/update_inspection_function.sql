@@ -451,11 +451,20 @@ DECLARE
     fertilizer_name text;
     registration_number text;
     verified boolean;
+    existing_inspector_id uuid;
 BEGIN
     -- Check if the provided inspection_id matches the one in the input JSON
     json_inspection_id := (p_input_json->>'inspection_id')::uuid;
     IF json_inspection_id IS NOT NULL AND json_inspection_id != inspection_id THEN
         RAISE EXCEPTION 'Inspection ID mismatch: % vs %', inspection_id, json_inspection_id;
+    END IF;
+
+    -- Check if the provided inspector_id matches the existing one
+    SELECT inspector_id INTO existing_inspector_id
+    FROM "fertiscan_0.0.9".inspection
+    WHERE id = p_inspection_id;
+    IF existing_inspector_id IS NULL OR existing_inspector_id != p_inspector_id THEN
+        RAISE EXCEPTION 'Unauthorized: Inspector ID mismatch or inspection not found';
     END IF;
 
     -- Upsert company information and get the ID
