@@ -27,15 +27,15 @@ class TestUpsertInspectionFunction(unittest.TestCase):
 
         # Insert a user to act as the inspector
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".users (email) VALUES (%s) RETURNING id;',
+            'INSERT INTO users (email) VALUES (%s) RETURNING id;',
             ("test_inspector@example.com",),
         )
         self.inspector_id = self.cursor.fetchone()[0]
 
         # Insert a label information record to link with inspection
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".label_information (lot_number, npk, registration_number, n, p, k) '
-            f"VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+            'INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) '
+            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
             ("L123456789", "10-20-30", "R123456", 10.0, 20.0, 30.0),
         )
         self.label_info_id = self.cursor.fetchone()[0]
@@ -49,14 +49,14 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_insert_new_inspection_minimal_fields(self):
         # Insert a new inspection with minimal required fields
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_inspection(%s, %s, %s, %s, %s, %s);',
+            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
             (None, self.label_info_id, self.inspector_id, None, None, False),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Verify that the inspection data is correctly saved
         self.cursor.execute(
-            f'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;',
             (inspection_id,),
         )
         saved_inspection = self.cursor.fetchone()
@@ -74,20 +74,20 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_update_existing_inspection(self):
         # Insert a new inspection first
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_inspection(%s, %s, %s, %s, %s, %s);',
+            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
             (None, self.label_info_id, self.inspector_id, None, None, False),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Update the inspection record
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_inspection(%s, %s, %s, %s, %s, %s);',
+            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
             (inspection_id, self.label_info_id, self.inspector_id, None, None, True),
         )
 
         # Verify the data is updated
         self.cursor.execute(
-            f'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;',
             (inspection_id,),
         )
         updated_inspection = self.cursor.fetchone()
@@ -101,14 +101,14 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_upsert_with_null_values(self):
         # Test handling of null values in optional fields
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_inspection(%s, %s, %s, %s, %s, %s);',
+            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
             (None, self.label_info_id, self.inspector_id, None, None, True),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Verify the data is correctly saved with nulls
         self.cursor.execute(
-            f'SELECT id, sample_id, picture_set_id FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            'SELECT id, sample_id, picture_set_id FROM inspection WHERE id = %s;',
             (inspection_id,),
         )
         saved_inspection = self.cursor.fetchone()

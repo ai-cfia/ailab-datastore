@@ -33,7 +33,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
 
         # Create a user to act as inspector
         self.cursor.execute(
-            f'INSERT INTO "{TEST_DB_SCHEMA}".users (email) VALUES (%s) RETURNING id;',
+            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
             ("inspector@example.com",),
         )
         self.inspector_id = str(self.cursor.fetchone()[0])
@@ -47,7 +47,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         # Create initial inspection data in the database
         self.picture_set_id = None
         self.cursor.execute(
-            f'SELECT "{TEST_DB_SCHEMA}".new_inspection(%s, %s, %s);',
+            "SELECT new_inspection(%s, %s, %s);",
             (self.inspector_id, self.picture_set_id, create_input_json_str),
         )
         self.created_data = self.cursor.fetchone()[0]
@@ -134,7 +134,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         )
 
         self.cursor.execute(
-            f'SELECT id FROM "{TEST_DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
+            "SELECT id FROM fertilizer WHERE latest_inspection_id = %s;",
             (self.inspection_id,),
         )
         fertilizer_id = self.cursor.fetchone()

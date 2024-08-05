@@ -52,9 +52,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
                 "phone_number": "+1 800 555 0123",
             }
         )
-        self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
-        )
+        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
         sample_label_info = json.dumps(
@@ -68,7 +66,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
@@ -82,13 +80,13 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
     def test_update_guaranteed(self):
         # Insert initial guaranteed analysis
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_guaranteed(%s, %s);',
+            "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.sample_guaranteed),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT read_name, value, unit FROM "{DB_SCHEMA}".guaranteed WHERE label_id = %s;',
+            "SELECT read_name, value, unit FROM guaranteed WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -108,13 +106,13 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
         # Update guaranteed analysis
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_guaranteed(%s, %s);',
+            "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.updated_guaranteed),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT read_name, value, unit FROM "{DB_SCHEMA}".guaranteed WHERE label_id = %s;',
+            "SELECT read_name, value, unit FROM guaranteed WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()

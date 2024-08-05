@@ -45,7 +45,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Insert new organization information
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);',
+            "SELECT upsert_organization_info(%s);",
             (sample_org_info_new,),
         )
         new_org_info_result = self.cursor.fetchone()
@@ -59,7 +59,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT name, website, phone_number, location_id FROM "{DB_SCHEMA}".organization_information WHERE id = %s;',
+            "SELECT name, website, phone_number, location_id FROM organization_information WHERE id = %s;",
             (new_org_info_id,),
         )
         saved_org_data = self.cursor.fetchone()
@@ -87,7 +87,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Verify location data
         self.cursor.execute(
-            f'SELECT address FROM "{DB_SCHEMA}".location WHERE id = %s;', (location_id,)
+            "SELECT address FROM location WHERE id = %s;", (location_id,)
         )
         saved_location_data = self.cursor.fetchone()
         self.assertIsNotNone(
@@ -112,7 +112,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Insert new organization information to get a new ID
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);',
+            "SELECT upsert_organization_info(%s);",
             (sample_org_info_new,),
         )
         new_org_info_result = self.cursor.fetchone()
@@ -131,7 +131,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Update existing organization information
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);',
+            "SELECT upsert_organization_info(%s);",
             (sample_org_info_existing,),
         )
         updated_org_info_result = self.cursor.fetchone()
@@ -149,7 +149,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT name, website, phone_number, location_id FROM "{DB_SCHEMA}".organization_information WHERE id = %s;',
+            "SELECT name, website, phone_number, location_id FROM organization_information WHERE id = %s;",
             (new_org_info_id,),
         )
         updated_org_data = self.cursor.fetchone()
@@ -170,7 +170,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
 
         # Verify location data
         self.cursor.execute(
-            f'SELECT address FROM "{DB_SCHEMA}".location WHERE id = %s;', (location_id,)
+            "SELECT address FROM location WHERE id = %s;", (location_id,)
         )
         updated_location_data = self.cursor.fetchone()
         self.assertIsNotNone(

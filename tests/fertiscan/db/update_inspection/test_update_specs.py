@@ -50,9 +50,7 @@ class TestUpdateSpecificationsFunction(unittest.TestCase):
                 "phone_number": "+1 800 555 0123",
             }
         )
-        self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
-        )
+        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
         sample_label_info = json.dumps(
@@ -66,7 +64,7 @@ class TestUpdateSpecificationsFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
@@ -80,13 +78,13 @@ class TestUpdateSpecificationsFunction(unittest.TestCase):
     def test_update_specifications(self):
         # Update specifications for the given label_id with initial data
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_specifications(%s, %s);',
+            "SELECT update_specifications(%s, %s);",
             (self.label_id, self.sample_specifications),
         )
 
         # Verify that the initial data is correctly saved
         self.cursor.execute(
-            f'SELECT humidity, ph, solubility, language FROM "{DB_SCHEMA}".specification WHERE label_id = %s;',
+            "SELECT humidity, ph, solubility, language FROM specification WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -100,13 +98,13 @@ class TestUpdateSpecificationsFunction(unittest.TestCase):
 
         # Update specifications for the given label_id with new data
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_specifications(%s, %s);',
+            "SELECT update_specifications(%s, %s);",
             (self.label_id, self.updated_specifications),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT humidity, ph, solubility, language FROM "{DB_SCHEMA}".specification WHERE label_id = %s;',
+            "SELECT humidity, ph, solubility, language FROM specification WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()

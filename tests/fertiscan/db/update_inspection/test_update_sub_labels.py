@@ -111,7 +111,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.sub_type_ids = {}
         for type_en, type_fr in sub_types:
             self.cursor.execute(
-                f'INSERT INTO "{DB_SCHEMA}".sub_type (type_en, type_fr) VALUES (%s, %s) RETURNING id;',
+                "INSERT INTO sub_type (type_en, type_fr) VALUES (%s, %s) RETURNING id;",
                 (type_en, type_fr),
             )
             self.sub_type_ids[type_en] = self.cursor.fetchone()[0]
@@ -124,9 +124,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                 "phone_number": "+1 800 555 0123",
             }
         )
-        self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
-        )
+        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
         sample_label_info = json.dumps(
@@ -140,7 +138,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
@@ -154,13 +152,13 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
     def test_update_sub_labels(self):
         # Insert initial sub labels
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_sub_labels(%s, %s);',
+            "SELECT update_sub_labels(%s, %s);",
             (self.label_id, self.sample_sub_labels),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT text_content_fr, text_content_en FROM "{DB_SCHEMA}".sub_label WHERE label_id = %s;',
+            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -191,13 +189,13 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         # Update sub labels
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_sub_labels(%s, %s);',
+            "SELECT update_sub_labels(%s, %s);",
             (self.label_id, self.updated_sub_labels),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT text_content_fr, text_content_en FROM "{DB_SCHEMA}".sub_label WHERE label_id = %s;',
+            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()

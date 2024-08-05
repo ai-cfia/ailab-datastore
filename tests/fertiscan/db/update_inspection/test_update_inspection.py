@@ -38,7 +38,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         self.inspector_id = None  # No inspector ID for this test case
         self.picture_set_id = None  # No picture set ID for this test case
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".new_inspection(%s, %s, %s);',
+            "SELECT new_inspection(%s, %s, %s);",
             (self.inspector_id, self.picture_set_id, create_input_json_str),
         )
         self.created_data = self.cursor.fetchone()[0]
@@ -67,13 +67,13 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Invoke the update_inspection function and capture the returned JSON
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_inspection(%s, %s, %s);',
+            "SELECT update_inspection(%s, %s, %s);",
             (self.inspection_id, self.inspector_id, updated_input_json_str),
         )
 
         # Verify the inspection record was updated in the database
         self.cursor.execute(
-            f'SELECT id, label_info_id, inspector_id, verified FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
             (self.inspection_id,),
         )
         updated_inspection = self.cursor.fetchone()
@@ -95,7 +95,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify that no fertilizer record was created
         self.cursor.execute(
-            f'SELECT COUNT(*) FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
+            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
             (self.inspection_id,),
         )
         fertilizer_count = self.cursor.fetchone()[0]
@@ -107,7 +107,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the company name was updated in the database
         self.cursor.execute(
-            f'SELECT name FROM "{DB_SCHEMA}".organization_information WHERE id = %s;',
+            "SELECT name FROM organization_information WHERE id = %s;",
             (self.created_data["company"]["id"],),
         )
         updated_company_name = self.cursor.fetchone()[0]
@@ -119,7 +119,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the metrics were updated
         self.cursor.execute(
-            f'SELECT value FROM "{DB_SCHEMA}".metric WHERE label_id = %s AND metric_type = %s;',
+            "SELECT value FROM metric WHERE label_id = %s AND metric_type = %s;",
             (self.created_data["product"]["id"], "weight"),
         )
         updated_weight_metric = self.cursor.fetchone()[0]
@@ -130,7 +130,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         self.cursor.execute(
-            f'SELECT value FROM "{DB_SCHEMA}".metric WHERE label_id = %s AND metric_type = %s;',
+            "SELECT value FROM metric WHERE label_id = %s AND metric_type = %s;",
             (self.created_data["product"]["id"], "density"),
         )
         updated_density_metric = self.cursor.fetchone()[0]
@@ -142,7 +142,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the specifications were updated
         self.cursor.execute(
-            f'SELECT ph FROM "{DB_SCHEMA}".specification WHERE label_id = %s;',
+            "SELECT ph FROM specification WHERE label_id = %s;",
             (self.created_data["product"]["id"],),
         )
         updated_ph = self.cursor.fetchone()[0]
@@ -154,7 +154,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the ingredient value was updated
         self.cursor.execute(
-            f'SELECT value FROM "{DB_SCHEMA}".ingredient WHERE label_id = %s AND name = %s;',
+            "SELECT value FROM ingredient WHERE label_id = %s AND name = %s;",
             (self.created_data["product"]["id"], "Bone meal"),
         )
         updated_ingredient_value = self.cursor.fetchone()[0]
@@ -166,7 +166,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the guaranteed analysis value was updated
         self.cursor.execute(
-            f'SELECT value FROM "{DB_SCHEMA}".guaranteed WHERE label_id = %s AND read_name = %s;',
+            "SELECT value FROM guaranteed WHERE label_id = %s AND read_name = %s;",
             (self.created_data["product"]["id"], "Total Nitrogen (N)"),
         )
         updated_nitrogen_value = self.cursor.fetchone()[0]
@@ -185,13 +185,13 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Invoke the update_inspection function
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_inspection(%s, %s, %s);',
+            "SELECT update_inspection(%s, %s, %s);",
             (self.inspection_id, self.inspector_id, updated_input_json_str),
         )
 
         # Verify the inspection record was updated in the database
         self.cursor.execute(
-            f'SELECT id, label_info_id, inspector_id, verified FROM "{DB_SCHEMA}".inspection WHERE id = %s;',
+            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
             (self.inspection_id,),
         )
         updated_inspection = self.cursor.fetchone()
@@ -213,7 +213,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify that a fertilizer record was created
         self.cursor.execute(
-            f'SELECT id FROM "{DB_SCHEMA}".fertilizer WHERE latest_inspection_id = %s;',
+            "SELECT id FROM fertilizer WHERE latest_inspection_id = %s;",
             (self.inspection_id,),
         )
         fertilizer_id = self.cursor.fetchone()[0]
@@ -223,7 +223,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the fertilizer details are correct
         self.cursor.execute(
-            f'SELECT name, registration_number, owner_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
+            "SELECT name, registration_number, owner_id FROM fertilizer WHERE id = %s;",
             (fertilizer_id,),
         )
         fertilizer_data = self.cursor.fetchone()
@@ -240,7 +240,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Check if the owner_id matches the organization created for the company
         self.cursor.execute(
-            f'SELECT id FROM "{DB_SCHEMA}".organization WHERE name = %s;',
+            "SELECT id FROM organization WHERE name = %s;",
             (updated_input_json["company"]["name"],),
         )
         organization_id = self.cursor.fetchone()[0]

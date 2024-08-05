@@ -36,7 +36,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);',
+            "SELECT upsert_organization_info(%s);",
             (self.sample_org_info,),
         )
         self.organization_info_id = self.cursor.fetchone()[0]
@@ -61,7 +61,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
 
         # Insert new label information
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.organization_info_id, self.organization_info_id),
         )
         label_info_id = self.cursor.fetchone()[0]
@@ -71,7 +71,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM "{DB_SCHEMA}".label_information WHERE id = %s;',
+            "SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM label_information WHERE id = %s;",
             (label_info_id,),
         )
         saved_label_data = self.cursor.fetchone()
@@ -123,7 +123,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
 
         # Insert new label information to get a valid label_info_id
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.organization_info_id, self.organization_info_id),
         )
         label_info_id = self.cursor.fetchone()[0]
@@ -143,7 +143,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
 
         # Update existing label information
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (updated_label_info, self.organization_info_id, self.organization_info_id),
         )
         updated_label_info_id = self.cursor.fetchone()[0]
@@ -157,7 +157,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM "{DB_SCHEMA}".label_information WHERE id = %s;',
+            "SELECT lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id FROM label_information WHERE id = %s;",
             (updated_label_info_id,),
         )
         updated_label_data = self.cursor.fetchone()

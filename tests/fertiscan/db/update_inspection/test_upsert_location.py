@@ -36,7 +36,7 @@ class TestUpsertLocationFunction(unittest.TestCase):
 
         # Insert a new location
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_location(%s, %s);', (None, sample_new_address)
+            "SELECT upsert_location(%s, %s);", (None, sample_new_address)
         )
         new_location_result = self.cursor.fetchone()
 
@@ -49,7 +49,7 @@ class TestUpsertLocationFunction(unittest.TestCase):
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT address FROM "{DB_SCHEMA}".location WHERE id = %s;',
+            "SELECT address FROM location WHERE id = %s;",
             (new_location_id,),
         )
         saved_data = self.cursor.fetchone()
@@ -64,14 +64,14 @@ class TestUpsertLocationFunction(unittest.TestCase):
 
         # Insert a new location to update
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_location(%s, %s);', (None, sample_new_address)
+            "SELECT upsert_location(%s, %s);", (None, sample_new_address)
         )
         new_location_result = self.cursor.fetchone()
         new_location_id = new_location_result[0]
 
         # Update the location
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_location(%s, %s);',
+            "SELECT upsert_location(%s, %s);",
             (new_location_id, sample_updated_address),
         )
         updated_location_result = self.cursor.fetchone()
@@ -88,7 +88,7 @@ class TestUpsertLocationFunction(unittest.TestCase):
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT address FROM "{DB_SCHEMA}".location WHERE id = %s;',
+            "SELECT address FROM location WHERE id = %s;",
             (new_location_id,),
         )
         updated_data = self.cursor.fetchone()

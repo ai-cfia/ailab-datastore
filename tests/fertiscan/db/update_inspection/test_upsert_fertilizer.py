@@ -27,8 +27,8 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Prepopulate organization_information table
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".organization_information (name, website, phone_number) '
-            f"VALUES (%s, %s, %s) RETURNING id;",
+            "INSERT INTO organization_information (name, website, phone_number) "
+            "VALUES (%s, %s, %s) RETURNING id;",
             (
                 "Test Organization Information",
                 "http://www.testorginfo.com",
@@ -39,38 +39,37 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Prepopulate location table
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".location (name, address) '
-            f"VALUES (%s, %s) RETURNING id;",
+            "INSERT INTO location (name, address) " "VALUES (%s, %s) RETURNING id;",
             ("Test Location", "123 Test Address, Test City"),
         )
         self.location_id = self.cursor.fetchone()[0]
 
         # Prepopulate organization table with references to organization_information and location
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".organization (name, information_id, main_location_id) '
-            f"VALUES (%s, %s, %s) RETURNING id;",
+            "INSERT INTO organization (name, information_id, main_location_id) "
+            "VALUES (%s, %s, %s) RETURNING id;",
             ("Test Organization", self.organization_info_id, self.location_id),
         )
         self.organization_id = self.cursor.fetchone()[0]
 
         # Insert a user to act as the inspector
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".users (email) VALUES (%s) RETURNING id;',
+            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
             ("test_inspector@example.com",),
         )
         self.inspector_id = self.cursor.fetchone()[0]
 
         # Insert a label information record to link with inspection
         self.cursor.execute(
-            f'INSERT INTO "{DB_SCHEMA}".label_information (lot_number, npk, registration_number, n, p, k) '
-            f"VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+            "INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) "
+            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
             ("L123456789", "10-20-30", "R123456", 10.0, 20.0, 30.0),
         )
         self.label_info_id = self.cursor.fetchone()[0]
 
         # Insert an inspection record
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_inspection(%s, %s, %s, %s, %s, %s);',
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);",
             (None, self.label_info_id, self.inspector_id, None, None, False),
         )
         self.inspection_id = self.cursor.fetchone()[0]
@@ -89,7 +88,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Insert new fertilizer
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_fertilizer(%s, %s, %s, %s);',
+            "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (fertilizer_name, registration_number, owner_id, latest_inspection_id),
         )
         fertilizer_id = self.cursor.fetchone()[0]
@@ -99,7 +98,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT name, registration_number, owner_id, latest_inspection_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
+            "SELECT name, registration_number, owner_id, latest_inspection_id FROM fertilizer WHERE id = %s;",
             (fertilizer_id,),
         )
         saved_fertilizer_data = self.cursor.fetchone()
@@ -135,7 +134,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Insert new fertilizer to get a valid fertilizer_id
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_fertilizer(%s, %s, %s, %s);',
+            "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (fertilizer_name, registration_number, owner_id, latest_inspection_id),
         )
         fertilizer_id = self.cursor.fetchone()[0]
@@ -144,7 +143,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         updated_registration_number = "T67890"
 
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_fertilizer(%s, %s, %s, %s);',
+            "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (
                 fertilizer_name,
                 updated_registration_number,
@@ -163,7 +162,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT name, registration_number, owner_id, latest_inspection_id FROM "{DB_SCHEMA}".fertilizer WHERE id = %s;',
+            "SELECT name, registration_number, owner_id, latest_inspection_id FROM fertilizer WHERE id = %s;",
             (updated_fertilizer_id,),
         )
         updated_fertilizer_data = self.cursor.fetchone()

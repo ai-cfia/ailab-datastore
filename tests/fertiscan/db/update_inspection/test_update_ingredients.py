@@ -62,9 +62,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
                 "phone_number": "+1 800 555 0123",
             }
         )
-        self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
-        )
+        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
         sample_label_info = json.dumps(
@@ -78,7 +76,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            "SELECT upsert_label_information(%s, %s, %s);",
             (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
@@ -92,13 +90,13 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
     def test_update_organic_ingredients(self):
         # Insert initial organic ingredients
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_ingredients(%s, %s);',
+            "SELECT update_ingredients(%s, %s);",
             (self.label_id, self.sample_organic_ingredients),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT name, value, unit, language FROM "{DB_SCHEMA}".ingredient WHERE label_id = %s;',
+            "SELECT name, value, unit, language FROM ingredient WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -117,13 +115,13 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
 
         # Update organic ingredients
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_ingredients(%s, %s);',
+            "SELECT update_ingredients(%s, %s);",
             (self.label_id, self.updated_organic_ingredients),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT name, value, unit, language FROM "{DB_SCHEMA}".ingredient WHERE label_id = %s;',
+            "SELECT name, value, unit, language FROM ingredient WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()

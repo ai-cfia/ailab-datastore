@@ -53,7 +53,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_organization_info(%s);', (sample_org_info,)
+            'SELECT upsert_organization_info(%s);', (sample_org_info,)
         )
         self.company_info_id = self.cursor.fetchone()[0]
 
@@ -68,7 +68,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             }
         )
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".upsert_label_information(%s, %s, %s);',
+            'SELECT upsert_label_information(%s, %s, %s);',
             (sample_label_info, self.company_info_id, self.company_info_id),
         )
         self.label_id = self.cursor.fetchone()[0]
@@ -82,13 +82,13 @@ class TestUpdateMetricsFunction(unittest.TestCase):
     def test_update_metrics(self):
         # Insert initial metrics
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_metrics(%s, %s);',
+            'SELECT update_metrics(%s, %s);',
             (self.label_id, self.sample_metrics),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            f'SELECT value, unit_id FROM "{DB_SCHEMA}".metric WHERE label_id = %s;',
+            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -107,13 +107,13 @@ class TestUpdateMetricsFunction(unittest.TestCase):
 
         # Update metrics
         self.cursor.execute(
-            f'SELECT "{DB_SCHEMA}".update_metrics(%s, %s);',
+            'SELECT update_metrics(%s, %s);',
             (self.label_id, self.updated_metrics),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            f'SELECT value, unit_id FROM "{DB_SCHEMA}".metric WHERE label_id = %s;',
+            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()
@@ -135,7 +135,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
     def _get_unit_name(self, unit_id):
         # Helper function to fetch the unit name by unit_id
         self.cursor.execute(
-            f'SELECT unit FROM "{DB_SCHEMA}".unit WHERE id = %s;', (unit_id,)
+            'SELECT unit FROM unit WHERE id = %s;', (unit_id,)
         )
         return self.cursor.fetchone()[0]
 
