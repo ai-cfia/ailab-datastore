@@ -631,7 +631,6 @@ class test_picture_set(unittest.TestCase):
         """
         This test checks if the delete_picture_set_with_archive function correctly archive the picture set in dev container and delete it from user container
         """
-        print(self.connection_str)
         # Create inferences for pictures in the picture set
         inferences = []
         for picture_id in self.pictures_ids:
