@@ -8,10 +8,47 @@ import json
 import datastore.db.queries.seed as seed
 import datastore.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
+from pydantic import BaseModel, ValidationError
+from typing import Optional
 
 class MissingKeyError(Exception):
     pass
 
+class Seed(BaseModel):
+    label: str
+    object_id: str
+    score: float
+    
+class Box(BaseModel):
+    topX : float
+    topY : float
+    bottomX : float
+    bottomY : float
+
+class Model(BaseModel):
+    name: str
+    version: str
+
+class InferenceObject(BaseModel):
+    box : Box
+    box_id : str
+    color : str
+    label : str
+    object_type_id : int 
+    overlapping : bool
+    overlappingIndices : list[float]
+    score : float
+    topN: list[Seed]
+    top_id : str
+
+class Inference(BaseModel):
+    boxes: list[InferenceObject]
+    filename: str
+    inference_id: str
+    labelOccurrence: dict[str, int]
+    totalBoxes: int
+    models: Optional[list[Model]]
+    pipeline_id: Optional[str]
 
 def build_inference_import(model_inference: dict) -> str:
     """
@@ -71,11 +108,12 @@ def compare_object_metadata(object1:dict , object2:dict) -> bool:
     Returns:
     - True if the objects are the same, False otherwise.
     """
-    keys = ["topX", "topY", "bottomX", "bottomY"]
-    for key in keys:
-        if object1[key] != object2[key]:
-            return False
-    return True
+    try :
+        box1 = Box(**object1)
+        box2 = Box(**object2)
+        return box1 == box2
+    except ValidationError as e :
+        raise e
 
 def rebuild_inference(cursor, inf) :
     """
@@ -87,34 +125,35 @@ def rebuild_inference(cursor, inf) :
     Returns:
     - The inference object as a dict.
     """
-    inference_id = str(inf[0])
-    inference_data = json.loads(json.dumps(inf[1]))
-    pipeline_id = str(inf[2])
+    try :
+        inference_id = str(inf[0])
+        inference_data = json.loads(json.dumps(inf[1]))
+        pipeline_id = str(inf[2])
+        
+        models = []
+        if pipeline_id is not None :
+            pipeline = machine_learning.get_pipeline(cursor, pipeline_id)
+            models_data = pipeline["models"]
+            version = pipeline["version"]
+            for model_name in models_data :
+                model = Model(name=model_name, version=version)
+                models.append(model)
+        
+        objects = inference.get_objects_by_inference(cursor, inference_id)
+        boxes = rebuild_boxes_export(cursor, objects)
     
-    models = []
-    if pipeline_id is not None :
-        pipeline = machine_learning.get_pipeline(cursor, pipeline_id)
-        models_data = pipeline["models"]
-        version = pipeline["version"]
-        for model_name in models_data :
-            model = {}
-            model["name"] = model_name
-            model["version"] = version
-            models.append(model)
-    
-    objects = inference.get_objects_by_inference(cursor, inference_id)
-    boxes = rebuild_boxes_export(cursor, objects)
-    
-    inf = {
-        "boxes": boxes,
-        "filename": inference_data.get("filename"),
-        "inference_id": inference_id,
-        "labelOccurrence" : inference_data.get("labelOccurrence"),
-        "totalBoxes" : inference_data.get("totalBoxes"),
-        "models" : models,
-        "pipeline_id" : pipeline_id,
-    }
-    return inf
+        inf = Inference(
+            boxes = boxes,
+            filename= inference_data.get("filename"),
+            inference_id = inference_id,
+            labelOccurrence = inference_data.get("labelOccurrence"),
+            totalBoxes= inference_data.get("totalBoxes"),
+            models = models,
+            pipeline_id = pipeline_id
+        )
+        return inf.model_dump()
+    except ValidationError as e :
+        raise e
 
 
 def rebuild_boxes_export(cursor, objects) :
@@ -127,51 +166,46 @@ def rebuild_boxes_export(cursor, objects) :
     Returns:
     - The boxes object as an array of dict.
     """
-    boxes = []
-    for object in objects:
-        box_id = str(object[0])
-        
-        box_metadata = object[1]
-        box_metadata = json.loads(json.dumps(box_metadata))
-        
-        box = box_metadata.get("box")
-        color = box_metadata.get("color")
-        overlapping = box_metadata.get("overlapping")
-        overlappingIndices = box_metadata.get("overlappingIndices")
-        
-        top_id = str(inference.get_inference_object_top_id(cursor, box_id))
-        top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
-        
-        seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
-        topN = rebuild_topN_export(cursor, seed_objects)
-        
-        top_score = 0
-        if inference.is_object_verified(cursor, box_id):
-            top_score = 1
-        else :
-            for seed_object in seed_objects:
-                score = seed_object[2]
-                seed_id = str(seed_object[1])
-                if seed_id == top_seed_id:
-                    top_score = score
-        top_label = seed.get_seed_name(cursor, top_seed_id)
+    try :
+        boxes = []
+        for object in objects:
+            box_id = str(object[0])
+            
+            box_metadata = object[1]
+            box_metadata = json.loads(json.dumps(box_metadata))
+            
+            top_id = str(inference.get_inference_object_top_id(cursor, box_id))
+            top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
+            
+            seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
+            topN = rebuild_topN_export(cursor, seed_objects)
+            
+            top_score = 0
+            if inference.is_object_verified(cursor, box_id):
+                top_score = 1
+            else :
+                top_score = max(topN, key=lambda seed: seed.score).score
+            
+            object = InferenceObject(
+                    box = Box(**box_metadata.get("box")),
+                    box_id = box_id,
+                    color = box_metadata.get("color"),
+                    label = seed.get_seed_name(cursor, top_seed_id),
+                    object_type_id = 1,
+                    overlapping = box_metadata.get("overlapping"),
+                    overlappingIndices = box_metadata.get("overlappingIndices"),
+                    score = top_score,
+                    topN = topN,
+                    top_id = top_id     
+                )
 
-        object = {"box" : box, 
-                    "box_id": box_id, 
-                    "color" : color, 
-                    "label" : top_label, 
-                    "object_type_id" : 1, 
-                    "overlapping" : overlapping, 
-                    "overlappingIndices" : overlappingIndices, 
-                    "score" : top_score, 
-                    "topN": topN, 
-                    "top_id" : top_id}
+            boxes.append(object)
+        return boxes
+    except ValidationError as e :
+        raise e
+    
 
-        boxes.append(object)
-    return boxes
-
-
-def rebuild_topN_export(cursor, seed_objects) :
+def rebuild_topN_export(cursor, seed_objects) -> list[Seed]:
     """
     This function rebuilds the topN object from the database.
 
@@ -181,11 +215,15 @@ def rebuild_topN_export(cursor, seed_objects) :
     Returns:
     - The topN object as an array of dict.
     """
-    topN = []
-    for seed_obj in seed_objects :
-        seed_obj = {
-            "label": seed.get_seed_name(cursor, str(seed_obj[1])), 
-            "object_id": str(seed_obj[0]), 
-            "score": seed_obj[2]}
-        topN.append(seed_obj)
-    return topN
+    try :
+        topN = []
+        for seed_obj in seed_objects :
+            res = Seed(
+                label = seed.get_seed_name(cursor, str(seed_obj[1])), 
+                object_id = str(seed_obj[0]), 
+                score = seed_obj[2]
+            )
+            topN.append(res)
+        return topN
+    except ValidationError as e :
+        raise e
