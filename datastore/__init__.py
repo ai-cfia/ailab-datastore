@@ -283,7 +283,7 @@ async def upload_pictures(
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
                 folder_name = picture_set_id
-        pic_ids=[]
+        pic_ids = []
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(
@@ -310,6 +310,8 @@ async def upload_pictures(
         return pic_ids
     except BlobUploadError or azure_storage.UploadImageError:
         raise BlobUploadError("Error uploading the picture")
+    except user.UserNotFoundError:
+        raise
     except Exception as e:
         print(e)
         raise Exception("Datastore Unhandled Error")
