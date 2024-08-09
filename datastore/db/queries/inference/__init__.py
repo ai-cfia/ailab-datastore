@@ -90,7 +90,31 @@ def get_inference(cursor, inference_id: str):
         return res
     except Exception:
         raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")
-
+    
+def get_inference_picture_id(cursor, inference_id: str):
+    """
+    This functions retrieve picture_id of a given inference
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_id (str): The UUID of the inference.
+    """
+    try :
+        query = """
+            SELECT 
+                picture_id
+            FROM 
+                inference
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inference_id,))
+        result = cursor.fetchone()[0]
+        return result
+    except Exception:
+        raise InferenceNotFoundError(
+            f"Error: could not get picture_id for the inference {inference_id}")
+    
 def get_inference_by_picture_id(cursor, picture_id: str):
     """
     This functions retrieve inference of a given picture
