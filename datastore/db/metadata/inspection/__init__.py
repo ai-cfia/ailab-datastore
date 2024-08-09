@@ -18,10 +18,10 @@ class MetadataFormattingError(Exception):
     pass
 
 class OrganizationInformation(BaseModel):
-    name: str
-    address: str
-    website: str
-    phone_number: str
+    name: str = ""
+    address: str = ""
+    website: str = ""
+    phone_number: str = ""
     
 class Value(BaseModel):
     value: Optional[float] = None
@@ -228,6 +228,8 @@ def build_inspection_import(analysis_form: dict) -> str:
         raise MetadataFormattingError("Error InspectionCreationError not created: "+ str(e)) from None
     # print(inspection_formatted.model_dump_json())
     return inspection_formatted.model_dump_json()
+
+def build_inspection_export(cursor, placeholder) -> str:
 
 
 def split_value_unit(value_unit: str) -> dict:

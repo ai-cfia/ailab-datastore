@@ -604,3 +604,28 @@ def delete_picture_set(cursor, picture_set_id):
         cursor.execute(query, (picture_set_id,))
     except Exception:
         raise PictureSetDeleteError(f"Error: PictureSet not deleted:{picture_set_id}")
+
+def get_picture_in_picture_set(cursor, picture_set_id):
+    """
+    This function retrieves all the pictures of a specific picture_set from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_set_id (str): The UUID of the PictureSet to retrieve the pictures from.
+
+    Returns:
+    - The pictures in json format.
+    """
+    try:
+        query = """
+            SELECT
+                picture
+            FROM
+                picture
+            WHERE
+                picture_set_id = %s
+            """
+        cursor.execute(query, (picture_set_id,))
+        return cursor.fetchall()
+    except Exception:
+        raise GetPictureError(f"Error: Error while getting pictures for picture_set:{picture_set_id}")

@@ -20,6 +20,9 @@ class InspectionCreationError(Exception):
 class InspectionUpdateError(Exception):
     pass
 
+class InspectionNotFoundError(Exception):
+    pass
+
 
 def new_inspection(cursor, user_id, picture_set_id, verified=False):
     """
@@ -75,6 +78,34 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
     except Exception as e:
         raise InspectionCreationError(e.__str__())
 
+def is_a_inspection_id(cursor, inspection_id):
+    """
+    This function checks if the inspection exists in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The value if the inspection exists.
+    """
+
+    try:
+        query = """
+            SELECT 
+                EXISTS(
+                    SELECT 
+                        1
+                    FROM 
+                        inspection
+                    WHERE 
+                        id = %s
+                )
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
 def is_inspection_verified(cursor, inspection_id):
     """
@@ -135,8 +166,45 @@ def get_inspection(cursor, inspection_id):
         return cursor.fetchone()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_inspection_fk(cursor, inspection_id):
+    """
+    This function gets the foreign keys of the inspection from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The foreign keys of the inspection.
+    """
+
+    try:
+        query = """
+            SELECT 
+                inspection.label_info_id,
+                inspection.inspector_id,
+                inspection.picture_set_id,
+                label_info.company_info_id,
+                label_info.manufacturer_info_id,
+                inspection.fertilizer_id,
+                inspection.sample_id
+            FROM 
+                inspection
+            LEFT JOIN
+                label_information as label_info
+            ON
+                inspection.label_info_id = label_information.id
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
     
-def get_all_user_unverified_inspection(cursor, user_id):
+def get_all_user_inspection_filter_verified(cursor, user_id,verified:bool):
     """
     This function gets all the unverified inspection of a user from the database.
 
@@ -158,18 +226,23 @@ def get_all_user_unverified_inspection(cursor, user_id):
                 inspection.picture_set_id,
                 label_info.id as label_info_id,
                 label_info.product_name,
-                label_info.company_info_id,
                 label_info.manufacturer_info_id
+                company_info.id as company_info_id,
+                company_info.company_name
             FROM 
                 inspection
             LEFT JOIN 
                 label_information as label_info
             ON
                 inspection.label_info_id = label_information.id
+            LEFT JOIN
+                organization_information as company_info
+            ON
+                label_info.company_info_id = company_info.id
             WHERE 
-                inspector_id = %s AND verified = FALSE
+                inspection.inspector_id = %s AND inspection.verified = %s
             """
-        cursor.execute(query, (user_id,))
+        cursor.execute(query, (user_id,verified,))
         return cursor.fetchall()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
