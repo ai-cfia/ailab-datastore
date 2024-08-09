@@ -57,13 +57,13 @@ class test_specification(unittest.TestCase):
 
     def test_new_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
         )
         self.assertTrue(validator.is_valid_uuid(specification_id))
 
     def test_get_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
         )
         specification_data = specification.get_specification(
             self.cursor, specification_id
@@ -79,10 +79,10 @@ class test_specification(unittest.TestCase):
     def test_get_all_specification(self):
         other_humidity = 40
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
         )
         specif_id = specification.new_specification(
-            self.cursor, other_humidity, self.ph, self.solubility, self.label_id
+            self.cursor, other_humidity, self.ph, self.solubility, self.label_id, self.language, False
         )
         specification_data = specification.get_all_specifications(
             self.cursor, self.label_id

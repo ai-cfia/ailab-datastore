@@ -185,6 +185,18 @@ class test_organization_information(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
+    def test_new_organization_located(self):
+        id = organization.new_organization_info(
+            self.cursor, self.name, self.website, self.phone, self.location_address
+        )
+        self.assertTrue(validator.is_valid_uuid(id))
+
+    def test_new_organization_loacted_no_location(self):
+        id = organization.new_organization_info(
+            self.cursor, self.name, self.website, self.phone, 'Not-an-address'
+        )
+        self.assertTrue(validator.is_valid_uuid(id))
+
     def test_new_organization_info_no_location(self):
         id = organization.new_organization_info(
             self.cursor, self.name, self.website, self.phone

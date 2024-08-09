@@ -150,9 +150,9 @@ class test_micronutrient(unittest.TestCase):
             self.micronutrient_name,
             self.micronutrient_value,
             self.micronutrient_unit,
-            self.element_id,
             self.label_information_id,
             self.language,
+            self.element_id,
             False
         )
         self.assertTrue(validator.is_valid_uuid(micronutrient_id))
@@ -305,8 +305,8 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
-            self.element_id,
             self.label_information_id,
+            self.element_id,
             False
         )
         self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
@@ -317,8 +317,8 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
-            self.element_id,
             self.label_information_id,
+            self.element_id,
             False
         )
         guaranteed_analysis_data = nutrients.get_guaranteed(
@@ -347,8 +347,8 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
-            self.element_id,
             self.label_information_id,
+            self.element_id,
             False
         )
         guaranteed_analysis_data = nutrients.get_full_guaranteed(
@@ -379,17 +379,17 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
-            self.element_id,
             self.label_information_id,
+            self.element_id,
             False
         )
         guaranteed_id = nutrients.new_guaranteed(
             self.cursor,
-            other_name,
+            self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
-            self.element_id,
             self.label_information_id,
+            self.element_id,
             False
         )
         guaranteed_analysis_data = nutrients.get_all_guaranteeds(

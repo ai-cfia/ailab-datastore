@@ -4,7 +4,7 @@ It tests the functions in the user, seed and picture modules.
 """
 
 import unittest
-from datastore.db.queries import metric
+from datastore.db.queries import metric,label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
@@ -60,19 +60,40 @@ class test_metric(unittest.TestCase):
         self.metric_edited = False
         self.metric_type = "volume"
 
+        self.lot_number = "lot_number"
+        self.npk = "npk"
+        self.registration_number = "registration_number"
+        self.n = 10.0
+        self.p = 20.0
+        self.k = 30.0
+        self.weight = None
+        self.density = None
+        self.volume = None
+        self.label_id = label.new_label_information(
+            self.cursor,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            None,
+            None
+        )
+
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor, self.metric_value, self.unit_unit,self.label_id, self.metric_type, self.metric_edited
         )
         self.assertTrue(validator.is_valid_uuid(metric_id))
 
     def test_get_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor, self.metric_value, self.unit_unit,self.label_id, self.metric_type, self.metric_edited
         )
         metric_data = metric.get_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], self.metric_value)
@@ -82,7 +103,7 @@ class test_metric(unittest.TestCase):
 
     def test_get_full_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor, self.metric_value, self.unit_unit,self.label_id, self.metric_type, self.metric_edited
         )
         metric_data = metric.get_full_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], metric_id)

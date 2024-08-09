@@ -12,7 +12,7 @@ class SpecificationNotFoundError(Exception):
     pass
 
 
-def new_specification(cursor, humidity, ph, solubility, label_id, edited=False,language="en"):
+def new_specification(cursor, humidity, ph, solubility, label_id, language, edited=False,):
     """
     This function creates a new specification in the database.
     Parameters:
@@ -26,11 +26,15 @@ def new_specification(cursor, humidity, ph, solubility, label_id, edited=False,l
     - The UUID of the new specification.
     """
     try:
+        if language not in ["en", "fr"]:
+            raise SpecificationCreationError("Error: language must be either 'en' or 'fr'")
         query = """
             SELECT new_specification(%s, %s, %s, %s, %s);
         """
-        cursor.execute(query, (humidity, ph, solubility, edited, label_id))
+        cursor.execute(query, (humidity, ph, solubility, edited, language,label_id))
         return cursor.fetchone()[0]
+    except SpecificationCreationError:
+        raise
     except Exception:
         raise SpecificationCreationError("Error: could not create the specification")
 

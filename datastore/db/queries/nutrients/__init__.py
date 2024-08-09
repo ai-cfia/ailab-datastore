@@ -135,7 +135,7 @@ def get_element_id_symbol(cursor, symbol):
 
 
 def new_micronutrient(
-    cursor, read_name:str, value:float, unit:str,  label_id,language:str, edited=False
+    cursor, read_name:str, value:float, unit:str,  label_id,language:str, element_id:int,edited=False
 ):
     """
     This function add a new micronutrient in the database.
@@ -156,9 +156,9 @@ def new_micronutrient(
         if language.lower() not in ['fr','en']:
             raise MicronutrientCreationError('Language not supported')
         query = """
-            SELECT new_micronutrient(%s, %s, %s, %s, %s, %s,%s);
+            SELECT new_micronutrient(%s, %s, %s, %s, %s, %s,%s,%s);
             """
-        cursor.execute(query, (read_name, value, unit, label_id, language,edited))
+        cursor.execute(query, (read_name, value, unit, label_id, language,element_id,edited))
         return cursor.fetchone()[0]
     except Exception:
         raise MicronutrientCreationError
@@ -270,7 +270,7 @@ def get_all_micronutrients(cursor, label_id):
         raise MicronutrientNotFoundError
 
 
-def new_guaranteed_analysis(cursor, read_name, value, unit, label_id,edited:bool=False, element_id:int=None):
+def new_guaranteed_analysis(cursor, read_name, value, unit, label_id, element_id:int=None,edited:bool=False):
     """
     This function add a new guaranteed in the database.
 
