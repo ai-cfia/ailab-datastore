@@ -5,7 +5,8 @@ read_unit FLOAT,
 label_id UUID,
 language "fertiscan_0.0.11".language,
 organic BOOLEAN,
-active BOOLEAN
+active BOOLEAN,
+edited BOOLEAN = FALSE
 )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -30,7 +31,7 @@ BEGIN
         name,
         value,
         read_unit,
-        FALSE, -- Assuming edited status
+        edited, -- Assuming edited status
         label_id,  
         language
     )

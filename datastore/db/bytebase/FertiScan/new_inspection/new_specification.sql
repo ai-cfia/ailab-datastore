@@ -3,7 +3,8 @@ humidity FLOAT,
 ph FLOAT,
 solubility FLOAT,
 language "fertiscan_0.0.11".language,
-label_id UUID
+label_id UUID,
+edited BOOLEAN = FALSE
 )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -18,7 +19,7 @@ BEGIN
 				humidity,
 				ph,
 				solubility,
-				FALSE,
+				edited,
 				language,
 				label_id
 			)

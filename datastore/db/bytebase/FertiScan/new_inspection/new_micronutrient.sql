@@ -3,7 +3,9 @@ name TEXT,
 value FLOAT,
 unit TEXT,
 label_id UUID,
-language "fertiscan_0.0.11".language
+language "fertiscan_0.0.11".language,
+edited BOOLEAN = FALSE,
+element_id int = NULL
 )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -13,14 +15,15 @@ DECLARE
     record RECORD
     _id uuid;
 BEGIN
-	INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language)
+	INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language,element_id)
 	VALUES (
 		name,
 	    value,
 	    unit,
 		FALSE,
 		label_id,
-		language
+		language,
+		element_id
 	)
     RETURNING id INTO micronutrient_id;
     RETURN micronutrient_id;

@@ -12,7 +12,7 @@ class SpecificationNotFoundError(Exception):
     pass
 
 
-def new_specification(cursor, humidity, ph, solubility, label_id, edited=False):
+def new_specification(cursor, humidity, ph, solubility, label_id, edited=False,language="en"):
     """
     This function creates a new specification in the database.
     Parameters:
@@ -27,12 +27,7 @@ def new_specification(cursor, humidity, ph, solubility, label_id, edited=False):
     """
     try:
         query = """
-            INSERT INTO 
-                specification (humidity, ph, solubility, edited,label_id)
-            VALUES 
-                (%s, %s, %s, %s,%s)
-            RETURNING 
-                id
+            SELECT new_specification(%s, %s, %s, %s, %s);
         """
         cursor.execute(query, (humidity, ph, solubility, edited, label_id))
         return cursor.fetchone()[0]

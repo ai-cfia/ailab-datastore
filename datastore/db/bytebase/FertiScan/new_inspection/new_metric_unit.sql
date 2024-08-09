@@ -2,7 +2,8 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_metric_unit(
     value FLOAT,
     read_unit TEXT,
     label_id UUID,
-    metric_type "fertiscan_0.0.11".metric_type
+    metric_type "fertiscan_0.0.11".metric_type,
+    edited BOOLEAN = FALSE
     )
 RETURNS UUID 
 LANGUAGE plpgsql
@@ -26,7 +27,13 @@ BEGIN
 	   
 	   	 -- Insert into metric for weight
 	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
-	    VALUES (value_float, unit_id, FALSE,metric_type,label_id);
+	    VALUES (
+            value_float, 
+            unit_id, 
+            edited,
+            metric_type,
+            label_id
+            );
         RETURN metric_id;
     RETURN metric_id;
 END;

@@ -2,7 +2,8 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_sub_label(
 content_fr TEXT,
 content_en TEXT,
 label_id UUID,
-sub_type_id UUID
+sub_type_id UUID,
+edited BOOLEAN = FALSE
 )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -17,7 +18,7 @@ BEGIN
 	    content_fr,
 		content_en,
 		label_id,
-		FALSE,
+		edited,
 		sub_type_id
 	)
     RETURNING id INTO sub_label_id;

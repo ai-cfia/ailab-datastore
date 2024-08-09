@@ -1,4 +1,10 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_organization_located(name,address,website,phone_number)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_organization_located(
+    name TEXT,
+    address TEXT,
+    website TEXT,
+    phone_number TEXT,
+    edited BOOLEAN = FALSE
+    )
 RETURNS uuid 
 LANGUAGE plpgsql
 AS $function$

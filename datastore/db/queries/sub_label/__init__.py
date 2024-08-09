@@ -37,12 +37,7 @@ def new_sub_label(cursor, text_fr, text_en, label_id, sub_type_id, edited=False)
     """
     try:
         query = """
-            INSERT INTO 
-                sub_label (text_content_fr, text_content_en, label_id, sub_type_id, edited)
-            VALUES 
-                (%s, %s, %s, %s, %s)
-            RETURNING 
-                id
+            SELECT new_sub_label(%s, %s, %s, %s, %s);
         """
         cursor.execute(query, (text_fr, text_en, label_id, sub_type_id, edited))
         return cursor.fetchone()[0]

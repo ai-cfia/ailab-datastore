@@ -135,7 +135,7 @@ def get_element_id_symbol(cursor, symbol):
 
 
 def new_micronutrient(
-    cursor, read_name, value, unit, element_id, label_id,language:str, edited=False
+    cursor, read_name:str, value:float, unit:str,  label_id,language:str, edited=False
 ):
     """
     This function add a new micronutrient in the database.
@@ -156,22 +156,9 @@ def new_micronutrient(
         if language.lower() not in ['fr','en']:
             raise MicronutrientCreationError('Language not supported')
         query = """
-            INSERT INTO 
-                micronutrient (
-                read_name,
-                value,
-                unit,
-                element_id,
-                label_id,
-                language,
-                edited
-                )
-            VALUES 
-                (%s,%s,%s,%s,%s,%s,%s)
-            RETURNING 
-                id
+            SELECT new_micronutrient(%s, %s, %s, %s, %s, %s,%s);
             """
-        cursor.execute(query, (read_name, value, unit, element_id, label_id, language,edited))
+        cursor.execute(query, (read_name, value, unit, label_id, language,edited))
         return cursor.fetchone()[0]
     except Exception:
         raise MicronutrientCreationError
@@ -283,7 +270,7 @@ def get_all_micronutrients(cursor, label_id):
         raise MicronutrientNotFoundError
 
 
-def new_guaranteed(cursor, read_name, value, unit, element_id, label_id,edited=False):
+def new_guaranteed_analysis(cursor, read_name, value, unit, label_id,edited:bool=False, element_id:int=None):
     """
     This function add a new guaranteed in the database.
 
@@ -301,21 +288,9 @@ def new_guaranteed(cursor, read_name, value, unit, element_id, label_id,edited=F
 
     try:
         query = """
-            INSERT INTO 
-                guaranteed (
-                read_name,
-                value,
-                unit,
-                element_id,
-                label_id,
-                edited
-            )
-            VALUES 
-                (%s,%s,%s,%s,%s,%s)
-            RETURNING 
-                id
+            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s);
             """
-        cursor.execute(query, (read_name, value, unit, element_id, label_id, edited))
+        cursor.execute(query, (read_name, value, unit, label_id, edited, element_id))
         return cursor.fetchone()[0]
     except Exception:
         raise GuaranteedCreationError

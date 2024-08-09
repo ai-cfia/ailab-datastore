@@ -88,6 +88,36 @@ def new_organization(cursor,information_id, location_id=None):
     except Exception as e:
         raise OrganizationCreationError("Datastore organization unhandeled error" + e.__str__())
     
+def new_organization_located(cursor, address:str, name:str, website:str, phone_number:str):
+    """
+    This function create a new organization information in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+    - website (str): The website of the organization.
+    - phone_number (str): The phone number of the organization.
+
+    Returns:
+    - str: The UUID of the organization information
+    """
+    try:
+        query = """
+            SELECT new_organization_located(%s, %s, %s, %s);
+            """
+        cursor.execute(
+            query,
+            (
+                name,
+                address,
+                website,
+                phone_number,
+            ),
+        )
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise OrganizationCreationError("Datastore organization unhandeled error"+e.__str__())
+
 def new_organization_info(cursor, name, website, phone_number,location_id=None):
     """
     This function create a new organization information in the database.

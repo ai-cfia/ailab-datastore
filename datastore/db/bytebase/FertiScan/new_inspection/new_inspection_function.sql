@@ -36,7 +36,8 @@ BEGIN
 		input_json->'company'->>'name',
 		input_json->'company'->>'address',
 		input_json->'company'->>'website',
-		input_json->'company'->>'phone_number'
+		input_json->'company'->>'phone_number',
+		FALSE
 	)
 	
 	-- Update input_json with company_id
@@ -49,7 +50,8 @@ BEGIN
 		input_json->'manufacturer'->>'name',
 		input_json->'manufacturer'->>'address',
 		input_json->'manufacturer'->>'website',
-		input_json->'manufacturer'->>'phone_number'
+		input_json->'manufacturer'->>'phone_number',
+		FALSE
 	)
 	
 	-- Update input_json with company_id
@@ -85,7 +87,8 @@ BEGIN
 			read_value::float,
 			record->>'unit',
 			label_id,
-			'weight'::"fertiscan_0.0.11".metric_type
+			'weight'::"fertiscan_0.0.11".metric_type,
+			FALSE
 		);
 	 END LOOP;
 -- Weight end
@@ -100,7 +103,8 @@ BEGIN
 			read_value::float,
 			read_unit,
 			label_id,
-			'density'::"fertiscan_0.0.11".metric_type
+			'density'::"fertiscan_0.0.11".metric_type,
+			FALSE
 		);
 
 	END IF;
@@ -117,7 +121,8 @@ BEGIN
 			value_float,
 			read_unit,
 			label_id,
-			'volume'::"fertiscan_0.0.11".metric_type
+			'volume'::"fertiscan_0.0.11".metric_type,
+			FALSE
 		);
 
 	END IF;
@@ -133,7 +138,8 @@ BEGIN
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
 				ingredient_language::"fertiscan_0.0.11".language,
-				label_id
+				label_id,
+				FALSE
 			);
 		END LOOP;
 	END LOOP;
@@ -158,7 +164,8 @@ BEGIN
 				label_id,
 				ingredient_language::"fertiscan_0.0.11".language,
 				NULL, --We cant tell atm
-				NULL  --We cant tell atm
+				NULL,  --We cant tell atm
+				FALSE
 			);
 		END LOOP;
 	END LOOP;
@@ -184,7 +191,8 @@ BEGIN
 						fr_values->>i,
 						en_values->>i,
 						label_id,
-						sub_type_rec.id
+						sub_type_rec.id,
+						FALSE
 					);
 			END LOOP;
 		END IF;
@@ -212,7 +220,9 @@ BEGIN
 			(record->> 'value')::float,
 			record->> 'unit',
 			label_id,
-			'fr'::"fertiscan_0.0.11".language
+			'fr'::"fertiscan_0.0.11".language,
+			FALSE,
+			NULL -- We arent handeling element_id yet
 		);
 	END LOOP;
 --MICRONUTRIENTS ENDS
@@ -224,7 +234,9 @@ BEGIN
 			record->>'name',
 			(record->>'value')::float,
 			record->>'unit',
-			label_id
+			label_id,
+			FALSE,
+			NULL -- We arent handeling element_id yet
 		);
 	END LOOP;
 -- GUARANTEED END	

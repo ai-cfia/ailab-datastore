@@ -49,7 +49,7 @@ def is_a_metric(cursor, metric_id):
         return False
 
 
-def new_metric(cursor, value, unit_id, metric_type:str,edited=False):
+def new_metric(cursor, value, read_unit, label_id, metric_type:str,edited=False):
     """
     This function uploads a new metric to the database.
 
@@ -67,24 +67,16 @@ def new_metric(cursor, value, unit_id, metric_type:str,edited=False):
         if metric_type.lower() not in ["density","weight","volume"]:
             raise MetricCreationError(f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'")
         query = """
-            INSERT INTO 
-                metric(
-                    value,
-                    unit_id,
-                    edited,
-                    metric_type
-                    )
-            VALUES
-                (%s, %s, %s, %s)
-            RETURNING id
+            SELECT new_metric_unit(%s, %s, %s, %s, %s);
             """
         cursor.execute(
             query,
             (
                 value,
-                unit_id,
+                read_unit,
+                label_id,
+                metric_type.lower(),
                 edited,
-                metric_type.lower()
             ),
         )
         return cursor.fetchone()[0]

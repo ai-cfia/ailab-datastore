@@ -4,7 +4,7 @@ This module represent the function for the table label_information
 
 
 def new_label_information(
-    cursor,name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
+    cursor,name:str, lot_number:str, npk:str, registration_number:str, n:float, p:float, k:float, company_info_id, manufacturer_info_id
 ):
     """
     This function create a new label_information in the database.
@@ -25,22 +25,7 @@ def new_label_information(
     """
     try:
         query = """
-            INSERT INTO 
-                label_information (
-                    product_name,
-                    lot_number, 
-                    npk, 
-                    registration_number, 
-                    n, 
-                    p, 
-                    k,
-                    company_info_id,
-                    manufacturer_info_id
-                    )
-            VALUES 
-                (%s, %s, %s, %s, %s, %s, %s,%s,%s)
-            RETURNING 
-                id
+        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
             query,
