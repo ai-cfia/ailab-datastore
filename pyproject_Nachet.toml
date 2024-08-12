@@ -25,10 +25,10 @@ license = { file = "LICENSE" }
 keywords = ["Nachet","ailab"]
 
 [tool.setuptools]
-packages = ["datastore", "datastore.Nachet", "datastore.db", "datastore.bin",
+packages = ["datastore", "datastore.db", "datastore.bin",
 "datastore.db.queries", "datastore.db.queries.picture",
 "datastore.db.queries.seed", "datastore.db.queries.user",
-"datastore.db.queries.machine_learning","datastore.db.queries.inference",
+"datastore.db.queries.machine_learning","datastore.db.queries.inference", "datastore.db.queries.analysis",
 "datastore.db.metadata","datastore.db.metadata.picture", "datastore.db.metadata.picture_set",
 "datastore.db.metadata.validator",
 "datastore.db.metadata.machine_learning","datastore.db.metadata.inference",
