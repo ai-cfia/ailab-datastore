@@ -108,8 +108,8 @@ async def get_blob(container_client, blob_name):
         blob_content = blob.readall()
         return blob_content
 
-    except GetBlobError:
-        raise GetBlobError("Error getting blob")
+    except Exception as error:
+        raise GetBlobError(error.__str__ + "\nError getting blob:"+ blob_name)
 
 
 async def upload_image(container_client, folder_name, folder_uuid, image:str, image_uuid):

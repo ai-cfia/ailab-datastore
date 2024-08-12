@@ -265,5 +265,37 @@ class test_picture(unittest.TestCase):
         with self.assertRaises(datastore.picture.PictureSetDeleteError):
             asyncio.run(datastore.delete_picture_set_permanently(self.cursor, str(self.user_id), str(general_folder_id), self.container_client))
 
+    def test_get_picture_set_pictures(self):
+        """
+        This test checks the get_picture_set_pictures function
+        """
+        picture_ids=asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, self.picture_set_id))
+        pictures = asyncio.run(datastore.get_picture_set_pictures(self.cursor, self.user_id, self.picture_set_id,self.container_client))
+        self.assertEqual(len(pictures), 3)
+        for picture in pictures:
+            self.assertTrue(picture["id"] in picture_ids)
+
+    def test_get_picture_set_pictures_error_user_not_found(self):
+        """
+        This test checks if the get_picture_set_pictures function correctly raise an exception if the user given doesn't exist in db
+        """
+        with self.assertRaises(datastore.user.UserNotFoundError):
+            asyncio.run(datastore.get_picture_set_pictures(self.cursor, str(uuid.uuid4()), self.picture_set_id,self.container_client))
+
+    def test_get_picture_set_pictures_error_connection_error(self):
+        """
+        This test checks if the get_picture_set_pictures function correctly raise an exception if the connection to the db fails
+        """
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.side_effect = Exception("Connection error")
+        with self.assertRaises(Exception):
+            asyncio.run(datastore.get_picture_set_pictures(mock_cursor, self.user_id, self.picture_set_id,self.container_client))
+
+    def test_get_picture_set_pictures_error_picture_set_not_found(self):
+        """
+        This test checks if the get_picture_set_pictures function correctly raise an exception if the picture set given doesn't exist in db
+        """
+        with self.assertRaises(datastore.picture.PictureSetNotFoundError):
+            asyncio.run(datastore.get_picture_set_pictures(self.cursor, self.user_id, str(uuid.uuid4()),self.container_client))
 if __name__ == "__main__":
     unittest.main()

@@ -202,6 +202,57 @@ async def get_picture_sets_info(cursor, user_id: str):
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
 
+async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_client):
+    """
+    This function retrieves the pictures of a picture set from the database.
+    """
+    try:
+        # Check if user exists
+        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+            raise user.UserNotFoundError(
+                f"User not found based on the given id: {user_id}"
+            )
+        # Check if picture set exists
+        if not picture.is_a_picture_set_id(cursor, picture_set_id):
+            raise picture.PictureSetNotFoundError(
+                f"Picture set not found based on the given id: {picture_set_id}"
+            )
+        # Check user is owner of the picture set
+        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
+            raise UserNotOwnerError(
+                f"User can't access this folder, user uuid :{user_id}, folder name : {picture_set_id}"
+            )
+        picture_set_name = picture.get_picture_set_name(cursor, picture_set_id)
+        # Get the pictures
+        pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
+        result = []
+        if len(pictures)==0:
+            return result
+        elif len(pictures)!= blob.get_images_count(container_client, picture_set_id):
+            raise Warning("The number of pictures in the database does not match the number of pictures in the blob storage")
+        for pic in pictures:
+            pic_id = pic[0]
+            pic_metadata = json.loads(pic[1])
+            pic_metadata["id"] = pic_id
+            if "link" in  pic_metadata:
+                blob_link = pic_metadata["link"]
+            else
+                blob_link = f"{picture_set_name}/{pic_id}"
+            blob = blob.get_blob(container_client, blob_link)
+            pic_metadata.pop("link", None)
+            pic_metadata["blob"] = blob
+            result.append(pic_metadata)
+        return result
+    except (
+        user.UserNotFoundError,
+        picture.PictureSetNotFoundError,
+        UserNotOwnerError,
+    ) as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise Exception("Datastore Unhandled Error")
+
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
 ):
