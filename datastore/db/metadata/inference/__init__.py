@@ -174,7 +174,10 @@ def rebuild_boxes_export(cursor, objects) :
             box_metadata = object[1]
             box_metadata = json.loads(json.dumps(box_metadata))
             
-            top_id = str(inference.get_inference_object_top_id(cursor, box_id))
+            if inference.is_object_verified(cursor, box_id):
+                top_id = str(inference.get_inference_object_verified_id(cursor, box_id))
+            else :
+                top_id = str(inference.get_inference_object_top_id(cursor, box_id))
             top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
             
             seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
