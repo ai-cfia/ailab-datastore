@@ -101,8 +101,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "registration_number" text,
     "n" float,
     "p" float,
-    "k" float
-    );
+    "k" float,
+    "company_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id),
+    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id)
     
     CREATE TABLE "fertiscan_0.0.11"."label_dimension" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),

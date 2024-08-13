@@ -71,6 +71,31 @@ def get_specification(cursor, specification_id):
     except Exception:
         raise SpecificationNotFoundError("Error: could not get the specification")
 
+def get_specification_json(cursor, specification_id)-> dict:
+    """
+    This function gets the specification from the database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - specification_id (uuid): The UUID of the specification.
+    Returns:
+    - The specification.
+    """
+    try:
+        query = """
+            SELECT get_specification_json(%s);
+        """
+        cursor.execute(query, (specification_id,))
+        result = cursor.fetchone()
+
+        if result is None:
+            raise SpecificationNotFoundError(
+                "No record found for the given specification_id"
+            )
+        return result
+    except SpecificationNotFoundError:
+        raise
+    except Exception:
+        raise 
 
 def get_all_specifications(cursor, label_id):
     """

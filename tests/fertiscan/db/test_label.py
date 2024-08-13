@@ -27,6 +27,7 @@ class test_label(unittest.TestCase):
         self.n = 10.0
         self.p = 20.0
         self.k = 30.0
+        self.warranty = "warranty"
         self.company_info_id = None
         self.manufacturer_info_id= None
 
@@ -44,6 +45,7 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
+            self.warranty,
             self.company_info_id,
             self.manufacturer_info_id,
         )
@@ -59,6 +61,7 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
+            self.warranty,
             self.company_info_id,
             self.manufacturer_info_id
         )
@@ -71,5 +74,6 @@ class test_label(unittest.TestCase):
         self.assertEqual(label_data[4], self.n)
         self.assertEqual(label_data[5], self.p)
         self.assertEqual(label_data[6], self.k)
-        self.assertIsNone(label_data[7])
+        self.assertEqual(label_data[7], self.warranty)
         self.assertIsNone(label_data[8])
+        self.assertIsNone(label_data[9])

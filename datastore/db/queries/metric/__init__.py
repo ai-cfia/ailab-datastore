@@ -113,6 +113,63 @@ def get_metric(cursor, metric_id):
     except Exception:
         raise MetricNotFoundError("Error: metric not found")
 
+def get_metric_by_label(cursor, label_id):
+    """
+    This function gets the metric from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - The metric.
+    """
+
+    try:
+        query = """
+            SELECT
+                id,
+                value,
+                unit_id,
+                edited,
+                metric_type
+            FROM
+                metric
+            WHERE
+                label_id = %s
+            ORDER BY
+                metric_type
+            """
+        cursor.execute(query, (label_id,))
+        return cursor.fetchall()
+    except Exception:
+        raise MetricNotFoundError("Error: metric not found")
+    
+def get_metrics_json(cursor, label_id) -> dict:
+    """
+    This function gets the metric from the database and returns it in json format.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - The metric in dict format.
+    """
+    try:
+        query = """
+            SELECT get_metrics_json(%s);
+            """
+        cursor.execute(query, (str(label_id),))
+        metric = cursor.fetchone()
+        if metric is None:
+            raise MetricNotFoundError("Error: could not get the metric for label: " + str(label_id))
+        return metric
+    except MetricNotFoundError as e:
+        raise e
+    except Exception:
+        raise e
+
 
 def get_full_metric(cursor, metric_id):
     """

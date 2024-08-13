@@ -7,6 +7,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 from typing import List
 from pydantic import BaseModel, ValidationError
 from typing import Optional
+from datastore.db.queries import inspection,ingredient,label, metric,nutrients, organization, specification,sub_label
 
 class MissingKeyError(Exception):
     pass
@@ -27,18 +28,20 @@ class Value(BaseModel):
     value: Optional[float] = None
     unit: Optional[str] = None
     name: str
+    edited: Optional[bool] = False
 
 class ValuesObjects(BaseModel):
-    en: List[Value]
-    fr: List[Value]
+    en: List[Value] = []
+    fr: List[Value] = []
 
 class SubLabel(BaseModel):
-    en: List[str]
-    fr: List[str]
+    en: List[str] = []
+    fr: List[str] = []
     
 class Metric(BaseModel):
-    value: float
-    unit: str
+    value: Optional[float] = None
+    unit: Optional[str] = None
+    edited: Optional[bool] = False
 
 class Metrics(BaseModel):
     weight: List[Metric]
@@ -62,12 +65,14 @@ class Specification(BaseModel):
     humidity: float
     ph: float
     solubility: float
+    edited: Optional[bool] = False
 
 class Specifications(BaseModel):
     en: List[Specification]
     fr: List[Specification]
 
 class Inspection(BaseModel):
+    id: Optional[str]=None
     company: OrganizationInformation
     manufacturer: OrganizationInformation
     product: ProductInformation
@@ -229,7 +234,78 @@ def build_inspection_import(analysis_form: dict) -> str:
     # print(inspection_formatted.model_dump_json())
     return inspection_formatted.model_dump_json()
 
-def build_inspection_export(cursor, placeholder) -> str:
+def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
+    """
+    This funtion build an inspection json object from the database.
+    """
+    try:
+        inspection_json = {
+            id: str(inspection_id)
+        }
+
+        # get the label information
+        product_json = label.get_label_information_json(cursor, label_info_id)
+        metrics_json = metric.get_metrics_json(cursor, label_info_id)
+
+        product_json.update(metrics_json)
+        ProductInformation(**product_json)
+
+        inspection_json.update(product_json)
+
+        # get the organizations information (Company and Manufacturer)
+        organization_json = organization.get_organizations_info_json(cursor, label_info_id)
+        
+        OrganizationInformation(**organization_json.get("company"))
+        OrganizationInformation(**organization_json.get("manufacturer"))
+
+        inspection_json.update(organization_json)
+
+        # Get all the sub labels
+        sub_label_json = sub_label.get_sub_label_json(cursor, label_info_id)
+
+        for key in sub_label_json:
+            SubLabel(**sub_label_json[key])
+
+        inspection_json.update(sub_label_json)
+
+        # Get the ingredients
+        ingredients_json = nutrients.get_ingredient_json(cursor, label_info_id)
+
+        ValuesObjects(**ingredients_json)
+
+        inspection_json.update(ingredients_json)
+
+        # Get the nutrients
+        nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
+        
+        ValuesObjects(**nutrients_json)
+
+        inspection_json.update(nutrients_json)
+
+        # Get the guaranteed analysis
+        guaranteed_analysis_json = nutrients.get_guaranteed_json(cursor, label_info_id)
+
+        for i in range(len(guaranteed_analysis_json)):
+            Value(**guaranteed_analysis_json[i])
+
+        inspection_json.update(guaranteed_analysis_json)
+
+        # Get the specifications
+        specifications_json = specification.get_specification_json(cursor, label_info_id)
+
+        Specifications(**specifications_json)
+
+        inspection_json.update(specifications_json)
+
+        # Verify the inspection object
+        inspection_formatted = Inspection(**inspection_json)
+
+        # Return the inspection object
+        return inspection_formatted.model_dump_json()
+    except label.LabelInformationNotFoundError or metric.MetricNotFoundError or organization.OrganizationNotFoundError or sub_label.SubLabelNotFoundError or nutrients.IngredientNotFoundError or nutrients.MicronutrientNotFoundError or nutrients.GuaranteedNotFoundError or specification.SpecificationNotFoundError as e:
+        raise e
+    except Exception as e:
+        raise MetadataFormattingError("Error InspectionCreationError not created: "+ str(e)) from None
 
 
 def split_value_unit(value_unit: str) -> dict:

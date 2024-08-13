@@ -6,6 +6,7 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_label_information(
     n FLOAt,
     p FLOAT,
     k FLOAT,
+    warranty TEXT,
     company_id UUID,
     manufacturer_id UUID
     )
@@ -27,6 +28,7 @@ BEGIN
         n,
         p,
         k,
+        warranty,
 		company_id,
 		manufacturer_id
     )

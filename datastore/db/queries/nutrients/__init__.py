@@ -196,6 +196,30 @@ def get_micronutrient(cursor, micronutrient_id):
     except Exception:
         raise MicronutrientNotFoundError
 
+def get_micronutrient_json(cursor, label_id)->dict:
+    """
+    This function get the micronutrient in the database for a specific label.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - micronutrient (dict): The micronutrient.
+    """
+    try:
+        query = """
+            SELECT get_micronutrient_json(%s);
+            """
+        cursor.execute(query, (label_id,))
+        data = cursor.fetchone()[0]
+        if data is None:
+            raise MicronutrientNotFoundError("Error: could not get the micronutrient for label: " + str(label_id))
+        return data
+    except MicronutrientNotFoundError as e:
+        raise e
+    except Exception:
+        raise MicronutrientNotFoundError
 
 def get_full_micronutrient(cursor, micronutrient_id):
     """
@@ -325,6 +349,31 @@ def get_guaranteed(cursor, guaranteed_id):
             """
         cursor.execute(query, (guaranteed_id,))
         return cursor.fetchone()
+    except Exception:
+        raise GuaranteedNotFoundError
+    
+def get_guaranteed_json(cursor, label_id)->dict:
+    """
+    This function get the guaranteed in the database for a specific label.
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - guaranteed (dict): The guaranteed.
+    """
+    try:
+        query = """
+            SELECT get_guaranteed_analysis_json(%s);
+            """
+        cursor.execute(query, (label_id,))
+        data = cursor.fetchone()[0]
+        if data is None:
+            raise GuaranteedNotFoundError("Error: could not get the guaranteed for label: " + str(label_id))
+        return data
+    except GuaranteedNotFoundError as e:
+        raise e
     except Exception:
         raise GuaranteedNotFoundError
 

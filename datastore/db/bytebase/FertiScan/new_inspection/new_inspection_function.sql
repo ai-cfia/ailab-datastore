@@ -67,6 +67,7 @@ BEGIN
 		(input_json->'product'->>'n')::float,
 		(input_json->'product'->>'p')::float,
 		(input_json->'product'->>'k')::float,
+		input_json->'product'->>'warranty',
 		company_id,
 		manufacturer_id
 	)

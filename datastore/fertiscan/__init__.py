@@ -63,7 +63,7 @@ async def register_analysis(
             user_id, len(hashed_pictures)
         )
         picture_set_id = picture.new_picture_set(
-            cursor, picture_set_metadata, user_id, "General"
+            cursor, picture_set_metadata, user_id
         )
 
         # Upload pictures to storage
@@ -180,29 +180,30 @@ async def get_full_inspection_json(
                 )
             ids = inspection.get_inspection_fk(cursor, inspection_id)
             if not picture_set_id == ids[2]:
-                raise Exception("Picture set id does not match the picture_set_id in the inspection for the given inspection_id")
+                raise Warning("Picture set id does not match the picture_set_id in the inspection for the given inspection_id")
             if not label_info_id == ids[0]:
-                raise Exception("Label info id does not match the label_info_id in the inspection for the given inspection_id")
+                raise Warning("Label info id does not match the label_info_id in the inspection for the given inspection_id")
             if not company_info_id == ids[3]:
-                raise Exception("Company info id does not match the company_info_id in the inspection for the given inspection_id")
+                raise Warning("Company info id does not match the company_info_id in the inspection for the given inspection_id")
             if not manufacturer_info_id == ids[4]:
-                raise Exception("Manufacturer info id does not match the manufacturer_info_id in the inspection for the given inspection_id")
+                raise Warning("Manufacturer info id does not match the manufacturer_info_id in the inspection for the given inspection_id")
             if not user_id == ids[1]:
-                raise Exception("User id does not match the user_id in the inspection for the given inspection_id")
+                raise Warning("User id does not match the user_id in the inspection for the given inspection_id")
         
         # Retrieve pictures
-        pictures_ids = picture.get_picture_in_picture_set(cursor, picture_set_id)
+        # pictures_ids = picture.get_picture_in_picture_set(cursor, picture_set_id)
 
         # Retrieve label_info
-        empty = data_inspection.Inspection()
-        label_metadata=data_inspection.build_inspection_export(cursor,inspection_id, label_info_id, company_info_id, manufacturer_info_id)
+        inspection_metadata=data_inspection.build_inspection_export(cursor,inspection_id, label_info_id)
 
-        return inspection.get_inspection(cursor, inspection_id)
+        return inspection_metadata
     except inspection.InspectionNotFoundError:
         raise
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore unhandeled error")
+    
+
 
 
 async def get_user_unverified_analysis(cursor, user_id):

@@ -24,3 +24,21 @@ def new_ingredient(cursor, name:str, value:float, read_unit:str, label_id, langu
         raise 
     except Exception:
         raise IngredientCreationError("Error: could not create the ingredient")
+    
+def get_ingredient_json(cursor, ingredient_id)->dict:
+    """
+    This function gets the ingredient json from the database.
+    """
+    try:
+        query = """
+            SELECT get_ingredients_json(%s);
+        """
+        cursor.execute(query, (ingredient_id,))
+        result = cursor.fetchone()
+        if result is None:
+            raise IngredientNotFoundError("Error: ingredient not found")
+        return result
+    except IngredientNotFoundError:
+        raise
+    except Exception:
+        raise IngredientNotFoundError("Error: could not get the ingredient")

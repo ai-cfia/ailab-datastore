@@ -190,6 +190,31 @@ def get_organization_info(cursor, information_id):
         raise OrganizationNotFoundError("organization information not found with information_id: " + information_id)
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
+    
+def get_organizations_info_json(cursor, label_id)-> dict:
+    """
+    This function get a organization information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - information_id (str): The UUID of the organization information.
+
+    Returns:
+    - dict: The organization information
+    """
+    try:
+        query = """
+            SELECT get_organizations_information_json(%s);
+            """
+        cursor.execute(query, (str(label_id),))
+        res = cursor.fetchone()
+        if res is None:
+            raise OrganizationNotFoundError
+        return res
+    except OrganizationNotFoundError:
+        raise OrganizationNotFoundError("organization information not found with information_id: " + label_id)
+    except Exception as e:
+        raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
 def update_organization(
