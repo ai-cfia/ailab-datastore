@@ -102,6 +102,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "n" float,
     "p" float,
     "k" float,
+    "warranty" text,
     "company_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id),
     "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id)
     
