@@ -258,7 +258,9 @@ class test_picture(unittest.TestCase):
         """
         picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
         inference = asyncio.run(nachet.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
-
+        for box in inference["boxes"] :
+            box["is_verified"] = False
+        
         picture_inference = asyncio.run(nachet.get_picture_inference(self.cursor, str(self.user_id), str(picture_id)))
         
         self.assertDictEqual(picture_inference,inference)
