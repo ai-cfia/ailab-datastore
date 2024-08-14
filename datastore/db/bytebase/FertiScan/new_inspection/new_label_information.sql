@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_label_information(
     name TEXT,
     lot_number TEXT,
@@ -19,7 +20,7 @@ DECLARE
 BEGIN
 	-- LABEL INFORMATION
     INSERT INTO label_information (
-        product_name,lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
+        product_name,lot_number, npk, registration_number, n, p, k,warranty, company_info_id, manufacturer_info_id
     ) VALUES (
 		name,
         lot_number,
@@ -29,7 +30,7 @@ BEGIN
         p,
         k,
         warranty,
-		company_id,
+		companyid,
 		manufacturer_id
     )
     RETURNING id INTO label_id;

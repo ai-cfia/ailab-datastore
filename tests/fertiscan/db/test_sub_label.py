@@ -59,8 +59,9 @@ class test_sub_label(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
+    
         self.lot_number = "lot_number"
+        self.product_name = "product_name"
         self.npk = "npk"
         self.registration_number = "registration_number"
         self.n = 10.0
@@ -69,14 +70,17 @@ class test_sub_label(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
+        self.warranty = "warranty"
         self.label_id = label.new_label_information(
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
             self.n,
             self.p,
             self.k,
+            self.warranty,
             None,
             None
         )

@@ -39,7 +39,7 @@ def new_sub_label(cursor, text_fr, text_en, label_id, sub_type_id, edited=False)
         query = """
             SELECT new_sub_label(%s, %s, %s, %s, %s);
         """
-        cursor.execute(query, (text_fr, text_en, label_id, edited, sub_type_id))
+        cursor.execute(query, (text_fr, text_en, label_id, sub_type_id,edited))
         return cursor.fetchone()[0]
     except Exception:
         raise SubLabelCreationError("Error: could not create the sub label")
