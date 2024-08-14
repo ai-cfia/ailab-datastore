@@ -4,7 +4,6 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
     result_json jsonb;
 BEGIN
     SELECT jsonb_build_object(

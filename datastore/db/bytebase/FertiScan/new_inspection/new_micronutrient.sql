@@ -12,7 +12,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     micronutrient_id uuid;
-    record RECORD
+    record RECORD;
     _id uuid;
 BEGIN
 	INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language,element_id)

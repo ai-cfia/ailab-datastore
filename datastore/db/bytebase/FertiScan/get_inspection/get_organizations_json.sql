@@ -4,7 +4,6 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
     result_json jsonb;
 BEGIN
     SELECT jsonb_build_object(
@@ -39,7 +38,7 @@ BEGIN
             id = label_id
         LIMIT 1
     ) AS label_info
-    ON org.id = label_info.company_info_id OR org.id = label_info.manufacturer_info_id;
+    ON org.id = label_info.company_info_id OR org.id = label_info.manufacturer_info_id
     JOIN (
         SELECT
             id,
@@ -48,6 +47,6 @@ BEGIN
             location
     ) AS location
     ON org.location_id = location.id;
-    RETURN result_json
+    RETURN result_json;
 END;
 $function$;

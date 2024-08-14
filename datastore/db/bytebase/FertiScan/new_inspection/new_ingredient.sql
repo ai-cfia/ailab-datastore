@@ -13,7 +13,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     ingredient_id uuid;
-    record RECORD
+    record RECORD;
     _id uuid;
 BEGIN
     INSERT INTO ingredient (

@@ -10,7 +10,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     unit_id UUID;
-    record RECORD
+    record RECORD;
     metric_id UUID;
 BEGIN
 	

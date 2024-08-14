@@ -4,7 +4,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
+    record RECORD;
     verified BOOLEAN = FALSE;
 BEGIN
     SELECT 
@@ -24,7 +24,7 @@ BEGIN
     FROM 
         label_information
     WHERE 
-        id = %s
+        id = label_id
     LIMIT 1; 
     IF record IS NULL THEN
         RAISE WARNING 'No record found for label_id: %', label_id;
@@ -37,7 +37,7 @@ BEGIN
     FROM
         inspection
     WHERE
-        label_info_id = label_id;
+        label_info_id = label_id
     LIMIT 1; 
     RETURN jsonb_build_object(
         'labe_id', record.id,
@@ -49,7 +49,7 @@ BEGIN
         'warranty', record.warranty,  
         'lot_number', record.lot_number,
         'registration_number', record.registration_number,
-        'verified', verified,
+        'verified', verified
     );
 END;
 $function$;

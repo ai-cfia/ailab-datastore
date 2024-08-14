@@ -1,11 +1,10 @@
+
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_sub_label_json(
 label_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
-    sub_type_record RECORD
     fr text[];
     en text[];
     result_json jsonb;
@@ -30,8 +29,8 @@ BEGIN
     ) AS sub_label_data
     ON sub_type.id = sub_label_data.sub_type_id
     GROUP BY
-        sub_type.type_en
+        sub_type.type_en;
 
-    return result_json;
+    RETURN result_json;
 END;
 $function$;

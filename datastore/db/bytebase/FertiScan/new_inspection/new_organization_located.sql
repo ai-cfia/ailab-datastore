@@ -10,7 +10,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     location_id uuid;
-    record RECORD
+    record RECORD;
     organization_id uuid;
 BEGIN
 	-- Check if organization location exists by address

@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -38,7 +39,7 @@ BEGIN
 		input_json->'company'->>'website',
 		input_json->'company'->>'phone_number',
 		FALSE
-	)
+	);
 	
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{company,id}', to_jsonb(company_id));
@@ -52,7 +53,7 @@ BEGIN
 		input_json->'manufacturer'->>'website',
 		input_json->'manufacturer'->>'phone_number',
 		FALSE
-	)
+	);
 	
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{manufacturer,id}', to_jsonb(manufacturer_id));
@@ -70,7 +71,7 @@ BEGIN
 		input_json->'product'->>'warranty',
 		company_id,
 		manufacturer_id
-	)
+	);
 		
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{product,label_id}', to_jsonb(label_id));
@@ -231,7 +232,7 @@ BEGIN
 -- GUARANTEED
 	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		"fertiscan_0.0.11".new_guaranteed_analysis(
+		call "fertiscan_0.0.11".new_guaranteed_analysis(
 			record->>'name',
 			(record->>'value')::float,
 			record->>'unit',

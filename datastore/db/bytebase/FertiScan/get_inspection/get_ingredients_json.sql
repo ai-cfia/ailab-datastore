@@ -1,10 +1,10 @@
+
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_ingredients_json(
 label_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
     result_json jsonb;
 BEGIN
     SELECT jsonb_build_object(

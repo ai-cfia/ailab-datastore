@@ -4,7 +4,6 @@ RETURNS jsonb
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-    record RECORD
     result_json jsonb;
 BEGIN
     SELECT jsonb_build_object(
@@ -19,7 +18,7 @@ BEGIN
         )
     INTO result_json
     FROM guaranteed
-    WHERE guaranteed.label_id = label_id
+    WHERE guaranteed.label_id = label_id;
     RETURN result_json;
 END;
 $function$;

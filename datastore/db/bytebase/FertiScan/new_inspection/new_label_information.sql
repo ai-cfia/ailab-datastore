@@ -7,15 +7,15 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_label_information(
     p FLOAT,
     k FLOAT,
     warranty TEXT,
-    company_id UUID,
-    manufacturer_id UUID
+    company_id UUID DEFAULT Null,
+    manufacturer_id UUID DEFAULT Null
     )
 RETURNS uuid 
 LANGUAGE plpgsql
 AS $function$
 DECLARE
     label_id uuid;
-    record RECORD
+    record RECORD;
 BEGIN
 	-- LABEL INFORMATION
     INSERT INTO label_information (

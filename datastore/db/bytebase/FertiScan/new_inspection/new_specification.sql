@@ -11,7 +11,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     specification_id uuid;
-    record RECORD
+    record RECORD;
     _id uuid;
 BEGIN
 	INSERT INTO specification (humidity, ph, solubility, edited,LANGUAGE,label_id)

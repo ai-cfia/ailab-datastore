@@ -10,7 +10,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     sub_label_id uuid;
-    record RECORD
+    record RECORD;
     _id uuid;
 BEGIN
     INSERT INTO sub_label (text_content_fr,text_content_en, label_id, edited, sub_type_id)

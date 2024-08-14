@@ -236,7 +236,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
             pic_metadata["id"] = pic_id
             if "link" in  pic_metadata:
                 blob_link = pic_metadata["link"]
-            else
+            else:
                 blob_link = f"{picture_set_name}/{pic_id}"
             blob = blob.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)

@@ -11,7 +11,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     guaranteed_id uuid;
-    record RECORD
+    record RECORD;
     _id uuid;
 BEGIN
 	INSERT INTO guaranteed (read_name, value, unit, edited, label_id,element_id)
