@@ -263,6 +263,24 @@ class test_picture(unittest.TestCase):
         
         self.assertDictEqual(picture_inference,inference)
     
+    def test_get_picture_inference_by_inference_id(self):
+        """
+        This test checks if the get_picture_inference function correctly returns the inference of a picture
+        """
+        picture_id = asyncio.run(nachet.upload_picture_unknown(self.cursor, self.user_id, self.pic_encoded,self.container_client))
+        inference = asyncio.run(nachet.register_inference_result(self.cursor,self.user_id,self.inference, picture_id, "test_model_id"))
+
+        picture_inference = asyncio.run(nachet.get_picture_inference(self.cursor, str(self.user_id), inference_id=str(inference["inference_id"])))
+        
+        self.assertDictEqual(picture_inference,inference)
+        
+    def test_get_picture_inference_error_missing_arguments(self):
+        """
+        This test checks if the get_pictures_inferences function correctly raise an exception if picture_id and inference_id are not provided
+        """
+        with self.assertRaises(ValueError):
+            asyncio.run(nachet.get_picture_inference(self.cursor, str(uuid.uuid4())))
+        
     def test_get_picture_inference_error_user_not_found(self):
         """
         This test checks if the get_pictures_inferences function correctly raise an exception if the user given doesn't exist in db

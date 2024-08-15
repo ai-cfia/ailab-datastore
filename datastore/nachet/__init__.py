@@ -696,21 +696,31 @@ async def get_picture_sets_info(cursor, user_id: str):
         raise  picture.GetPictureSetError(f"An error occured while retrieving the picture sets : {e}")
 
 
-async def get_picture_inference(cursor, user_id: str, picture_id: str):
+async def get_picture_inference(cursor, user_id: str, picture_id: str = None, inference_id :str = None):
     """
     Retrieves inference (if exist) of the given picture
 
     Args:
         cursor: The cursor object to interact with the database.
         user_id (str): id of the user
-        picture_set_id (str): id of the picture set
+        picture_id (str): id of the picture
+        inference_id (str): id of the inference
     """
     try:
+        # Si aucun id (ni picture_id ni inference_id) n'est fourni, lève une exception.
+        if picture_id is None and inference_id is None:
+            raise ValueError("Error: picture_id or inference_id must be provided")
+
         # Check if user exists
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
+        
+        # Si picture_id n'est pas fourni, mais inference_id l'est, récupère le picture_id en utilisant inference_id.
+        if picture_id is None and inference_id is not None:
+            picture_id = str(inference.get_inference_picture_id(cursor, inference_id))
+        
         # Check if picture set exists
         if not picture.is_a_picture_id(cursor, picture_id):
             raise picture.PictureNotFoundError(
@@ -732,8 +742,10 @@ async def get_picture_inference(cursor, user_id: str, picture_id: str):
         else :
             return None
         
-    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
+    except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError, ValueError) as e:
         raise e
+    except Exception as e:
+        raise Exception(f"Datastore Unhandled Error : {e}")
 
 async def get_picture_blob(cursor, user_id: str, container_client, picture_id: str):
     """

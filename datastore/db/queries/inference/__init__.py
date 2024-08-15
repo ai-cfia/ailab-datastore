@@ -90,7 +90,31 @@ def get_inference(cursor, inference_id: str):
         return res
     except Exception:
         raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")
-
+    
+def get_inference_picture_id(cursor, inference_id: str):
+    """
+    This functions retrieve picture_id of a given inference
+    
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_id (str): The UUID of the inference.
+    """
+    try :
+        query = """
+            SELECT 
+                picture_id
+            FROM 
+                inference
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (inference_id,))
+        result = cursor.fetchone()[0]
+        return result
+    except Exception:
+        raise InferenceNotFoundError(
+            f"Error: could not get picture_id for the inference {inference_id}")
+    
 def get_inference_by_picture_id(cursor, picture_id: str):
     """
     This functions retrieve inference of a given picture
@@ -204,6 +228,28 @@ def is_object_verified(cursor, object_id):
         return False
     except Exception:
         raise Exception(f"Error: could not select verified_id column for object {object_id}")
+
+def get_inference_object_verified_id(cursor, object_id):
+    """
+    Check if an object is verified or not.
+    
+    return True if verified, False otherwise
+    """
+    try:
+        query = """
+            SELECT 
+                verified_id
+            FROM
+                object
+            WHERE 
+                id = %s
+            """
+        cursor.execute(query, (str(object_id),))
+        return cursor.fetchone()[0] 
+    except ValueError as e:
+        return e
+    except Exception:
+        raise Exception(f"Error: could not get verified_id column for object {object_id}")
 
 def verify_inference_status(cursor, inference_id, user_id):
     """
