@@ -6,7 +6,7 @@
   blob Storage.
 
 - A User can do an analysis of a label during its inspection and must confirm
-  the digitalization of the label_ information.
+  the digitalization of the label_information.
 
 - A User must be able to store its inspection about fertilizers
 
@@ -16,48 +16,46 @@
 
 This is the doc about the FertiScan Database Architecture
 
-``` mermaid
+```mermaid
 
 ---
 title: FertiScan DB Structure
 ---
 erDiagram
-  users{
+  users {
     uuid id PK
     string email
     timestamp registration_date
     timestamp updated_at
     uuid default_set_id FK
   }
-  picture_set{
+  picture_set {
     uuid id PK
-    string name
     json picture_set
     uuid owner_id FK
-    timestamp upload_date
+    date upload_date
+    string name
   }
-  picture{
+  picture {
     uuid id PK
     json picture
-    boolean used_for_digitalization
-    timestamp upload_date 
+    int nb_obj
     uuid picture_set_id FK
-    uuid parent_picture_id FK
+    boolean verified
+    timestamp upload_date
   }
   inspection {
     uuid id PK
     boolean verified
-    TIMESTAMP upload_date
-    TIMESTAMP updated_at
+    timestamp upload_date
+    timestamp updated_at
     uuid inspector_id FK
-    uuid label_info_id Fk
+    uuid label_info_id FK
     uuid fertilizer_id FK
     uuid sample_id FK
-    uuid company_id FK
-    uuid manufacturer_id FK
     uuid picture_set_id FK
   }
-  fertilizer{
+  fertilizer {
     uuid id PK
     string name "Unique"
     string registration_number
@@ -66,7 +64,7 @@ erDiagram
     uuid latest_inspection_id FK
     uuid owner_id FK
   }
-  organization{
+  organization {
     uuid id PK
     uuid information_id FK
     uuid main_location_id FK
@@ -78,27 +76,36 @@ erDiagram
     string phone_number
     uuid location_id FK
   }
-  location{
+  organization_information {
     uuid id PK
-    string address
-    uuid organization_id FK
-    uuid region_id FK
+    string name
+    string website
+    string phone_number
+    uuid location_id FK
   }
-  sample{
+  location {
+    uuid id PK
+    string name
+    string address
+    uuid region_id FK
+    uuid owner_id FK
+  }
+  sample {
     uuid id PK
     uuid number
-    Date collection_date
+    date collection_date
+    uuid location FK
   }
-  province{
+  province {
     int id PK
     string name "Unique"
   }
-  region{
+  region {
     uuid id PK
     int province_id FK
     string name
   }
-  label_information{
+  label_information {
     uuid id PK
     string lot_number
     string npk
@@ -109,27 +116,27 @@ erDiagram
     uuid company_info_id FK
     uuid manufacturer_info_id FK
   }
-  sub_label{
+  sub_label {
     uuid id PK
-    text content_fr
-    text content_en
+    text text_content_fr
+    text text_content_en
     boolean edited
     uuid label_id FK
     uuid sub_type_id FK
   }
-  sub_type{
-    id uuid PK
+  sub_type {
+    uuid id PK
     text type_fr "unique"
     text type_en "unique"
   }
-  specification{
-    id uuid PK
+  specification {
+    uuid id PK
     float humidity
     float ph
     float solubility
     boolean edited
     uuid label_id FK
-    language language
+    enum language
   }
   micronutrient{
     uuid id PK
