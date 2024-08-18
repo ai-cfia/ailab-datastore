@@ -28,8 +28,7 @@ BEGIN
     )
     INTO result_json
     FROM specification
-    WHERE specification.label_id = label_id
-    ORDER BY specification.language;
+    WHERE specification.label_id = label_id;
     RETURN result_json;
 END;
 $function$;

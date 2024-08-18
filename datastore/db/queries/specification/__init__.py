@@ -29,9 +29,9 @@ def new_specification(cursor, humidity, ph, solubility, label_id, language, edit
         if language not in ["en", "fr"]:
             raise SpecificationCreationError("Error: language must be either 'en' or 'fr'")
         query = """
-            SELECT new_specification(%s, %s, %s, %s, %s);
+            SELECT new_specification(%s, %s, %s, %s, %s, %s);
         """
-        cursor.execute(query, (humidity, ph, solubility, edited, language,label_id))
+        cursor.execute(query, (humidity, ph, solubility, language,label_id, edited))
         return cursor.fetchone()[0]
     except SpecificationCreationError:
         raise
@@ -71,7 +71,32 @@ def get_specification(cursor, specification_id):
     except Exception:
         raise SpecificationNotFoundError("Error: could not get the specification")
 
-def get_specification_json(cursor, specification_id)-> dict:
+def has_specification(cursor, label_id):
+    """
+    This function checks if a label has specification.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+    Returns:
+    - True if the label has specification, False otherwise.
+    """
+    try:
+        query = """
+            SELECT
+                EXISTS(
+                    SELECT 1
+                    FROM 
+                        specification
+                    WHERE 
+                        label_id = %s
+                );
+        """
+        cursor.execute(query, (label_id,))
+        return cursor.fetchone()[0]
+    except Exception:
+        raise SpecificationNotFoundError("Error: could not check if the label has specification")
+
+def get_specification_json(cursor, label_id)-> dict:
     """
     This function gets the specification from the database.
     Parameters:
@@ -81,17 +106,22 @@ def get_specification_json(cursor, specification_id)-> dict:
     - The specification.
     """
     try:
+        if not has_specification(cursor, label_id):
+            raise SpecificationNotFoundError(
+                "Error: could not get the specification for label: " + str(label_id)
+            )
         query = """
             SELECT get_specification_json(%s);
         """
-        cursor.execute(query, (specification_id,))
+        cursor.execute(query, (label_id,))
         result = cursor.fetchone()
 
         if result is None:
             raise SpecificationNotFoundError(
                 "No record found for the given specification_id"
             )
-        return result
+        specification = result[0]
+        return specification
     except SpecificationNotFoundError:
         raise
     except Exception:

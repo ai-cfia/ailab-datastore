@@ -88,12 +88,14 @@ def has_sub_label(cursor, label_id):
     try:
         query = """
             SELECT 
-                1
-            FROM
-                sub_label
-            WHERE
-                label_id = %s
-            LIMIT 1;
+                Exists(
+                    SELECT 1
+                    FROM
+                        sub_label
+                    WHERE
+                        label_id = %s
+                    Limit 1
+                );
         """
         cursor.execute(query, (label_id,))
         return cursor.fetchone()[0]

@@ -134,6 +134,14 @@ class test_sub_label(unittest.TestCase):
         with self.assertRaises(sub_label.SubLabelNotFoundError):
             sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
         
+    def test_has_sub_label(self):
+        sub_label_id = sub_label.new_sub_label(
+            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+        )
+        self.assertTrue(sub_label.has_sub_label(self.cursor, self.label_id))
+    
+    def test_has_sub_label_not_found(self):
+        self.assertFalse(sub_label.has_sub_label(self.cursor, str(uuid.uuid4())))
 
     def test_get_full_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
