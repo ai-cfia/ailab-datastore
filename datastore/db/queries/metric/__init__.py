@@ -80,6 +80,8 @@ def new_metric(cursor, value, read_unit, label_id, metric_type:str,edited=False)
             ),
         )
         return cursor.fetchone()[0]
+    except MetricCreationError as e:
+        raise e
     except Exception:
         raise MetricCreationError("Error: metric not uploaded")
 
@@ -164,11 +166,11 @@ def get_metrics_json(cursor, label_id) -> dict:
         metric = cursor.fetchone()
         if metric is None:
             raise MetricNotFoundError("Error: could not get the metric for label: " + str(label_id))
-        return metric
+        return metric[0]
     except MetricNotFoundError as e:
         raise e
     except Exception:
-        raise e
+        raise Exception("Error: could not get the metric for label: " + str(label_id))
 
 
 def get_full_metric(cursor, metric_id):

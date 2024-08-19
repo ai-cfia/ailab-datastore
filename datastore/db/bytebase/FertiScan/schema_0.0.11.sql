@@ -134,7 +134,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float NOT NULL,
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.11".unit(id),
-    "metric_type" metric_type,
+    "metric_type" "fertiscan_0.0.11".metric_type,
     "label_id" uuid REFERENCES "fertiscan_0.0.11".label_information(id)
     );
 

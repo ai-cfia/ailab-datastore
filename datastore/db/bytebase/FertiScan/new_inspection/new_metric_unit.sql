@@ -26,15 +26,15 @@ BEGIN
 	    END IF;
 	   
 	   	 -- Insert into metric for weight
-	    INSERT INTO metric (value, unit_id, edited,metric_type_id,label_id)
+	    INSERT INTO metric (value, unit_id, edited,metric_type,label_id)
 	    VALUES (
-            value_float, 
+            value, 
             unit_id, 
             edited,
             metric_type,
             label_id
-            );
-        RETURN metric_id;
+            )
+        RETURNING id INTO metric_id;
     RETURN metric_id;
 END;
 $function$;
