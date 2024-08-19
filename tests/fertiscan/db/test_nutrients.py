@@ -14,7 +14,8 @@ DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
-DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
+#DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
+DB_SCHEMA = "fertiscan_0.0.11"
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
@@ -119,6 +120,7 @@ class test_micronutrient(unittest.TestCase):
         self.micronutrient_unit = "%"
 
         self.lot_number = "lot_number"
+        self.product_name = "product_name"
         self.npk = "npk"
         self.registration_number = "registration_number"
         self.n = 10.0
@@ -127,18 +129,22 @@ class test_micronutrient(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
+        self.warranty = "warranty"
         self.label_information_id = label.new_label_information(
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
             self.n,
             self.p,
             self.k,
+            self.warranty,
             None,
             None
         )
         self.language = "fr"
+
 
     def tearDown(self):
         self.con.rollback()
@@ -157,15 +163,47 @@ class test_micronutrient(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(micronutrient_id))
 
+    def test_get_micronutrient_json(self):
+        name_fr = "test-nutriment"
+        name_en = "test-nutrient"
+        nutrients.new_micronutrient(
+            self.cursor,
+            name_fr,
+            self.micronutrient_value,
+            self.micronutrient_unit,
+            self.label_information_id,
+            'fr',
+            self.element_id,
+            False
+        )
+        nutrients.new_micronutrient(
+            self.cursor,
+            name_en,
+            self.micronutrient_value,
+            self.micronutrient_unit,
+            self.label_information_id,
+            'en',
+            self.element_id,
+            False
+        )
+        data  = nutrients.get_micronutrient_json(self.cursor, label_id=self.label_information_id)
+        self.assertEqual(data["micronutrients"]["en"][0]["name"], name_en)
+        self.assertEqual(data["micronutrients"]["fr"][0]["name"], name_fr)
+
+    def test_get_micronutrient_json_empty(self):
+        data = nutrients.get_micronutrient_json(self.cursor, label_id=self.label_information_id)
+        self.assertIsNone(data["micronutrients"]["en"])
+        self.assertIsNone(data["micronutrients"]["fr"])
+
     def test_get_micronutrient(self):
         micronutrient_id = nutrients.new_micronutrient(
             self.cursor,
             self.micronutrient_name,
             self.micronutrient_value,
             self.micronutrient_unit,
-            self.element_id,
             self.label_information_id,
             self.language,
+            self.element_id,
             False
         )
         micronutrient_data = nutrients.get_micronutrient(self.cursor, micronutrient_id)
@@ -192,9 +230,9 @@ class test_micronutrient(unittest.TestCase):
             self.micronutrient_name,
             self.micronutrient_value,
             self.micronutrient_unit,
-            self.element_id,
             self.label_information_id,
             self.language,
+            self.element_id,
             False
         )
         micronutrient_data = nutrients.get_full_micronutrient(
@@ -226,9 +264,9 @@ class test_micronutrient(unittest.TestCase):
             self.micronutrient_name,
             self.micronutrient_value,
             self.micronutrient_unit,
-            self.element_id,
             self.label_information_id,
             self.language,
+            self.element_id,
             False
         )
         micro_id = nutrients.new_micronutrient(
@@ -236,9 +274,9 @@ class test_micronutrient(unittest.TestCase):
             other_name,
             self.micronutrient_value,
             self.micronutrient_unit,
-            self.element_id,
             self.label_information_id,
             self.language,
+            self.element_id,
             False
         )
         micronutrient_data = nutrients.get_all_micronutrients(
@@ -273,8 +311,9 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.guaranteed_analysis_name = "test-micronutrient"
         self.guaranteed_analysis_value = 10
         self.guaranteed_analysis_unit = "%"
-
+        
         self.lot_number = "lot_number"
+        self.product_name = "product_name"
         self.npk = "npk"
         self.registration_number = "registration_number"
         self.n = 10.0
@@ -283,24 +322,28 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
+        self.warranty = "warranty"
         self.label_information_id = label.new_label_information(
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
             self.n,
             self.p,
             self.k,
+            self.warranty,
             None,
             None
         )
+        self.language = "fr"
 
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_guaranteed_analysis(self):
-        guaranteed_analysis_id = nutrients.new_guaranteed(
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
             self.cursor,
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
@@ -311,8 +354,25 @@ class test_guaranteed_analysis(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
 
+    def test_get_guaranteed_analysis_json(self):
+        nutrients.new_guaranteed_analysis(
+            self.cursor,
+            self.guaranteed_analysis_name,
+            self.guaranteed_analysis_value,
+            self.guaranteed_analysis_unit,
+            self.label_information_id,
+            self.element_id,
+            False
+        )
+        data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
+        self.assertEqual(data["guaranteeds"][0]["name"], self.guaranteed_analysis_name)
+
+    def test_get_guaranteed_analysis_json_empty(self):
+        data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
+        self.assertIsNone(data["guaranteeds"])
+
     def test_get_guaranteed_analysis(self):
-        guaranteed_analysis_id = nutrients.new_guaranteed(
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
             self.cursor,
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
@@ -342,7 +402,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         )
 
     def test_get_full_guaranteed_analysis(self):
-        guaranteed_analysis_id = nutrients.new_guaranteed(
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
             self.cursor,
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
@@ -374,7 +434,7 @@ class test_guaranteed_analysis(unittest.TestCase):
 
     def test_get_all_guaranteed_analysis(self):
         other_name = "other-nutrient"
-        guaranteed_analysis_id = nutrients.new_guaranteed(
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
             self.cursor,
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
@@ -383,9 +443,9 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.element_id,
             False
         )
-        guaranteed_id = nutrients.new_guaranteed(
+        guaranteed_id = nutrients.new_guaranteed_analysis(
             self.cursor,
-            self.guaranteed_analysis_name,
+            other_name,
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.label_information_id,

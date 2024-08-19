@@ -1,6 +1,6 @@
 
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_micronutrient_json(
-label_id uuid)
+label_info_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
@@ -20,9 +20,9 @@ BEGIN
                     ) FILTER (WHERE micronutrient.language = 'en'),
                     'fr', jsonb_agg(
                         jsonb_build_object(
-                            'name', COALESCE(micronutrient.ph,Null),
-                            'unit', COALESCE(micronutrient.humidity,Null),
-                            'value', COALESCE(micronutrient.solubility,Null),
+                            'name', COALESCE(micronutrient.read_name,Null),
+                            'unit', COALESCE(micronutrient.unit,Null),
+                            'value', COALESCE(micronutrient.value,Null),
                             'edited', COALESCE(micronutrient.edited,Null)
                         )
                     ) FILTER (WHERE micronutrient.language = 'fr')
@@ -30,8 +30,7 @@ BEGIN
            )
     INTO result_json
     FROM micronutrient
-    WHERE micronutrient.label_id = label_id
-    ORDER BY micronutrient.language;
+    WHERE micronutrient.label_id = label_info_id;
     RETURN result_json;
 END;
-$function$;
+$function$

@@ -58,7 +58,6 @@ class ProductInformation(BaseModel):
     n: float
     p: float
     k: float
-    verified: bool
 
 
 class Specification(BaseModel):
@@ -73,6 +72,7 @@ class Specifications(BaseModel):
 
 class Inspection(BaseModel):
     id: Optional[str]=None
+    verified: Optional[bool]=False
     company: OrganizationInformation
     manufacturer: OrganizationInformation
     product: ProductInformation
