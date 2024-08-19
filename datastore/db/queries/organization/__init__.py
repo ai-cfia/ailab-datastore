@@ -88,7 +88,7 @@ def new_organization(cursor,information_id, location_id=None):
     except Exception as e:
         raise OrganizationCreationError("Datastore organization unhandeled error" + e.__str__())
     
-def new_organization_located(cursor, address:str, name:str, website:str, phone_number:str):
+def new_organization_info_located(cursor, address:str, name:str, website:str, phone_number:str):
     """
     This function create a new organization information in the database.
 
@@ -103,7 +103,7 @@ def new_organization_located(cursor, address:str, name:str, website:str, phone_n
     """
     try:
         query = """
-            SELECT new_organization_located(%s, %s, %s, %s);
+            SELECT new_organization_info_located(%s, %s, %s, %s);
             """
         cursor.execute(
             query,
@@ -203,6 +203,7 @@ def get_organizations_info_json(cursor, label_id)-> dict:
     - dict: The organization information
     """
     try:
+
         query = """
             SELECT get_organizations_information_json(%s);
             """
@@ -210,7 +211,7 @@ def get_organizations_info_json(cursor, label_id)-> dict:
         res = cursor.fetchone()
         if res is None:
             raise OrganizationNotFoundError
-        return res
+        return res[0]
     except OrganizationNotFoundError:
         raise OrganizationNotFoundError("organization information not found with information_id: " + label_id)
     except Exception as e:
