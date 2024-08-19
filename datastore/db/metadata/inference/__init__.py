@@ -40,6 +40,7 @@ class InferenceObject(BaseModel):
     score : float
     topN: list[Seed]
     top_id : str
+    is_verified : bool
 
 class Inference(BaseModel):
     boxes: list[InferenceObject]
@@ -176,8 +177,10 @@ def rebuild_boxes_export(cursor, objects) :
             
             if inference.is_object_verified(cursor, box_id):
                 top_id = str(inference.get_inference_object_verified_id(cursor, box_id))
+                is_verified = True
             else :
                 top_id = str(inference.get_inference_object_top_id(cursor, box_id))
+                is_verified = False
             top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
             
             seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
@@ -199,7 +202,8 @@ def rebuild_boxes_export(cursor, objects) :
                     overlappingIndices = box_metadata.get("overlappingIndices"),
                     score = top_score,
                     topN = topN,
-                    top_id = top_id     
+                    top_id = top_id,
+                    is_verified = is_verified
                 )
 
             boxes.append(object)
