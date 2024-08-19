@@ -3,6 +3,7 @@ from datastore.db.queries import label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
+import uuid
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -53,8 +54,8 @@ class test_label(unittest.TestCase):
 
     def test_get_label_information(self):
         label_information_id = label.new_label_information(
-            self.product_name,
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
@@ -67,13 +68,43 @@ class test_label(unittest.TestCase):
         )
         label_data = label.get_label_information(self.cursor, label_information_id)
         
-        self.assertEqual(label_data[0], self.product_name)
-        self.assertEqual(label_data[1], self.lot_number)
-        self.assertEqual(label_data[2], self.npk)
-        self.assertEqual(label_data[3], self.registration_number)
-        self.assertEqual(label_data[4], self.n)
-        self.assertEqual(label_data[5], self.p)
-        self.assertEqual(label_data[6], self.k)
-        self.assertEqual(label_data[7], self.warranty)
-        self.assertIsNone(label_data[8])
+        self.assertEqual(label_data[0], label_information_id)
+        self.assertEqual(label_data[1], self.product_name)
+        self.assertEqual(label_data[2], self.lot_number)
+        self.assertEqual(label_data[3], self.npk)
+        self.assertEqual(label_data[4], self.registration_number)
+        self.assertEqual(label_data[5], self.n)
+        self.assertEqual(label_data[6], self.p)
+        self.assertEqual(label_data[7], self.k)
+        self.assertEqual(label_data[8], self.warranty)
         self.assertIsNone(label_data[9])
+        self.assertIsNone(label_data[10])
+
+    def test_get_label_information_json(self):
+        label_information_id = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.warranty,
+            None,
+            None
+        )
+        label_data = label.get_label_information_json(self.cursor, label_information_id)
+        self.assertEqual(label_data["label_id"], str(label_information_id))
+        self.assertEqual(label_data["name"], self.product_name)
+        self.assertEqual(label_data["lot_number"], self.lot_number)
+        self.assertEqual(label_data["npk"], self.npk)
+        self.assertEqual(label_data["registration_number"], self.registration_number)
+        self.assertEqual(label_data["n"], self.n)
+        self.assertEqual(label_data["p"], self.p)
+        self.assertEqual(label_data["k"], self.k)
+        self.assertEqual(label_data["warranty"], self.warranty)
+
+    def test_get_label_information_json_wrong_label_id(self):
+        with self.assertRaises(label.LabelInformationNotFoundError):
+            label.get_label_information_json(self.cursor, str(uuid.uuid4()))

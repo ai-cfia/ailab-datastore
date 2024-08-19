@@ -5,7 +5,7 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     record RECORD;
-    verified BOOLEAN = FALSE;
+    verified_bool BOOLEAN = FALSE;
 BEGIN
     SELECT 
         id,
@@ -33,15 +33,15 @@ BEGIN
     SELECT 
         verified
     INTO
-        verified
+        verified_bool
     FROM
         inspection
     WHERE
         label_info_id = label_id
     LIMIT 1; 
     RETURN jsonb_build_object(
-        'labe_id', record.id,
-        'name', record.name,
+        'label_id', record.id,
+        'name', record.product_name,
         'k', record.k,
         'n', record.n,
         'p', record.p,
@@ -49,7 +49,7 @@ BEGIN
         'warranty', record.warranty,  
         'lot_number', record.lot_number,
         'registration_number', record.registration_number,
-        'verified', verified
+        'verified', verified_bool
     );
 END;
-$function$;
+$function$

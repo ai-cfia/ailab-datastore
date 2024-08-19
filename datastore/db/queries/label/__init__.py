@@ -110,9 +110,9 @@ def get_label_information_json(cursor, label_info_id)-> dict:
             """
         cursor.execute(query, (str(label_info_id),))
         label_info = cursor.fetchone()
-        if label_info is None:
+        if label_info is None or label_info[0] is None:
             raise LabelInformationNotFoundError("Error: could not get the label information: " + str(label_info_id))
-        return label_info
+        return label_info[0]
     except LabelInformationNotFoundError as e:
         raise e
     except Exception as e:

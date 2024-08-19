@@ -13,8 +13,7 @@ DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
-#DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
-DB_SCHEMA = "fertiscan_0.0.11"
+DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
