@@ -178,6 +178,15 @@ def get_inspection_fk(cursor, inspection_id):
 
     Returns:
     - The foreign keys of the inspection.
+    [ 
+        label_info_id, 
+        inspector_id, 
+        picture_set_id, 
+        company_info_id, 
+        manufacturer_info_id, 
+        fertilizer_id, 
+        sample_id
+    ]
     """
 
     try:

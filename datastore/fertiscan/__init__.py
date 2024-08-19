@@ -66,6 +66,8 @@ async def register_analysis(
             cursor, picture_set_metadata, user_id
         )
 
+        await datastore.create_picture_set(cursor, container_client, len(hashed_pictures), user_id, str(picture_set_id))
+
         # Upload pictures to storage
         await datastore.upload_pictures(
             cursor=cursor,

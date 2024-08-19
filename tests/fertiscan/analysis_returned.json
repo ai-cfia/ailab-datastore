@@ -30,7 +30,7 @@
                 }
             ],
             "density": {
-                "unit": "g/cm\u00b3",
+                "unit": "g/cm",
                 "value": 1.2
             }
         },

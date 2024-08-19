@@ -345,7 +345,7 @@ async def upload_pictures(
             )
             # Upload the picture to the Blob Storage
             response = await azure_storage.upload_image(
-                container_client, folder_name, picture_set_id, picture_hash, picture_id
+                container_client, str(folder_name), picture_set_id, picture_hash, picture_id
             )
             # Update the picture metadata in the DB
             data = {

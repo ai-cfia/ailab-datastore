@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_ingredient(
 name TEXT,
 value FLOAt,
-read_unit FLOAT,
+read_unit TEXT,
 label_id UUID,
 language "fertiscan_0.0.11".language,
 organic BOOLEAN,

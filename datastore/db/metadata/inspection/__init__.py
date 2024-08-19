@@ -134,7 +134,7 @@ def build_inspection_import(analysis_form: dict) -> str:
                 missing_keys.append(key)
         if len(missing_keys) > 0:
             raise MissingKeyError(missing_keys)
-        #data = json.loads(analysis_form)
+        
         npk = extract_npk(analysis_form.get("npk"))
         company = OrganizationInformation(
             name=analysis_form.get("company_name"),

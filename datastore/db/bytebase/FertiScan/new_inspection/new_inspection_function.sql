@@ -33,7 +33,7 @@ DECLARE
 BEGIN
 	
 -- COMPANY
-	company_id := "fertiscan_0.0.11".new_organization_located(
+	company_id := "fertiscan_0.0.11".new_organization_info_located(
 		input_json->'company'->>'name',
 		input_json->'company'->>'address',
 		input_json->'company'->>'website',
@@ -47,7 +47,7 @@ BEGIN
 -- COMPANY END
 
 -- MANUFACTURER
-	manufacturer_id := "fertiscan_0.0.11".new_organization_located(
+	manufacturer_id := "fertiscan_0.0.11".new_organization_info_located(
 		input_json->'manufacturer'->>'name',
 		input_json->'manufacturer'->>'address',
 		input_json->'manufacturer'->>'website',
@@ -167,7 +167,7 @@ BEGIN
 				ingredient_language::"fertiscan_0.0.11".language,
 				NULL, --We cant tell atm
 				NULL,  --We cant tell atm
-				FALSE
+				FALSE  --preset
 			);
 		END LOOP;
 	END LOOP;
@@ -179,10 +179,10 @@ BEGIN
     LOOP
 		-- Extract the French and English arrays for the current sub_type
         
-		key_string := sub_type_rec.type_en + '_' + 'fr';
+		key_string := CONCAT(sub_type_rec.type_en, '_', 'fr');
     	fr_values := input_json->key_string;
 
-		key_string := sub_type_rec.type_en + '_' + 'en';
+		key_string := CONCAT(sub_type_rec.type_en, '_', 'en');
         en_values := input_json->key_string;
 
         -- Ensure both arrays are of the same length
@@ -232,7 +232,7 @@ BEGIN
 -- GUARANTEED
 	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		call "fertiscan_0.0.11".new_guaranteed_analysis(
+		PERFORM "fertiscan_0.0.11".new_guaranteed_analysis(
 			record->>'name',
 			(record->>'value')::float,
 			record->>'unit',
