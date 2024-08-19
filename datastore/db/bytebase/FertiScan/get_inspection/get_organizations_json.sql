@@ -6,26 +6,20 @@ AS $function$
 DECLARE
     result_json jsonb;
 BEGIN
-    SELECT jsonb_build_object(
-        'manufacturer', 
-            jsonb_agg(jsonb_build_object(
-                'id',  COALESCE(org.id,Null),
+    SELECT jsonb_agg(jsonb_build_object(
+        CASE 
+            WHEN org.id = label_info.manufacturer_info_id THEN 'manufacturer'
+            WHEN org.id = label_info.company_info_id THEN 'company'
+            ELSE 'organization'
+        end, 
+            jsonb_build_object(
+                'id',  COALESCE(org.id, Null),
                 'name',  COALESCE(org.name, Null),
                 'address',  COALESCE(location.address, Null),
                 'phone_number',  COALESCE(org.phone_number, Null),
                 'website',  COALESCE(org.website, Null)
             )
-        ) FILTER (WHERE org.id = label_info.manufacturer_info_id),
-        'company', jsonb_agg(
-            jsonb_build_object(
-                'id', COALESCE(org.id, Null),
-                'name', COALESCE(org.name, Null),
-                'address', COALESCE(location.address, Null),
-                'phone_number', COALESCE(org.phone_number, Null),
-                'website', COALESCE(org.website, Null)
-            )
-        ) FILTER (WHERE org.id = label_info.company_info_id)
-    )
+    ))
     INTO result_json
     FROM organization_information as org
     JOIN (

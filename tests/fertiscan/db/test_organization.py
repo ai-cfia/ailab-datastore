@@ -260,10 +260,16 @@ class test_organization_information(unittest.TestCase):
         manufacturer_id = organization.new_organization_info_located(
             self.cursor, address=self.location_address, name=self.location_name, website=self.website, phone_number=self.phone
         )
-        label_id=label.new_label_information(self.cursor,"label_name","lot_number","10-10-10","registration_number",10,10,10,"warranty",company_id,manufacturer_id)
+        label_id=label.new_label_information(self.cursor,"label_name","lot_number","10-10-10","registration_number",10,10,10,"warranty",company_id, manufacturer_id)
         data = organization.get_organizations_info_json(self.cursor, label_id)
-        self.assertEqual(data["company"]["id"], company_id)
-        self.assertEqual(data["manufacturer"]["id"], manufacturer_id)
+        self.assertEqual(data["company"]["id"], str(company_id))
+        self.assertEqual(data["manufacturer"]["id"], str(manufacturer_id))
+
+    def test_get_organizations_info_json_not_found(self):
+        label_id=label.new_label_information(self.cursor,"label_name","lot_number","10-10-10","registration_number",10,10,10,"warranty",None, None)
+        with self.assertRaises(organization.OrganizationNotFoundError):
+            organization.get_organizations_info_json(self.cursor, label_id)
+
 
 class test_organization(unittest.TestCase):
     def setUp(self):
