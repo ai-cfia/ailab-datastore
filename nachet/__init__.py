@@ -8,7 +8,7 @@ import datastore.db.metadata.inference as inference_metadata
 import datastore.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.validator as validator
-import datastore.db.queries.inference as inference
+import nachet.db.queries.inference as inference
 import datastore.db.queries.machine_learning as machine_learning
 import datastore.db.queries.picture as picture
 import datastore.db.queries.seed as seed

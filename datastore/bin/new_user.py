@@ -15,7 +15,7 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
-    raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
+    raise ValueError("FERTISCAN_STORAGE_URL_TESTING is not set")
 
 
 if __name__ == "__main__":

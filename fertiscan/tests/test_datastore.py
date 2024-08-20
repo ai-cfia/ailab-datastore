@@ -9,7 +9,7 @@ import unittest
 import json
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
-import datastore.fertiscan as fertiscan
+import fertiscan as fertiscan
 import datastore.db.metadata.validator as validator
 import os
 

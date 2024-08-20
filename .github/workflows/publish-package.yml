@@ -1,0 +1,119 @@
+name: Reusable workflow to create a release with changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-name:
+        description: 'Package name (e.g., nachet-datastore or fertiscan-datastore)'
+        required: true
+        type: string
+      pyproject-path:
+        description: 'Path to pyproject.toml file (relative to repo root)'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: pip install build
+
+      - name: Parse version from pyproject.toml
+        id: parse_version
+        run: |
+          version=$(grep -Po '(?<=^version = ")[^"]*' ${{ inputs.pyproject-path }})
+          echo "version=$version" >> $GITHUB_ENV
+
+      - name: Tag the new version
+        run: |
+          git tag -a v${{ env.version }}-${{ inputs.package-name }} -m "Release ${{ env.version }}"
+          git push origin v${{ env.version }}-${{ inputs.package-name }}
+
+      - name: Prepare pyproject.toml for build
+        run: |
+          mv ${{ inputs.pyproject-path }} pyproject.toml
+
+      - name: Build wheel package
+        run: python -m build
+
+      - name: Generate changelog from PRs
+        id: generate_changelog
+        run: |
+          pr_list=$(gh pr list --repo $GITHUB_REPOSITORY --state merged --json number,title,url --jq '.[] | .number')
+
+          datastore_changelog=""
+          nachet_changelog=""
+          fertiscan_changelog=""
+
+          for pr in $pr_list; do
+            files=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json files --jq '.files[].path')
+
+            # Check for changes in the datastore folder
+            if echo "$files" | grep -q "^datastore/"; then
+              pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
+              datastore_changelog="$datastore_changelog\n$pr_info"
+            fi
+
+            # Check for changes in the nachet folder
+            if [ "${{ inputs.package-name }}" = "nachet-datastore" ]; then
+              if echo "$files" | grep -q "^nachet/"; then
+                pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
+                nachet_changelog="$nachet_changelog\n$pr_info"
+              fi
+            fi
+
+            # Check for changes in the fertiscan folder
+            if [ "${{ inputs.package-name }}" = "fertiscan-datastore" ]; then
+              if echo "$files" | grep -q "^fertiscan/"; then
+                pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
+                fertiscan_changelog="$fertiscan_changelog\n$pr_info"
+              fi
+            fi
+          done
+
+          # Generate the final changelog
+          changelog="Changelog:\n"
+
+          if [ -n "$datastore_changelog" ]; then
+            changelog="$changelog\nDatastore:\n$datastore_changelog"
+          fi
+
+          if [ -n "$nachet_changelog" ]; then
+            changelog="$changelog\n\nNachet:\n$nachet_changelog"
+          fi
+
+          if [ -n "$fertiscan_changelog" ]; then
+            changelog="$changelog\n\nFertiscan:\n$fertiscan_changelog"
+          fi
+
+          echo -e "changelog=$changelog" >> $GITHUB_ENV
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ env.version }}-${{ inputs.package-name }}
+          release_name: ${{ inputs.package-name }} v${{ env.version }}
+          body: ${{ env.changelog }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        uses: AButler/upload-release-assets@v3.0
+        with:
+          files: "dist/*.whl"
+          repo-token:  ${{ secrets.GITHUB_TOKEN }}
+          release-tag: v${{ env.version }}-${{ inputs.package-name }}
