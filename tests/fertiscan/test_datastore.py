@@ -10,9 +10,10 @@ import json
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.fertiscan as fertiscan
+import datastore.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.metric as metric
-from datastore.db.queries import sub_label, nutrients
+from datastore.db.queries import sub_label, nutrients, inspection, picture
 import os
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -94,3 +95,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.analysis_json.pop("specification_en",None)
         with self.assertRaises(fertiscan.data_inspection.MissingKeyError):
             asyncio.run(fertiscan.register_analysis(self.cursor, self.container_client, self.user_id, [self.pic_encoded,self.pic_encoded], {}))
+
+    def test_get_full_inspection_json(self):
+        formatted_analysis = metadata.build_inspection_import(self.analysis_json)
+        picture_set_id = picture.new_picture_set(self.cursor, json.dumps({}), self.user_id)
+
+        inspection_dict = inspection.new_inspection_with_label_info(self.cursor, self.user_id,picture_set_id,formatted_analysis)
+        inspection_id =  inspection_dict['inspection_id']
+
+        data = asyncio.run(fertiscan.get_full_inspection_json(self.cursor, inspection_id))
+        data = json.loads(data)
+        self.assertEqual(data["inspection_id"],str(inspection_id))

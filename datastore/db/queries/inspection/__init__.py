@@ -204,9 +204,9 @@ def get_inspection_fk(cursor, inspection_id):
             LEFT JOIN
                 label_information as label_info
             ON
-                inspection.label_info_id = label_information.id
+                inspection.label_info_id = label_info.id
             WHERE 
-                id = %s
+                inspection.id = %s
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
