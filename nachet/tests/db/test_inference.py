@@ -13,7 +13,7 @@ import base64
 from time import sleep
 from unittest.mock import MagicMock
 
-from datastore.db.__init__ import db
+import datastore.db.__init__ as db
 from datastore.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator

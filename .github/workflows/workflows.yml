@@ -8,7 +8,7 @@ on:
       - closed
       - synchronize
 jobs:
-  python-lint:
+  nachet-lint:
     name: workflow-lint-test-python
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
@@ -16,6 +16,20 @@ jobs:
       pyproject-path: 'nachet_pyproject.toml'  # testing
       package-name: 'nachet-datastore'  # testing
       project-path: 'nachet'  # testing
+  fertiscan-lint:
+    name: fertiscan-lint-test-python
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    secrets: inherit
+    with:
+      pyproject-path: 'fertiscan_pyproject.toml'  # testing
+      package-name: 'fertiscan-datastore'  # testing
+      project-path: 'fertiscan'  # testing
+  datastore-lint:
+    name: datastore-lint-test-python
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    secrets: inherit
+    with:
+      project-path: 'datastore'  # testing
   # bytebase-sql-review:
   #   uses: ai-cfia/github-workflows/.github/workflows/workflow-bytebase-sql-review.yml@main
   #   secrets: inherit
