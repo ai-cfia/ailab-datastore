@@ -7,6 +7,7 @@ name = "nachet_datastore"
 version = "1.0.0"
 authors = [
   { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" },
+  { name="Sylvanie You", email="Sylvanie.You@inspection.gc.ca"}
 ]
 description = "Data management python layer"
 readme = "README.md"
