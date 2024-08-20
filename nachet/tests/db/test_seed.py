@@ -7,7 +7,7 @@ import unittest
 import os
 from unittest.mock import MagicMock
 
-import datastore.db.__init__ as db
+from datastore.db.__init__ import db
 from datastore.db.metadata import validator
 from datastore.db.queries import seed
 

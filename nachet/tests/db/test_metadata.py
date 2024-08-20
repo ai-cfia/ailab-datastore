@@ -1,6 +1,6 @@
 import os
-import datastore.db.metadata.inference as inference
-import datastore.db.metadata.machine_learning as ml_data
+from datastore.db.metadata.inference import inference
+from datastore.db.metadata.machine_learning import ml_data
 import json
 import unittest
 
