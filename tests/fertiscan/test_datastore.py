@@ -11,6 +11,7 @@ import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import datastore.fertiscan as fertiscan
 import datastore.db.metadata.validator as validator
+import datastore.db.queries.metric as metric
 import os
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -72,7 +73,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
 
-        # print(analysis)
+        metrics = metric.get_metric_by_label(self.cursor, str(analysis["product"]["label_id"]))
+
+        self.assertIsNotNone(metrics)
+        self.assertEqual(len(metrics), 4) # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):

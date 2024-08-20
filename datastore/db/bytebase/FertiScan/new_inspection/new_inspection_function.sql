@@ -80,7 +80,7 @@ BEGIN
 
 --WEIGHT
 	-- Loop through each element in the 'weight' array
-    FOR record IN SELECT * FROM jsonb_array_elements(input_json->'weight')
+    FOR record IN SELECT * FROM jsonb_array_elements(input_json-> 'product' -> 'metrics' -> 'weight')
     LOOP
         -- Extract the value and unit from the current weight record
         read_value := record->>'value';
@@ -96,8 +96,8 @@ BEGIN
 -- Weight end
 	
 --DENSITY
- 	read_value := input_json -> 'product' -> 'density'->> 'value';
- 	read_unit := input_json -> 'product' -> 'density'->> 'unit';
+ 	read_value := input_json -> 'product' -> 'metrics' ->'density'->> 'value';
+ 	read_unit := input_json -> 'product' -> 'metrics' -> 'density'->> 'unit';
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
 	    
@@ -113,8 +113,8 @@ BEGIN
 -- DENSITY END
 
 --VOLUME
- 	read_value := input_json -> 'product' -> 'volume'->> 'value';
- 	read_unit := input_json -> 'product' -> 'volume'->> 'unit';
+ 	read_value := input_json -> 'product' -> 'metrics' -> 'volume'->> 'value';
+ 	read_unit := input_json -> 'product' -> 'metrics' -> 'volume'->> 'unit';
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
 		value_float = read_value::float;
