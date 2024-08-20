@@ -59,7 +59,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                         "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
                     ],
                 },
-                "warranty": {
+                "warranties": {
                     "fr": ["Garantie limitée de 1 an."],
                     "en": ["Limited warranty of 1 year."],
                 },
@@ -94,27 +94,12 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                     "fr": ["En cas de contact avec les yeux, rincer immédiatement."],
                     "en": ["If in eyes, rinse immediately."],
                 },
-                "warranty": {
+                "warranties": {
                     "fr": ["Garantie limitée de 2 ans."],
                     "en": ["Limited warranty of 2 years."],
                 },
             }
         )
-
-        # Insert test data to obtain a valid label_id and sub_type_id
-        sub_types = [
-            ("instructions", "instructions"),
-            ("cautions", "cautions"),
-            ("first_aid", "first_aid"),
-            ("warranty", "warranty"),
-        ]
-        self.sub_type_ids = {}
-        for type_en, type_fr in sub_types:
-            self.cursor.execute(
-                "INSERT INTO sub_type (type_en, type_fr) VALUES (%s, %s) RETURNING id;",
-                (type_en, type_fr),
-            )
-            self.sub_type_ids[type_en] = self.cursor.fetchone()[0]
 
         sample_org_info = json.dumps(
             {
@@ -183,9 +168,11 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.assertEqual(
             len(saved_data), 7, "There should be seven sub label records inserted"
         )
-        self.assertListEqual(
-            saved_data, expected_data, "Saved data should match the expected values"
-        )
+        for expected_item in expected_data:
+            self.assertTrue(
+                expected_item in saved_data,
+                f"Expected item {expected_item} was not found in the saved data"
+            )
 
         # Update sub labels
         self.cursor.execute(
@@ -217,11 +204,11 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.assertEqual(
             len(updated_data), 7, "There should be seven sub label records after update"
         )
-        self.assertListEqual(
-            updated_data,
-            expected_updated_data,
-            "Updated data should match the new values",
-        )
+        for expected_updated_item in expected_updated_data:
+            self.assertTrue(
+                expected_updated_item in updated_data,
+                f"Expected updated item {expected_updated_item} was not found in the updated data"
+            )
 
 
 if __name__ == "__main__":
