@@ -1,3 +1,5 @@
+SET search_path TO "fertiscan_0.0.11";
+
 -- Function to upsert location information based on location_id and address
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_location(location_id uuid, address text)
 RETURNS uuid AS $$
@@ -5,8 +7,8 @@ DECLARE
     new_location_id uuid;
 BEGIN
     -- Upsert the location
-    INSERT INTO "fertiscan_0.0.11".location (id, address)
-    VALUES (COALESCE(location_id, "fertiscan_0.0.11".uuid_generate_v4()), address)
+    INSERT INTO location (id, address)
+    VALUES (COALESCE(location_id, uuid_generate_v4()), address)
     ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
     DO UPDATE SET address = EXCLUDED.address
     RETURNING id INTO new_location_id;
@@ -25,18 +27,18 @@ DECLARE
 BEGIN
     -- Fetch location_id from the address if it exists
     SELECT id INTO location_id
-    FROM "fertiscan_0.0.11".location
+    FROM location
     WHERE address = input_org_info->>'address'
     LIMIT 1;
 
     -- Use upsert_location to insert or update the location
-    location_id := "fertiscan_0.0.11".upsert_location(location_id, input_org_info->>'address');
+    location_id := upsert_location(location_id, input_org_info->>'address');
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
     organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, uuid_generate_v4());
 
     -- Upsert organization information
-    INSERT INTO "fertiscan_0.0.11".organization_information (id, name, website, phone_number, location_id)
+    INSERT INTO organization_information (id, name, website, phone_number, location_id)
     VALUES (
         organization_info_id,
         input_org_info->>'name',
@@ -70,7 +72,7 @@ BEGIN
     label_id := COALESCE(NULLIF(input_label->>'id', '')::uuid, uuid_generate_v4());
 
     -- Upsert label information
-    INSERT INTO "fertiscan_0.0.11".label_information (
+    INSERT INTO label_information (
         id, product_name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id, warranty
     )
     VALUES (
@@ -116,7 +118,7 @@ DECLARE
     unit_id uuid;
 BEGIN
     -- Delete existing metrics for the given label_id
-    DELETE FROM "fertiscan_0.0.11".metric WHERE label_id = p_label_id;
+    DELETE FROM metric WHERE label_id = p_label_id;
 
     -- Handle weight metrics separately
     IF metrics ? 'weight' THEN
@@ -128,13 +130,13 @@ BEGIN
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM "fertiscan_0.0.11".unit WHERE unit = metric_unit LIMIT 1;
+                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
                 IF unit_id IS NULL THEN
-                    INSERT INTO "fertiscan_0.0.11".unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
                 END IF;
 
                 -- Insert metric record for weight
-                INSERT INTO "fertiscan_0.0.11".metric (id, value, unit_id, metric_type, label_id)
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
                 VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
             END IF;
         END LOOP;
@@ -151,13 +153,13 @@ BEGIN
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM "fertiscan_0.0.11".unit WHERE unit = metric_unit LIMIT 1;
+                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
                 IF unit_id IS NULL THEN
-                    INSERT INTO "fertiscan_0.0.11".unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
                 END IF;
 
                 -- Insert metric record
-                INSERT INTO "fertiscan_0.0.11".metric (id, value, unit_id, metric_type, label_id)
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
                 VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
             END IF;
         END IF;
@@ -178,7 +180,7 @@ DECLARE
     spec_record jsonb;
 BEGIN
     -- Delete existing specifications for the given label_id
-    DELETE FROM "fertiscan_0.0.11".specification WHERE label_id = p_label_id;
+    DELETE FROM specification WHERE label_id = p_label_id;
 
     -- Insert new specifications
     FOR spec_language IN SELECT * FROM jsonb_object_keys(new_specifications)
@@ -186,7 +188,7 @@ BEGIN
         FOR spec_record IN SELECT * FROM jsonb_array_elements(new_specifications -> spec_language)
         LOOP
             -- Insert each specification record
-            INSERT INTO "fertiscan_0.0.11".specification (
+            INSERT INTO specification (
                 humidity, ph, solubility, edited, label_id, language
             )
             VALUES (
@@ -195,7 +197,7 @@ BEGIN
                 (spec_record->>'solubility')::float,
                 FALSE,  -- not handled
                 p_label_id,
-                spec_language::"fertiscan_0.0.11".language
+                spec_language::language
             );
         END LOOP;
     END LOOP;
@@ -214,7 +216,7 @@ DECLARE
     ingredient_record jsonb;
 BEGIN
     -- Delete existing ingredients for the given label_id
-    DELETE FROM "fertiscan_0.0.11".ingredient WHERE label_id = p_label_id;
+    DELETE FROM ingredient WHERE label_id = p_label_id;
 
     -- Insert new ingredients
     FOR ingredient_language IN SELECT * FROM jsonb_object_keys(new_ingredients)
@@ -222,7 +224,7 @@ BEGIN
         FOR ingredient_record IN SELECT * FROM jsonb_array_elements(new_ingredients -> ingredient_language)
         LOOP
             -- Insert each ingredient record
-            INSERT INTO "fertiscan_0.0.11".ingredient (
+            INSERT INTO ingredient (
                 organic, active, name, value, unit, edited, label_id, language
             )
             VALUES (
@@ -233,7 +235,7 @@ BEGIN
                 ingredient_record->>'unit',
                 FALSE, -- not yet handled
                 p_label_id,
-                ingredient_language::"fertiscan_0.0.11".language
+                ingredient_language::language
             );
         END LOOP;
     END LOOP;
@@ -252,7 +254,7 @@ DECLARE
     nutrient_record jsonb;
 BEGIN
     -- Delete existing micronutrients for the given label_id
-    DELETE FROM "fertiscan_0.0.11".micronutrient WHERE label_id = p_label_id;
+    DELETE FROM micronutrient WHERE label_id = p_label_id;
 
     -- Insert new micronutrients
     FOR nutrient_language IN SELECT * FROM jsonb_object_keys(new_micronutrients)
@@ -260,7 +262,7 @@ BEGIN
         FOR nutrient_record IN SELECT * FROM jsonb_array_elements(new_micronutrients -> nutrient_language)
         LOOP
             -- Insert each micronutrient record
-            INSERT INTO "fertiscan_0.0.11".micronutrient (
+            INSERT INTO micronutrient (
                 read_name, value, unit, edited, label_id, language
             )
             VALUES (
@@ -269,7 +271,7 @@ BEGIN
                 nutrient_record->>'unit',
                 FALSE,  -- not handled
                 p_label_id,
-                nutrient_language::"fertiscan_0.0.11".language
+                nutrient_language::language
             );
         END LOOP;
     END LOOP;
@@ -287,13 +289,13 @@ DECLARE
     guaranteed_record jsonb;
 BEGIN
     -- Delete existing guaranteed analysis for the given label_id
-    DELETE FROM "fertiscan_0.0.11".guaranteed WHERE label_id = p_label_id;
+    DELETE FROM guaranteed WHERE label_id = p_label_id;
 
     -- Insert new guaranteed analysis
     FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed)
     LOOP
         -- Insert each guaranteed analysis record
-        INSERT INTO "fertiscan_0.0.11".guaranteed (
+        INSERT INTO guaranteed (
             read_name, value, unit, edited, label_id
         )
         VALUES (
@@ -321,10 +323,10 @@ DECLARE
     i int;
 BEGIN
     -- Delete existing sub labels for the given label_id
-    DELETE FROM "fertiscan_0.0.11".sub_label WHERE label_id = p_label_id;
+    DELETE FROM sub_label WHERE label_id = p_label_id;
 
     -- Loop through each sub_type
-    FOR sub_type_rec IN SELECT id, type_en FROM "fertiscan_0.0.11".sub_type
+    FOR sub_type_rec IN SELECT id, type_en FROM sub_type
     LOOP
         -- Extract the French and English arrays for the current sub_type
         fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
@@ -335,7 +337,7 @@ BEGIN
             FOR i IN 0..(jsonb_array_length(fr_values) - 1)
             LOOP
                 -- Insert sub label record
-                INSERT INTO "fertiscan_0.0.11".sub_label (
+                INSERT INTO sub_label (
                     text_content_fr, text_content_en, label_id, edited, sub_type_id
                 )
                 VALUES (
@@ -371,7 +373,7 @@ BEGIN
     inspection_id := COALESCE(p_inspection_id, uuid_generate_v4());
 
     -- Upsert inspection information
-    INSERT INTO "fertiscan_0.0.11".inspection (
+    INSERT INTO inspection (
         id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
     )
     VALUES (
@@ -411,7 +413,7 @@ DECLARE
     fertilizer_id uuid;
 BEGIN
     -- Upsert fertilizer information
-    INSERT INTO "fertiscan_0.0.11".fertilizer (
+    INSERT INTO fertilizer (
         name, registration_number, upload_date, update_at, owner_id, latest_inspection_id
     )
     VALUES (
@@ -463,22 +465,22 @@ BEGIN
 
     -- Check if the provided inspector_id matches the existing one
     SELECT inspector_id INTO existing_inspector_id
-    FROM "fertiscan_0.0.11".inspection
+    FROM inspection
     WHERE id = p_inspection_id;
     IF existing_inspector_id IS NULL OR existing_inspector_id != p_inspector_id THEN
         RAISE EXCEPTION 'Unauthorized: Inspector ID mismatch or inspection not found';
     END IF;
 
     -- Upsert company information and get the ID
-    company_info_id := "fertiscan_0.0.11".upsert_organization_info(p_input_json->'company');
+    company_info_id := upsert_organization_info(p_input_json->'company');
     updated_json := jsonb_set(updated_json, '{company,id}', to_jsonb(company_info_id));
 
     -- Upsert manufacturer information and get the ID
-    manufacturer_info_id := "fertiscan_0.0.11".upsert_organization_info(p_input_json->'manufacturer');
+    manufacturer_info_id := upsert_organization_info(p_input_json->'manufacturer');
     updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
 
     -- Upsert label information and get the ID
-    label_info_id := "fertiscan_0.0.11".upsert_label_information(
+    label_info_id := upsert_label_information(
         p_input_json->'product',
         company_info_id,
         manufacturer_info_id
@@ -486,26 +488,26 @@ BEGIN
     updated_json := jsonb_set(updated_json, '{product,id}', to_jsonb(label_info_id));
 
     -- Update metrics related to the label
-    PERFORM "fertiscan_0.0.11".update_metrics(label_info_id, p_input_json->'product'->'metrics');
+    PERFORM update_metrics(label_info_id, p_input_json->'product'->'metrics');
 
     -- Update specifications related to the label
-    PERFORM "fertiscan_0.0.11".update_specifications(label_info_id, p_input_json->'specifications');
+    PERFORM update_specifications(label_info_id, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    PERFORM "fertiscan_0.0.11".update_ingredients(label_info_id, p_input_json->'ingredients');
+    PERFORM update_ingredients(label_info_id, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
-    PERFORM "fertiscan_0.0.11".update_micronutrients(label_info_id, p_input_json->'micronutrients');
+    PERFORM update_micronutrients(label_info_id, p_input_json->'micronutrients');
 
     -- Update guaranteed analysis related to the label
-    PERFORM "fertiscan_0.0.11".update_guaranteed(label_info_id, p_input_json->'guaranteed_analysis');
+    PERFORM update_guaranteed(label_info_id, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
-    PERFORM "fertiscan_0.0.11".update_sub_labels(label_info_id, p_input_json->'sub_labels');
+    PERFORM update_sub_labels(label_info_id, p_input_json->'sub_labels');
 
     -- Update the inspection record
     verified := (p_input_json->'product'->>'verified')::boolean;
-    inspection_id := "fertiscan_0.0.11".upsert_inspection(
+    inspection_id := upsert_inspection(
         p_inspection_id,
         label_info_id,
         p_inspector_id,
@@ -523,12 +525,12 @@ BEGIN
         registration_number := p_input_json->'product'->>'registration_number';
 
         -- Insert organization and get the organization_id
-        INSERT INTO "fertiscan_0.0.11".organization (information_id, main_location_id)
+        INSERT INTO organization (information_id, main_location_id)
         VALUES (company_info_id, NULL) -- TODO: main_location_id not yet handled
         RETURNING id INTO organization_id;
 
         -- Upsert the fertilizer record
-        PERFORM "fertiscan_0.0.11".upsert_fertilizer(
+        PERFORM upsert_fertilizer(
             fertilizer_name,
             registration_number,
             organization_id,
