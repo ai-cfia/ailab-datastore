@@ -29,35 +29,58 @@ DECLARE
     specification_id uuid;
     sub_label_id uuid;
     ingredient_language text;
+	micronutrient_language text;
+	name_string text;
+	address_string text;
+	website_string text;
+	phone_number_string text;
     result_json jsonb := '{}';
 BEGIN
 	
 -- COMPANY
-	company_id := "fertiscan_0.0.11".new_organization_info_located(
-		input_json->'company'->>'name',
-		input_json->'company'->>'address',
-		input_json->'company'->>'website',
-		input_json->'company'->>'phone_number',
-		FALSE
-	);
+	name_string := input_json->'company'->>'name';
+	address_string := input_json->'company'->>'address';
+	website_string := input_json->'company'->>'website';
+	phone_number_string := input_json->'company'->>'phone_number';
+	If((COALESCE(name_string, '') <> '' ) OR
+		(COALESCE(address_string,'' ) <> '' ) OR
+		(COALESCE(website_string , '') <> '') OR
+		(COALESCE(phone_number_string , '') <> ''))
+		THEN
+		company_id := "fertiscan_0.0.11".new_organization_info_located(
+			input_json->'company'->>'name',
+			input_json->'company'->>'address',
+			input_json->'company'->>'website',
+			input_json->'company'->>'phone_number',
+			FALSE
+		);
 	
-	-- Update input_json with company_id
-	input_json := jsonb_set(input_json, '{company,id}', to_jsonb(company_id));
-
+		-- Update input_json with company_id
+		input_json := jsonb_set(input_json, '{company,id}', to_jsonb(company_id));
+	END IF;
 -- COMPANY END
 
 -- MANUFACTURER
-	manufacturer_id := "fertiscan_0.0.11".new_organization_info_located(
-		input_json->'manufacturer'->>'name',
-		input_json->'manufacturer'->>'address',
-		input_json->'manufacturer'->>'website',
-		input_json->'manufacturer'->>'phone_number',
-		FALSE
-	);
-	
-	-- Update input_json with company_id
-	input_json := jsonb_set(input_json, '{manufacturer,id}', to_jsonb(manufacturer_id));
--- Manufacturer end
+	name_string := input_json->'manufacturer'->>'name';
+	address_string := input_json->'manufacturer'->>'address';
+	website_string := input_json->'manufacturer'->>'website';
+	phone_number_string := input_json->'manufacturer'->>'phone_number';
+	If((COALESCE(name_string, '') <> '' ) OR
+		(COALESCE(address_string,'' ) <> '' ) OR
+		(COALESCE(website_string , '') <> '') OR
+		(COALESCE(phone_number_string , '') <> ''))
+		THEN
+		manufacturer_id := "fertiscan_0.0.11".new_organization_info_located(
+			input_json->'manufacturer'->>'name',
+			input_json->'manufacturer'->>'address',
+			input_json->'manufacturer'->>'website',
+			input_json->'manufacturer'->>'phone_number',
+			FALSE
+		);
+		-- Update input_json with company_id
+		input_json := jsonb_set(input_json, '{manufacturer,id}', to_jsonb(manufacturer_id));
+	end if;
+	-- Manufacturer end
 
 -- LABEL INFORMATION
 	label_id := "fertiscan_0.0.11".new_label_information(
@@ -178,12 +201,10 @@ BEGIN
     FOR sub_type_rec IN SELECT id,type_en FROM sub_type
     LOOP
 		-- Extract the French and English arrays for the current sub_type
-        
-		key_string := CONCAT(sub_type_rec.type_en, '_', 'fr');
-    	fr_values := input_json->key_string;
 
-		key_string := CONCAT(sub_type_rec.type_en, '_', 'en');
-        en_values := input_json->key_string;
+		key_string := sub_type_rec.type_en;
+        en_values := input_json -> key_string -> 'en';
+    	fr_values := input_json -> key_string -> 'fr';
 
         -- Ensure both arrays are of the same length
         IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
@@ -202,30 +223,19 @@ BEGIN
   -- SUB_LABEL END
   
   -- MICRO NUTRIENTS
-	en_values := input_json->'micronutrients_en';
-	fr_values := input_json->'micronutrients_fr';
-	--	RAISE EXCEPTION 'French and English micronutrient arrays must be of the same length';
-	FOR record IN SELECT * FROM jsonb_array_elements(en_values)
+		-- Loop through each language ('en' and 'fr')
+    FOR micronutrient_language  IN SELECT * FROM jsonb_object_keys(input_json->'micronutrients')
 	LOOP
-		micronutrient_id := "fertiscan_0.0.11".new_micronutrient(
-			record->> 'name',
-			(record->> 'value')::float,
-			record->> 'unit',
-			label_id,
-			'en'::"fertiscan_0.0.11".language
-		);
-	END LOOP;
-	FOR record IN SELECT * FROM jsonb_array_elements(fr_values)
-	LOOP
-		micronutrient_id := "fertiscan_0.0.11".new_micronutrient(
-			record->> 'name',
-			(record->> 'value')::float,
-			record->> 'unit',
-			label_id,
-			'fr'::"fertiscan_0.0.11".language,
-			FALSE,
-			NULL -- We arent handeling element_id yet
-		);
+		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'micronutrients'->micronutrient_language)
+		LOOP
+			micronutrient_id := "fertiscan_0.0.11".new_micronutrient(
+				record->> 'name',
+				(record->> 'value')::float,
+				record->> 'unit',
+				label_id,
+				micronutrient_language::"fertiscan_0.0.11".language
+			);
+		END LOOP;
 	END LOOP;
 --MICRONUTRIENTS ENDS
 

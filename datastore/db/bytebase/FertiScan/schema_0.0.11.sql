@@ -267,10 +267,10 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Insert the default types : [instruction, caution,first_aid, warranty]
     INSERT INTO "fertiscan_0.0.11".sub_type(type_fr,type_en) VALUES
-    ('Instruction','Instruction'),
-    ('Mise en garde','Caution'),
-    ('Premier soin','First aid'),
-    ('Garantie','Warranty');
+    ('instructions','instructions'),
+    ('mises_en_garde','cautions'),
+    ('premier_soin','first_aid'),
+    ('garanties','warranties');
 
  CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb

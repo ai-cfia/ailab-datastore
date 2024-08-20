@@ -107,9 +107,7 @@ def get_specification_json(cursor, label_id)-> dict:
     """
     try:
         if not has_specification(cursor, label_id):
-            raise SpecificationNotFoundError(
-                "Error: could not get the specification for label: " + str(label_id)
-            )
+            return {'specifications': {'en': [], 'fr': []}}
         query = """
             SELECT get_specification_json(%s);
         """

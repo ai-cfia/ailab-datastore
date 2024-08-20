@@ -10,22 +10,22 @@ BEGIN
     SELECT jsonb_build_object(
                 'micronutrients', 
                 jsonb_build_object(
-                    'en', jsonb_agg(
+                    'en', COALESCE(jsonb_agg(
                         jsonb_build_object(
                             'name', COALESCE(micronutrient.read_name,Null),
                             'unit', COALESCE(micronutrient.unit,Null),
                             'value', COALESCE(micronutrient.value,Null),
                             'edited', COALESCE(micronutrient.edited,Null)
                         )
-                    ) FILTER (WHERE micronutrient.language = 'en'),
-                    'fr', jsonb_agg(
+                    ) FILTER (WHERE micronutrient.language = 'en'), '[]'::jsonb), 
+                    'fr', COALESCE(jsonb_agg(
                         jsonb_build_object(
                             'name', COALESCE(micronutrient.read_name,Null),
                             'unit', COALESCE(micronutrient.unit,Null),
                             'value', COALESCE(micronutrient.value,Null),
                             'edited', COALESCE(micronutrient.edited,Null)
                         )
-                    ) FILTER (WHERE micronutrient.language = 'fr')
+                    ) FILTER (WHERE micronutrient.language = 'fr'), '[]'::jsonb)
                 )
            )
     INTO result_json

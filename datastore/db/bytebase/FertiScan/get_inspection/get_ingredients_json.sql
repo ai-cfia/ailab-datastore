@@ -1,6 +1,6 @@
 
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_ingredients_json(
-label_id uuid)
+label_info_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
@@ -9,28 +9,27 @@ DECLARE
 BEGIN
     SELECT jsonb_build_object(
         'ingredients', jsonb_build_object(
-            'en',jsonb_agg(
+            'en',COALESCE(jsonb_agg(
                 jsonb_build_object(
                     'name', COALESCE(ingredient.name, Null),
                     'value', COALESCE(ingredient.value,Null),
                     'unit', COALESCE(ingredient.unit,Null),
                     'edited', COALESCE(ingredient.edited,Null)
                 )
-            ) FILTER (WHERE ingredient.language = 'en'), 
-            'fr', jsonb_agg(
+            ) FILTER (WHERE ingredient.language = 'en'), '[]'::jsonb), 
+            'fr', COALESCE(jsonb_agg(
                 jsonb_build_object(
                     'name', COALESCE(ingredient.name, Null),
                     'value', COALESCE(ingredient.value,Null),
                     'unit', COALESCE(ingredient.unit,Null),
                     'edited', COALESCE(ingredient.edited,Null)
                 )
-            ) FILTER (WHERE ingredient.language = 'fr')
+            ) FILTER (WHERE ingredient.language = 'fr'), '[]'::jsonb)
         )
     )
     INTO result_json
     FROM ingredient
-    WHERE ingredient.label_id = label_id
-    ORDER BY ingredient.language;
+    WHERE ingredient.label_id = label_info_id;
     RETURN result_json;
 END;
 $function$;

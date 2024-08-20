@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_specification_json(
-label_id uuid)
+label_info_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
@@ -8,27 +8,27 @@ DECLARE
 BEGIN
     SELECT jsonb_build_object(
         'specifications', jsonb_build_object(
-            'en',jsonb_agg(
+            'en',COALESCE(jsonb_agg(
                 jsonb_build_object(
                     'ph', COALESCE(specification.ph, Null),
                     'humidity', COALESCE(specification.humidity,Null),
                     'solubility', COALESCE(specification.solubility,Null),
                     'edited', COALESCE(specification.edited,Null)
                 )
-            ) FILTER (WHERE specification.language = 'en'), 
-            'fr', jsonb_agg(
+            ) FILTER (WHERE specification.language = 'en'), '[]'::jsonb), 
+            'fr', COALESCE(jsonb_agg(
                 jsonb_build_object(
                     'ph', COALESCE(specification.ph,Null),
                     'humidity', COALESCE(specification.humidity,Null),
                     'solubility', COALESCE(specification.solubility,Null),
                     'edited', COALESCE(specification.edited,Null)
                 )
-            ) FILTER (WHERE specification.language = 'fr')
+            ) FILTER (WHERE specification.language = 'fr'), '[]'::jsonb)
         )
     )
     INTO result_json
     FROM specification
-    WHERE specification.label_id = label_id;
+    WHERE specification.label_id = label_info_id;
     RETURN result_json;
 END;
 $function$;

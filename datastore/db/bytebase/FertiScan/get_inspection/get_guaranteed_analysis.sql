@@ -7,7 +7,7 @@ DECLARE
     result_json jsonb;
 BEGIN
     SELECT jsonb_build_object(
-            'guaranteeds', COALESCE(jsonb_agg(
+            'guaranteed_analysis', COALESCE(jsonb_agg(
                 jsonb_build_object(
                     'name', COALESCE(guaranteed.read_name,Null),
                     'unit', COALESCE(guaranteed.unit,Null),

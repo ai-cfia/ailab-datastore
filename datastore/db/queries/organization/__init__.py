@@ -212,11 +212,16 @@ def get_organizations_info_json(cursor, label_id)-> dict:
         res = cursor.fetchone()
         if res is None or res[0] is None:
             raise OrganizationNotFoundError
-        return {**res[0][0],**res[0][1]}
+        if len(res[0]) == 2 :
+            return {**res[0][0],**res[0][1]}
+        elif len(res[0]) == 1:
+            return res[0][0]
+        else:
+            return {}
     except OrganizationNotFoundError:
         raise OrganizationNotFoundError("organization information not found for the label_info_id " + str(label_id))
     except Exception as e:
-        raise Exception("Datastore organization unhandeled error" + e.__str__())
+        raise Exception("Datastore organization unhandeled error: " + e.__str__())
 
 
 def update_organization(

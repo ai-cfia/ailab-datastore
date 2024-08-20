@@ -245,7 +245,7 @@ def get_full_micronutrient(cursor, micronutrient_id):
                 CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
             FROM 
                 micronutrient m
-            JOIN 
+            LEFT JOIN 
                 element_compound ec ON m.element_id = ec.id
             WHERE 
                 m.id = %s
@@ -283,7 +283,7 @@ def get_all_micronutrients(cursor, label_id):
                 CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
             FROM 
                 micronutrient m
-            JOIN 
+            LEFT JOIN 
                 element_compound ec ON m.element_id = ec.id
             WHERE 
                 m.label_id = %s

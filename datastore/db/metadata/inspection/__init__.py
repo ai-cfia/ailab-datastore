@@ -4,6 +4,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
+import json
 from typing import List
 from pydantic import BaseModel, ValidationError
 from typing import Optional
@@ -19,10 +20,11 @@ class MetadataFormattingError(Exception):
     pass
 
 class OrganizationInformation(BaseModel):
-    name: str = ""
-    address: str = ""
-    website: str = ""
-    phone_number: str = ""
+    id: Optional[str] = None
+    name: Optional[str] = None
+    address: Optional[str] = None
+    website: Optional[str] = None
+    phone_number: Optional[str] = None
     
 class Value(BaseModel):
     value: Optional[float] = None
@@ -44,12 +46,13 @@ class Metric(BaseModel):
     edited: Optional[bool] = False
 
 class Metrics(BaseModel):
-    weight: List[Metric]
-    volume: Metric
-    density: Metric
+    weight: Optional[List[Metric]] = []
+    volume: Optional[Metric] = Metric()
+    density: Optional[Metric] = Metric()
 
 class ProductInformation(BaseModel):
     name: str
+    label_id: Optional[str] = None
     registration_number: str
     lot_number: str
     metrics: Metrics
@@ -71,10 +74,10 @@ class Specifications(BaseModel):
     fr: List[Specification]
 
 class Inspection(BaseModel):
-    id: Optional[str]=None
+    inspection_id: Optional[str]=None
     verified: Optional[bool]=False
-    company: OrganizationInformation
-    manufacturer: OrganizationInformation
+    company:  Optional[OrganizationInformation] = OrganizationInformation()
+    manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
@@ -136,25 +139,42 @@ def build_inspection_import(analysis_form: dict) -> str:
             raise MissingKeyError(missing_keys)
         
         npk = extract_npk(analysis_form.get("npk"))
-        company = OrganizationInformation(
+        if (analysis_form.get("company_name") is None) or (analysis_form.get("company_address") is None) or (analysis_form.get("company_website") is None) or (analysis_form.get("company_phone_number") is None):
+            company = OrganizationInformation()
+        else:
+            company = OrganizationInformation(
             name=analysis_form.get("company_name"),
             address=analysis_form["company_address"],
             website=analysis_form["company_website"],
             phone_number=analysis_form["company_phone_number"]
         )
-        manufacturer = OrganizationInformation(
+        if (analysis_form.get("manufacturer_name") is None) or (analysis_form.get("manufacturer_address") is None) or (analysis_form.get("manufacturer_website") is None) or (analysis_form.get("manufacturer_phone_number") is None):
+            manufacturer = OrganizationInformation()
+        #    raise MissingKeyError("Missing keys: manufacturer_name, manufacturer_address, manufacturer_website, manufacturer_phone_number")
+        else:
+            manufacturer = OrganizationInformation(
             name=analysis_form["manufacturer_name"],
             address=analysis_form["manufacturer_address"],
             website=analysis_form["manufacturer_website"],
             phone_number=analysis_form["manufacturer_phone_number"]
-        )
+            )
         weights : List[Metric] = []
-        for i in range(len(analysis_form["weight"])):
-            weights.append(Metric(unit=analysis_form["weight"][i]["unit"], value=analysis_form["weight"][i]["value"]))
+
+        if analysis_form["weight"] != []:
+            for i in range(len(analysis_form["weight"])):
+                weights.append(Metric(unit=analysis_form["weight"][i]["unit"], value=analysis_form["weight"][i]["value"]))
+        if not analysis_form["volume"] is None:
+            volume_obj = Metric(unit=analysis_form["volume"]["unit"], value=analysis_form["volume"]["value"])
+        else:
+            volume_obj = Metric()
+        if not analysis_form["density"] is None:
+            density_obj = Metric(unit=analysis_form["density"]["unit"], value=analysis_form["density"]["value"])
+        else:
+            density_obj = Metric()
         metrics = Metrics(
             weight=weights,
-            volume=Metric(unit=analysis_form["volume"]["unit"], value=analysis_form["volume"]["value"]),
-            density=Metric(unit=analysis_form["density"]["unit"], value=analysis_form["density"]["value"])
+            volume=volume_obj,
+            density=density_obj
         )
         product = ProductInformation(
             name=analysis_form["fertiliser_name"],
@@ -239,38 +259,46 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
+        
         inspection_json = {
-            id: str(inspection_id)
+            'inspection_id': str(inspection_id)
         }
-
         # get the label information
-        product_json = label.get_label_information_json(cursor, label_info_id)
+        label_json = label.get_label_information_json(cursor, label_info_id)
+        
         metrics_json = metric.get_metrics_json(cursor, label_info_id)
+        if metrics_json["metrics"]["weight"] is None:
+            metrics_json["metrics"]["weight"] = []
+        if metrics_json["metrics"]["volume"] is None:
+            metrics_json["metrics"]["volume"] = Metric()
+        if metrics_json["metrics"]["density"] is None:
+            metrics_json["metrics"]["density"] = Metric()
+        label_json.update(metrics_json)
+        ProductInformation(**label_json)
 
-        product_json.update(metrics_json)
-        ProductInformation(**product_json)
-
+        product_json = {'product': label_json}
+        
         inspection_json.update(product_json)
 
         # get the organizations information (Company and Manufacturer)
         organization_json = organization.get_organizations_info_json(cursor, label_info_id)
-        
-        OrganizationInformation(**organization_json.get("company"))
-        OrganizationInformation(**organization_json.get("manufacturer"))
+        if "company" in  organization_json.keys():
+            OrganizationInformation(**organization_json.get("company"))
+        if "manufacturer" in  organization_json.keys():
+            OrganizationInformation(**organization_json.get("manufacturer"))
 
         inspection_json.update(organization_json)
 
         # Get all the sub labels
         sub_label_json = sub_label.get_sub_label_json(cursor, label_info_id)
-
+        
         for key in sub_label_json:
             SubLabel(**sub_label_json[key])
 
         inspection_json.update(sub_label_json)
-
         # Get the ingredients
-        ingredients_json = nutrients.get_ingredient_json(cursor, label_info_id)
-
+        ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
+        
         ValuesObjects(**ingredients_json)
 
         inspection_json.update(ingredients_json)
@@ -283,27 +311,27 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         inspection_json.update(nutrients_json)
 
         # Get the guaranteed analysis
-        guaranteed_analysis_json = nutrients.get_guaranteed_json(cursor, label_info_id)
-
-        for i in range(len(guaranteed_analysis_json)):
-            Value(**guaranteed_analysis_json[i])
+        guaranteed_analysis_json = nutrients.get_guaranteed_analysis_json(cursor, label_info_id)
+        if guaranteed_analysis_json.get("guaranteed_analysis") is None:
+            guaranteed_analysis_json["guaranteed_analysis"] = []
+        for i in range(len(guaranteed_analysis_json.get("guaranteed_analysis"))):
+            Value(**(guaranteed_analysis_json.get("guaranteed_analysis")[i]))
 
         inspection_json.update(guaranteed_analysis_json)
-
+        
         # Get the specifications
         specifications_json = specification.get_specification_json(cursor, label_info_id)
-
-        Specifications(**specifications_json)
-
+        
+        Specifications(**(specifications_json.get("specifications")))
+        
         inspection_json.update(specifications_json)
 
         # Verify the inspection object
         inspection_formatted = Inspection(**inspection_json)
-
         # Return the inspection object
         return inspection_formatted.model_dump_json()
     except label.LabelInformationNotFoundError or metric.MetricNotFoundError or organization.OrganizationNotFoundError or sub_label.SubLabelNotFoundError or nutrients.IngredientNotFoundError or nutrients.MicronutrientNotFoundError or nutrients.GuaranteedNotFoundError or specification.SpecificationNotFoundError as e:
-        raise e
+        raise
     except Exception as e:
         raise MetadataFormattingError("Error InspectionCreationError not created: "+ str(e)) from None
 
