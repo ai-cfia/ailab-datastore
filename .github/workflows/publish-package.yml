@@ -115,5 +115,5 @@ jobs:
         uses: AButler/upload-release-assets@v3.0
         with:
           files: "dist/*.whl"
-          repo-token:  ${{ secrets.GITHUB_TOKEN }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: v${{ env.version }}-${{ inputs.package-name }}
