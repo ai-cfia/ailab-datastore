@@ -6,7 +6,7 @@ DECLARE
 BEGIN
     -- Upsert the location
     INSERT INTO "fertiscan_0.0.11".location (id, address)
-    VALUES (COALESCE(location_id, uuid_generate_v4()), address)
+    VALUES (COALESCE(location_id, "fertiscan_0.0.11".uuid_generate_v4()), address)
     ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
     DO UPDATE SET address = EXCLUDED.address
     RETURNING id INTO new_location_id;
@@ -71,10 +71,11 @@ BEGIN
 
     -- Upsert label information
     INSERT INTO "fertiscan_0.0.11".label_information (
-        id, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
+        id, product_name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id, warranty
     )
     VALUES (
         label_id,
+        input_label->>'name',
         input_label->>'lot_number',
         input_label->>'npk',
         input_label->>'registration_number',
@@ -82,7 +83,8 @@ BEGIN
         (NULLIF(input_label->>'p', '')::float),
         (NULLIF(input_label->>'k', '')::float),
         company_info_id,
-        manufacturer_info_id
+        manufacturer_info_id,
+        input_label->>'warranty'
     )
     ON CONFLICT (id) DO UPDATE
     SET lot_number = EXCLUDED.lot_number,
@@ -133,7 +135,7 @@ BEGIN
 
                 -- Insert metric record for weight
                 INSERT INTO "fertiscan_0.0.11".metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::public.metric_type, p_label_id);
+                VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
             END IF;
         END LOOP;
     END IF;
@@ -156,7 +158,7 @@ BEGIN
 
                 -- Insert metric record
                 INSERT INTO "fertiscan_0.0.11".metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::public.metric_type, p_label_id);
+                VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
             END IF;
         END IF;
     END LOOP;
@@ -522,7 +524,7 @@ BEGIN
 
         -- Insert organization and get the organization_id
         INSERT INTO "fertiscan_0.0.11".organization (information_id, main_location_id)
-        VALUES (company_info_id, NULL) -- main_location_id not yet handled
+        VALUES (company_info_id, NULL) -- TODO: main_location_id not yet handled
         RETURNING id INTO organization_id;
 
         -- Upsert the fertilizer record
