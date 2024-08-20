@@ -1,1 +1,1 @@
--e ../datastore
+-r ../datastore/requirements.txt
