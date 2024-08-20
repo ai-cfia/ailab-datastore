@@ -8,3 +8,4 @@ pydantic==2.7.1
 pydantic_core==2.18.2
 python-dotenv
 pytest-ordering==0.6
+pytest-order==1.2.1

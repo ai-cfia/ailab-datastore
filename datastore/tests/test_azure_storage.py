@@ -39,7 +39,7 @@ BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
-@pytest.mark.order("first")
+@pytest.mark.run(order=1)
 class TestMountContainerFunction(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -87,7 +87,7 @@ class TestMountContainerFunction(unittest.TestCase):
                 mount_container("invalid-url", self.container_uuid, True, self.tier)
             )
 
-@pytest.mark.order("second")
+@pytest.mark.run(order=2)
 class TestGetBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -122,7 +122,7 @@ class TestGetBlob(unittest.TestCase):
         with self.assertRaises(GetBlobError):
             asyncio.run(get_blob(mock_container_client, blob))
 
-@pytest.mark.order("third")
+@pytest.mark.run(order=3)
 class TestUploadImage(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -177,7 +177,7 @@ class TestUploadImage(unittest.TestCase):
                 )
             )
 
-@pytest.mark.order("fourth")
+@pytest.mark.run(order=4)
 class TestIsAFolder(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -205,7 +205,7 @@ class TestIsAFolder(unittest.TestCase):
         result = asyncio.run(is_a_folder(self.container_client, not_folder_name))
         self.assertFalse(result)
 
-@pytest.mark.order("fifth")
+@pytest.mark.run(order=5)
 class TestCreateFolder(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -240,7 +240,7 @@ class TestCreateFolder(unittest.TestCase):
         with self.assertRaises(CreateDirectoryError):
             asyncio.run(create_folder(mock_container_client, folder_name))
 
-@pytest.mark.order("sixth")
+@pytest.mark.run(order=6)
 class TestGenerateHash(unittest.TestCase):
     def setUp(self):
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -256,7 +256,7 @@ class TestGenerateHash(unittest.TestCase):
         with self.assertRaises(GenerateHashError):
             asyncio.run(generate_hash("not an image"))
 
-@pytest.mark.order("seventh")
+@pytest.mark.run(order=7)
 class TestGetFolderUUID(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -284,7 +284,7 @@ class TestGetFolderUUID(unittest.TestCase):
         with self.assertRaises(GetFolderUUIDError):
             asyncio.run(get_folder_uuid(self.container_client, not_folder_name))
 
-@pytest.mark.order("eighth")
+@pytest.mark.run(order=8)
 class TestGetBlobsFromTag(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -332,7 +332,7 @@ class TestGetBlobsFromTag(unittest.TestCase):
         with self.assertRaises(Exception):
             asyncio.run(get_blobs_from_tag(self.container_client, tag))
 
-@pytest.mark.order("ninth")
+@pytest.mark.run(order=9)
 class TestGetDirectories(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -387,7 +387,7 @@ class TestGetDirectories(unittest.TestCase):
         with self.assertRaises(FolderListError):
             asyncio.run(get_directories(mock_container_client))
 
-@pytest.mark.order("tenth")
+@pytest.mark.run(order=10)
 class TestMoveBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
