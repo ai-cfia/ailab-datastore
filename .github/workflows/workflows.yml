@@ -15,7 +15,7 @@ jobs:
     with:
       pyproject-path: 'nachet_pyproject.toml'  # testing
       package-name: 'nachet-datastore'  # testing
-      test-path: 'nachet/tests'  # testing
+      project-path: 'nachet'  # testing
   bytebase-sql-review:
     uses: ai-cfia/github-workflows/.github/workflows/workflow-bytebase-sql-review.yml@main
     secrets: inherit
