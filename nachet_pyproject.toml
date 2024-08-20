@@ -7,7 +7,6 @@ name = "nachet_datastore"
 version = "1.0.0"
 authors = [
   { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" },
-  { name="Sylvanie You", email="Sylvanie.You@inspection.gc.ca"}
 ]
 description = "Data management python layer"
 readme = "README.md"
@@ -37,6 +36,6 @@ dependencies = {file = ["./datastore/requirements.txt"]}
 # where = ["ailab"]
 
 [project.urls]
-"Homepage" = "https://github.com/ai-cfia/ailab-datastore"
-"Bug Tracker" = "https://github.com/ai-cfia/ailab-datastore/issues"
-Repository = "https://github.com/ai-cfia/ailab-datastore"  
+"Homepage" = "https://github.com/ai-cfia/nachet-datastore"
+"Bug Tracker" = "https://github.com/ai-cfia/nachet-datastore/issues"
+Repository = "https://github.com/ai-cfia/nachet-datastore"  

@@ -5,11 +5,6 @@ The metadata is generated in a json format and is used to store the metadata in 
 """
 
 import json
-import datastore.db.queries.seed as seed
-import nachet.db.queries.inference as inference
-import datastore.db.queries.machine_learning as machine_learning
-from pydantic import BaseModel, ValidationError
-from typing import Optional
 
 class MissingKeyError(Exception):
     pass
