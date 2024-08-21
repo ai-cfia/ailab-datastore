@@ -56,7 +56,7 @@ class TestMountContainer:
     @pytest.mark.asyncio
     async def test_mount_existing_container(self, blob_storage_setup):
         """
-        Test that an existing container can be successfully mounted.
+        Test that an existing container can be mounted.
         """
         _, container_client, _, _, _ = blob_storage_setup
         assert container_client.exists()
