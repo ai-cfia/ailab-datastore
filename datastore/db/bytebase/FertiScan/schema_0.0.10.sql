@@ -487,7 +487,7 @@ BEGIN
 					en_values->>i,
 					label_id,
 					FALSE,
-					sub_type_id
+					sub_type_rec.id
 	            );
 			END LOOP;
 		END IF;

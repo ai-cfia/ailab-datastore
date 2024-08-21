@@ -290,6 +290,135 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             str(context.exception),
         )
 
+    def test_update_inspection_with_null_company_and_manufacturer(self):
+        # Update the JSON data with null company and manufacturer for testing
+        updated_input_json = self.created_data.copy()
+        updated_input_json["company"] = None  # Company is set to null
+        updated_input_json["manufacturer"] = None  # Manufacturer is set to null
+        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+
+        updated_input_json_str = json.dumps(updated_input_json)
+
+        # Invoke the update_inspection function
+        self.cursor.execute(
+            "SELECT update_inspection(%s, %s, %s);",
+            (self.inspection_id, self.inspector_id, updated_input_json_str),
+        )
+
+        # Verify that the inspection record was updated
+        self.cursor.execute(
+            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
+            (self.inspection_id,),
+        )
+        updated_inspection = self.cursor.fetchone()
+        self.assertIsNotNone(updated_inspection, "The inspection record should exist.")
+        self.assertEqual(
+            updated_inspection[2],
+            self.inspector_id,
+            "The inspector ID should match the expected value.",
+        )
+        self.assertFalse(
+            updated_inspection[3],
+            "The verified status should be False as updated.",
+        )
+
+        # Verify that no organization record was created for the null company or manufacturer
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM organization WHERE information_id IS NULL;",
+        )
+        organization_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            organization_count,
+            0,
+            "No organization record should be created when company or manufacturer is null.",
+        )
+
+    def test_update_inspection_with_missing_company_and_manufacturer(self):
+        # Update the JSON data with company and manufacturer keys missing
+        updated_input_json = self.created_data.copy()
+        del updated_input_json["company"]  # Remove company key
+        del updated_input_json["manufacturer"]  # Remove manufacturer key
+        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+
+        updated_input_json_str = json.dumps(updated_input_json)
+
+        # Invoke the update_inspection function
+        self.cursor.execute(
+            "SELECT update_inspection(%s, %s, %s);",
+            (self.inspection_id, self.inspector_id, updated_input_json_str),
+        )
+
+        # Verify that the inspection record was updated
+        self.cursor.execute(
+            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
+            (self.inspection_id,),
+        )
+        updated_inspection = self.cursor.fetchone()
+        self.assertIsNotNone(updated_inspection, "The inspection record should exist.")
+        self.assertEqual(
+            updated_inspection[2],
+            self.inspector_id,
+            "The inspector ID should match the expected value.",
+        )
+        self.assertFalse(
+            updated_inspection[3],
+            "The verified status should be False as updated.",
+        )
+
+        # Verify that no organization record was created for the missing company or manufacturer
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM organization WHERE information_id IS NULL;",
+        )
+        organization_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            organization_count,
+            0,
+            "No organization record should be created when company or manufacturer is missing.",
+        )
+
+    def test_update_inspection_with_empty_company_and_manufacturer(self):
+        # Update the JSON data with empty company and manufacturer for testing
+        updated_input_json = self.created_data.copy()
+        updated_input_json["company"] = {}  # Company is set to an empty object
+        updated_input_json["manufacturer"] = {}  # Manufacturer is set to an empty object
+        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+
+        updated_input_json_str = json.dumps(updated_input_json)
+
+        # Invoke the update_inspection function
+        self.cursor.execute(
+            "SELECT update_inspection(%s, %s, %s);",
+            (self.inspection_id, self.inspector_id, updated_input_json_str),
+        )
+
+        # Verify that the inspection record was updated
+        self.cursor.execute(
+            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
+            (self.inspection_id,),
+        )
+        updated_inspection = self.cursor.fetchone()
+        self.assertIsNotNone(updated_inspection, "The inspection record should exist.")
+        self.assertEqual(
+            updated_inspection[2],
+            self.inspector_id,
+            "The inspector ID should match the expected value.",
+        )
+        self.assertFalse(
+            updated_inspection[3],
+            "The verified status should be False as updated.",
+        )
+
+        # Verify that no organization record was created for the empty company or manufacturer
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM organization WHERE information_id IS NULL;",
+        )
+        organization_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            organization_count,
+            0,
+            "No organization record should be created when company or manufacturer is empty.",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,6 +25,11 @@ DECLARE
     organization_info_id uuid;
     location_id uuid;
 BEGIN
+    -- Skip processing if the input JSON object is empty or null
+    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
+        RETURN NULL;
+    END IF;
+
     -- Fetch location_id from the address if it exists
     SELECT id INTO location_id
     FROM location
@@ -473,11 +478,15 @@ BEGIN
 
     -- Upsert company information and get the ID
     company_info_id := upsert_organization_info(p_input_json->'company');
-    updated_json := jsonb_set(updated_json, '{company,id}', to_jsonb(company_info_id));
+    IF company_info_id IS NOT NULL THEN
+        updated_json := jsonb_set(updated_json, '{company,id}', to_jsonb(company_info_id));
+    END IF;
 
     -- Upsert manufacturer information and get the ID
     manufacturer_info_id := upsert_organization_info(p_input_json->'manufacturer');
-    updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
+    IF manufacturer_info_id IS NOT NULL THEN
+        updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
+    END IF;
 
     -- Upsert label information and get the ID
     label_info_id := upsert_label_information(
@@ -525,9 +534,13 @@ BEGIN
         registration_number := p_input_json->'product'->>'registration_number';
 
         -- Insert organization and get the organization_id
-        INSERT INTO organization (information_id, main_location_id)
-        VALUES (company_info_id, NULL) -- TODO: main_location_id not yet handled
-        RETURNING id INTO organization_id;
+        IF company_info_id IS NOT NULL THEN
+            INSERT INTO organization (information_id, main_location_id)
+            VALUES (company_info_id, NULL) -- TODO: main_location_id not yet handled
+            RETURNING id INTO organization_id;
+        ELSE
+            organization_id := NULL;
+        END IF;
 
         -- Upsert the fertilizer record
         PERFORM upsert_fertilizer(
