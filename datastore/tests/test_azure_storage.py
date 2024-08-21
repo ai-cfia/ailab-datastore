@@ -77,7 +77,7 @@ class TestMountContainer:
     @pytest.mark.asyncio
     async def test_mount_nonexisting_container_no_create(self):
         not_uuid = "alsonotuuid"
-        with pytest.raises(ConnectionStringError):
+        with pytest.raises(MountContainerError):
             asyncio.run(
                 mount_container(
                     self.storage_url, not_uuid, False, self.tier, self.credential
