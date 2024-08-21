@@ -51,7 +51,8 @@ def blob_storage_setup():
 
     container_client.delete_container()
 
-class TestMountContainer(unittest.TestCase):
+@pytest.mark.usefixtures("blob_storage_setup")
+class TestMountContainer:
     @pytest.mark.asyncio
     async def test_mount_existing_container(self, blob_storage_setup):
         """
