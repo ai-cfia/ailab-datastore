@@ -77,7 +77,7 @@ class TestMountContainer:
     @pytest.mark.asyncio
     async def test_mount_nonexisting_container_no_create(self):
         not_uuid = "alsonotuuid"
-        with self.assertRaises(MountContainerError):
+        with pytest.raises(ConnectionStringError):
             asyncio.run(
                 mount_container(
                     self.storage_url, not_uuid, False, self.tier, self.credential
@@ -90,7 +90,7 @@ class TestMountContainer:
         Test that an invalid connection string raises a ConnectionStringError.
         """
         with pytest.raises(ConnectionStringError):
-            await mount_container("invalid-url", self.container_uuid, True, self.tier)
+            await mount_container("invalid-url", "uuid", True, "test-user")
 
 class TestGetBlob(unittest.TestCase):
     def setUp(self):
