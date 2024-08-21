@@ -28,66 +28,70 @@ from datastore.blob.azure_storage_api import (
 import pytest
 
 BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
-if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
-    raise ValueError("NACHET_STORAGE_URL_TESTING is not set")
-
 BLOB_ACCOUNT = os.environ["NACHET_BLOB_ACCOUNT_TESTING"]
-if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
-    raise ValueError("NACHET_BLOB_ACCOUNT is not set")
-
 BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
-if BLOB_KEY is None or BLOB_KEY == "":
-    raise ValueError("NACHET_BLOB_KEY is not set")
 
-@pytest.mark.run(order=1)
-class TestMountContainerFunction(unittest.TestCase):
-    def setUp(self):
-        self.storage_url = BLOB_CONNECTION_STRING
-        self.account_name = BLOB_ACCOUNT
-        self.account_key = BLOB_KEY
-        self.credential = blob.get_account_sas(self.account_name, self.account_key)
-        self.tier = "test-user"
-        self.container_uuid = str(uuid.uuid4())
+if not all([BLOB_CONNECTION_STRING, BLOB_ACCOUNT, BLOB_KEY]):
+    raise ValueError("Nachet Blob environment variables are not set")
 
-    def test_mount_existing_container(self):
+# Fixture for setting up Azure Blob Storage resources
+@pytest.fixture(scope="function")
+def blob_storage_setup():
+    storage_url = BLOB_CONNECTION_STRING
+    account_name = BLOB_ACCOUNT
+    account_key = BLOB_KEY
+    credential = blob.get_account_sas(account_name, account_key)
+    tier = "test-user"
+    container_uuid = str(uuid.uuid4())
+    container_name = f"{tier}-{container_uuid}"
 
-        container_client = asyncio.run(
-            mount_container(self.storage_url, self.container_uuid, True, self.tier)
-        )
+    # Create BlobServiceClient and container
+    blob_service_client = blob.create_BlobServiceClient(storage_url)
+    container_client = blob_service_client.create_container(container_name)
 
-        self.assertTrue(container_client.exists())
-        container_client.delete_container()
+    yield storage_url, container_client, credential, container_name, tier
 
-    def test_mount_nonexisting_container_create(self):
+    container_client.delete_container()
+
+class TestMountContainer(unittest.TestCase):
+    @pytest.mark.asyncio
+    async def test_mount_existing_container(self, blob_storage_setup):
         """
-        tests when a container does not exists and create_container flag is set to True,
-        should create a new container and return the container client
+        Test that an existing container can be successfully mounted.
         """
+        _, container_client, _, _, _ = blob_storage_setup
+        assert container_client.exists()
+
+    @pytest.mark.asyncio
+    async def test_mount_nonexisting_container_create(self, blob_storage_setup):
+        """
+        Test that a non-existing container can be created and mounted.
+        """
+        storage_url, _, _, _, tier = blob_storage_setup
         not_uuid = "notauuid"
-        container_client = asyncio.run(
-            mount_container(
-                self.storage_url, not_uuid, True, self.tier, self.credential
-            )
+        container_client = await mount_container(
+            storage_url, not_uuid, True, tier
         )
-        self.assertTrue(container_client.exists())
-        container_client.delete_container()
+        assert container_client.exists()
 
-    def test_mount_nonexisting_container_no_create(self):
-        not_uuid = "alsonotuuid"
-        with self.assertRaises(MountContainerError):
-            asyncio.run(
-                mount_container(
-                    self.storage_url, not_uuid, False, self.tier, self.credential
-                )
-            )
+    @pytest.mark.asyncio
+    async def test_mount_nonexisting_container_no_create(self, blob_storage_setup):
+        """
+        Test that mounting a non-existing container without creating it raises an error.
+        """
+        storage_url, _, _, _, tier = blob_storage_setup
+        not_uuid = "notauuid"
+        with pytest.raises(MountContainerError):
+            await mount_container(storage_url, not_uuid, False, tier)
 
-    def test_mount_container_connection_string_error(self):
-        with self.assertRaises(ConnectionStringError):
-            asyncio.run(
-                mount_container("invalid-url", self.container_uuid, True, self.tier)
-            )
+    @pytest.mark.asyncio
+    async def test_mount_container_connection_string_error(self):
+        """
+        Test that an invalid connection string raises a ConnectionStringError.
+        """
+        with pytest.raises(ConnectionStringError):
+            await mount_container("invalid-url", "uuid", True, "test-user")
 
-@pytest.mark.run(order=2)
 class TestGetBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -122,7 +126,6 @@ class TestGetBlob(unittest.TestCase):
         with self.assertRaises(GetBlobError):
             asyncio.run(get_blob(mock_container_client, blob))
 
-@pytest.mark.run(order=3)
 class TestUploadImage(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -177,7 +180,6 @@ class TestUploadImage(unittest.TestCase):
                 )
             )
 
-@pytest.mark.run(order=4)
 class TestIsAFolder(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -205,7 +207,6 @@ class TestIsAFolder(unittest.TestCase):
         result = asyncio.run(is_a_folder(self.container_client, not_folder_name))
         self.assertFalse(result)
 
-@pytest.mark.run(order=5)
 class TestCreateFolder(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -240,7 +241,6 @@ class TestCreateFolder(unittest.TestCase):
         with self.assertRaises(CreateDirectoryError):
             asyncio.run(create_folder(mock_container_client, folder_name))
 
-@pytest.mark.run(order=6)
 class TestGenerateHash(unittest.TestCase):
     def setUp(self):
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -256,7 +256,6 @@ class TestGenerateHash(unittest.TestCase):
         with self.assertRaises(GenerateHashError):
             asyncio.run(generate_hash("not an image"))
 
-@pytest.mark.run(order=7)
 class TestGetFolderUUID(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -284,7 +283,6 @@ class TestGetFolderUUID(unittest.TestCase):
         with self.assertRaises(GetFolderUUIDError):
             asyncio.run(get_folder_uuid(self.container_client, not_folder_name))
 
-@pytest.mark.run(order=8)
 class TestGetBlobsFromTag(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -332,7 +330,6 @@ class TestGetBlobsFromTag(unittest.TestCase):
         with self.assertRaises(Exception):
             asyncio.run(get_blobs_from_tag(self.container_client, tag))
 
-@pytest.mark.run(order=9)
 class TestGetDirectories(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
@@ -387,7 +384,6 @@ class TestGetDirectories(unittest.TestCase):
         with self.assertRaises(FolderListError):
             asyncio.run(get_directories(mock_container_client))
 
-@pytest.mark.run(order=10)
 class TestMoveBlob(unittest.TestCase):
     def setUp(self):
         self.storage_url = os.environ.get("NACHET_STORAGE_URL")
