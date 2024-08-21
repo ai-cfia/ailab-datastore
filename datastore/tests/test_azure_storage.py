@@ -52,8 +52,21 @@ def blob_storage_setup():
 
     container_client.delete_container()
 
+# Fixture for setting up Azure Blob Storage resources without creating the container
+@pytest.fixture(scope="function")
+def blob_storage_no_container():
+    storage_url = BLOB_CONNECTION_STRING
+    account_name = BLOB_ACCOUNT
+    account_key = BLOB_KEY
+    credential = blob.get_account_sas(account_name, account_key)
+    tier = "test-user"
+    container_uuid = str(uuid.uuid4())
+
+    yield storage_url, credential, tier, container_uuid
+
 @pytest.mark.usefixtures("blob_storage_setup")
 class TestMountContainer:
+
     @pytest.mark.asyncio
     async def test_mount_existing_container(self, blob_storage_setup):
         """
@@ -75,14 +88,15 @@ class TestMountContainer:
         assert container_client.exists()
 
     @pytest.mark.asyncio
-    async def test_mount_nonexisting_container_no_create(self):
-        not_uuid = "alsonotuuid"
-        with pytest.raises(MountContainerError):
-            asyncio.run(
-                mount_container(
-                    self.storage_url, not_uuid, False, self.tier, self.credential
-                )
-            )
+    async def test_mount_nonexisting_container_no_create(self, blob_storage_no_container):
+        """
+        Test that mounting a non-existing container without creating it raises an error.
+        """
+        storage_url, credential, tier, not_uuid = blob_storage_no_container
+
+        with pytest.raises(MountContainerError, match="Container does not exist"):
+            await mount_container(storage_url, not_uuid, False, tier, credential)
+
 
     @pytest.mark.asyncio
     async def test_mount_container_connection_string_error(self):
