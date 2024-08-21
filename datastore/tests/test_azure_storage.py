@@ -44,6 +44,7 @@ def blob_storage_setup():
     container_uuid = str(uuid.uuid4())
     container_name = f"{tier}-{container_uuid}"
 
+    # Create container and yield the client for each test
     blob_service_client = blob.create_BlobServiceClient(storage_url)
     container_client = blob_service_client.create_container(container_name)
 
