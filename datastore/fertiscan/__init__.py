@@ -230,9 +230,9 @@ async def get_full_inspection_json(
         raise Exception("Datastore unhandeled error")
 
 
-async def get_user_unverified_analysis(cursor, user_id):
+async def get_user_analysis_by_verified(cursor, user_id,verified:bool):
     """
-    This function fetch all the unverified inspection of a user
+    This function fetch all the inspection of a user
 
     Parameters:
     - cursor: The cursor object to interact with the database.
@@ -261,7 +261,7 @@ async def get_user_unverified_analysis(cursor, user_id):
                 f"User not found based on the given id: {user_id}"
             )
         return inspection.get_all_user_inspection_filter_verified(
-            cursor, user_id, False
+            cursor, user_id, verified
         )
     except user.UserNotFoundError:
         raise
