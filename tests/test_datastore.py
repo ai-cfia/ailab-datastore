@@ -269,7 +269,7 @@ class test_picture(unittest.TestCase):
         """
         This test checks the get_picture_set_pictures function
         """
-        picture_ids=asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, self.picture_set_id))
+        picture_ids = asyncio.run(datastore.upload_pictures(self.cursor, self.user_id, [self.pic_encoded,self.pic_encoded,self.pic_encoded], self.container_client, self.picture_set_id))
         pictures = asyncio.run(datastore.get_picture_set_pictures(self.cursor, self.user_id, self.picture_set_id,self.container_client))
         self.assertEqual(len(pictures), 3)
         for picture in pictures:

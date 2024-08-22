@@ -4,12 +4,10 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
-import json
 from typing import List
 from pydantic import BaseModel, ValidationError
 from typing import Optional
 from datastore.db.queries import (
-    inspection,
     ingredient,
     label,
     metric,

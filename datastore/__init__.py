@@ -208,7 +208,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
     """
     try:
         # Check if user exists
-        if not user.is_a_user_id(cursor=cursor, user_id=user_id):
+        if not user.is_a_user_id(cursor=cursor, user_id=str(user_id)):
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
@@ -218,8 +218,8 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
                 f"Picture set not found based on the given id: {picture_set_id}"
             )
         # Check user is owner of the picture set
-        if picture.get_picture_set_owner_id(cursor, picture_set_id) != user_id:
-            raise UserNotOwnerError(
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != str(user_id):
+            raise UserNotOwnerError(    
                 f"User can't access this folder, user uuid :{user_id}, folder name : {picture_set_id}"
             )
         picture_set_name = picture.get_picture_set_name(cursor, picture_set_id)
@@ -228,19 +228,19 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
         result = []
         if len(pictures)==0:
             return result
-        elif len(pictures)!= blob.get_images_count(container_client, picture_set_id):
-            raise Warning("The number of pictures in the database does not match the number of pictures in the blob storage")
+        elif len(pictures)!= await azure_storage.get_image_count(container_client, picture_set_name):
+            raise Warning("The number of pictures in the database '" + str(len(pictures)) + "' does not match the number of pictures in the blob storage'"+ str(test) +"'")
         for pic in pictures:
             pic_id = pic[0]
-            pic_metadata = json.loads(pic[1])
+            pic_metadata = pic[1]
             pic_metadata["id"] = pic_id
             if "link" in  pic_metadata:
                 blob_link = pic_metadata["link"]
             else:
                 blob_link = f"{picture_set_name}/{pic_id}"
-            blob = blob.get_blob(container_client, blob_link)
+            blob_obj = azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
-            pic_metadata["blob"] = blob
+            pic_metadata["blob"] = blob_obj
             result.append(pic_metadata)
         return result
     except (
@@ -324,7 +324,7 @@ async def upload_pictures(
                 f"User not found based on the given id: {user_id}"
             )
 
-        empty_picture = json.dumps([])
+        empty_picture = data_picture_set.build_picture_set(user_id, len(hashed_pictures))
 
         default_picture_set = str(user.get_default_picture_set(cursor, user_id))
         if picture_set_id is None or str(picture_set_id) == default_picture_set:
