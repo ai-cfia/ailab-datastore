@@ -229,7 +229,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
         if len(pictures)==0:
             return result
         elif len(pictures)!= await azure_storage.get_image_count(container_client, picture_set_name):
-            raise Warning("The number of pictures in the database '" + str(len(pictures)) + "' does not match the number of pictures in the blob storage'"+ str(test) +"'")
+            raise Warning("The number of pictures in the database '" + str(len(pictures)) + "' does not match the number of pictures in the blob storage")
         for pic in pictures:
             pic_id = pic[0]
             pic_metadata = pic[1]
