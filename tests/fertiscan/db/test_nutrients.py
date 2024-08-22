@@ -191,8 +191,10 @@ class test_micronutrient(unittest.TestCase):
 
     def test_get_micronutrient_json_empty(self):
         data = nutrients.get_micronutrient_json(self.cursor, label_id=self.label_information_id)
-        self.assertIsNone(data["micronutrients"]["en"])
-        self.assertIsNone(data["micronutrients"]["fr"])
+        self.assertIsNotNone(data["micronutrients"]["en"])
+        self.assertIsNotNone(data["micronutrients"]["fr"])
+        self.assertEqual(data["micronutrients"]["en"], [])
+        self.assertEqual(data["micronutrients"]["fr"], [])
 
     def test_get_micronutrient(self):
         micronutrient_id = nutrients.new_micronutrient(
@@ -364,11 +366,11 @@ class test_guaranteed_analysis(unittest.TestCase):
             False
         )
         data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
-        self.assertEqual(data["guaranteeds"][0]["name"], self.guaranteed_analysis_name)
+        self.assertEqual(data["guaranteed_analysis"][0]["name"], self.guaranteed_analysis_name)
 
     def test_get_guaranteed_analysis_json_empty(self):
         data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
-        self.assertIsNone(data["guaranteeds"])
+        self.assertIsNone(data["guaranteed_analysis"])
 
     def test_get_guaranteed_analysis(self):
         guaranteed_analysis_id = nutrients.new_guaranteed_analysis(

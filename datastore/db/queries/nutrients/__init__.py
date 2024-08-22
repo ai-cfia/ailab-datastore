@@ -258,7 +258,7 @@ def get_full_micronutrient(cursor, micronutrient_id):
 
 def get_all_micronutrients(cursor, label_id):
     """
-    This function get all the micronutrients in the database.
+    This function get all the micronutrients with the right label_id in the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.

@@ -91,8 +91,9 @@ class test_specification(unittest.TestCase):
         self.assertEqual(specification_data[self.language][0]["solubility"], self.solubility)
 
     def test_get_specification_json_not_found(self):
-        with self.assertRaises(specification.SpecificationNotFoundError):
-            specification.get_specification_json(self.cursor, str(uuid.uuid4()))
+        empty = {'specifications': {'en': [], 'fr': []}}
+        data = specification.get_specification_json(self.cursor, str(uuid.uuid4()))
+        self.assertDictEqual(data, empty)
 
     def test_get_specification_not_found(self):
         with self.assertRaises(specification.SpecificationNotFoundError):
