@@ -2,12 +2,13 @@
 
 ## Context
 
-The User want to visualize the digitalization of a label, whether it is verified or not. Therefore, the BE needs to be able to fetch an inspection in json format from the database with only its id .
+The User want to visualize the digitalization of a label, whether it is verified
+or not. Therefore, the BE needs to be able to fetch an inspection in json format
+from the database with only its id .
 
 ## Prerequisites
 
 - The inspection id must be of a valid inspection
-
 
 ## Entity Used
 
@@ -161,6 +162,7 @@ FE -->> C: Display inspection
 ```
 
 ## Sequence of build_inspection_export
+
 ```mermaid
 sequenceDiagram
     title FertiScan Get Inspection Form
@@ -210,6 +212,5 @@ M -) M : inspection_json.update(specification_json)
 M -) P: Inspection(inspection_json)
 
 M --> DS: inspection_json.dump_model()
-
 
 ```

@@ -4,6 +4,7 @@ This document reprensent all the documentation around an Inspection and the json
 object representing it.
 
 ## Inspection Json
+
 ```JSON
 {
     "inspection_id": "inspection uuid",

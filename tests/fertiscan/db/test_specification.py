@@ -25,7 +25,6 @@ class test_specification(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
-        
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -48,10 +47,9 @@ class test_specification(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
-
 
         self.humidity = 10.0
         self.ph = 20.0
@@ -63,13 +61,25 @@ class test_specification(unittest.TestCase):
 
     def test_new_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(specification_id))
 
     def test_get_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specification_data = specification.get_specification(
             self.cursor, specification_id
@@ -80,18 +90,28 @@ class test_specification(unittest.TestCase):
 
     def test_get_specification_json(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specification_data = specification.get_specification_json(
             self.cursor, self.label_id
         )
         specification_data = specification_data["specifications"]
-        self.assertEqual(specification_data[self.language][0]["humidity"], self.humidity)
+        self.assertEqual(
+            specification_data[self.language][0]["humidity"], self.humidity
+        )
         self.assertEqual(specification_data[self.language][0]["ph"], self.ph)
-        self.assertEqual(specification_data[self.language][0]["solubility"], self.solubility)
+        self.assertEqual(
+            specification_data[self.language][0]["solubility"], self.solubility
+        )
 
     def test_get_specification_json_not_found(self):
-        empty = {'specifications': {'en': [], 'fr': []}}
+        empty = {"specifications": {"en": [], "fr": []}}
         data = specification.get_specification_json(self.cursor, str(uuid.uuid4()))
         self.assertDictEqual(data, empty)
 
@@ -101,20 +121,40 @@ class test_specification(unittest.TestCase):
 
     def test_has_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         self.assertTrue(specification.has_specification(self.cursor, self.label_id))
 
     def test_has_specification_not_found(self):
-        self.assertFalse(specification.has_specification(self.cursor, str(uuid.uuid4())))
-            
+        self.assertFalse(
+            specification.has_specification(self.cursor, str(uuid.uuid4()))
+        )
+
     def test_get_all_specification(self):
         other_humidity = 40
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specif_id = specification.new_specification(
-            self.cursor, other_humidity, self.ph, self.solubility, self.label_id, self.language, False
+            self.cursor,
+            other_humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specification_data = specification.get_all_specifications(
             self.cursor, self.label_id

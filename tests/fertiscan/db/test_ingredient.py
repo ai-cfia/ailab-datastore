@@ -18,13 +18,13 @@ DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
+
 class test_ingredient(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
-        
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -47,28 +47,58 @@ class test_ingredient(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
 
         self.ingredient_name = "ingredient_name"
         self.value = 10.0
         self.unit = "unit"
-        
+
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_ingredient(self):
-        ingredient_id = ingredient.new_ingredient(self.cursor, self.ingredient_name, self.value, self.unit, self.label_id,self.language,False,False,False)
+        ingredient_id = ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            self.language,
+            False,
+            False,
+            False,
+        )
         self.assertTrue(validator.is_valid_uuid(ingredient_id))
-    
+
     def test_get_ingredient_json(self):
         nom = "nom_ingredient"
         name = "ingredient_name"
-        ingredient.new_ingredient(self.cursor, nom, self.value, self.unit, self.label_id,'fr',False,False,False)
-        ingredient.new_ingredient(self.cursor, name, self.value, self.unit, self.label_id,'en',False,False,False)
-        
+        ingredient.new_ingredient(
+            self.cursor,
+            nom,
+            self.value,
+            self.unit,
+            self.label_id,
+            "fr",
+            False,
+            False,
+            False,
+        )
+        ingredient.new_ingredient(
+            self.cursor,
+            name,
+            self.value,
+            self.unit,
+            self.label_id,
+            "en",
+            False,
+            False,
+            False,
+        )
+
         ingredient_obj = ingredient.get_ingredient_json(self.cursor, self.label_id)
         self.assertIsNotNone(ingredient_obj["ingredients"]["en"])
         self.assertEqual(len(ingredient_obj.get("ingredients").get("en")), 1)

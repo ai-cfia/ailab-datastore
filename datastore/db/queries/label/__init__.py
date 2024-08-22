@@ -2,12 +2,23 @@
 This module represent the function for the table label_information
 """
 
+
 class LabelInformationNotFoundError(Exception):
     pass
 
 
 def new_label_information(
-    cursor,name:str, lot_number:str, npk:str, registration_number:str, n:float, p:float, k:float, warranty, company_info_id, manufacturer_info_id
+    cursor,
+    name: str,
+    lot_number: str,
+    npk: str,
+    registration_number: str,
+    n: float,
+    p: float,
+    k: float,
+    warranty,
+    company_info_id,
+    manufacturer_info_id,
 ):
     """
     This function create a new label_information in the database.
@@ -92,11 +103,12 @@ def get_label_information(cursor, label_information_id):
         return cursor.fetchone()
     except Exception as e:
         raise e
-    
-def get_label_information_json(cursor, label_info_id)-> dict:
+
+
+def get_label_information_json(cursor, label_info_id) -> dict:
     """
     This function retrieves the label information from the database in json format.
-    
+
     Parameters:
     - cursor (cursor): The cursor object to interact with the database.
     - label_info_id (str): The label information id.
@@ -111,7 +123,9 @@ def get_label_information_json(cursor, label_info_id)-> dict:
         cursor.execute(query, (str(label_info_id),))
         label_info = cursor.fetchone()
         if label_info is None or label_info[0] is None:
-            raise LabelInformationNotFoundError("Error: could not get the label information: " + str(label_info_id))
+            raise LabelInformationNotFoundError(
+                "Error: could not get the label information: " + str(label_info_id)
+            )
         return label_info[0]
     except LabelInformationNotFoundError as e:
         raise e

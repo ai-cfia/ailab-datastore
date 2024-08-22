@@ -20,6 +20,7 @@ class InspectionCreationError(Exception):
 class InspectionUpdateError(Exception):
     pass
 
+
 class InspectionNotFoundError(Exception):
     pass
 
@@ -78,6 +79,7 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
     except Exception as e:
         raise InspectionCreationError(e.__str__())
 
+
 def is_a_inspection_id(cursor, inspection_id):
     """
     This function checks if the inspection exists in the database.
@@ -106,6 +108,7 @@ def is_a_inspection_id(cursor, inspection_id):
         return cursor.fetchone()[0]
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
 
 def is_inspection_verified(cursor, inspection_id):
     """
@@ -178,13 +181,13 @@ def get_inspection_fk(cursor, inspection_id):
 
     Returns:
     - The foreign keys of the inspection.
-    [ 
-        label_info_id, 
-        inspector_id, 
-        picture_set_id, 
-        company_info_id, 
-        manufacturer_info_id, 
-        fertilizer_id, 
+    [
+        label_info_id,
+        inspector_id,
+        picture_set_id,
+        company_info_id,
+        manufacturer_info_id,
+        fertilizer_id,
         sample_id
     ]
     """
@@ -212,8 +215,9 @@ def get_inspection_fk(cursor, inspection_id):
         return cursor.fetchone()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
-    
-def get_all_user_inspection_filter_verified(cursor, user_id,verified:bool):
+
+
+def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
     """
     This function gets all the unverified inspection of a user from the database.
 
@@ -251,7 +255,13 @@ def get_all_user_inspection_filter_verified(cursor, user_id,verified:bool):
             WHERE 
                 inspection.inspector_id = %s AND inspection.verified = %s
             """
-        cursor.execute(query, (user_id,verified,))
+        cursor.execute(
+            query,
+            (
+                user_id,
+                verified,
+            ),
+        )
         return cursor.fetchall()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
@@ -289,6 +299,7 @@ def get_all_user_inspection(cursor, user_id):
         return cursor.fetchall()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
 
 # Deprecated
 def get_all_organization_inspection(cursor, org_id):

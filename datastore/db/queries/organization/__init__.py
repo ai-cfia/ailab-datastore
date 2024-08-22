@@ -41,7 +41,7 @@ class ProvinceNotFoundError(Exception):
     pass
 
 
-def new_organization(cursor,information_id, location_id=None):
+def new_organization(cursor, information_id, location_id=None):
     """
     This function create a new organization in the database.
 
@@ -86,9 +86,14 @@ def new_organization(cursor,information_id, location_id=None):
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise OrganizationCreationError("Datastore organization unhandeled error" + e.__str__())
-    
-def new_organization_info_located(cursor, address:str, name:str, website:str, phone_number:str):
+        raise OrganizationCreationError(
+            "Datastore organization unhandeled error" + e.__str__()
+        )
+
+
+def new_organization_info_located(
+    cursor, address: str, name: str, website: str, phone_number: str
+):
     """
     This function create a new organization information in the database.
 
@@ -116,9 +121,12 @@ def new_organization_info_located(cursor, address:str, name:str, website:str, ph
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise OrganizationCreationError("Datastore organization unhandeled error"+e.__str__())
+        raise OrganizationCreationError(
+            "Datastore organization unhandeled error" + e.__str__()
+        )
 
-def new_organization_info(cursor, name, website, phone_number,location_id=None):
+
+def new_organization_info(cursor, name, website, phone_number, location_id=None):
     """
     This function create a new organization information in the database.
 
@@ -147,17 +155,15 @@ def new_organization_info(cursor, name, website, phone_number,location_id=None):
             """
         cursor.execute(
             query,
-            (
-                name,
-                website,
-                phone_number,
-                location_id
-            ),
+            (name, website, phone_number, location_id),
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise OrganizationCreationError("Datastore organization unhandeled error"+e.__str__())
-    
+        raise OrganizationCreationError(
+            "Datastore organization unhandeled error" + e.__str__()
+        )
+
+
 def get_organization_info(cursor, information_id):
     """
     This function get a organization information from the database.
@@ -187,11 +193,14 @@ def get_organization_info(cursor, information_id):
             raise OrganizationNotFoundError
         return res
     except OrganizationNotFoundError:
-        raise OrganizationNotFoundError("organization information not found with information_id: " + information_id)
+        raise OrganizationNotFoundError(
+            "organization information not found with information_id: " + information_id
+        )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
-    
-def get_organizations_info_json(cursor, label_id)-> dict:
+
+
+def get_organizations_info_json(cursor, label_id) -> dict:
     """
     This function get a organization information from the database.
 
@@ -208,25 +217,25 @@ def get_organizations_info_json(cursor, label_id)-> dict:
             SELECT get_organizations_information_json(%s);
             """
         cursor.execute(query, (str(label_id),))
-       
+
         res = cursor.fetchone()
         if res is None or res[0] is None:
             raise OrganizationNotFoundError
-        if len(res[0]) == 2 :
-            return {**res[0][0],**res[0][1]}
+        if len(res[0]) == 2:
+            return {**res[0][0], **res[0][1]}
         elif len(res[0]) == 1:
             return res[0][0]
         else:
             return {}
     except OrganizationNotFoundError:
-        raise OrganizationNotFoundError("organization information not found for the label_info_id " + str(label_id))
+        raise OrganizationNotFoundError(
+            "organization information not found for the label_info_id " + str(label_id)
+        )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error: " + e.__str__())
 
 
-def update_organization(
-    cursor, organization_id, information_id, location_id
-):
+def update_organization(cursor, organization_id, information_id, location_id):
     """
     This function update a organization in the database.
 
@@ -253,7 +262,7 @@ def update_organization(
             """
         cursor.execute(
             query,
-            (   
+            (
                 information_id,
                 location_id,
                 organization_id,
@@ -261,11 +270,12 @@ def update_organization(
         )
         return organization_id
     except Exception as e:
-        raise OrganizationUpdateError("Datastore organization unhandeled error"+e.__str__())
-    
-def update_organization_info(
-    cursor, information_id, name, website, phone_number
-):
+        raise OrganizationUpdateError(
+            "Datastore organization unhandeled error" + e.__str__()
+        )
+
+
+def update_organization_info(cursor, information_id, name, website, phone_number):
     """
     This function update a organization information in the database.
 
@@ -292,7 +302,7 @@ def update_organization_info(
             """
         cursor.execute(
             query,
-            (   
+            (
                 name,
                 website,
                 phone_number,
@@ -301,7 +311,9 @@ def update_organization_info(
         )
         return information_id
     except Exception as e:
-        raise OrganizationUpdateError("Datastore organization unhandeled error"+e.__str__())
+        raise OrganizationUpdateError(
+            "Datastore organization unhandeled error" + e.__str__()
+        )
 
 
 def get_organization(cursor, organization_id):
@@ -331,7 +343,9 @@ def get_organization(cursor, organization_id):
             raise OrganizationNotFoundError
         return res
     except OrganizationNotFoundError:
-        raise OrganizationNotFoundError("organization not found with organization_id: " + organization_id)
+        raise OrganizationNotFoundError(
+            "organization not found with organization_id: " + organization_id
+        )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
 
@@ -388,6 +402,7 @@ def get_full_organization(cursor, org_id):
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
 
+
 def new_location(cursor, name, address, region_id, org_id=None):
     """
     This function create a new location in the database.
@@ -427,7 +442,7 @@ def new_location(cursor, name, address, region_id, org_id=None):
         )
         return cursor.fetchone()[0]
     except Exception as e:
-        raise LocationCreationError("Datastore location unhandeled error"+e.__str__())
+        raise LocationCreationError("Datastore location unhandeled error" + e.__str__())
 
 
 def get_location(cursor, location_id):
@@ -459,7 +474,9 @@ def get_location(cursor, location_id):
             raise LocationNotFoundError
         return res
     except LocationNotFoundError:
-        raise LocationNotFoundError("location not found with location_id: " + location_id)
+        raise LocationNotFoundError(
+            "location not found with location_id: " + location_id
+        )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
 
@@ -744,7 +761,9 @@ def get_province(cursor, province_id):
             raise ProvinceNotFoundError
         return res
     except ProvinceNotFoundError:
-        raise ProvinceNotFoundError("province not found with province_id: " + str(province_id))
+        raise ProvinceNotFoundError(
+            "province not found with province_id: " + str(province_id)
+        )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
 

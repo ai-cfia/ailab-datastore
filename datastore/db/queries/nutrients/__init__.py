@@ -135,7 +135,14 @@ def get_element_id_symbol(cursor, symbol):
 
 
 def new_micronutrient(
-    cursor, read_name:str, value:float, unit:str,  label_id,language:str, element_id:int,edited=False
+    cursor,
+    read_name: str,
+    value: float,
+    unit: str,
+    label_id,
+    language: str,
+    element_id: int,
+    edited=False,
 ):
     """
     This function add a new micronutrient in the database.
@@ -153,12 +160,14 @@ def new_micronutrient(
     """
 
     try:
-        if language.lower() not in ['fr','en']:
-            raise MicronutrientCreationError('Language not supported')
+        if language.lower() not in ["fr", "en"]:
+            raise MicronutrientCreationError("Language not supported")
         query = """
             SELECT new_micronutrient(%s, %s, %s, %s, %s,%s,%s);
             """
-        cursor.execute(query, (read_name, value, unit, label_id, language,edited, element_id))
+        cursor.execute(
+            query, (read_name, value, unit, label_id, language, edited, element_id)
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise MicronutrientCreationError
@@ -196,10 +205,11 @@ def get_micronutrient(cursor, micronutrient_id):
     except Exception:
         raise MicronutrientNotFoundError
 
-def get_micronutrient_json(cursor, label_id)->dict:
+
+def get_micronutrient_json(cursor, label_id) -> dict:
     """
     This function get the micronutrient in the database for a specific label.
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
     - label_id (str): The UUID of the label.
@@ -214,12 +224,15 @@ def get_micronutrient_json(cursor, label_id)->dict:
         cursor.execute(query, (label_id,))
         data = cursor.fetchone()
         if data is None:
-            raise MicronutrientNotFoundError("Error: could not get the micronutrient for label: " + str(label_id))
+            raise MicronutrientNotFoundError(
+                "Error: could not get the micronutrient for label: " + str(label_id)
+            )
         return data[0]
     except MicronutrientNotFoundError as e:
         raise e
     except Exception:
         raise MicronutrientNotFoundError
+
 
 def get_full_micronutrient(cursor, micronutrient_id):
     """
@@ -294,7 +307,15 @@ def get_all_micronutrients(cursor, label_id):
         raise MicronutrientNotFoundError
 
 
-def new_guaranteed_analysis(cursor, read_name, value, unit, label_id, element_id:int=None,edited:bool=False):
+def new_guaranteed_analysis(
+    cursor,
+    read_name,
+    value,
+    unit,
+    label_id,
+    element_id: int = None,
+    edited: bool = False,
+):
     """
     This function add a new guaranteed in the database.
 
@@ -351,11 +372,12 @@ def get_guaranteed(cursor, guaranteed_id):
         return cursor.fetchone()
     except Exception:
         raise GuaranteedNotFoundError
-    
-def get_guaranteed_analysis_json(cursor, label_id)->dict:
+
+
+def get_guaranteed_analysis_json(cursor, label_id) -> dict:
     """
     This function get the guaranteed in the database for a specific label.
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
     - label_id (str): The UUID of the label.
@@ -370,7 +392,9 @@ def get_guaranteed_analysis_json(cursor, label_id)->dict:
         cursor.execute(query, (label_id,))
         data = cursor.fetchone()[0]
         if data is None:
-            raise GuaranteedNotFoundError("Error: could not get the guaranteed for label: " + str(label_id))
+            raise GuaranteedNotFoundError(
+                "Error: could not get the guaranteed for label: " + str(label_id)
+            )
         return data
     except GuaranteedNotFoundError as e:
         raise e

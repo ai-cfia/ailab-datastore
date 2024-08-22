@@ -2,13 +2,26 @@
 This module represent the function for the Ingredient table
 """
 
+
 class IngredientCreationError(Exception):
     pass
+
 
 class IngredientNotFoundError(Exception):
     pass
 
-def new_ingredient(cursor, name:str, value:float, read_unit:str, label_id, language:str, organic:bool, active:bool, edited=False):
+
+def new_ingredient(
+    cursor,
+    name: str,
+    value: float,
+    read_unit: str,
+    label_id,
+    language: str,
+    organic: bool,
+    active: bool,
+    edited=False,
+):
     """
     This function creates a new ingredient in the database.
     """
@@ -18,14 +31,17 @@ def new_ingredient(cursor, name:str, value:float, read_unit:str, label_id, langu
         query = """
             SELECT new_ingredient(%s, %s, %s, %s, %s, %s, %s, %s);
         """
-        cursor.execute(query, (name, value, read_unit, label_id, language, organic, active, edited))
+        cursor.execute(
+            query, (name, value, read_unit, label_id, language, organic, active, edited)
+        )
         return cursor.fetchone()[0]
     except IngredientCreationError:
-        raise 
+        raise
     except Exception:
         raise IngredientCreationError("Error: could not create the ingredient")
-    
-def get_ingredient_json(cursor, label_id)->dict:
+
+
+def get_ingredient_json(cursor, label_id) -> dict:
     """
     This function gets the ingredient json from the database.
     """
@@ -41,4 +57,6 @@ def get_ingredient_json(cursor, label_id)->dict:
     except IngredientNotFoundError:
         raise
     except Exception:
-        raise IngredientNotFoundError("Datastore.db.ingredient unhandled error: could not get the ingredient")
+        raise IngredientNotFoundError(
+            "Datastore.db.ingredient unhandled error: could not get the ingredient"
+        )

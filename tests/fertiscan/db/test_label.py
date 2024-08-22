@@ -21,7 +21,7 @@ class test_label(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        self.product_name= "product_name"
+        self.product_name = "product_name"
         self.lot_number = "lot_number"
         self.npk = "npk"
         self.registration_number = "registration_number"
@@ -30,7 +30,7 @@ class test_label(unittest.TestCase):
         self.k = 30.0
         self.warranty = "warranty"
         self.company_info_id = None
-        self.manufacturer_info_id= None
+        self.manufacturer_info_id = None
 
     def tearDown(self):
         self.con.rollback()
@@ -64,10 +64,10 @@ class test_label(unittest.TestCase):
             self.k,
             self.warranty,
             self.company_info_id,
-            self.manufacturer_info_id
+            self.manufacturer_info_id,
         )
         label_data = label.get_label_information(self.cursor, label_information_id)
-        
+
         self.assertEqual(label_data[0], label_information_id)
         self.assertEqual(label_data[1], self.product_name)
         self.assertEqual(label_data[2], self.lot_number)
@@ -92,7 +92,7 @@ class test_label(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         label_data = label.get_label_information_json(self.cursor, label_information_id)
         self.assertEqual(label_data["label_id"], str(label_information_id))

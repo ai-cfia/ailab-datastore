@@ -140,10 +140,9 @@ class test_micronutrient(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
-
 
     def tearDown(self):
         self.con.rollback()
@@ -158,7 +157,7 @@ class test_micronutrient(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(micronutrient_id))
 
@@ -171,9 +170,9 @@ class test_micronutrient(unittest.TestCase):
             self.micronutrient_value,
             self.micronutrient_unit,
             self.label_information_id,
-            'fr',
+            "fr",
             self.element_id,
-            False
+            False,
         )
         nutrients.new_micronutrient(
             self.cursor,
@@ -181,16 +180,20 @@ class test_micronutrient(unittest.TestCase):
             self.micronutrient_value,
             self.micronutrient_unit,
             self.label_information_id,
-            'en',
+            "en",
             self.element_id,
-            False
+            False,
         )
-        data  = nutrients.get_micronutrient_json(self.cursor, label_id=self.label_information_id)
+        data = nutrients.get_micronutrient_json(
+            self.cursor, label_id=self.label_information_id
+        )
         self.assertEqual(data["micronutrients"]["en"][0]["name"], name_en)
         self.assertEqual(data["micronutrients"]["fr"][0]["name"], name_fr)
 
     def test_get_micronutrient_json_empty(self):
-        data = nutrients.get_micronutrient_json(self.cursor, label_id=self.label_information_id)
+        data = nutrients.get_micronutrient_json(
+            self.cursor, label_id=self.label_information_id
+        )
         self.assertIsNotNone(data["micronutrients"]["en"])
         self.assertIsNotNone(data["micronutrients"]["fr"])
         self.assertEqual(data["micronutrients"]["en"], [])
@@ -205,7 +208,7 @@ class test_micronutrient(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         micronutrient_data = nutrients.get_micronutrient(self.cursor, micronutrient_id)
         self.assertEqual(micronutrient_data[0], self.micronutrient_name)
@@ -234,7 +237,7 @@ class test_micronutrient(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         micronutrient_data = nutrients.get_full_micronutrient(
             self.cursor, micronutrient_id
@@ -268,7 +271,7 @@ class test_micronutrient(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         micro_id = nutrients.new_micronutrient(
             self.cursor,
@@ -278,7 +281,7 @@ class test_micronutrient(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         micronutrient_data = nutrients.get_all_micronutrients(
             self.cursor, self.label_information_id
@@ -312,7 +315,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.guaranteed_analysis_name = "test-micronutrient"
         self.guaranteed_analysis_value = 10
         self.guaranteed_analysis_unit = "%"
-        
+
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -335,7 +338,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
 
@@ -351,7 +354,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
 
@@ -363,13 +366,19 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
-        data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
-        self.assertEqual(data["guaranteed_analysis"][0]["name"], self.guaranteed_analysis_name)
+        data = nutrients.get_guaranteed_analysis_json(
+            self.cursor, label_id=self.label_information_id
+        )
+        self.assertEqual(
+            data["guaranteed_analysis"][0]["name"], self.guaranteed_analysis_name
+        )
 
     def test_get_guaranteed_analysis_json_empty(self):
-        data = nutrients.get_guaranteed_analysis_json(self.cursor, label_id=self.label_information_id)
+        data = nutrients.get_guaranteed_analysis_json(
+            self.cursor, label_id=self.label_information_id
+        )
         self.assertIsNone(data["guaranteed_analysis"])
 
     def test_get_guaranteed_analysis(self):
@@ -380,7 +389,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
         guaranteed_analysis_data = nutrients.get_guaranteed(
             self.cursor, guaranteed_analysis_id
@@ -410,7 +419,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
         guaranteed_analysis_data = nutrients.get_full_guaranteed(
             self.cursor, guaranteed_analysis_id
@@ -442,7 +451,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
         guaranteed_id = nutrients.new_guaranteed_analysis(
             self.cursor,
@@ -451,7 +460,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.guaranteed_analysis_unit,
             self.label_information_id,
             self.element_id,
-            False
+            False,
         )
         guaranteed_analysis_data = nutrients.get_all_guaranteeds(
             self.cursor, self.label_information_id

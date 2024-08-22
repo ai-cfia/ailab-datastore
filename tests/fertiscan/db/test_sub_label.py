@@ -82,7 +82,7 @@ class test_sub_label(unittest.TestCase):
             self.k,
             self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
 
@@ -107,13 +107,23 @@ class test_sub_label(unittest.TestCase):
 
     def test_new_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(sub_label_id))
 
     def test_get_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_label_data = sub_label.get_sub_label(self.cursor, sub_label_id)
         self.assertEqual(sub_label_data[0], self.text_fr)
@@ -121,31 +131,58 @@ class test_sub_label(unittest.TestCase):
 
     def test_get_sub_label_json(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_label_id2 = sub_label.new_sub_label(
-            self.cursor, self.text_fr_2, self.text_en_2, self.label_id, self.sub_type_2_id, False
+            self.cursor,
+            self.text_fr_2,
+            self.text_en_2,
+            self.label_id,
+            self.sub_type_2_id,
+            False,
         )
-        sub_label.new_sub_label(self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False)
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
         sub_label_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
         self.assertTrue(self.type_en in sub_label_data.keys())
 
     def test_get_sub_label_not_found(self):
         with self.assertRaises(sub_label.SubLabelNotFoundError):
             sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
-        
+
     def test_has_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         self.assertTrue(sub_label.has_sub_label(self.cursor, self.label_id))
-    
+
     def test_has_sub_label_not_found(self):
         self.assertFalse(sub_label.has_sub_label(self.cursor, str(uuid.uuid4())))
 
     def test_get_full_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_label_data = sub_label.get_full_sub_label(self.cursor, sub_label_id)
         self.assertEqual(sub_label_data[0], sub_label_id)
@@ -159,7 +196,12 @@ class test_sub_label(unittest.TestCase):
         other_en = "other_en"
 
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id, False
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_id = sub_label.new_sub_label(
             self.cursor, other_fr, other_en, self.label_id, self.sub_type_id, False
