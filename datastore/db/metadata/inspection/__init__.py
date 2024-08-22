@@ -197,14 +197,14 @@ def build_inspection_import(analysis_form: dict) -> str:
                         value=analysis_form["weight"][i]["value"],
                     )
                 )
-        if not analysis_form["volume"] is None:
+        if analysis_form["volume"] is not None:
             volume_obj = Metric(
                 unit=analysis_form["volume"]["unit"],
                 value=analysis_form["volume"]["value"],
             )
         else:
             volume_obj = Metric()
-        if not analysis_form["density"] is None:
+        if analysis_form["density"] is not None:
             density_obj = Metric(
                 unit=analysis_form["density"]["unit"],
                 value=analysis_form["density"]["value"],
@@ -344,7 +344,7 @@ def build_inspection_import(analysis_form: dict) -> str:
         )
         Inspection(**inspection_formatted.model_dump())
     except MissingKeyError as e:
-        raise MissingKeyError(f"Missing keys: {e}")
+        raise MissingKeyError("Missing keys:" +  str(e))
     except ValidationError as e:
         raise MetadataFormattingError(
             "Error InspectionCreationError not created: " + str(e)
@@ -364,11 +364,11 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         label_json = label.get_label_information_json(cursor, label_info_id)
 
         metrics_json = metric.get_metrics_json(cursor, label_info_id)
-        if metrics_json["metrics"]["weight"] is None:
+        if metrics_json["metrics"]["weight"] is not None:
             metrics_json["metrics"]["weight"] = []
-        if metrics_json["metrics"]["volume"] is None:
+        if metrics_json["metrics"]["volume"] is not None:
             metrics_json["metrics"]["volume"] = Metric()
-        if metrics_json["metrics"]["density"] is None:
+        if metrics_json["metrics"]["density"] is not None:
             metrics_json["metrics"]["density"] = Metric()
         label_json.update(metrics_json)
         ProductInformation(**label_json)
@@ -442,7 +442,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         or nutrients.MicronutrientNotFoundError
         or nutrients.GuaranteedNotFoundError
         or specification.SpecificationNotFoundError
-    ) as e:
+    ):
         raise
     except Exception as e:
         raise MetadataFormattingError(
@@ -524,11 +524,11 @@ def extract_specifications(specifications: list) -> list:
     output = []
     if specifications is None or specifications == []:
         return output
-    for specification in specifications:
+    for specification_obj in specifications:
         res = Specification(
-            humidity=specification["humidity"],
-            ph=specification["ph"],
-            solubility=specification["solubility"],
+            humidity=specification_obj["humidity"],
+            ph=specification_obj["ph"],
+            solubility=specification_obj["solubility"],
         )
         output.append(res)
     return output

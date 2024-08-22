@@ -1,21 +1,10 @@
 import unittest
-import uuid
 import datastore.db.metadata.inspection as metadata
-from datastore.db.metadata import validator
 from datastore.db.queries import (
     inspection,
-    ingredient,
-    label,
-    metric,
-    nutrients,
-    organization,
-    specification,
-    sub_label,
     user,
     picture,
 )
-import datastore.__init__ as datastore
-import io
 import os
 import datastore.db.__init__ as db
 import json

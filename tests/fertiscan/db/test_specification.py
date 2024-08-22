@@ -89,7 +89,7 @@ class test_specification(unittest.TestCase):
         self.assertEqual(specification_data[2], self.solubility)
 
     def test_get_specification_json(self):
-        specification_id = specification.new_specification(
+        specification.new_specification(
             self.cursor,
             self.humidity,
             self.ph,
@@ -120,7 +120,7 @@ class test_specification(unittest.TestCase):
             specification.get_specification(self.cursor, str(uuid.uuid4()))
 
     def test_has_specification(self):
-        specification_id = specification.new_specification(
+        specification.new_specification(
             self.cursor,
             self.humidity,
             self.ph,

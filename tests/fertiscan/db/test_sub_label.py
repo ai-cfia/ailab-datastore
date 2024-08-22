@@ -130,7 +130,7 @@ class test_sub_label(unittest.TestCase):
         self.assertEqual(sub_label_data[1], self.text_en)
 
     def test_get_sub_label_json(self):
-        sub_label_id = sub_label.new_sub_label(
+        sub_label.new_sub_label(
             self.cursor,
             self.text_fr,
             self.text_en,
@@ -138,7 +138,7 @@ class test_sub_label(unittest.TestCase):
             self.sub_type_id,
             False,
         )
-        sub_label_id2 = sub_label.new_sub_label(
+        sub_label.new_sub_label(
             self.cursor,
             self.text_fr_2,
             self.text_en_2,
@@ -162,7 +162,7 @@ class test_sub_label(unittest.TestCase):
             sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
 
     def test_has_sub_label(self):
-        sub_label_id = sub_label.new_sub_label(
+        sub_label.new_sub_label(
             self.cursor,
             self.text_fr,
             self.text_en,
