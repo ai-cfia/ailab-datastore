@@ -534,9 +534,9 @@ BEGIN
         registration_number := p_input_json->'product'->>'registration_number';
 
         -- Insert organization and get the organization_id
-        IF company_info_id IS NOT NULL THEN
+        IF manufacturer_info_id IS NOT NULL THEN
             INSERT INTO organization (information_id, main_location_id)
-            VALUES (company_info_id, NULL) -- TODO: main_location_id not yet handled
+            VALUES (manufacturer_info_id, NULL) -- TODO: main_location_id not yet handled
             RETURNING id INTO organization_id;
         ELSE
             organization_id := NULL;

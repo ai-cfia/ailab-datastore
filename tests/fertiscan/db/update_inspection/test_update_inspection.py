@@ -248,7 +248,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             "The registration number should match the input JSON.",
         )
 
-        # Check if the owner_id matches the organization information created for the company
+        # Check if the owner_id matches the organization information created for the manufacturer
         self.cursor.execute(
             "SELECT information_id FROM organization WHERE id = %s;",
             (fertilizer_data[2],),
@@ -263,8 +263,8 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         self.assertEqual(
             organization_name,
-            updated_input_json["company"]["name"],
-            "The organization's name should match the company's name in the input JSON.",
+            updated_input_json["manufacturer"]["name"],
+            "The organization's name should match the manufacturer's name in the input JSON.",
         )
 
     def test_update_inspection_unauthorized_user(self):
@@ -380,7 +380,9 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Update the JSON data with empty company and manufacturer for testing
         updated_input_json = self.created_data.copy()
         updated_input_json["company"] = {}  # Company is set to an empty object
-        updated_input_json["manufacturer"] = {}  # Manufacturer is set to an empty object
+        updated_input_json[
+            "manufacturer"
+        ] = {}  # Manufacturer is set to an empty object
         updated_input_json["product"]["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)
