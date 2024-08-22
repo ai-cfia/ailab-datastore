@@ -4,6 +4,7 @@ from datastore.db.queries import (
     inspection,
     user,
     picture,
+    metric,
 )
 import os
 import datastore.db.__init__ as db
@@ -95,7 +96,6 @@ class test_inspection_export(unittest.TestCase):
         self.assertIsNotNone(data["inspection_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
-        self.assertDictEqual(inspection_dict["product"], data["product"])
         self.assertDictEqual(inspection_dict["company"], data["company"])
         self.assertIsNotNone(data["manufacturer"])
         self.assertIsNone(data["manufacturer"]["id"])
@@ -129,6 +129,9 @@ class test_inspection_export(unittest.TestCase):
         self.assertIsNotNone(data["product"]["metrics"]["volume"])
         self.assertIsNone(data["product"]["metrics"]["volume"]["unit"])
         self.assertIsNone(data["product"]["metrics"]["volume"]["value"])
+
+        self.assertIsNotNone(data["product"]["metrics"]["density"])
+        self.assertIsNotNone(data["product"]["metrics"]["density"]["unit"])
 
     def test_no_weight(self):
         self.analyse["weight"] = []

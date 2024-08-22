@@ -364,11 +364,11 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         label_json = label.get_label_information_json(cursor, label_info_id)
 
         metrics_json = metric.get_metrics_json(cursor, label_info_id)
-        if metrics_json["metrics"]["weight"] is not None:
+        if metrics_json["metrics"]["weight"] is None:
             metrics_json["metrics"]["weight"] = []
-        if metrics_json["metrics"]["volume"] is not None:
+        if metrics_json["metrics"]["volume"] is None:
             metrics_json["metrics"]["volume"] = Metric()
-        if metrics_json["metrics"]["density"] is not None:
+        if metrics_json["metrics"]["density"] is None:
             metrics_json["metrics"]["density"] = Metric()
         label_json.update(metrics_json)
         ProductInformation(**label_json)
