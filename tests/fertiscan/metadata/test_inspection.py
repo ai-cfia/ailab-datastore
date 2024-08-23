@@ -4,7 +4,6 @@ from datastore.db.queries import (
     inspection,
     user,
     picture,
-    metric,
 )
 import os
 import datastore.db.__init__ as db
