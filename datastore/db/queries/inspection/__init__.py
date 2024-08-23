@@ -239,7 +239,7 @@ def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
                 inspection.picture_set_id,
                 label_info.id as label_info_id,
                 label_info.product_name,
-                label_info.manufacturer_info_id
+                label_info.manufacturer_info_id,
                 company_info.id as company_info_id,
                 company_info.company_name
             FROM 
