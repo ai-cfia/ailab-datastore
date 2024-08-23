@@ -232,16 +232,16 @@ def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
     try:
         query = """
             SELECT 
-                inspection.id,
-                inspection.upload_date,
-                inspection.updated_at,
-                inspection.sample_id,
-                inspection.picture_set_id,
+                inspection.id as inspection_id,
+                inspection.upload_date as upload_date,
+                inspection.updated_at as updated_at,
+                inspection.sample_id as sample_id,
+                inspection.picture_set_id as picture_set_id,
                 label_info.id as label_info_id,
-                label_info.product_name,
-                label_info.manufacturer_info_id,
+                label_info.product_name as product_name,
+                label_info.manufacturer_info_id as manufacturer_info_id,
                 company_info.id as company_info_id,
-                company_info.company_name
+                company_info.name as company_name
             FROM 
                 inspection
             LEFT JOIN 
