@@ -113,7 +113,7 @@ class TestGetBlob(unittest.TestCase):
     def test_get_blob_error(self):
         blob = "nonexisting_blob"
         mock_blob_client = Mock()
-        mock_blob_client.download_blob.side_effect = GetBlobError("Resource not found")
+        mock_blob_client.download_blob.side_effect = Exception("test error triggered")
 
         mock_container_client = Mock()
         mock_container_client.get_blob_client.return_value = mock_blob_client

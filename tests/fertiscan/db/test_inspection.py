@@ -74,6 +74,24 @@ class test_inspection(unittest.TestCase):
         self.assertEqual(inspection_data[0][0], inspection_id)
         self.assertEqual(inspection_data[1][0], inspection_id2)
 
+    def test_get_all_user_inspection_filter_verified(self):
+        inspection_id = inspection.new_inspection(
+            self.cursor, self.user_id, self.picture_set_id, False
+        )
+        inspection_id2 = inspection.new_inspection(
+            self.cursor, self.user_id, self.picture_set_id, True
+        )
+        inspection_data = inspection.get_all_user_inspection_filter_verified(
+            self.cursor, self.user_id, True
+        )
+        inspection_data2 = inspection.get_all_user_inspection_filter_verified(
+            self.cursor, self.user_id, False
+        )
+        self.assertEqual(len(inspection_data), 1)
+        self.assertEqual(inspection_data[0][0], inspection_id2)
+        self.assertEqual(len(inspection_data2), 1)
+        self.assertEqual(inspection_data2[0][0], inspection_id)
+
     # Deprecated function at the moment
     # def test_get_all_organization_inspection(self):
     #     company_id = organization.new_organization(

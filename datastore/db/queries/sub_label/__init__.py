@@ -37,12 +37,7 @@ def new_sub_label(cursor, text_fr, text_en, label_id, sub_type_id, edited=False)
     """
     try:
         query = """
-            INSERT INTO 
-                sub_label (text_content_fr, text_content_en, label_id, sub_type_id, edited)
-            VALUES 
-                (%s, %s, %s, %s, %s)
-            RETURNING 
-                id
+            SELECT new_sub_label(%s, %s, %s, %s, %s);
         """
         cursor.execute(query, (text_fr, text_en, label_id, sub_type_id, edited))
         return cursor.fetchone()[0]
@@ -78,6 +73,63 @@ def get_sub_label(cursor, sub_label_id):
         return cursor.fetchone()
     except Exception:
         raise SubLabelNotFoundError("Error: could not get the sub label")
+
+
+def has_sub_label(cursor, label_id):
+    """
+    This function checks if a label has sub label.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+
+    Returns:
+    - True if the label has sub label, False otherwise.
+    """
+    try:
+        query = """
+            SELECT 
+                Exists(
+                    SELECT 1
+                    FROM
+                        sub_label
+                    WHERE
+                        label_id = %s
+                    Limit 1
+                );
+        """
+        cursor.execute(query, (label_id,))
+        return cursor.fetchone()[0]
+    except Exception:
+        raise SubLabelNotFoundError("Error: could not check if the label has sub label")
+
+
+def get_sub_label_json(cursor, label_id) -> dict:
+    """
+    This function gets all the sub label for a label in a json format.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - The sub label in dict format.
+    """
+    try:
+        if not has_sub_label(cursor, label_id):
+            raise SubLabelNotFoundError(
+                "Error: could not get the sub label for label: " + str(label_id)
+            )
+        query = """
+            SELECT get_sub_label_json(%s);
+            """
+        cursor.execute(query, (str(label_id),))
+        sub_label = cursor.fetchone()
+        return sub_label[0]
+    except SubLabelNotFoundError as e:
+        raise e
+    except Exception:
+        raise
 
 
 def get_full_sub_label(cursor, sub_label_id):

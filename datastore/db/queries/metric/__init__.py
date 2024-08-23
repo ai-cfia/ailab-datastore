@@ -49,7 +49,7 @@ def is_a_metric(cursor, metric_id):
         return False
 
 
-def new_metric(cursor, value, unit_id, metric_type:str,edited=False):
+def new_metric(cursor, value, read_unit, label_id, metric_type: str, edited=False):
     """
     This function uploads a new metric to the database.
 
@@ -64,30 +64,26 @@ def new_metric(cursor, value, unit_id, metric_type:str,edited=False):
     """
 
     try:
-        if metric_type.lower() not in ["density","weight","volume"]:
-            raise MetricCreationError(f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'")
+        if metric_type.lower() not in ["density", "weight", "volume"]:
+            raise MetricCreationError(
+                f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'"
+            )
         query = """
-            INSERT INTO 
-                metric(
-                    value,
-                    unit_id,
-                    edited,
-                    metric_type
-                    )
-            VALUES
-                (%s, %s, %s, %s)
-            RETURNING id
+            SELECT new_metric_unit(%s, %s, %s, %s, %s);
             """
         cursor.execute(
             query,
             (
                 value,
-                unit_id,
+                read_unit,
+                label_id,
+                metric_type.lower(),
                 edited,
-                metric_type.lower()
             ),
         )
         return cursor.fetchone()[0]
+    except MetricCreationError as e:
+        raise e
     except Exception:
         raise MetricCreationError("Error: metric not uploaded")
 
@@ -120,6 +116,67 @@ def get_metric(cursor, metric_id):
         return cursor.fetchone()
     except Exception:
         raise MetricNotFoundError("Error: metric not found")
+
+
+def get_metric_by_label(cursor, label_id):
+    """
+    This function gets the metric from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - The metric.
+    """
+
+    try:
+        query = """
+            SELECT
+                id,
+                value,
+                unit_id,
+                edited,
+                metric_type
+            FROM
+                metric
+            WHERE
+                label_id = %s
+            ORDER BY
+                metric_type
+            """
+        cursor.execute(query, (label_id,))
+        return cursor.fetchall()
+    except Exception:
+        raise MetricNotFoundError("Error: metric not found")
+
+
+def get_metrics_json(cursor, label_id) -> dict:
+    """
+    This function gets the metric from the database and returns it in json format.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - The metric in dict format.
+    """
+    try:
+        query = """
+            SELECT get_metrics_json(%s);
+            """
+        cursor.execute(query, (str(label_id),))
+        metric = cursor.fetchone()
+        if metric is None:
+            raise MetricNotFoundError(
+                "Error: could not get the metric for label: " + str(label_id)
+            )
+        return metric[0]
+    except MetricNotFoundError as e:
+        raise e
+    except Exception:
+        raise Exception("Error: could not get the metric for label: " + str(label_id))
 
 
 def get_full_metric(cursor, metric_id):

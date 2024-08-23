@@ -26,6 +26,7 @@ class test_specification(unittest.TestCase):
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         self.lot_number = "lot_number"
+        self.product_name = "product_name"
         self.npk = "npk"
         self.registration_number = "registration_number"
         self.n = 10.0
@@ -34,16 +35,19 @@ class test_specification(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
+        self.warranty = "warranty"
         self.label_id = label.new_label_information(
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
             self.n,
             self.p,
             self.k,
+            self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
 
@@ -57,13 +61,25 @@ class test_specification(unittest.TestCase):
 
     def test_new_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(specification_id))
 
     def test_get_specification(self):
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specification_data = specification.get_specification(
             self.cursor, specification_id
@@ -72,17 +88,73 @@ class test_specification(unittest.TestCase):
         self.assertEqual(specification_data[1], self.ph)
         self.assertEqual(specification_data[2], self.solubility)
 
+    def test_get_specification_json(self):
+        specification.new_specification(
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
+        )
+        specification_data = specification.get_specification_json(
+            self.cursor, self.label_id
+        )
+        specification_data = specification_data["specifications"]
+        self.assertEqual(
+            specification_data[self.language][0]["humidity"], self.humidity
+        )
+        self.assertEqual(specification_data[self.language][0]["ph"], self.ph)
+        self.assertEqual(
+            specification_data[self.language][0]["solubility"], self.solubility
+        )
+
+    def test_get_specification_json_not_found(self):
+        empty = {"specifications": {"en": [], "fr": []}}
+        data = specification.get_specification_json(self.cursor, str(uuid.uuid4()))
+        self.assertDictEqual(data, empty)
+
     def test_get_specification_not_found(self):
         with self.assertRaises(specification.SpecificationNotFoundError):
             specification.get_specification(self.cursor, str(uuid.uuid4()))
 
+    def test_has_specification(self):
+        specification.new_specification(
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
+        )
+        self.assertTrue(specification.has_specification(self.cursor, self.label_id))
+
+    def test_has_specification_not_found(self):
+        self.assertFalse(
+            specification.has_specification(self.cursor, str(uuid.uuid4()))
+        )
+
     def test_get_all_specification(self):
         other_humidity = 40
         specification_id = specification.new_specification(
-            self.cursor, self.humidity, self.ph, self.solubility, self.label_id
+            self.cursor,
+            self.humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specif_id = specification.new_specification(
-            self.cursor, other_humidity, self.ph, self.solubility, self.label_id
+            self.cursor,
+            other_humidity,
+            self.ph,
+            self.solubility,
+            self.label_id,
+            self.language,
+            False,
         )
         specification_data = specification.get_all_specifications(
             self.cursor, self.label_id

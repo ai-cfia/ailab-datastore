@@ -4,7 +4,7 @@ It tests the functions in the user, seed and picture modules.
 """
 
 import unittest
-from datastore.db.queries import metric
+from datastore.db.queries import metric, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
@@ -59,6 +59,31 @@ class test_metric(unittest.TestCase):
         self.metric_unit = "milli-unite"
         self.metric_edited = False
         self.metric_type = "volume"
+        self.lot_number = "lot_number"
+        self.product_name = "product_name"
+        self.npk = "npk"
+        self.registration_number = "registration_number"
+        self.n = 10.0
+        self.p = 20.0
+        self.k = 30.0
+        self.weight = None
+        self.density = None
+        self.volume = None
+        self.warranty = "warranty"
+        self.label_id = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.warranty,
+            None,
+            None,
+        )
+        self.language = "fr"
 
     def tearDown(self):
         self.con.rollback()
@@ -66,13 +91,46 @@ class test_metric(unittest.TestCase):
 
     def test_new_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor,
+            self.metric_value,
+            self.unit_unit,
+            self.label_id,
+            self.metric_type,
+            self.metric_edited,
         )
         self.assertTrue(validator.is_valid_uuid(metric_id))
 
+    def test_new_metric_new_unit(self):
+        unit = "milli-new-unite"
+        metric_id = metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            unit,
+            self.label_id,
+            self.metric_type,
+            self.metric_edited,
+        )
+        self.assertTrue(validator.is_valid_uuid(metric_id))
+
+    def test_new_metric_wrong_metric_type(self):
+        with self.assertRaises(metric.MetricCreationError):
+            metric.new_metric(
+                self.cursor,
+                self.metric_value,
+                self.unit_unit,
+                self.label_id,
+                "wrong_metric_type",
+                self.metric_edited,
+            )
+
     def test_get_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor,
+            self.metric_value,
+            self.unit_unit,
+            self.label_id,
+            self.metric_type,
+            self.metric_edited,
         )
         metric_data = metric.get_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], self.metric_value)
@@ -80,9 +138,68 @@ class test_metric(unittest.TestCase):
         self.assertEqual(metric_data[2], self.metric_edited)
         self.assertEqual(metric_data[3], self.metric_type)
 
+    def test_get_metrics_json(self):
+        volume_unit = "ml"
+        weight_unit_imperial = "lb"
+        weight_unit_metric = "kg"
+        density_unit = "lb/ml"
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            volume_unit,
+            self.label_id,
+            "volume",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_imperial,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_metric,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            density_unit,
+            self.label_id,
+            "density",
+            self.metric_edited,
+        )
+        metric_data = metric.get_metrics_json(self.cursor, self.label_id)
+
+        self.assertEqual(metric_data["metrics"]["volume"]["unit"], volume_unit)
+        self.assertEqual(
+            metric_data["metrics"]["weight"][0]["unit"], weight_unit_imperial
+        )
+        self.assertEqual(
+            metric_data["metrics"]["weight"][1]["unit"], weight_unit_metric
+        )
+        self.assertEqual(metric_data["metrics"]["density"]["unit"], density_unit)
+
+    def test_get_metrics_json_empty(self):
+        data = metric.get_metrics_json(self.cursor, self.label_id)
+        self.assertIsNone(data["metrics"]["volume"])
+        self.assertIsNone(data["metrics"]["weight"])
+        self.assertIsNone(data["metrics"]["density"])
+
     def test_get_full_metric(self):
         metric_id = metric.new_metric(
-            self.cursor, self.metric_value, self.unit_id, self.metric_type, self.metric_edited
+            self.cursor,
+            self.metric_value,
+            self.unit_unit,
+            self.label_id,
+            self.metric_type,
+            self.metric_edited,
         )
         metric_data = metric.get_full_metric(self.cursor, metric_id)
         self.assertEqual(metric_data[0], metric_id)

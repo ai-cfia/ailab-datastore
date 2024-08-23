@@ -3,8 +3,22 @@ This module represent the function for the table label_information
 """
 
 
+class LabelInformationNotFoundError(Exception):
+    pass
+
+
 def new_label_information(
-    cursor, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id
+    cursor,
+    name: str,
+    lot_number: str,
+    npk: str,
+    registration_number: str,
+    n: float,
+    p: float,
+    k: float,
+    warranty,
+    company_info_id,
+    manufacturer_info_id,
 ):
     """
     This function create a new label_information in the database.
@@ -17,6 +31,7 @@ def new_label_information(
     - n (float): The n of the label_information.
     - p (float): The p of the label_information.
     - k (float): The k of the label_information.
+    - warranty (str): The warranty of the label_information.
     - company_info_id (str): The UUID of the company.
     - manufacturer_info_id (str): The UUID of the manufacturer.
 
@@ -25,31 +40,19 @@ def new_label_information(
     """
     try:
         query = """
-            INSERT INTO 
-                label_information (
-                    lot_number, 
-                    npk, 
-                    registration_number, 
-                    n, 
-                    p, 
-                    k,
-                    company_info_id,
-                    manufacturer_info_id
-                    )
-            VALUES 
-                (%s, %s, %s, %s, %s, %s,%s,%s)
-            RETURNING 
-                id
+        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
             query,
             (
+                name,
                 lot_number,
                 npk,
                 registration_number,
                 n,
                 p,
                 k,
+                warranty,
                 company_info_id,
                 manufacturer_info_id,
             ),
@@ -80,12 +83,15 @@ def get_label_information(cursor, label_information_id):
     try:
         query = """
             SELECT 
+                id,
+                product_name,
                 lot_number, 
                 npk, 
                 registration_number, 
                 n, 
                 p, 
                 k, 
+                warranty,
                 company_info_id,
                 manufacturer_info_id
             FROM 
@@ -95,5 +101,33 @@ def get_label_information(cursor, label_information_id):
             """
         cursor.execute(query, (label_information_id,))
         return cursor.fetchone()
+    except Exception as e:
+        raise e
+
+
+def get_label_information_json(cursor, label_info_id) -> dict:
+    """
+    This function retrieves the label information from the database in json format.
+
+    Parameters:
+    - cursor (cursor): The cursor object to interact with the database.
+    - label_info_id (str): The label information id.
+
+    Returns:
+    - dict: The label information in json format.
+    """
+    try:
+        query = """
+            SELECT get_label_info_json(%s);
+            """
+        cursor.execute(query, (str(label_info_id),))
+        label_info = cursor.fetchone()
+        if label_info is None or label_info[0] is None:
+            raise LabelInformationNotFoundError(
+                "Error: could not get the label information: " + str(label_info_id)
+            )
+        return label_info[0]
+    except LabelInformationNotFoundError as e:
+        raise e
     except Exception as e:
         raise e

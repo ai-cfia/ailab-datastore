@@ -9,6 +9,7 @@ from datastore.db.queries import sub_label, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
+import uuid
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -60,6 +61,7 @@ class test_sub_label(unittest.TestCase):
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         self.lot_number = "lot_number"
+        self.product_name = "product_name"
         self.npk = "npk"
         self.registration_number = "registration_number"
         self.n = 10.0
@@ -68,27 +70,36 @@ class test_sub_label(unittest.TestCase):
         self.weight = None
         self.density = None
         self.volume = None
+        self.warranty = "warranty"
         self.label_id = label.new_label_information(
             self.cursor,
+            self.product_name,
             self.lot_number,
             self.npk,
             self.registration_number,
             self.n,
             self.p,
             self.k,
+            self.warranty,
             None,
-            None
+            None,
         )
         self.language = "fr"
 
         self.type_fr = "test-type-fr"
         self.type_en = "test-type-en"
+        self.type_2_fr = "test-type-2-fr"
+        self.type_2_en = "test-type-2-en"
         self.sub_type_id = sub_label.new_sub_type(
             self.cursor, self.type_fr, self.type_en
         )
-
+        self.sub_type_2_id = sub_label.new_sub_type(
+            self.cursor, self.type_2_fr, self.type_2_en
+        )
         self.text_fr = "text_fr"
         self.text_en = "text_en"
+        self.text_fr_2 = "text_fr_2"
+        self.text_en_2 = "text_en_2"
 
     def tearDown(self):
         self.con.rollback()
@@ -96,21 +107,82 @@ class test_sub_label(unittest.TestCase):
 
     def test_new_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         self.assertTrue(validator.is_valid_uuid(sub_label_id))
 
     def test_get_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_label_data = sub_label.get_sub_label(self.cursor, sub_label_id)
         self.assertEqual(sub_label_data[0], self.text_fr)
         self.assertEqual(sub_label_data[1], self.text_en)
 
+    def test_get_sub_label_json(self):
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr_2,
+            self.text_en_2,
+            self.label_id,
+            self.sub_type_2_id,
+            False,
+        )
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+        sub_label_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        self.assertTrue(self.type_en in sub_label_data.keys())
+
+    def test_get_sub_label_not_found(self):
+        with self.assertRaises(sub_label.SubLabelNotFoundError):
+            sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
+
+    def test_has_sub_label(self):
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+        self.assertTrue(sub_label.has_sub_label(self.cursor, self.label_id))
+
+    def test_has_sub_label_not_found(self):
+        self.assertFalse(sub_label.has_sub_label(self.cursor, str(uuid.uuid4())))
+
     def test_get_full_sub_label(self):
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_label_data = sub_label.get_full_sub_label(self.cursor, sub_label_id)
         self.assertEqual(sub_label_data[0], sub_label_id)
@@ -124,10 +196,15 @@ class test_sub_label(unittest.TestCase):
         other_en = "other_en"
 
         sub_label_id = sub_label.new_sub_label(
-            self.cursor, self.text_fr, self.text_en, self.label_id, self.sub_type_id
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
         )
         sub_id = sub_label.new_sub_label(
-            self.cursor, other_fr, other_en, self.label_id, self.sub_type_id
+            self.cursor, other_fr, other_en, self.label_id, self.sub_type_id, False
         )
         sub_label_data = sub_label.get_all_sub_label(self.cursor, self.label_id)
         self.assertEqual(len(sub_label_data), 2)
