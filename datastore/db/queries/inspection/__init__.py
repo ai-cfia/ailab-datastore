@@ -286,7 +286,7 @@ def get_all_user_inspection(cursor, user_id):
                 verified,
                 upload_date,
                 updated_at,
-                label_info_id,
+                label_information_id,
                 sample_id,
                 picture_set_id,
                 fertilizer_id
