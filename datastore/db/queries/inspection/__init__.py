@@ -247,7 +247,7 @@ def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
             LEFT JOIN 
                 label_information as label_info
             ON
-                inspection.label_info_id = label_information.id
+                inspection.label_info_id = label_info.id
             LEFT JOIN
                 organization_information as company_info
             ON
@@ -286,7 +286,7 @@ def get_all_user_inspection(cursor, user_id):
                 verified,
                 upload_date,
                 updated_at,
-                label_information_id,
+                label_info_id,
                 sample_id,
                 picture_set_id,
                 fertilizer_id
