@@ -74,7 +74,7 @@ DECLARE
     label_id uuid;
 BEGIN
     -- Extract or generate the label ID
-    label_id := COALESCE(NULLIF(input_label->>'id', '')::uuid, uuid_generate_v4());
+    label_id := COALESCE(NULLIF(input_label->>'label_id', '')::uuid, uuid_generate_v4());
 
     -- Upsert label information
     INSERT INTO label_information (
@@ -494,7 +494,7 @@ BEGIN
         company_info_id,
         manufacturer_info_id
     );
-    updated_json := jsonb_set(updated_json, '{product,id}', to_jsonb(label_info_id));
+    updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id));
 
     -- Update metrics related to the label
     PERFORM update_metrics(label_info_id, p_input_json->'product'->'metrics');
@@ -515,7 +515,7 @@ BEGIN
     PERFORM update_sub_labels(label_info_id, p_input_json->'sub_labels');
 
     -- Update the inspection record
-    verified := (p_input_json->'product'->>'verified')::boolean;
+    verified := (p_input_json->>'verified')::boolean;
     inspection_id := upsert_inspection(
         p_inspection_id,
         label_info_id,

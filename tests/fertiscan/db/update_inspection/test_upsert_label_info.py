@@ -151,7 +151,7 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
                 "p": 25.0,
                 "k": 35.0,
                 "warranty": "Guaranteed analysis of nutrients.",
-                "id": str(label_info_id),  # Include ID to target the correct record
+                "label_id": str(label_info_id),  # Include ID to target the correct record
             }
         )
 

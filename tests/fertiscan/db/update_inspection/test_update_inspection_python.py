@@ -19,7 +19,7 @@ TEST_DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if not TEST_DB_SCHEMA:
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
-TEST_INPUT_JSON_PATH = "tests/fertiscan/analysis_returned.json"
+TEST_INPUT_JSON_PATH = "tests/fertiscan/inspection.json"
 
 
 class TestInspectionUpdatePythonFunction(unittest.TestCase):
@@ -115,7 +115,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
 
     def test_python_function_update_inspection_with_verified_true(self):
         updated_input_json = self.created_data.copy()
-        updated_input_json["product"]["verified"] = True
+        updated_input_json["verified"] = True
 
         try:
             updated_data = Inspection(**updated_input_json)
@@ -129,7 +129,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
             self.fail(f"update_inspection raised an unexpected error: {str(e)}")
 
         self.assertTrue(
-            updated_result["product"]["verified"],
+            updated_result["verified"],
             "The verified status should be True as updated.",
         )
 
