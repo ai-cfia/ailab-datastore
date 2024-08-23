@@ -8,7 +8,6 @@ DECLARE
     sub_type_rec RECORD;
     fr_values jsonb;
     en_values jsonb;
-    read_language text;
     record jsonb;
     inspection_id uuid;
     company_id uuid;
@@ -20,14 +19,17 @@ DECLARE
     manufacturer_location_id uuid;
     manufacturer_id uuid;
 	ingredient_id uuid;
-	key_string text;
-    read_value text;
-    read_unit text;
-    metric_type_id uuid;
-    value_float float;
+	guaranteed_analysis_id uuid;
+	time_id uuid;
     unit_id uuid;
     specification_id uuid;
     sub_label_id uuid;
+    metric_type_id uuid;
+	key_string text;
+    read_value text;
+    read_unit text;
+    read_language text;
+    value_float float;
     ingredient_language text;
 	micronutrient_language text;
 	name_string text;
@@ -115,6 +117,10 @@ BEGIN
 			'weight'::"fertiscan_0.0.11".metric_type,
 			FALSE
 		);
+		-- Update the label_dimension table with the new weight_id
+		UPDATE "fertiscan_0.0.11"."label_dimension" 
+		SET weight_ids = array_append(weight_ids, weight_id);
+		WHERE label_id = label_id;
 	 END LOOP;
 -- Weight end
 	
@@ -131,7 +137,10 @@ BEGIN
 			'density'::"fertiscan_0.0.11".metric_type,
 			FALSE
 		);
-
+		-- Update the label_dimension table with the new density_id
+		UPDATE "fertiscan_0.0.11"."label_dimension" 
+		SET density_ids = array_append(density_ids, density_id);
+		WHERE label_id = label_id;
 	END IF;
 -- DENSITY END
 
@@ -149,7 +158,10 @@ BEGIN
 			'volume'::"fertiscan_0.0.11".metric_type,
 			FALSE
 		);
-
+		-- Update the label_dimension table with the new volume_ids
+		UPDATE "fertiscan_0.0.11"."label_dimension" 
+		SET volume_ids = array_append(volume_ids, volume_id);
+		WHERE label_id = label_id;
 	END IF;
 -- Volume end
    
@@ -165,7 +177,11 @@ BEGIN
 				ingredient_language::"fertiscan_0.0.11".language,
 				label_id,
 				FALSE
-			);
+			);		
+		-- Update the label_dimension table with the new specification_id
+		UPDATE "fertiscan_0.0.11"."label_dimension" 
+		SET specification_id = array_append(specification_ids, specification_id);
+		WHERE label_id = label_id;
 		END LOOP;
 	END LOOP;
 -- SPECIFICATION END
@@ -192,6 +208,10 @@ BEGIN
 				NULL,  --We cant tell atm
 				FALSE  --preset
 			);
+			-- Update the label_dimension table with the new specification_id
+			UPDATE "fertiscan_0.0.11"."label_dimension" 
+			SET ingredient_ids = array_append(ingredient_ids, ingredient_id);
+			WHERE label_id = label_id;
 		END LOOP;
 	END LOOP;
 --INGREDIENTS ENDS
@@ -210,13 +230,19 @@ BEGIN
         IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
 		  	FOR i IN 0..(jsonb_array_length(fr_values) - 1)
 	   		LOOP
-	   				sub_label_id := "fertiscan_0.0.11".new_sub_label(
-						fr_values->>i,
-						en_values->>i,
-						label_id,
-						sub_type_rec.id,
-						FALSE
-					);
+	   			sub_label_id := "fertiscan_0.0.11".new_sub_label(
+					fr_values->>i,
+					en_values->>i,
+					label_id,
+					sub_type_rec.id,
+					FALSE
+				);
+				-- Update the label_dimension table with the new sub_label_id
+				key_string := key_string || '_ids';
+				EXECUTE format('UPDATE %I.label_dimension 
+					SET %I = array_append(%I, %L) 
+					WHERE label_id = %L',
+					"fertiscan_0.0.11",key_string, key_string, sub_label_id, label_id);
 			END LOOP;
 		END IF;
    END LOOP;    
@@ -235,6 +261,10 @@ BEGIN
 				label_id,
 				micronutrient_language::"fertiscan_0.0.11".language
 			);
+			-- Update the label_dimension table with the new Micronutrient_id
+			UPDATE "fertiscan_0.0.11"."label_dimension" 
+			SET micronutrient_ids = array_append(micronutrient_ids, micronutrient_id);
+			WHERE label_id = label_id;
 		END LOOP;
 	END LOOP;
 --MICRONUTRIENTS ENDS
@@ -242,7 +272,7 @@ BEGIN
 -- GUARANTEED
 	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		PERFORM "fertiscan_0.0.11".new_guaranteed_analysis(
+		guaranteed_analysis_id := "fertiscan_0.0.11".new_guaranteed_analysis(
 			record->>'name',
 			(record->>'value')::float,
 			record->>'unit',
@@ -250,8 +280,23 @@ BEGIN
 			FALSE,
 			NULL -- We arent handeling element_id yet
 		);
+		-- Update the label_dimension table with the new Micronutrient_id
+		UPDATE "fertiscan_0.0.11"."label_dimension" 
+		SET guaranteed_analysis_id = array_append(guaranteed_analysis_ids, guaranteed_analysis_id);
+		WHERE label_id = label_id;
 	END LOOP;
 -- GUARANTEED END	
+
+-- Time Dimension
+	INSERT INTO time_dimension (
+		date_value, year,month,day,
+	) VALUES (
+		CURRENT_DATE,
+		EXTRACT(YEAR FROM CURRENT_DATE),
+		EXTRACT(MONTH FROM CURRENT_DATE),
+  		EXTRACT(DAY FROM CURRENT_DATE)	
+	) RETURNING id INTO time_id;
+-- Time Dimension End
 
 -- INSPECTION
     INSERT INTO inspection (
@@ -267,6 +312,20 @@ BEGIN
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
 
+	-- Create the Inspection_factual entry
+	INSERT INTO inspection_factual (
+		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
+	) VALUES (
+		inspection_id,
+		user_id,
+		label_id,
+		time_id,
+		NULL, -- NOT handled yet
+		NULL, -- IS not defined yet
+		NULL, -- IS not defined yet
+		picture_set_id
+	);
+-- INSPECTION END
 	RETURN input_json;
 
 END;
