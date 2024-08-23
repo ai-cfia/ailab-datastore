@@ -16,7 +16,7 @@ DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if not DB_SCHEMA:
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
-INPUT_JSON_PATH = "tests/fertiscan/analysis_returned.json"
+INPUT_JSON_PATH = "tests/fertiscan/inspection.json"
 
 
 class TestUpdateInspectionFunction(unittest.TestCase):
@@ -130,7 +130,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify the metrics were updated
         self.cursor.execute(
             "SELECT value FROM metric WHERE label_id = %s AND metric_type = %s;",
-            (self.created_data["product"]["id"], "weight"),
+            (self.created_data["product"]["label_id"], "weight"),
         )
         updated_weight_metric = self.cursor.fetchone()[0]
         self.assertEqual(
@@ -141,7 +141,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         self.cursor.execute(
             "SELECT value FROM metric WHERE label_id = %s AND metric_type = %s;",
-            (self.created_data["product"]["id"], "density"),
+            (self.created_data["product"]["label_id"], "density"),
         )
         updated_density_metric = self.cursor.fetchone()[0]
         self.assertEqual(
@@ -153,7 +153,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify the specifications were updated
         self.cursor.execute(
             "SELECT ph FROM specification WHERE label_id = %s;",
-            (self.created_data["product"]["id"],),
+            (self.created_data["product"]["label_id"],),
         )
         updated_ph = self.cursor.fetchone()[0]
         self.assertEqual(
@@ -165,7 +165,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify the ingredient value was updated
         self.cursor.execute(
             "SELECT value FROM ingredient WHERE label_id = %s AND name = %s;",
-            (self.created_data["product"]["id"], "Bone meal"),
+            (self.created_data["product"]["label_id"], "Bone meal"),
         )
         updated_ingredient_value = self.cursor.fetchone()[0]
         self.assertEqual(
@@ -177,7 +177,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Verify the guaranteed analysis value was updated
         self.cursor.execute(
             "SELECT value FROM guaranteed WHERE label_id = %s AND read_name = %s;",
-            (self.created_data["product"]["id"], "Total Nitrogen (N)"),
+            (self.created_data["product"]["label_id"], "Total Nitrogen (N)"),
         )
         updated_nitrogen_value = self.cursor.fetchone()[0]
         self.assertEqual(
@@ -189,7 +189,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
     def test_update_inspection_with_verified_true(self):
         # Update the JSON data for testing the update function
         updated_input_json = self.created_data.copy()
-        updated_input_json["product"]["verified"] = True  # Set verified to true
+        updated_input_json["verified"] = True  # Set verified to true
 
         updated_input_json_str = json.dumps(updated_input_json)
 
@@ -295,7 +295,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         updated_input_json = self.created_data.copy()
         updated_input_json["company"] = None  # Company is set to null
         updated_input_json["manufacturer"] = None  # Manufacturer is set to null
-        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+        updated_input_json["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)
 
@@ -338,7 +338,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         updated_input_json = self.created_data.copy()
         del updated_input_json["company"]  # Remove company key
         del updated_input_json["manufacturer"]  # Remove manufacturer key
-        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+        updated_input_json["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)
 
@@ -383,7 +383,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         updated_input_json[
             "manufacturer"
         ] = {}  # Manufacturer is set to an empty object
-        updated_input_json["product"]["verified"] = False  # Ensure verified is false
+        updated_input_json["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)
 
