@@ -75,13 +75,7 @@ erDiagram
     string website
     string phone_number
     uuid location_id FK
-  }
-  organization_information {
-    uuid id PK
-    string name
-    string website
-    string phone_number
-    uuid location_id FK
+    boolean edited
   }
   location {
     uuid id PK
@@ -191,7 +185,7 @@ erDiagram
   location ||--|| region: defines
   region ||--|| province: apart
   inspection ||--|| fertilizer : about
-  inspection }|--|| users :inspect
+  inspection }o--|| users :inspect
   inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
   label_information ||--|{ ingredient: has
@@ -205,9 +199,9 @@ erDiagram
   label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
   users ||--o{ picture_set: owns
-  metric }|--|| unit: defines
+  metric }o--|| unit: defines
 
-  micronutrient ||--|| element_compound: is
-  guaranteed ||--|| element_compound: is
+  micronutrient |o--|| element_compound: is
+  guaranteed |o--|| element_compound: is
 
 ```
