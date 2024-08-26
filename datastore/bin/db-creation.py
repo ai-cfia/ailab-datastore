@@ -1,7 +1,5 @@
 import os
 import datastore.db as db
-import datastore.db.queries as queries
-import psycopg
 from psycopg import sql
 
 DB_URL = os.environ.get("FERTISCAN_DB_URL")

@@ -14,7 +14,14 @@ import datastore.fertiscan as fertiscan
 import datastore.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.metric as metric
-from datastore.db.queries import sub_label, nutrients, inspection, picture,label, specification
+from datastore.db.queries import (
+    sub_label,
+    nutrients,
+    inspection,
+    picture,
+    label,
+    specification,
+)
 import os
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -71,28 +78,46 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.image.save(self.image_byte_array, format="TIFF")
         self.pic_encoded = self.image.tobytes()
 
-        if len(self.analysis_json.get("cautions_en")) >=  len(self.analysis_json.get("cautions_fr")) :
+        if len(self.analysis_json.get("cautions_en")) >= len(
+            self.analysis_json.get("cautions_fr")
+        ):
             self.nb_cautions = len(self.analysis_json.get("cautions_en"))
-        elif len(self.analysis_json.get("cautions_en")) <  len(self.analysis_json.get("cautions_fr")) :
+        elif len(self.analysis_json.get("cautions_en")) < len(
+            self.analysis_json.get("cautions_fr")
+        ):
             self.nb_cautions = len(self.analysis_json.get("cautions_fr"))
 
-        if len(self.analysis_json.get("instructions_en")) >=  len(self.analysis_json.get("instructions_fr")) :
+        if len(self.analysis_json.get("instructions_en")) >= len(
+            self.analysis_json.get("instructions_fr")
+        ):
             self.nb_instructions = len(self.analysis_json.get("instructions_en"))
-        elif len(self.analysis_json.get("instructions_en")) <  len(self.analysis_json.get("instructions_fr")) :
+        elif len(self.analysis_json.get("instructions_en")) < len(
+            self.analysis_json.get("instructions_fr")
+        ):
             self.nb_instructions = len(self.analysis_json.get("instructions_fr"))
 
-        if len(self.analysis_json.get("first_aid_en")) >=  len(self.analysis_json.get("first_aid_fr")) :
+        if len(self.analysis_json.get("first_aid_en")) >= len(
+            self.analysis_json.get("first_aid_fr")
+        ):
             self.nb_first_aid = len(self.analysis_json.get("first_aid_en"))
-        elif len(self.analysis_json.get("first_aid_en")) <  len(self.analysis_json.get("first_aid_fr")) :
+        elif len(self.analysis_json.get("first_aid_en")) < len(
+            self.analysis_json.get("first_aid_fr")
+        ):
             self.nb_first_aid = len(self.analysis_json.get("first_aid_fr"))
 
-        self.nb_specifications = len(self.analysis_json.get("specifications_en")) + len(self.analysis_json.get("specifications_fr"))
+        self.nb_specifications = len(self.analysis_json.get("specifications_en")) + len(
+            self.analysis_json.get("specifications_fr")
+        )
 
         self.nb_guaranteed = len(self.analysis_json.get("guaranteed_analysis"))
 
-        self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(self.analysis_json.get("ingredients_fr"))
+        self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
+            self.analysis_json.get("ingredients_fr")
+        )
 
-        self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(self.analysis_json.get("micronutrients_fr"))
+        self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
+            self.analysis_json.get("micronutrients_fr")
+        )
 
         self.nb_weight = len(self.analysis_json.get("weight"))
 
@@ -115,7 +140,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(analysis)
         self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
         inspection_id = analysis["inspection_id"]
-        
+
         self.assertTrue(validator.is_valid_uuid(analysis["product"]["label_id"]))
         label_id = analysis["product"]["label_id"]
 
@@ -128,9 +153,13 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        specifications = specification.get_all_specifications(cursor=self.cursor, label_id=str(analysis["product"]["label_id"]))
+        specifications = specification.get_all_specifications(
+            cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
+        )
         self.assertIsNotNone(specifications)
-        self.assertEqual(len(specifications), self.nb_specifications)  # There are 2 specifications in the analysis_json
+        self.assertEqual(
+            len(specifications), self.nb_specifications
+        )  # There are 2 specifications in the analysis_json
 
         nutrients_data = nutrients.get_all_micronutrients(
             cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
@@ -160,7 +189,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Verify if the saved ids are the same length as the ones in the analysis_json
 
         label_dimension = label.get_label_dimension(self.cursor, label_id)
-                
+
         company_info_id = str(label_dimension[1])
         manufacturer_info_id = str(label_dimension[3])
 
@@ -170,7 +199,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(label_dimension[5]), self.nb_instructions)
         self.assertEqual(len(label_dimension[6]), self.nb_cautions)
         self.assertEqual(len(label_dimension[7]), self.nb_first_aid)
-        
+
         self.assertEqual(len(label_dimension[9]), self.nb_specifications)
         self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
         self.assertEqual(len(label_dimension[11]), self.nb_micronutrients)

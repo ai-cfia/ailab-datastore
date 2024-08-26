@@ -132,6 +132,7 @@ def get_label_information_json(cursor, label_info_id) -> dict:
     except Exception as e:
         raise e
 
+
 def get_label_dimension(cursor, label_id):
     """
     This function get the label_dimension from the database.
