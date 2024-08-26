@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_metrics_json(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".get_metrics_json(
 label_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
