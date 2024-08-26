@@ -1,12 +1,13 @@
 """
-This module contains the function to generate the metadata necessary to interact with the database and the other layers of Fertiscan for all the inspection related objects. 
+This module contains the function to generate the metadata necessary to interact with the database and the other layers of Fertiscan for all the inspection related objects.
 The metadata is generated in a json format and is used to store the metadata in the database.
 
 """
 
-from typing import List
+from typing import List, Optional
+
 from pydantic import BaseModel, ValidationError
-from typing import Optional
+
 from datastore.db.queries import (
     ingredient,
     label,
@@ -193,21 +194,21 @@ def build_inspection_import(analysis_form: dict) -> str:
             for i in range(len(analysis_form["weight"])):
                 weights.append(
                     Metric(
-                        unit=analysis_form["weight"][i]["unit"],
-                        value=analysis_form["weight"][i]["value"],
+                        unit=analysis_form["weight"][i].get("unit"),
+                        value=analysis_form["weight"][i].get("value"),
                     )
                 )
         if analysis_form["volume"] is not None:
             volume_obj = Metric(
-                unit=analysis_form["volume"]["unit"],
-                value=analysis_form["volume"]["value"],
+                unit=analysis_form["volume"].get("unit"),
+                value=analysis_form["volume"].get("value"),
             )
         else:
             volume_obj = Metric()
         if analysis_form["density"] is not None:
             density_obj = Metric(
-                unit=analysis_form["density"]["unit"],
-                value=analysis_form["density"]["value"],
+                unit=analysis_form["density"].get("unit"),
+                value=analysis_form["density"].get("value"),
             )
         else:
             density_obj = Metric()
@@ -239,13 +240,13 @@ def build_inspection_import(analysis_form: dict) -> str:
                 Value(
                     unit=(
                         None
-                        if analysis_form["micronutrients_en"][i]["unit"] == ""
-                        else analysis_form["micronutrients_en"][i]["unit"]
+                        if analysis_form["micronutrients_en"][i].get("unit") == ""
+                        else analysis_form["micronutrients_en"][i].get("unit")
                     ),
                     value=(
                         None
-                        if analysis_form["micronutrients_fr"][i]["value"] == ""
-                        else analysis_form["micronutrients_fr"][i]["value"]
+                        if analysis_form["micronutrients_fr"][i].get("value") == ""
+                        else analysis_form["micronutrients_fr"][i].get("value")
                     ),
                     name=analysis_form["micronutrients_en"][i]["nutrient"],
                 )
@@ -255,13 +256,13 @@ def build_inspection_import(analysis_form: dict) -> str:
                 Value(
                     unit=(
                         None
-                        if analysis_form["micronutrients_fr"][i]["unit"] == ""
-                        else analysis_form["micronutrients_fr"][i]["unit"]
+                        if analysis_form["micronutrients_fr"][i].get("unit") == ""
+                        else analysis_form["micronutrients_fr"][i].get("unit")
                     ),
                     value=(
                         None
-                        if analysis_form["micronutrients_fr"][i]["value"] == ""
-                        else analysis_form["micronutrients_fr"][i]["value"]
+                        if analysis_form["micronutrients_fr"][i].get("value") == ""
+                        else analysis_form["micronutrients_fr"][i].get("value")
                     ),
                     name=analysis_form["micronutrients_fr"][i]["nutrient"],
                 )
@@ -274,13 +275,13 @@ def build_inspection_import(analysis_form: dict) -> str:
                 Value(
                     unit=(
                         None
-                        if analysis_form["ingredients_en"][i]["unit"] == ""
-                        else analysis_form["ingredients_en"][i]["unit"]
+                        if analysis_form["ingredients_en"][i].get("unit") == ""
+                        else analysis_form["ingredients_en"][i].get("unit")
                     ),
                     value=(
                         None
-                        if analysis_form["ingredients_en"][i]["value"] == ""
-                        else analysis_form["ingredients_en"][i]["value"]
+                        if analysis_form["ingredients_en"][i].get("value") == ""
+                        else analysis_form["ingredients_en"][i].get("value")
                     ),
                     name=analysis_form["ingredients_en"][i]["nutrient"],
                 )
@@ -290,13 +291,13 @@ def build_inspection_import(analysis_form: dict) -> str:
                 Value(
                     unit=(
                         None
-                        if analysis_form["ingredients_fr"][i]["unit"] == ""
-                        else analysis_form["ingredients_fr"][i]["unit"]
+                        if analysis_form["ingredients_fr"][i].get("unit") == ""
+                        else analysis_form["ingredients_fr"][i].get("unit")
                     ),
                     value=(
                         None
-                        if analysis_form["ingredients_fr"][i]["value"] == ""
-                        else analysis_form["ingredients_fr"][i]["value"]
+                        if analysis_form["ingredients_fr"][i].get("value") == ""
+                        else analysis_form["ingredients_fr"][i].get("value")
                     ),
                     name=analysis_form["ingredients_fr"][i]["nutrient"],
                 )
@@ -318,13 +319,13 @@ def build_inspection_import(analysis_form: dict) -> str:
                 Value(
                     unit=(
                         None
-                        if analysis_form["guaranteed_analysis"][i]["unit"] == ""
-                        else analysis_form["guaranteed_analysis"][i]["unit"]
+                        if analysis_form["guaranteed_analysis"][i].get("unit") == ""
+                        else analysis_form["guaranteed_analysis"][i].get("unit")
                     ),
                     value=(
                         None
-                        if analysis_form["guaranteed_analysis"][i]["value"] == ""
-                        else analysis_form["guaranteed_analysis"][i]["value"]
+                        if analysis_form["guaranteed_analysis"][i].get("value") == ""
+                        else analysis_form["guaranteed_analysis"][i].get("value")
                     ),
                     name=analysis_form["guaranteed_analysis"][i]["nutrient"],
                 )
@@ -344,7 +345,7 @@ def build_inspection_import(analysis_form: dict) -> str:
         )
         Inspection(**inspection_formatted.model_dump())
     except MissingKeyError as e:
-        raise MissingKeyError("Missing keys:" +  str(e))
+        raise MissingKeyError("Missing keys:" + str(e))
     except ValidationError as e:
         raise MetadataFormattingError(
             "Error InspectionCreationError not created: " + str(e)
@@ -358,7 +359,6 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
-
         inspection_json = {"inspection_id": str(inspection_id)}
         # get the label information
         label_json = label.get_label_information_json(cursor, label_info_id)
@@ -438,7 +438,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         or metric.MetricNotFoundError
         or organization.OrganizationNotFoundError
         or sub_label.SubLabelNotFoundError
-        or nutrients.IngredientNotFoundError
+        or ingredient.IngredientNotFoundError
         or nutrients.MicronutrientNotFoundError
         or nutrients.GuaranteedNotFoundError
         or specification.SpecificationNotFoundError
