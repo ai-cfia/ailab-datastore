@@ -2,6 +2,7 @@
 This module represent the function for the Specification table
 
 """
+from psycopg import sql
 
 
 class SpecificationCreationError(Exception):
@@ -20,6 +21,7 @@ def new_specification(
     label_id,
     language,
     edited=False,
+    schema="public",
 ):
     """
     This function creates a new specification in the database.
@@ -38,9 +40,12 @@ def new_specification(
             raise SpecificationCreationError(
                 "Error: language must be either 'en' or 'fr'"
             )
-        query = """
+        #query = sql.SQL("""
+        #    SELECT {}.new_specification(%s, %s, %s, %s, %s, %s);
+        #""").format(sql.Identifier(schema))
+        query=sql.SQL("""
             SELECT new_specification(%s, %s, %s, %s, %s, %s);
-        """
+        """)
         cursor.execute(query, (humidity, ph, solubility, language, label_id, edited))
         return cursor.fetchone()[0]
     except SpecificationCreationError:

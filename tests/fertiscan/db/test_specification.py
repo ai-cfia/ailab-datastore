@@ -24,7 +24,7 @@ class test_specification(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
+        
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -68,6 +68,7 @@ class test_specification(unittest.TestCase):
             self.label_id,
             self.language,
             False,
+            str(DB_SCHEMA),
         )
         self.assertTrue(validator.is_valid_uuid(specification_id))
 
@@ -80,6 +81,7 @@ class test_specification(unittest.TestCase):
             self.label_id,
             self.language,
             False,
+            DB_SCHEMA,
         )
         specification_data = specification.get_specification(
             self.cursor, specification_id
@@ -97,6 +99,7 @@ class test_specification(unittest.TestCase):
             self.label_id,
             self.language,
             False,
+            DB_SCHEMA,
         )
         specification_data = specification.get_specification_json(
             self.cursor, self.label_id
