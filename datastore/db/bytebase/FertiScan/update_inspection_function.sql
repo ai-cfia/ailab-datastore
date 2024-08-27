@@ -456,7 +456,7 @@ DECLARE
     json_inspection_id uuid;
     company_info_id uuid;
     manufacturer_info_id uuid;
-    label_info_id uuid;
+    label_info_id_value uuid;
     organization_id uuid;
     updated_json jsonb := p_input_json;
     fertilizer_name text;
@@ -491,30 +491,30 @@ BEGIN
     END IF;
 
     -- Upsert label information and get the ID
-    label_info_id := upsert_label_information(
+    label_info_id_value := upsert_label_information(
         p_input_json->'product',
         company_info_id,
         manufacturer_info_id
     );
-    updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id));
+    updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
 
     -- Update metrics related to the label
-    PERFORM update_metrics(label_info_id, p_input_json->'product'->'metrics');
+    PERFORM update_metrics(label_info_id_value, p_input_json->'product'->'metrics');
 
     -- Update specifications related to the label
-    PERFORM update_specifications(label_info_id, p_input_json->'specifications');
+    PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    PERFORM update_ingredients(label_info_id, p_input_json->'ingredients');
+    PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
-    PERFORM update_micronutrients(label_info_id, p_input_json->'micronutrients');
+    PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
 
     -- Update guaranteed analysis related to the label
-    PERFORM update_guaranteed(label_info_id, p_input_json->'guaranteed_analysis');
+    PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
-    PERFORM update_sub_labels(label_info_id, p_input_json->'sub_labels');
+    PERFORM update_sub_labels(label_info_id_value, p_input_json->'sub_labels');
 
     -- Update the inspection record
     verified_bool := (p_input_json->>'verified')::boolean;
@@ -522,7 +522,7 @@ BEGIN
     UPDATE 
         inspection
     SET 
-        label_info_id = label_info_id,
+        label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
