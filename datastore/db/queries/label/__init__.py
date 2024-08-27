@@ -131,3 +131,49 @@ def get_label_information_json(cursor, label_info_id) -> dict:
         raise e
     except Exception as e:
         raise e
+
+
+def get_label_dimension(cursor, label_id):
+    """
+    This function get the label_dimension from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - dict: The label_dimension
+    """
+    try:
+        query = """
+            SELECT 
+                "label_id",
+                "company_info_id",
+                "company_location_id",
+                "manufacturer_info_id",
+                "manufacturer_location_id",
+                "instructions_ids",
+                "cautions_ids",
+                "first_aid_ids",
+                "warranties_ids",
+                "specification_ids",
+                "ingredient_ids",
+                "micronutrient_ids",
+                "guaranteed_ids",
+                "weight_ids",
+                "volume_ids",
+                "density_ids"
+            FROM 
+                label_dimension
+            WHERE 
+                label_id = %s;
+            """
+        cursor.execute(query, (label_id,))
+        data = cursor.fetchone()
+        if data is None or data[0] is None:
+            raise LabelInformationNotFoundError(
+                "Error: could not get the label dimension for label: " + str(label_id)
+            )
+        return data
+    except Exception as e:
+        raise e

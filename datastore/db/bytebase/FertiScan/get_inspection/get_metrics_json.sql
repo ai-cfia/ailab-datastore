@@ -1,5 +1,5 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_metrics_json(
-label_id uuid)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".get_metrics_json(
+label_info_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
 AS $function$
@@ -17,7 +17,7 @@ BEGIN
         JOIN 
             unit ON metric.unit_id = unit.id
         WHERE 
-            metric.label_id = label_id 
+            metric.label_id = label_info_id 
         ORDER BY 
             metric.metric_type
     ),

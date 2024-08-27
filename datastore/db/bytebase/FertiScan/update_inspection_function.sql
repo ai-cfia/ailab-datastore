@@ -1,7 +1,7 @@
-SET search_path TO "fertiscan_0.0.11";
+SET search_path TO "fertiscan_0.0.12";
 
 -- Function to upsert location information based on location_id and address
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_location(location_id uuid, address text)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_location(location_id uuid, address text)
 RETURNS uuid AS $$
 DECLARE
     new_location_id uuid;
@@ -19,7 +19,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert organization information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_organization_info(input_org_info jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_organization_info(input_org_info jsonb)
 RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
@@ -64,7 +64,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert label information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_label_information(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_label_information(
     input_label jsonb,
     company_info_id uuid,
     manufacturer_info_id uuid
@@ -110,7 +110,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update metrics: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_metrics(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_metrics(
     p_label_id uuid,
     metrics jsonb
 )
@@ -175,7 +175,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update specifications: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_specifications(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_specifications(
     p_label_id uuid,
     new_specifications jsonb
 )
@@ -211,7 +211,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update ingredients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_ingredients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_ingredients(
     p_label_id uuid,
     new_ingredients jsonb
 )
@@ -249,7 +249,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update micronutrients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_micronutrients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_micronutrients(
     p_label_id uuid,
     new_micronutrients jsonb
 )
@@ -285,7 +285,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update guaranteed analysis: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_guaranteed(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_guaranteed(
     p_label_id uuid,
     new_guaranteed jsonb
 )
@@ -316,7 +316,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update sub labels: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_sub_labels(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_sub_labels(
     p_label_id uuid,
     new_sub_labels jsonb
 )
@@ -362,7 +362,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert inspection information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_inspection(
     p_inspection_id uuid,
     p_label_info_id uuid,
     p_inspector_id uuid,
@@ -407,7 +407,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert fertilizer information based on unique fertilizer name
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".upsert_fertilizer(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_fertilizer(
     p_name text,
     p_registration_number text,
     p_owner_id uuid,
@@ -443,7 +443,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update inspection data and related entities, returning an updated JSON
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".update_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid,
     p_input_json jsonb

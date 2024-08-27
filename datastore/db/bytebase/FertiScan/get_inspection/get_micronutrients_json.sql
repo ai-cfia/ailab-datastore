@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".get_micronutrient_json(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".get_micronutrient_json(
 label_info_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
