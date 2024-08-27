@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".delete_organization_information(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".delete_organization_information(
     p_organization_information_id uuid
 )
 RETURNS void
@@ -9,24 +9,17 @@ DECLARE
 BEGIN
     -- Retrieve the associated location ID before deleting the organization
     SELECT location_id INTO v_location_id
-    FROM "fertiscan_0.0.12".organization_information
+    FROM "fertiscan_0.0.13".organization_information
     WHERE id = p_organization_information_id;
 
-    -- Attempt to delete the organization information
-    IF p_organization_information_id IS NOT NULL THEN
-        BEGIN
-            DELETE FROM "fertiscan_0.0.12".organization_information
-            WHERE id = p_organization_information_id;
-            RAISE NOTICE 'Organization information with ID % deleted successfully.', p_organization_information_id;
-        EXCEPTION WHEN others THEN
-            RAISE NOTICE 'Organization information with ID % could not be deleted due to associated records.', p_organization_information_id;
-        END;
-    END IF;
+    -- Delete the organization information without handling exceptions
+    DELETE FROM "fertiscan_0.0.13".organization_information
+    WHERE id = p_organization_information_id;
 
     -- If the organization information was successfully deleted, delete the associated location
     IF v_location_id IS NOT NULL THEN
         BEGIN
-            DELETE FROM "fertiscan_0.0.12".location
+            DELETE FROM "fertiscan_0.0.13".location
             WHERE id = v_location_id;
             RAISE NOTICE 'Location with ID % deleted successfully.', v_location_id;
         EXCEPTION WHEN others THEN
@@ -36,7 +29,8 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".delete_inspection(
+
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".delete_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid
 )
@@ -53,7 +47,7 @@ BEGIN
     -- Check if the inspector is the creator of the inspection
     IF NOT EXISTS (
         SELECT 1 
-        FROM "fertiscan_0.0.12".inspection 
+        FROM "fertiscan_0.0.13".inspection 
         WHERE id = p_inspection_id 
         AND inspector_id = p_inspector_id
     ) THEN
@@ -61,27 +55,39 @@ BEGIN
     END IF;
 
     -- Get the entire inspection data and extract relevant IDs
-    SELECT jsonb_build_object(
-        'id', id,
-        'label_info_id', label_info_id,
-        'sample_id', sample_id,
-        'picture_set_id', picture_set_id,
-        'inspector_id', inspector_id,
-        'verified', verified,
-        'upload_date', upload_date,
-        'updated_at', updated_at
-    ) INTO v_inspection_data,
-    label_info_id INTO v_label_id,
-    sample_id INTO v_sample_id,
-    company_info_id INTO v_company_id,
-    manufacturer_info_id INTO v_manufacturer_id
-    FROM "fertiscan_0.0.12".inspection
-    JOIN "fertiscan_0.0.12".label_information ON label_info_id = "fertiscan_0.0.12".label_information.id
-    WHERE "fertiscan_0.0.12".inspection.id = p_inspection_id;
-
+    SELECT 
+        jsonb_build_object(
+            'id', i.id,
+            'label_info_id', i.label_info_id,
+            'sample_id', i.sample_id,
+            'picture_set_id', i.picture_set_id,
+            'inspector_id', i.inspector_id,
+            'verified', i.verified,
+            'upload_date', i.upload_date,
+            'updated_at', i.updated_at
+        ),
+        i.label_info_id,
+        i.sample_id,
+        li.company_info_id,
+        li.manufacturer_info_id
+    INTO 
+        v_inspection_data,
+        v_label_id,
+        v_sample_id,
+        v_company_id,
+        v_manufacturer_id
+    FROM 
+        "fertiscan_0.0.13".inspection i
+    JOIN 
+        "fertiscan_0.0.13".label_information li 
+    ON 
+        i.label_info_id = li.id
+    WHERE 
+        i.id = p_inspection_id;
+    
     -- Delete the label information (cascade deletes associated records)
     IF v_label_id IS NOT NULL THEN
-        DELETE FROM "fertiscan_0.0.12".label_information
+        DELETE FROM "fertiscan_0.0.13".label_information
         WHERE id = v_label_id;
     ELSE
         RAISE EXCEPTION 'Label information not found for this inspection';
@@ -89,15 +95,23 @@ BEGIN
 
     -- Delete the sample if it exists
     IF v_sample_id IS NOT NULL THEN
-        DELETE FROM "fertiscan_0.0.12".sample
+        DELETE FROM "fertiscan_0.0.13".sample
         WHERE id = v_sample_id;
     END IF;
 
     -- Attempt to delete the company organization information
-    PERFORM "fertiscan_0.0.12".delete_organization_information(v_company_id);
+    BEGIN
+        PERFORM "fertiscan_0.0.13".delete_organization_information(v_company_id);
+    EXCEPTION WHEN foreign_key_violation THEN
+        RAISE NOTICE 'Company organization information with ID % could not be deleted due to foreign key constraints.', v_company_id;
+    END;
 
     -- Attempt to delete the manufacturer organization information
-    PERFORM "fertiscan_0.0.12".delete_organization_information(v_manufacturer_id);
+    BEGIN
+        PERFORM "fertiscan_0.0.13".delete_organization_information(v_manufacturer_id);
+    EXCEPTION WHEN foreign_key_violation THEN
+        RAISE NOTICE 'Manufacturer organization information with ID % could not be deleted due to foreign key constraints.', v_manufacturer_id;
+    END;
 
     -- Return the inspection data as JSON
     RETURN v_inspection_data;
