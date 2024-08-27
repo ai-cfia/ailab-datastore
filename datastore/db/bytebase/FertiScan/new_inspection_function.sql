@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -49,7 +49,7 @@ BEGIN
 		(COALESCE(website_string , '') <> '') OR
 		(COALESCE(phone_number_string , '') <> ''))
 		THEN
-		company_id := "fertiscan_0.0.12".new_organization_info_located(
+		company_id := "fertiscan_0.0.13".new_organization_info_located(
 			input_json->'company'->>'name',
 			input_json->'company'->>'address',
 			input_json->'company'->>'website',
@@ -72,7 +72,7 @@ BEGIN
 		(COALESCE(website_string , '') <> '') OR
 		(COALESCE(phone_number_string , '') <> ''))
 		THEN
-		manufacturer_id := "fertiscan_0.0.12".new_organization_info_located(
+		manufacturer_id := "fertiscan_0.0.13".new_organization_info_located(
 			input_json->'manufacturer'->>'name',
 			input_json->'manufacturer'->>'address',
 			input_json->'manufacturer'->>'website',
@@ -85,7 +85,7 @@ BEGIN
 	-- Manufacturer end
 
 -- LABEL INFORMATION
-	label_info_id := "fertiscan_0.0.12".new_label_information(
+	label_info_id := "fertiscan_0.0.13".new_label_information(
 		input_json->'product'->>'name',
 		input_json->'product'->>'lot_number',
 		input_json->'product'->>'npk',
@@ -110,15 +110,15 @@ BEGIN
         -- Extract the value and unit from the current weight record
         read_value := record->>'value';
        
-       weight_id = "fertiscan_0.0.12".new_metric_unit(
+       weight_id = "fertiscan_0.0.13".new_metric_unit(
 			read_value::float,
 			record->>'unit',
 			label_info_id,
-			'weight'::"fertiscan_0.0.12".metric_type,
+			'weight'::"fertiscan_0.0.13".metric_type,
 			FALSE
 		);
 		-- Update the label_dimension table with the new weight_id
-		UPDATE "fertiscan_0.0.12"."label_dimension" 
+		UPDATE "fertiscan_0.0.13"."label_dimension" 
 		SET weight_ids = array_append(weight_ids, weight_id)
 		WHERE label_dimension.label_id = label_info_id;
 	 END LOOP;
@@ -130,15 +130,15 @@ BEGIN
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
 	    
-		density_id := "fertiscan_0.0.12".new_metric_unit(
+		density_id := "fertiscan_0.0.13".new_metric_unit(
 			read_value::float,
 			read_unit,
 			label_info_id,
-			'density'::"fertiscan_0.0.12".metric_type,
+			'density'::"fertiscan_0.0.13".metric_type,
 			FALSE
 		);
 		-- Update the label_dimension table with the new density_id
-		UPDATE "fertiscan_0.0.12"."label_dimension" 
+		UPDATE "fertiscan_0.0.13"."label_dimension" 
 		SET density_ids = array_append(density_ids, density_id)
 		WHERE label_dimension.label_id = label_info_id;
 	END IF;
@@ -151,15 +151,15 @@ BEGIN
 	IF read_value IS NOT NULL THEN
 		value_float = read_value::float;
 	  
-		volume_id := "fertiscan_0.0.12".new_metric_unit(
+		volume_id := "fertiscan_0.0.13".new_metric_unit(
 			value_float,
 			read_unit,
 			label_info_id,
-			'volume'::"fertiscan_0.0.12".metric_type,
+			'volume'::"fertiscan_0.0.13".metric_type,
 			FALSE
 		);
 		-- Update the label_dimension table with the new volume_ids
-		UPDATE "fertiscan_0.0.12"."label_dimension" 
+		UPDATE "fertiscan_0.0.13"."label_dimension" 
 		SET volume_ids = array_append(volume_ids, volume_id)
 		WHERE label_dimension.label_id = label_info_id;
 	END IF;
@@ -170,16 +170,16 @@ BEGIN
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'specifications'->ingredient_language)
 		LOOP
-			specification_id := "fertiscan_0.0.12".new_specification(
+			specification_id := "fertiscan_0.0.13".new_specification(
 				(record->>'humidity')::float,
 				(record->>'ph')::float,
 				(record->>'solubility')::float,
-				ingredient_language::"fertiscan_0.0.12".language,
+				ingredient_language::"fertiscan_0.0.13".language,
 				label_info_id,
 				FALSE
 			);		
 		-- Update the label_dimension table with the new specification_id
-		UPDATE "fertiscan_0.0.12"."label_dimension" 
+		UPDATE "fertiscan_0.0.13"."label_dimension" 
 		SET specification_ids = array_append(specification_ids, specification_id)
 		WHERE label_dimension.label_id = label_info_id;
 		END LOOP;
@@ -198,18 +198,18 @@ BEGIN
 	        read_value := record->> 'value';
  			read_unit := record ->> 'unit';
 	        
-			ingredient_id := "fertiscan_0.0.12".new_ingredient(
+			ingredient_id := "fertiscan_0.0.13".new_ingredient(
 				record->>'name',
 				read_value::float,
 				read_unit,
 				label_info_id,
-				ingredient_language::"fertiscan_0.0.12".language,
+				ingredient_language::"fertiscan_0.0.13".language,
 				NULL, --We cant tell atm
 				NULL,  --We cant tell atm
 				FALSE  --preset
 			);
 			-- Update the label_dimension table with the new specification_id
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
+			UPDATE "fertiscan_0.0.13"."label_dimension" 
 			SET ingredient_ids = array_append(ingredient_ids, ingredient_id)
 			WHERE label_dimension.label_id = label_info_id;
 		END LOOP;
@@ -230,7 +230,7 @@ BEGIN
         IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
 		  	FOR i IN 0..(jsonb_array_length(fr_values) - 1)
 	   		LOOP
-	   			sub_label_id := "fertiscan_0.0.12".new_sub_label(
+	   			sub_label_id := "fertiscan_0.0.13".new_sub_label(
 					fr_values->>i,
 					en_values->>i,
 					label_info_id,
@@ -239,7 +239,7 @@ BEGIN
 				);
 				-- Update the label_dimension table with the new sub_label_id
 
-				EXECUTE format('UPDATE "fertiscan_0.0.12".label_dimension 
+				EXECUTE format('UPDATE "fertiscan_0.0.13".label_dimension 
 					SET %I = array_append(%I, %L) 
 					WHERE label_id = %L;',
 					key_string, key_string, sub_label_id, label_info_id);
@@ -254,15 +254,15 @@ BEGIN
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'micronutrients'->micronutrient_language)
 		LOOP
-			micronutrient_id := "fertiscan_0.0.12".new_micronutrient(
+			micronutrient_id := "fertiscan_0.0.13".new_micronutrient(
 				record->> 'name',
 				(record->> 'value')::float,
 				record->> 'unit',
 				label_info_id,
-				micronutrient_language::"fertiscan_0.0.12".language
+				micronutrient_language::"fertiscan_0.0.13".language
 			);
 			-- Update the label_dimension table with the new Micronutrient_id
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
+			UPDATE "fertiscan_0.0.13"."label_dimension" 
 			SET micronutrient_ids = array_append(micronutrient_ids, micronutrient_id)
 			WHERE label_dimension.label_id = label_info_id;
 		END LOOP;
@@ -272,7 +272,7 @@ BEGIN
 -- GUARANTEED
 	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		guaranteed_analysis_id := "fertiscan_0.0.12".new_guaranteed_analysis(
+		guaranteed_analysis_id := "fertiscan_0.0.13".new_guaranteed_analysis(
 			record->>'name',
 			(record->>'value')::float,
 			record->>'unit',
@@ -281,14 +281,14 @@ BEGIN
 			NULL -- We arent handeling element_id yet
 		);
 		-- Update the label_dimension table with the new Micronutrient_id
-		UPDATE "fertiscan_0.0.12"."label_dimension" 
+		UPDATE "fertiscan_0.0.13"."label_dimension" 
 		SET guaranteed_ids = array_append(guaranteed_ids, guaranteed_analysis_id)
 		WHERE label_dimension.label_id = label_info_id;
 	END LOOP;
 -- GUARANTEED END	
 
 -- Time Dimension
-	INSERT INTO "fertiscan_0.0.12".time_dimension (
+	INSERT INTO "fertiscan_0.0.13".time_dimension (
 		date_value, year,month,day) 
 	VALUES (
 		CURRENT_DATE,
@@ -299,7 +299,7 @@ BEGIN
 -- Time Dimension End
 
 -- INSPECTION
-    INSERT INTO "fertiscan_0.0.12".inspection (
+    INSERT INTO "fertiscan_0.0.13".inspection (
         inspector_id, label_info_id, sample_id, picture_set_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
@@ -313,7 +313,7 @@ BEGIN
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
 
 	-- Create the Inspection_factual entry
-	INSERT INTO "fertiscan_0.0.12".inspection_factual (
+	INSERT INTO "fertiscan_0.0.13".inspection_factual (
 		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
 	) VALUES (
 		inspection_id,

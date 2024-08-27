@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".new_label_information(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_label_information(
     name TEXT,
     lot_number TEXT,
     npk TEXT,
