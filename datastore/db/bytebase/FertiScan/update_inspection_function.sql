@@ -522,7 +522,7 @@ BEGIN
     UPDATE 
         inspection
     SET 
-        label_info_id = label_info_id,
+        label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
