@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.11".new_label_information(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".new_label_information(
     name TEXT,
     lot_number TEXT,
     npk TEXT,
@@ -30,10 +30,16 @@ BEGIN
         p,
         k,
         warranty,
-		companyid,
+		company_id,
 		manufacturer_id
     )
     RETURNING id INTO label_id;
+    -- OLAP
+    INSERT INTO label_dimension (
+        label_id, company_info_id, manufacturer_info_id
+    ) VALUES (
+        label_id, company_id, manufacturer_id
+    );
     RETURN label_id;
 END;
 $function$;

@@ -1,86 +1,59 @@
 import os
 import datastore.db as db
-import datastore.db.queries as queries
+from psycopg import sql
 
-NACHET_SCHEMA = os.getenv("NACHET_SCHEMA")
+DB_URL = os.environ.get("FERTISCAN_DB_URL")
+SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 
+def create_db(DB_URL, SCHEMA : str):
 
-def create_db():
-
-    # Connect to your PostgreSQL database with the DB URL
-    conn = db.connect_db()
-    # Create a cursor object
+    conn = db.connect_db(DB_URL, SCHEMA)
     cur = db.cursor(connection=conn)
+    db.create_search_path(connection=conn, cur=cur, schema=SCHEMA)
 
-    # Create Schema
-    cur.execute("""CREATE SCHEMA "%s";""", (NACHET_SCHEMA,))
 
-    # # Create Search Path
-    cur.execute(f"""SET search_path TO "{NACHET_SCHEMA}";""")
 
-    # Create Users table
-    query = """
-        CREATE TABLE users (
-            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-            email VARCHAR(255),
-            container_url VARCHAR(255),
-            registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """
-    queries.query_db(conn, cur, query)
+    # Create the tables
+    schema_number = SCHEMA.removeprefix("fertiscan_")
+    try:
+        path = "datastore/db/bytebase/FertiScan/schema_" + schema_number + ".sql"
+        #execute_sql_file(cur, path)
 
-    # Create PictureSet table
+        # Create the functions
+        path = "datastore/db/bytebase/FertiScan/new_inspection"
+        loop_for_sql_files(cur, path)
 
-    query = """
-        CREATE TABLE  picture_set (
-            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-            picture_set JSON,
-            owner_id uuid REFERENCES users(id),
-            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """
-    queries.query_db(conn, cur, query)
+        path = "datastore/db/bytebase/FertiScan/new_inspection_function.sql"
+        execute_sql_file(cur, path)
 
-    # Create Pictures table
+        path = "datastore/db/bytebase/FertiScan/get_inspection"
+        loop_for_sql_files(cur, path)
 
-    query = """
-        CREATE TABLE  pictures (
-            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-            picture JSON,
-            picture_set_id uuid REFERENCES picture_set(id),
-            upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """
-
-    # Create seed DB
-    query = """
-        CREATE TABLE seeds (
-            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-            metadata JSON,
-            name VARCHAR(255)
-        )
-    """
-    queries.query_db(conn, cur, query)
-
-    # Create SeedPicture table
-    query = """
-        CREATE TABLE picture_seed (
-            id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-            seed_id uuid REFERENCES seeds(id),
-            picture_id uuid REFERENCES pictures(id)
-        )
-    """
-    queries.query_db(conn, cur, query)
-
-    # # check if the search path exists
-    # cur.execute("Show search_path")
-
-    # check all the table under the schema
-    # cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'nachetdb_0.0.2'")
-
+        path = "datastore/db/bytebase/FertiScan/update_inspection_function.sql"
+        execute_sql_file(cur, path)
+    except Exception as e:
+        conn.rollback()
+        print(e)
+    
     db.end_query(connection=conn, cursor=cur)
-    print("done")
+
+def loop_for_sql_files(cursor, folder_path):
+    # Loop through all files in the specified folder
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith('.sql'):
+                file_path = os.path.join(root, file)
+                execute_sql_file(cursor, file_path)
+
+def execute_sql_file(cursor,sql_file):
+    with open(sql_file, 'r') as f:
+        sql_content = f.read()
+        try:
+            cursor.execute(sql.SQL(sql_content))
+            print(f"Executed {sql_file} successfully.")
+        except Exception as e:
+            raise Exception(f"Failed to execute {sql_file}: {e}")
 
 
 if __name__ == "__main__":
-    create_db()
+    create_db(DB_URL=DB_URL, SCHEMA=SCHEMA)

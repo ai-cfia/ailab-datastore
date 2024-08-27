@@ -107,24 +107,45 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id)
     
     CREATE TABLE "fertiscan_0.0.11"."label_dimension" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "label_id" uuid REFERENCES "fertiscan_0.0.11".label_information(id),
+    "label_id" uuid PRIMARY KEY,
     "company_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id),
     "company_location_id" uuid REFERENCES "fertiscan_0.0.11".location(id),
     "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.11".organization_information(id),
     "manufacturer_location_id" uuid REFERENCES "fertiscan_0.0.11".location(id),
-    "instruction_ids" uuid[],
-    "caution_ids" uuid[],
-    "first_aid_ids" uuid[],
-    "warranty_ids" uuid[]
-    "specification_ids" uuid[],
-    "ingredient_ids" uuid[],
-    "micronutrient_ids" uuid[],
-    "guaranteed_ids" uuid[],
-    "weight_ids" uuid[],
-    "volume_ids" uuid[],
-    "density_ids" uuid[]
+    "instructions_ids" uuid[] DEFAULT '{}',
+    "cautions_ids" uuid[] DEFAULT '{}',
+    "first_aid_ids" uuid[] DEFAULT '{}',
+    "warranties_ids" uuid[] DEFAULT '{}',
+    "specification_ids" uuid[] DEFAULT '{}',
+    "ingredient_ids" uuid[] DEFAULT '{}',
+    "micronutrient_ids" uuid[] DEFAULT '{}',
+    "guaranteed_ids" uuid[] DEFAULT '{}',
+    "weight_ids" uuid[] DEFAULT '{}',
+    "volume_ids" uuid[] DEFAULT '{}',
+    "density_ids" uuid[] DEFAULT '{}'
     );
+
+    CREATE TABLE "fertiscan_0.0.11"."time_dimension" (
+    "time_id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "date_value" date,
+    "year" int,
+    "month" int,
+    "day" int,
+    "month_name" text,
+    "day_name" text
+);
+
+    CREATE TABLE "fertiscan_0.0.11"."inspection_factual" (
+    "inspection_id" uuid PRIMARY KEY,
+    "inspector_id" uuid REFERENCES "fertiscan_0.0.11".users(id),
+    "label_info_id" uuid REFERENCES "fertiscan_0.0.11".label_information(id),
+    "time_id" uuid REFERENCES "fertiscan_0.0.11".time(id),
+    "sample_id" uuid REFERENCES "fertiscan_0.0.11".sample(id),
+    "company_id" uuid REFERENCES "fertiscan_0.0.11".organization(id),
+    "manufacturer_id" uuid REFERENCES "fertiscan_0.0.11".organization(id),
+    "picture_set_id" uuid,
+    "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP,
+);
 
 
     CREATE TYPE "fertiscan_0.0.11".metric_type as ENUM ('volume', 'weight','density');
