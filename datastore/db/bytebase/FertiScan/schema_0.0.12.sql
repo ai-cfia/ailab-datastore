@@ -227,7 +227,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.12".users(id),
     "label_info_id" uuid REFERENCES "fertiscan_0.0.12".label_information(id),
     "sample_id" uuid REFERENCES "fertiscan_0.0.12".sample(id),
-    "picture_set_id" uuid REFERENCES "fertiscan_0.0.12".picture_set(id)
+    "picture_set_id" uuid REFERENCES "fertiscan_0.0.12".picture_set(id),
+    "original_dataset" json
     );
 
     CREATE TABLE "fertiscan_0.0.12"."fertilizer" (
