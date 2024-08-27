@@ -368,7 +368,8 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_inspection(
     p_inspector_id uuid,
     p_sample_id uuid,
     p_picture_set_id uuid,
-    p_verified boolean
+    p_verified boolean,
+    p_original_dataset jsonb
 )
 RETURNS uuid AS $$
 DECLARE
@@ -379,7 +380,7 @@ BEGIN
 
     -- Upsert inspection information
     INSERT INTO inspection (
-        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
+        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at, original_dataset
     )
     VALUES (
         inspection_id,
@@ -389,7 +390,8 @@ BEGIN
         p_picture_set_id,
         p_verified,
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
+        CURRENT_TIMESTAMP,
+        p_original_dataset
     )
     ON CONFLICT (id) DO UPDATE
     SET 
@@ -459,7 +461,7 @@ DECLARE
     updated_json jsonb := p_input_json;
     fertilizer_name text;
     registration_number text;
-    verified boolean;
+    verified_bool boolean;
     existing_inspector_id uuid;
 BEGIN
     -- Check if the provided inspection_id matches the one in the input JSON
@@ -515,21 +517,25 @@ BEGIN
     PERFORM update_sub_labels(label_info_id, p_input_json->'sub_labels');
 
     -- Update the inspection record
-    verified := (p_input_json->>'verified')::boolean;
-    inspection_id := upsert_inspection(
-        p_inspection_id,
-        label_info_id,
-        p_inspector_id,
-        COALESCE(p_input_json->>'sample_id', NULL)::uuid,
-        COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
-        verified
-    );
+    verified_bool := (p_input_json->>'verified')::boolean;
+
+    UPDATE 
+        inspection
+    SET 
+        label_info_id = label_info_id,
+        inspector_id = p_inspector_id,
+        sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
+        picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
+        verified = verified_bool,
+        updated_at = CURRENT_TIMESTAMP  -- Update timestamp on conflict
+    WHERE 
+        id = p_inspection_id;
 
     -- Update the inspection ID in the output JSON
     updated_json := jsonb_set(updated_json, '{inspection_id}', to_jsonb(inspection_id));
 
     -- Check if the verified field is true, and upsert fertilizer if so
-    IF verified THEN
+    IF verified_bool THEN
         fertilizer_name := p_input_json->'product'->>'name';
         registration_number := p_input_json->'product'->>'registration_number';
 
