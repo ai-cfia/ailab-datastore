@@ -18,6 +18,7 @@ DECLARE
     label_id uuid;
     record RECORD;
 BEGIN
+    SET SEARCH_PATH TO "fertiscan_0.0.12";
 	-- LABEL INFORMATION
     INSERT INTO label_information (
         product_name,lot_number, npk, registration_number, n, p, k,warranty, company_info_id, manufacturer_info_id
@@ -34,12 +35,6 @@ BEGIN
 		manufacturer_id
     )
     RETURNING id INTO label_id;
-    -- OLAP
-    INSERT INTO label_dimension (
-        label_id, company_info_id, manufacturer_info_id
-    ) VALUES (
-        label_id, company_id, manufacturer_id
-    );
     RETURN label_id;
 END;
 $function$;

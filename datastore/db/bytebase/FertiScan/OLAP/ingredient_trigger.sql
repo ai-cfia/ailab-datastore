@@ -7,7 +7,7 @@ BEGIN
         -- Update the label_dimension table with the new ingredient_analysis_id
         UPDATE "fertiscan_0.0.12"."label_dimension" 
         SET ingredient_ids = array_append(ingredient_ids, NEW.id)
-        WHERE label_dimension.label_id = label_info_id;
+        WHERE label_dimension.label_id = NEW.label_id;
         ELSE
             -- Raise a warning if the condition is not met
             RAISE WARNING 'The OLAP dimension of this ingredient is not updated because the condition is not met';
@@ -17,6 +17,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS ingredient_creation ON "fertiscan_0.0.12".ingredient;
 CREATE TRIGGER ingredient_creation
 AFTER INSERT ON "fertiscan_0.0.12".ingredient
 FOR EACH ROW
@@ -29,8 +30,8 @@ BEGIN
         IF (OLD.id IS NOT NULL) AND (OLD.label_id IS NOT NULL) THEN
         -- Update the label_dimension table with the new ingredient_analysis_id
         UPDATE "fertiscan_0.0.12"."label_dimension" 
-        SET label_dimension.ingredient_ids = array_remove(label_dimension.ingredient_ids, OLD.id)
-        WHERE label_dimension.label_id = label_info_id;
+        SET ingredient_ids = array_remove(ingredient_ids, OLD.id)
+        WHERE label_dimension.label_id = OLD.label_id;
         ELSE
             -- Raise a warning if the condition is not met
             RAISE WARNING 'The OLAP dimension of this ingredient is not updated because the condition is not met';
@@ -40,6 +41,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS ingredient_deletion ON "fertiscan_0.0.12".ingredient;
 CREATE TRIGGER ingredient_deletion
 AFTER DELETE ON "fertiscan_0.0.12".ingredient
 FOR EACH ROW

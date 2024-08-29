@@ -37,6 +37,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS inspection_creation ON "fertiscan_0.0.12".inspection;
 CREATE TRIGGER inspection_creation
 AFTER INSERT ON "fertiscan_0.0.12".inspection
 FOR EACH ROW
@@ -58,6 +59,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS inspection_deletion ON "fertiscan_0.0.12".inspection;
 CREATE TRIGGER inspection_deletion
 AFTER DELETE ON "fertiscan_0.0.12".inspection
 FOR EACH ROW

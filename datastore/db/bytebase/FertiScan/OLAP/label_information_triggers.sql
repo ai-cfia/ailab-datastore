@@ -18,6 +18,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS label_information_creation ON "fertiscan_0.0.12".label_information;
 CREATE TRIGGER label_information_creation
 AFTER INSERT ON "fertiscan_0.0.12".label_information
 FOR EACH ROW
@@ -39,6 +40,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS label_information_deletion ON "fertiscan_0.0.12".label_information;
 CREATE TRIGGER label_information_deletion
 AFTER DELETE ON "fertiscan_0.0.12".label_information
 FOR EACH ROW
