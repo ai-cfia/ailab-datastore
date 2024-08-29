@@ -8,7 +8,7 @@ DECLARE
 BEGIN
     -- Upsert the location
     INSERT INTO location (id, address)
-    VALUES (COALESCE(location_id, uuid_generate_v4()), address)
+    VALUES (COALESCE(location_id, public.uuid_generate_v4()), address)
     ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
     DO UPDATE SET address = EXCLUDED.address
     RETURNING id INTO new_location_id;
@@ -40,7 +40,7 @@ BEGIN
     location_id := upsert_location(location_id, input_org_info->>'address');
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
-    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, uuid_generate_v4());
+    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
     -- Upsert organization information
     INSERT INTO organization_information (id, name, website, phone_number, location_id)
@@ -74,7 +74,7 @@ DECLARE
     label_id uuid;
 BEGIN
     -- Extract or generate the label ID
-    label_id := COALESCE(NULLIF(input_label->>'label_id', '')::uuid, uuid_generate_v4());
+    label_id := NULLIF(input_label->>'label_id', '');
 
     -- Upsert label information
     INSERT INTO label_information (
@@ -142,7 +142,7 @@ BEGIN
 
                 -- Insert metric record for weight
                 INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
             END IF;
         END LOOP;
     END IF;
@@ -165,7 +165,7 @@ BEGIN
 
                 -- Insert metric record
                 INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
             END IF;
         END IF;
     END LOOP;
@@ -375,8 +375,12 @@ RETURNS uuid AS $$
 DECLARE
     inspection_id uuid;
 BEGIN
+
+    IF p_inspection_id IS NULL THEN 
+        RAISE EXCEPTION 'Inspection ID is required';
+    END IF;
     -- Use provided inspection_id or generate a new one if not provided
-    inspection_id := COALESCE(p_inspection_id, uuid_generate_v4());
+    inspection_id := p_inspection_id;
 
     -- Upsert inspection information
     INSERT INTO inspection (
@@ -451,6 +455,7 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection(
     p_input_json jsonb
 )
 RETURNS jsonb AS $$
+#variable_conflict use_variable
 DECLARE
     inspection_id uuid := p_inspection_id;
     json_inspection_id uuid;
@@ -478,6 +483,14 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized: Inspector ID mismatch or inspection not found';
     END IF;
 
+    -- Check if the provided label_id matches the existing one
+    SELECT label_info_id INTO label_info_id_value
+    FROM inspection
+    WHERE id = p_inspection_id;
+    IF label_info_id_value IS NULL OR label_info_id_value != (p_input_json->'product'->>'label_id')::uuid THEN
+        RAISE EXCEPTION 'Label ID mismatch or inspection not found';
+    END IF;
+
     -- Upsert company information and get the ID
     company_info_id := upsert_organization_info(p_input_json->'company');
     IF company_info_id IS NOT NULL THEN
@@ -490,12 +503,21 @@ BEGIN
         updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
     END IF;
 
-    -- Upsert label information and get the ID
-    label_info_id_value := upsert_label_information(
-        p_input_json->'product',
-        company_info_id,
-        manufacturer_info_id
-    );
+    -- update Label information
+    UPDATE label_information
+    SET
+    id = label_info_id_value,
+    product_name = p_input_json->'product'->>'name', 
+    lot_number = p_input_json->'product'->>'lot_number',
+    npk = p_input_json->'product'->>'npk',
+    registration_number = p_input_json->'product'->>'registration_number',
+    n = (NULLIF(p_input_json->'product'->>'n', '')::float),
+    p = (NULLIF(p_input_json->'product'->>'p', '')::float),
+    k = (NULLIF(p_input_json->'product'->>'k', '')::float),
+    "company_info_id" = company_info_id, 
+    "manufacturer_info_id" = manufacturer_info_id
+    WHERE id = label_info_id_value;
+
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
 
     -- Update metrics related to the label
@@ -522,6 +544,7 @@ BEGIN
     UPDATE 
         inspection
     SET 
+        id = inspection_id,
         label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,

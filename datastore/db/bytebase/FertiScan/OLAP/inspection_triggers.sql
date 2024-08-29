@@ -20,7 +20,7 @@ BEGIN
                 inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
             ) VALUES (
                 NEW.id,
-                NEW.user_id,
+                NEW.inspector_id,
                 NEW.label_info_id,
                 time_id,
                 NULL, -- NOT handled yet
@@ -42,6 +42,31 @@ CREATE TRIGGER inspection_creation
 AFTER INSERT ON "fertiscan_0.0.12".inspection
 FOR EACH ROW
 EXECUTE FUNCTION olap_inspection_creation();
+
+CREATE OR REPLACE FUNCTION olap_inspection_update()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF (TG_OP = 'UPDATE') THEN
+        IF (NEW.id IS NOT NULL) THEN
+            IF (NEW.label_info_id != OLD.label_info_id) OR (NEW.inspector_id != OLD.inspector_id) OR (NEW.picture_set_id != OLD.picture_set_id) THEN
+                UPDATE "fertiscan_0.0.12".inspection_factual 
+                SET inspector_id = NEW.inspector_id, label_info_id = NEW.label_info_id, picture_set_id = NEW.picture_set_id
+                WHERE inspection_id = NEW.id;
+            END IF;
+        ELSE
+            -- Raise a warning if the condition is not met
+            RAISE EXCEPTION 'THE NEW ID OF THIS INSPECTION IS NULL';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS inspection_update ON "fertiscan_0.0.12".inspection;
+CREATE TRIGGER inspection_update
+BEFORE UPDATE ON "fertiscan_0.0.12".inspection
+FOR EACH ROW
+EXECUTE FUNCTION olap_inspection_update();
 
 CREATE OR REPLACE FUNCTION olap_inspection_deletion()
 RETURNS TRIGGER AS $$
