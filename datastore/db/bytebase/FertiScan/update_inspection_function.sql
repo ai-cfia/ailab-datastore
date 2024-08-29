@@ -121,6 +121,7 @@ DECLARE
     metric_value float;
     metric_unit text;
     unit_id uuid;
+    edited_value boolean;
 BEGIN
     -- Delete existing metrics for the given label_id
     DELETE FROM metric WHERE label_id = p_label_id;
@@ -131,7 +132,7 @@ BEGIN
         LOOP
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-            
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
@@ -141,8 +142,8 @@ BEGIN
                 END IF;
 
                 -- Insert metric record for weight
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id,edited_value);
             END IF;
         END LOOP;
     END IF;
@@ -154,7 +155,7 @@ BEGIN
             metric_record := metrics->metric_type;
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
@@ -164,8 +165,8 @@ BEGIN
                 END IF;
 
                 -- Insert metric record
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id,edited_value);
             END IF;
         END IF;
     END LOOP;
@@ -200,7 +201,7 @@ BEGIN
                 (spec_record->>'humidity')::float,
                 (spec_record->>'ph')::float,
                 (spec_record->>'solubility')::float,
-                FALSE,  -- not handled
+                COALESCE(spec_record->>'edited','FALSE')::boolean, 
                 p_label_id,
                 spec_language::language
             );
@@ -238,7 +239,7 @@ BEGIN
                 ingredient_record->>'name',
                 NULLIF(ingredient_record->>'value', '')::float,
                 ingredient_record->>'unit',
-                FALSE, -- not yet handled
+                COALESCE(ingredient_record->>'edited','FALSE')::boolean,
                 p_label_id,
                 ingredient_language::language
             );
@@ -274,7 +275,7 @@ BEGIN
                 nutrient_record->>'name',
                 NULLIF(nutrient_record->>'value', '')::float,
                 nutrient_record->>'unit',
-                FALSE,  -- not handled
+                COALESCE(nutrient_record->>'edited','FALSE')::boolean,
                 p_label_id,
                 nutrient_language::language
             );
@@ -307,7 +308,7 @@ BEGIN
             guaranteed_record->>'name',
             NULLIF(guaranteed_record->>'value', '')::float,
             guaranteed_record->>'unit',
-            FALSE,  -- not handled
+            COALESCE(guaranteed_record->>'edited','FALSE')::boolean,
             p_label_id
         );
     END LOOP;
@@ -336,25 +337,28 @@ BEGIN
         -- Extract the French and English arrays for the current sub_type
         fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
         en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        
-        -- Ensure both arrays are of the same length
-        IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-            FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-            LOOP
-                -- Insert sub label record
-                INSERT INTO sub_label (
-                    text_content_fr, text_content_en, label_id, edited, sub_type_id
-                )
-                VALUES (
-                    fr_values->>i,
-                    en_values->>i,
-                    p_label_id,
-                    FALSE,  -- not handled
-                    sub_type_rec.id
-                );
-            END LOOP;
+        If fr_values IS NULL OR en_values IS NULL THEN
+            RAISE warning 'Sub-labels for type % are missing', sub_type_rec.type_en;
         ELSE
-            RAISE NOTICE 'Mismatch in number of French and English sub-labels for type %', sub_type_rec.type_en;
+            -- Ensure both arrays are of the same length
+            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
+                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
+                LOOP
+                    -- Insert sub label record
+                    INSERT INTO sub_label (
+                        text_content_fr, text_content_en, label_id, edited, sub_type_id
+                    )
+                    VALUES (
+                        fr_values->>i,
+                        en_values->>i,
+                        p_label_id,
+                        FALSE,  -- not handled
+                        sub_type_rec.id
+                    );
+                END LOOP;
+            ELSE
+                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
+            END IF;
         END IF;
     END LOOP;
 END;
@@ -536,7 +540,7 @@ BEGIN
     PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
-    PERFORM update_sub_labels(label_info_id_value, p_input_json->'sub_labels');
+    PERFORM update_sub_labels(label_info_id_value, p_input_json);
 
     -- Update the inspection record
     verified_bool := (p_input_json->>'verified')::boolean;

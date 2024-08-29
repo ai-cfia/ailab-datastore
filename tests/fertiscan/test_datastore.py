@@ -13,7 +13,6 @@ import datastore.__init__ as datastore
 import datastore.fertiscan as fertiscan
 import datastore.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
-import datastore.db.queries.metric as metric
 from datastore.db.queries import (
     sub_label,
     nutrients,
@@ -21,8 +20,10 @@ from datastore.db.queries import (
     picture,
     label,
     specification,
+    metric,
 )
 import os
+import psycopg
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -47,7 +48,6 @@ if BLOB_KEY is None or BLOB_KEY == "":
 
 class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, "analyse.json")
         with open(file_path, "r") as file:
@@ -72,6 +72,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 tier="test-user",
             )
         )
+
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
@@ -257,3 +258,175 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
         data = json.loads(data)
         self.assertEqual(data["inspection_id"], str(inspection_id))
+
+    def test_update_inspection(self):
+        self.assertTrue(self.container_client.exists())
+        analysis = asyncio.run(
+            fertiscan.register_analysis(
+                self.cursor,
+                self.container_client,
+                self.user_id,
+                [self.pic_encoded, self.pic_encoded],
+                self.analysis_json,
+            )
+        )
+        self.assertIsNotNone(analysis)
+        inspection_id = analysis["inspection_id"]
+        label_id = analysis["product"]["label_id"]
+        self.assertTrue(validator.is_valid_uuid(inspection_id))
+        # new values
+        new_product_name = "New Product Name"
+        untouched_weight = analysis["product"]["metrics"]["weight"][1]["value"]
+        new_weight = 1000.0
+        untouched_volume = analysis["product"]["metrics"]["volume"]["value"]
+        new_density = 10.0
+        old_npk = analysis["product"]["npk"]
+        new_npk = "10-10-10"
+        new_instruction_en = [
+            "3. of",
+            "2. set"
+        ]
+        new_instruction_fr = [
+            "3. de",
+            "2. ensemble"
+        ]
+        new_instruction_nb = 2
+        new_value = 100.0
+        old_value = analysis["specifications"]["en"][0]["humidity"]
+        new_specification_en = [
+            {
+                "humidity": new_value,
+                "ph": 6.5,
+                "solubility": 100,
+                "edited": True
+            }
+        ]
+        new_first_aid_en = [
+            "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice.",
+            "NEWLY ADDED FIRST AID"
+        ]
+        new_first_aid_fr = [
+            "En cas de contact avec les yeux, rincer immédiatement à l'eau et consulter un médecin.",
+            "NOUVELLE PREMIÈRE AIDE AJOUTÉE"
+        ]
+        new_first_aid_number = 2
+        new_guaranteed_analysis = [
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": "Total Nitrogen (N)",
+                "edited": True
+            },
+            {
+                "value": 20.0,
+                "unit": "%",
+                "name": "Available Phosphate (P2O5)",
+                "edited": False
+            }
+        ]
+        new_guaranteed_nb = 2
+        # update the dataset
+        analysis["product"]["name"] = new_product_name
+        analysis["product"]["metrics"]["weight"][0]["value"] = new_weight
+        analysis["product"]["metrics"]["weight"][0]["edited"] = True
+        analysis["product"]["metrics"]["density"]["value"] = new_density
+        analysis["product"]["metrics"]["density"]["edited"] = True
+        analysis["product"]["npk"] = new_npk
+        analysis["instructions"]["en"] = new_instruction_en
+        analysis["instructions"]["fr"] = new_instruction_fr
+        analysis["specifications"]["en"] = new_specification_en
+        analysis["first_aid"]["en"] = new_first_aid_en
+        analysis["first_aid"]["fr"] = new_first_aid_fr
+        analysis["guaranteed_analysis"] = new_guaranteed_analysis
+            
+        old_label_dimension = label.get_label_dimension(self.cursor, label_id)
+
+        asyncio.run(fertiscan.update_inspection(self.cursor, inspection_id,self.user_id, analysis))
+        
+        #check if specifications are updated
+        specifications = specification.get_all_specifications(self.cursor, label_id)
+        for specific in specifications:
+            if(specific[5] == "en"):
+                self.assertTrue(specific[4])
+                self.assertEqual(specific[1],new_value)
+            else:
+                self.assertFalse(specific[4])
+                self.assertEqual(specific[1],old_value)
+        # check if metrics are updated correctly
+        metrics = metric.get_metric_by_label(self.cursor, label_id)
+        for metric_data in metrics:
+            if metric_data[4]=="weight":
+                if metric_data[3]== True:
+                    self.assertEqual(metric_data[1],new_weight)
+                else:
+                    self.assertEqual(metric_data[1],untouched_weight)
+            elif metric_data[4]=="density":
+                self.assertEqual(metric_data[1],new_density)
+                self.assertTrue(metric_data[3])
+            elif metric_data[4]=="volume":
+                self.assertEqual(metric_data[1],untouched_volume)
+                self.assertFalse(metric_data[3])
+        #verify npk update (label_information)
+        label_info_data = label.get_label_information(self.cursor,label_id)
+        self.assertEqual(label_info_data[3],new_npk)
+        self.assertNotEqual(label_info_data[3],old_npk)
+
+        guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
+        for guaranteed in guaranteed_data:
+            if(guaranteed[7]):
+                self.assertEqual(guaranteed[1],new_value)
+            else:
+                self.assertEqual(guaranteed[1],20.0)
+
+        # VERIFY OLAP
+        new_label_dimension = label.get_label_dimension(self.cursor, label_id)
+
+        # Check if sub_label created a new id if there is a field that is not in the old label_dimension
+        self.assertEqual(len(old_label_dimension[7]), self.nb_first_aid)
+        self.assertEqual(len(new_label_dimension[7]), new_first_aid_number)
+        self.assertNotEqual(len(new_label_dimension[7]), len(old_label_dimension[7]))
+        # Check if the total of sub_label reduced after a field has been removed
+        self.assertEqual(len(old_label_dimension[5]), self.nb_instructions)
+        self.assertEqual(len(new_label_dimension[5]), new_instruction_nb)
+        self.assertNotEqual(len(new_label_dimension[5]), len(old_label_dimension[5]))
+       # Check if the total of guaranteed is reduced after a field has been removed
+        self.assertEqual(len(old_label_dimension[12]), self.nb_guaranteed)
+        self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
+        self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
+
+        new_guaranteed_analysis = [
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": "Total Nitrogen (N)",
+                "edited": True
+            },
+            {
+                "value": 20.0,
+                "unit": "%",
+                "name": "Available Phosphate (P2O5)",
+                "edited": False
+            },
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": "Soluble Potash (K2O)",
+                "edited": True
+            },
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": "Soluble Potash (K2O)",
+                "edited": True
+            }
+        ]
+        new_guaranteed_nb = 4
+        analysis["guaranteed_analysis"] = new_guaranteed_analysis
+        asyncio.run(fertiscan.update_inspection(self.cursor, inspection_id,self.user_id, analysis))
+
+        new_label_dimension = label.get_label_dimension(self.cursor, label_id)
+
+        # Check if the total of guaranteed is increased after a field has been added
+        self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
+        self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
+    

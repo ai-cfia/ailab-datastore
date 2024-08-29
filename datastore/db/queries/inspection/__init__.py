@@ -410,3 +410,37 @@ def update_inspection(
         raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+
+def get_inspection_factual(cursor, inspection_id):
+    """
+    This function gets the inspection from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The inspection.
+    """
+    if not is_a_inspection_id(cursor, inspection_id):
+        raise InspectionNotFoundError(f"Inspection with id {inspection_id} not found")
+    try:
+        query = """
+            SELECT 
+                inspection_id,
+                inspector_id,
+                label_info_id,
+                time_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id
+            FROM 
+                inspection_factual
+            WHERE 
+                inspection_id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise Exception("Datastore.db.inspection unhandeled error" + e.__str__())
