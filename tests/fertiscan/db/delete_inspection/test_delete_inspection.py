@@ -71,10 +71,26 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         self.conn.close()
 
     def test_delete_inspection_success(self):
-        # Test that everything related to the inspection is deleted successfully
+        # Call the delete_inspection function and get the returned inspection record
         self.cursor.execute(
             "SELECT delete_inspection(%s, %s);",
             (self.inspection_id, self.inspector_id),
+        )
+        deleted_inspection = self.cursor.fetchone()[0]
+
+        # Validate that the returned inspection record matches the expected data
+        self.assertIsNotNone(
+            deleted_inspection, "Deleted inspection should be returned."
+        )
+        self.assertEqual(
+            deleted_inspection["id"],
+            str(self.inspection_id),
+            "Inspection ID should match.",
+        )
+        self.assertEqual(
+            deleted_inspection["inspector_id"],
+            str(self.inspector_id),
+            "Inspector ID should match.",
         )
 
         # Verify that the inspection record was deleted
@@ -95,8 +111,7 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Verify that the related sample was deleted
         self.cursor.execute(
-            "SELECT COUNT(*) FROM sample WHERE id = %s;",
-            (self.inspection_id,),  # Assuming the sample ID is linked to the inspection_id
+            "SELECT COUNT(*) FROM sample WHERE id = %s;", (deleted_inspection["sample_id"],)
         )
         sample_count = self.cursor.fetchone()[0]
         self.assertEqual(sample_count, 0, "Sample should be deleted.")

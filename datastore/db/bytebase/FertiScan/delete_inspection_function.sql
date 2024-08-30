@@ -37,12 +37,14 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".delete_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid
 )
-RETURNS void
+RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    inspection_record jsonb;
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 
+        SELECT 1
         FROM "fertiscan_0.0.13".inspection 
         WHERE id = p_inspection_id 
         AND inspector_id = p_inspector_id
@@ -50,8 +52,18 @@ BEGIN
         RAISE EXCEPTION 'Inspector is not the creator of this inspection';
     END IF;
 
+    -- Retrieve the inspection record before deletion
+    SELECT row_to_json(i) 
+    INTO inspection_record
+    FROM "fertiscan_0.0.13".inspection i
+    WHERE id = p_inspection_id;
+
+    -- Delete the inspection record
     DELETE FROM "fertiscan_0.0.13".inspection
     WHERE id = p_inspection_id;
+
+    -- Return the deleted inspection record
+    RETURN inspection_record;
 END;
 $$;
 
