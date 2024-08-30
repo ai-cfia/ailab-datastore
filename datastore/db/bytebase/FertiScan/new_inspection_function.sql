@@ -299,13 +299,14 @@ BEGIN
 -- Time Dimension End
 
 -- INSPECTION
-    INSERT INTO "fertiscan_0.0.13".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id
+    INSERT INTO "fertiscan_0.0.12".inspection (
+        inspector_id, label_info_id, sample_id, picture_set_id, original_dataset
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
-        picture_set_id  -- Assuming picture_set_id is handled separately
+        picture_set_id,  -- Assuming picture_set_id is handled separately
+		input_json
     )
     RETURNING id INTO inspection_id;
    

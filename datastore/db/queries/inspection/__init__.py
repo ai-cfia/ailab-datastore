@@ -44,9 +44,10 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
             INSERT INTO inspection (
                 inspector_id,
                 picture_set_id,
-                verified)
+                verified,
+                original_dataset)
             VALUES 
-                (%s, %s, %s)
+                (%s, %s, %s, NULL)
             RETURNING 
                 id
             """
@@ -159,7 +160,8 @@ def get_inspection(cursor, inspection_id):
                 label_info_id,
                 sample_id,
                 picture_set_id,
-                fertilizer_id
+                fertilizer_id,
+                original_dataset
             FROM 
                 inspection
             WHERE 
