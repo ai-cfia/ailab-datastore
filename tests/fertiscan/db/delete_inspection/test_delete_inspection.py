@@ -93,6 +93,14 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         label_count = self.cursor.fetchone()[0]
         self.assertEqual(label_count, 0, "Label information should be deleted.")
 
+        # Verify that the related sample was deleted
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM sample WHERE id = %s;",
+            (self.inspection_id,),  # Assuming the sample ID is linked to the inspection_id
+        )
+        sample_count = self.cursor.fetchone()[0]
+        self.assertEqual(sample_count, 0, "Sample should be deleted.")
+
         # Verify that the related label dimensions were deleted
         self.cursor.execute(
             "SELECT COUNT(*) FROM label_dimension WHERE label_id = %s;",
