@@ -60,7 +60,6 @@ class test_inspection(unittest.TestCase):
         self.assertEqual(inspection_data[0], False)
         self.assertEqual(inspection_data[3], self.user_id)
         self.assertEqual(inspection_data[6], self.picture_set_id)
-        self.assertIsNone(inspection_data[4])
 
     def test_get_all_user_inspection(self):
         inspection_id = inspection.new_inspection(

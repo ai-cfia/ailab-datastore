@@ -305,8 +305,7 @@ BEGIN
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
-        picture_set_id,  -- Assuming picture_set_id is handled separately
-		input_json
+        picture_set_id  -- Assuming picture_set_id is handled separately
     )
     RETURNING id INTO inspection_id;
    
@@ -324,7 +323,8 @@ BEGIN
 		NULL, -- NOT handled yet
 		NULL, -- IS not defined yet
 		NULL, -- IS not defined yet
-		picture_set_id
+		picture_set_id,
+		input_json
 	);
 -- INSPECTION END
 	RETURN input_json;
