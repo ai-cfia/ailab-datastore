@@ -4,9 +4,10 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
+from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import UUID4, BaseModel, ValidationError
 
 from datastore.db.queries import (
     ingredient,
@@ -91,6 +92,19 @@ class Specification(BaseModel):
 class Specifications(BaseModel):
     en: List[Specification]
     fr: List[Specification]
+
+
+# Awkwardly named so to avoid name conflict
+class DBInspection(BaseModel):
+    id: UUID4
+    verified: bool = False
+    upload_date: datetime | None = None
+    updated_at: datetime | None = None
+    inspector_id: UUID4 | None = None
+    label_info_id: UUID4 | None = None
+    sample_id: UUID4 | None = None
+    picture_set_id: UUID4 | None = None
+    fertilizer_id: UUID4 | None = None
 
 
 class Inspection(BaseModel):
