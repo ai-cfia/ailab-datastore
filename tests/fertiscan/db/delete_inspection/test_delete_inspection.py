@@ -111,7 +111,8 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Verify that the related sample was deleted
         self.cursor.execute(
-            "SELECT COUNT(*) FROM sample WHERE id = %s;", (deleted_inspection["sample_id"],)
+            "SELECT COUNT(*) FROM sample WHERE id = %s;",
+            (deleted_inspection["sample_id"],),
         )
         sample_count = self.cursor.fetchone()[0]
         self.assertEqual(sample_count, 0, "Sample should be deleted.")
