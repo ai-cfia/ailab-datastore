@@ -1,6 +1,7 @@
 import os
 from uuid import UUID
 
+from azure.storage.blob import ContainerClient
 from dotenv import load_dotenv
 from psycopg import Cursor
 
@@ -236,7 +237,7 @@ async def get_full_inspection_json(
         raise Exception("Datastore unhandeled error")
 
 
-async def get_user_analysis_by_verified(cursor, user_id,verified:bool):
+async def get_user_analysis_by_verified(cursor, user_id, verified: bool):
     """
     This function fetch all the inspection of a user
 
@@ -274,3 +275,36 @@ async def get_user_analysis_by_verified(cursor, user_id,verified:bool):
     except Exception as e:
         print(e.__str__())
         raise Exception("Datastore unhandeled error")
+
+
+async def delete_inspection(
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    user_id: str | UUID,
+    container_client: ContainerClient,
+) -> data_inspection.DBInspection:
+    """
+    Delete an existing inspection record and its associated picture set from the database.
+
+    Parameters:
+    - cursor (Cursor): Database cursor for executing queries.
+    - inspection_id (str | UUID): UUID of the inspection to delete.
+    - user_id (str | UUID): UUID of the user performing the deletion.
+
+    Returns:
+    - data_inspection.Inspection: The deleted inspection data from the database.
+
+    """
+    if isinstance(inspection_id, str):
+        inspection_id = UUID(inspection_id)
+    if isinstance(user_id, str):
+        user_id = UUID(user_id)
+
+    # Delete the inspection and get the returned data
+    deleted_inspection = inspection.delete_inspection(cursor, inspection_id, user_id)
+
+    await datastore.delete_picture_set_permanently(
+        cursor, str(user_id), str(deleted_inspection.picture_set_id), container_client
+    )
+
+    return deleted_inspection
