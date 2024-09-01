@@ -1,28 +1,35 @@
 """
-This is a test script for the highest level of the datastore packages. 
+This is a test script for the highest level of the datastore packages.
 It tests the functions in the __init__.py files of the datastore packages.
 """
 
 import asyncio
 import io
-from PIL import Image
-import unittest
 import json
-import datastore.db.__init__ as db
+import os
+import unittest
+
+# from azure.storage.blob import ContainerClient
+from azure.storage.blob import ContainerClient
+from dotenv import load_dotenv
+from PIL import Image
+
 import datastore.__init__ as datastore
-import datastore.fertiscan as fertiscan
+import datastore.db.__init__ as db
 import datastore.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.metric as metric
+import datastore.fertiscan as fertiscan
 from datastore.db.queries import (
-    sub_label,
-    nutrients,
     inspection,
-    picture,
     label,
+    nutrients,
+    picture,
     specification,
+    sub_label,
 )
-import os
+
+load_dotenv()
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -44,10 +51,11 @@ BLOB_KEY = os.environ["FERTISCAN_BLOB_KEY"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
+TEST_INSPECTION_JSON_PATH = "tests/fertiscan/inspection.json"
+
 
 class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
-
         base_dir = os.path.dirname(os.path.abspath(__file__))
         file_path = os.path.join(base_dir, "analyse.json")
         with open(file_path, "r") as file:
@@ -56,21 +64,15 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.user_email = "testesss@email"
-        self.user_obj = asyncio.run(
+        self.tier = "test-user"
+        self.user = asyncio.run(
             datastore.new_user(
-                self.cursor, self.user_email, BLOB_CONNECTION_STRING, "test-user"
+                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
             )
         )
-
-        self.user_id = datastore.User.get_id(self.user_obj)
-        self.container_client = asyncio.run(
-            datastore.get_user_container_client(
-                user_id=self.user_id,
-                storage_url=BLOB_CONNECTION_STRING,
-                account=BLOB_ACCOUNT,
-                key=BLOB_KEY,
-                tier="test-user",
-            )
+        self.container_client = ContainerClient.from_connection_string(
+            conn_str=BLOB_CONNECTION_STRING,
+            container_name=f"{self.tier}-{self.user.id}",
         )
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -122,9 +124,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.nb_weight = len(self.analysis_json.get("weight"))
 
     def tearDown(self):
-        self.con.rollback()
-        self.container_client.delete_container()
-        db.end_query(self.con, self.cursor)
+        try:
+            self.con.rollback()
+            db.end_query(self.con, self.cursor)
+            self.container_client.delete_container()
+        except Exception as e:
+            print(e)
 
     def test_register_analysis(self):
         self.assertTrue(self.container_client.exists())
@@ -132,7 +137,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             fertiscan.register_analysis(
                 self.cursor,
                 self.container_client,
-                self.user_id,
+                self.user.id,
                 [self.pic_encoded, self.pic_encoded],
                 self.analysis_json,
             )
@@ -235,7 +240,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 fertiscan.register_analysis(
                     self.cursor,
                     self.container_client,
-                    self.user_id,
+                    self.user.id,
                     [self.pic_encoded, self.pic_encoded],
                     {},
                 )
@@ -244,11 +249,11 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def test_get_full_inspection_json(self):
         formatted_analysis = metadata.build_inspection_import(self.analysis_json)
         picture_set_id = picture.new_picture_set(
-            self.cursor, json.dumps({}), self.user_id
+            self.cursor, json.dumps({}), self.user.id
         )
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user_id, picture_set_id, formatted_analysis
+            self.cursor, self.user.id, picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
 
@@ -257,3 +262,68 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
         data = json.loads(data)
         self.assertEqual(data["inspection_id"], str(inspection_id))
+
+    def test_delete_inspection(self):
+        # Create a new inspection to delete later
+        with open(TEST_INSPECTION_JSON_PATH, "r") as file:
+            input_json = json.load(file)
+
+        picture_set_id = asyncio.run(
+            datastore.create_picture_set(
+                self.cursor, self.container_client, 0, self.user.id
+            )
+        )
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user.id, picture_set_id, json.dumps(input_json)
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        # Verify the inspection was created by directly querying the database
+        self.cursor.execute(
+            "SELECT id FROM inspection WHERE id = %s;",
+            (inspection_id,),
+        )
+        fetched_inspection_id = self.cursor.fetchone()
+        self.assertIsNotNone(
+            fetched_inspection_id, "The inspection should exist before deletion."
+        )
+
+        # Perform the delete operation
+        deleted_inspection = asyncio.run(
+            fertiscan.delete_inspection(
+                self.cursor, inspection_id, self.user.id, self.container_client
+            )
+        )
+
+        # Verify that the inspection ID matches the one we deleted
+        self.assertIsInstance(deleted_inspection, metadata.DBInspection)
+        self.assertEqual(str(deleted_inspection.id), inspection_id)
+
+        # Ensure that the inspection no longer exists in the database
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM inspection WHERE id = %s);",
+            (inspection_id,),
+        )
+        inspection_exists = self.cursor.fetchone()[0]
+        self.assertFalse(
+            inspection_exists, "The inspection should be deleted from the database."
+        )
+
+        # Verify that the picture set associated with the inspection was also deleted
+        self.cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM picture_set WHERE id = %s);",
+            (picture_set_id,),
+        )
+        picture_set_exists = self.cursor.fetchone()[0]
+        self.assertFalse(
+            picture_set_exists,
+            "The picture set should be deleted from the database.",
+        )
+
+        # Verify that no blobs associated with the picture set ID remain in the container
+        blobs_after = [blob.name for blob in self.container_client.list_blobs()]
+        self.assertFalse(
+            any(str(picture_set_id) in blob_name for blob_name in blobs_after),
+            "The folder associated with the picture set ID should be deleted from the container.",
+        )

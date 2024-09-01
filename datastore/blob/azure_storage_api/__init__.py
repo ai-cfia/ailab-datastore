@@ -1,8 +1,10 @@
-import json
-import hashlib
-import os
 import datetime
+import hashlib
+import json
+import os
+
 from azure.storage.blob import BlobServiceClient
+
 
 class GenerateHashError(Exception):
     pass
@@ -438,6 +440,7 @@ async def delete_folder(container_client, picture_set_id):
         blobs = await get_blobs_from_tag(container_client, picture_set_id)
         for blob in blobs:
             container_client.delete_blob(blob)
+        return True
         
     except GetFolderUUIDError:
         return False
