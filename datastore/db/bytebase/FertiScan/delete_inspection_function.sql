@@ -27,6 +27,7 @@ END;
 $$;
 
 -- Trigger definition on organization_information table for location deletion
+DROP TRIGGER IF EXISTS after_organization_information_delete_location ON "fertiscan_0.0.13".organization_information;
 CREATE TRIGGER after_organization_information_delete_location
 AFTER DELETE ON "fertiscan_0.0.13".organization_information
 FOR EACH ROW
@@ -49,7 +50,7 @@ BEGIN
         WHERE id = p_inspection_id 
         AND inspector_id = p_inspector_id
     ) THEN
-        RAISE EXCEPTION 'Inspector is not the creator of this inspection';
+        RAISE EXCEPTION 'Inspector % is not the creator of inspection %', p_inspector_id, p_inspection_id;
     END IF;
 
     -- Retrieve the inspection record before deletion
@@ -88,6 +89,7 @@ END;
 $$;
 
 -- Trigger definition on inspection table for combined cleanup (sample and label_information deletion)
+DROP TRIGGER IF EXISTS after_inspection_delete_cleanup ON "fertiscan_0.0.13".inspection;
 CREATE TRIGGER after_inspection_delete_cleanup
 AFTER DELETE ON "fertiscan_0.0.13".inspection
 FOR EACH ROW
@@ -116,6 +118,7 @@ END;
 $$;
 
 -- Trigger definition on label_information table for organization_information deletion
+DROP TRIGGER IF EXISTS after_label_information_delete_organization_information ON "fertiscan_0.0.13".label_information;
 CREATE TRIGGER after_label_information_delete_organization_information
 AFTER DELETE ON "fertiscan_0.0.13".label_information
 FOR EACH ROW
