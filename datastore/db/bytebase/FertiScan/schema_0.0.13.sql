@@ -51,7 +51,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text,
     "address" text NOT NULL,
-    "region_id" uuid References "fertiscan_0.0.13".region(id)
+    "region_id" uuid REFERENCES "fertiscan_0.0.13".region(id)
     );    
     
     CREATE TABLE "fertiscan_0.0.13"."organization_information" (
@@ -109,10 +109,10 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     
     CREATE TABLE "fertiscan_0.0.13"."label_dimension" (
     "label_id" uuid PRIMARY KEY,
-    "company_info_id" uuid REFERENCES "fertiscan_0.0.13".organization_information(id),
-    "company_location_id" uuid REFERENCES "fertiscan_0.0.13".location(id),
-    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.13".organization_information(id),
-    "manufacturer_location_id" uuid REFERENCES "fertiscan_0.0.13".location(id),
+    "company_info_id" uuid ,
+    "company_location_id" uuid ,
+    "manufacturer_info_id" uuid,
+    "manufacturer_location_id" uuid ,
     "instructions_ids" uuid[] DEFAULT '{}',
     "cautions_ids" uuid[] DEFAULT '{}',
     "first_aid_ids" uuid[] DEFAULT '{}',
@@ -138,12 +138,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.13"."inspection_factual" (
     "inspection_id" uuid PRIMARY KEY,
-    "inspector_id" uuid REFERENCES "fertiscan_0.0.13".users(id),
-    "label_info_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
+    "inspector_id" uuid ,
+    "label_info_id" uuid ,
     "time_id" uuid REFERENCES "fertiscan_0.0.13".time_dimension(id),
-    "sample_id" uuid REFERENCES "fertiscan_0.0.13".sample(id),
-    "company_id" uuid REFERENCES "fertiscan_0.0.13".organization(id),
-    "manufacturer_id" uuid REFERENCES "fertiscan_0.0.13".organization(id),
+    "sample_id" uuid,
+    "company_id" uuid,
+    "manufacturer_id" uuid,
     "picture_set_id" uuid,
     "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP
     );
@@ -181,7 +181,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "text_content_fr" text NOT NULL DEFAULT '',
         "text_content_en" text NOT NULL DEFAULT '',
-        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13".label_information("id") ON DELETE CASCADE,
+        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean NOT NULL,
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13"."sub_type" ("id")
     );
@@ -227,7 +227,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13".users(id),
     "label_info_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id) ON DELETE CASCADE,
     "sample_id" uuid REFERENCES "fertiscan_0.0.13".sample(id),
-    "picture_set_id" uuid REFERENCES "fertiscan_0.0.13".picture_set(id)
+    "picture_set_id" uuid REFERENCES "fertiscan_0.0.13".picture_set(id),
+    "original_dataset" json
     );
 
     CREATE TABLE "fertiscan_0.0.13"."fertilizer" (
@@ -236,7 +237,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "registration_number" text,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "update_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.13".inspection(id),
+    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.13".inspection(id) ON DELETE CASCADE,
     "owner_id" uuid REFERENCES "fertiscan_0.0.13".organization(id)
     );
 

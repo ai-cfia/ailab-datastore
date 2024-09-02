@@ -69,8 +69,8 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Insert an inspection record
         self.cursor.execute(
-            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, False),
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
+            (None, self.label_info_id, self.inspector_id, None, None, False, None),
         )
         self.inspection_id = self.cursor.fetchone()[0]
 
