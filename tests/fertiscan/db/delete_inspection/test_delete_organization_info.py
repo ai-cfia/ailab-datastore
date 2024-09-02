@@ -53,10 +53,11 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         self.conn.close()
 
     def test_delete_organization_information_success(self):
-        # Call the function to delete the organization information
+        # Delete the organization information
         self.cursor.execute(
             """
-            SELECT delete_organization_information(%s);
+            DELETE FROM organization_information
+            WHERE id = %s;
             """,
             (self.organization_information_id,),
         )
@@ -103,7 +104,8 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         with self.assertRaises(psycopg.errors.ForeignKeyViolation) as _:
             self.cursor.execute(
                 """
-                SELECT delete_organization_information(%s);
+                DELETE FROM organization_information
+                WHERE id = %s;
                 """,
                 (self.organization_information_id,),
             )
@@ -123,7 +125,8 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         # Delete the first organization information
         self.cursor.execute(
             """
-            SELECT delete_organization_information(%s);
+            DELETE FROM organization_information
+            WHERE id = %s;
             """,
             (self.organization_information_id,),
         )

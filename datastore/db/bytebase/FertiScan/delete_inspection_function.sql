@@ -1,16 +1,3 @@
--- Function to delete organization_information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".delete_organization_information(
-    p_organization_information_id uuid
-)
-RETURNS void
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    DELETE FROM "fertiscan_0.0.13".organization_information
-    WHERE id = p_organization_information_id;
-END;
-$$;
-
 -- Trigger function to handle after organization_information delete for location deletion
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".after_org_info_delete_location_trig()
 RETURNS TRIGGER
@@ -18,8 +5,12 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     IF OLD.location_id IS NOT NULL THEN
-        DELETE FROM "fertiscan_0.0.13".location
-        WHERE id = OLD.location_id;
+        BEGIN
+            DELETE FROM "fertiscan_0.0.13".location
+            WHERE id = OLD.location_id;
+        EXCEPTION WHEN foreign_key_violation THEN
+            RAISE NOTICE 'Location % is still referenced by another record and cannot be deleted.', OLD.location_id;
+        END;
     END IF;
 
     RETURN NULL;
@@ -102,13 +93,15 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
     BEGIN
-        PERFORM "fertiscan_0.0.13".delete_organization_information(OLD.company_info_id);
+        DELETE FROM "fertiscan_0.0.13".organization_information
+        WHERE id = OLD.company_info_id;
     EXCEPTION WHEN foreign_key_violation THEN
         RAISE NOTICE 'Company organization_information with ID % could not be deleted due to foreign key constraints.', OLD.company_info_id;
     END;
 
     BEGIN
-        PERFORM "fertiscan_0.0.13".delete_organization_information(OLD.manufacturer_info_id);
+        DELETE FROM "fertiscan_0.0.13".organization_information
+        WHERE id = OLD.manufacturer_info_id;
     EXCEPTION WHEN foreign_key_violation THEN
         RAISE NOTICE 'Manufacturer organization_information with ID % could not be deleted due to foreign key constraints.', OLD.manufacturer_info_id;
     END;
