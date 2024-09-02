@@ -53,15 +53,15 @@ BEGIN
         RAISE EXCEPTION 'Inspector % is not the creator of inspection %', p_inspector_id, p_inspection_id;
     END IF;
 
-    -- Retrieve the inspection record before deletion
-    SELECT row_to_json(i) 
+    -- Delete the inspection record and retrieve it
+    WITH deleted_inspection AS (
+        DELETE FROM "fertiscan_0.0.13".inspection
+        WHERE id = p_inspection_id
+        RETURNING *
+    )
+    SELECT row_to_json(deleted_inspection) 
     INTO inspection_record
-    FROM "fertiscan_0.0.13".inspection i
-    WHERE id = p_inspection_id;
-
-    -- Delete the inspection record
-    DELETE FROM "fertiscan_0.0.13".inspection
-    WHERE id = p_inspection_id;
+    FROM deleted_inspection;
 
     -- Return the deleted inspection record
     RETURN inspection_record;
