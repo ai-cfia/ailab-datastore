@@ -104,7 +104,6 @@ class DBInspection(BaseModel):
     label_info_id: UUID4 | None = None
     sample_id: UUID4 | None = None
     picture_set_id: UUID4 | None = None
-    fertilizer_id: UUID4 | None = None
 
 
 class Inspection(BaseModel):
