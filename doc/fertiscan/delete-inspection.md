@@ -17,6 +17,7 @@ sequenceDiagram
     participant Inspection as Inspection
     participant Sample as Sample
     participant LabelInfo as Label_Information
+    participant Fertilizer as Fertilizer
 
     Client->>DB: delete_inspection(inspection_id, inspector_id)
 
@@ -25,8 +26,9 @@ sequenceDiagram
     Inspection-->>DB: inspection_record
 
     DB->>Sample: trigger DELETE where id=deleted_inspection.sample_id
-
     DB->>LabelInfo: trigger DELETE where id=deleted_inspection.label_info_id
+
+    DB->>Fertilizer: cascade DELETE where latest_inspection_id=deleted_inspection.id
 
     DB-->>Client: inspection_record
 

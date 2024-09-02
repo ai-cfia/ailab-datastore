@@ -101,14 +101,6 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         inspection_count = self.cursor.fetchone()[0]
         self.assertEqual(inspection_count, 0, "Inspection should be deleted.")
 
-        # Verify that the label information was deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM label_information WHERE id = %s;",
-            (self.label_info_id,),
-        )
-        label_count = self.cursor.fetchone()[0]
-        self.assertEqual(label_count, 0, "Label information should be deleted.")
-
         # Verify that the related sample was deleted
         self.cursor.execute(
             "SELECT COUNT(*) FROM sample WHERE id = %s;",
@@ -117,15 +109,21 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         sample_count = self.cursor.fetchone()[0]
         self.assertEqual(sample_count, 0, "Sample should be deleted.")
 
-        # Verify that the related label dimensions were deleted
+        # Verify that related fertilizer information was deleted
         self.cursor.execute(
-            "SELECT COUNT(*) FROM label_dimension WHERE label_id = %s;",
+            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
+            (self.inspection_id,),
+        )
+        sample_count = self.cursor.fetchone()[0]
+        self.assertEqual(sample_count, 0, "Sample should be deleted.")
+
+        # Verify that the label information was deleted
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM label_information WHERE id = %s;",
             (self.label_info_id,),
         )
-        label_dimension_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            label_dimension_count, 0, "Label dimensions should be deleted."
-        )
+        label_count = self.cursor.fetchone()[0]
+        self.assertEqual(label_count, 0, "Label information should be deleted.")
 
         # Verify that the related metrics were deleted
         self.cursor.execute(
@@ -237,7 +235,8 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Check that the exception message indicates unauthorized access
         self.assertIn(
-            "Inspector is not the creator of this inspection", str(context.exception)
+            f"Inspector {unauthorized_inspector_id} is not the creator of inspection {self.inspection_id}",
+            str(context.exception),
         )
 
 

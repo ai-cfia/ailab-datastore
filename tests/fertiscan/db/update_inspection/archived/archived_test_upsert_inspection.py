@@ -49,8 +49,8 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_insert_new_inspection_minimal_fields(self):
         # Insert a new inspection with minimal required fields
         self.cursor.execute(
-            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
-            (None, self.label_info_id, self.inspector_id, None, None, False),
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
+            (None, self.label_info_id, self.inspector_id, None, None, False, None),
         )
         inspection_id = inspection.new_inspection(self.cursor, self.inspector_id)
         inspection_id = self.cursor.fetchone()[0]
@@ -75,15 +75,15 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_update_existing_inspection(self):
         # Insert a new inspection first
         self.cursor.execute(
-            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
-            (None, self.label_info_id, self.inspector_id, None, None, False),
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
+            (None, self.label_info_id, self.inspector_id, None, None, False, None),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Update the inspection record
         self.cursor.execute(
-            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
-            (inspection_id, self.label_info_id, self.inspector_id, None, None, True),
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
+            (inspection_id, self.label_info_id, self.inspector_id, None, None, True, None),
         )
 
         # Verify the data is updated
@@ -102,8 +102,8 @@ class TestUpsertInspectionFunction(unittest.TestCase):
     def test_upsert_with_null_values(self):
         # Test handling of null values in optional fields
         self.cursor.execute(
-            'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
-            (None, self.label_info_id, self.inspector_id, None, None, True),
+            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
+            (None, self.label_info_id, self.inspector_id, None, None, True, None),
         )
         inspection_id = self.cursor.fetchone()[0]
 
