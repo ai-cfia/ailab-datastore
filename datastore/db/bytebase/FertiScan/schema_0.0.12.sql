@@ -145,7 +145,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "company_id" uuid REFERENCES "fertiscan_0.0.12".organization(id),
     "manufacturer_id" uuid REFERENCES "fertiscan_0.0.12".organization(id),
     "picture_set_id" uuid,
-    "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP
+    "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP,
+    "original_dataset" json
     );
 
 
@@ -286,6 +287,26 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     BEFORE UPDATE ON  "fertiscan_0.0.12".fertilizer
     FOR EACH ROW
     EXECUTE FUNCTION update_fertilizer_timestamp();
+
+    -- Trigger function for the `inspection` table
+    CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection_original_dataset_protection()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NULL) THEN
+        RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NOT NULL) THEN
+        -- Protect the original dataset from being updated
+        NEW.original_dataset = OLD.original_dataset;
+        RETURN NEW;
+    END IF;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- Trigger for the `inspection` table
+    CREATE TRIGGER inspection_update_protect_original_dataset
+    BEFORE UPDATE ON  "fertiscan_0.0.12".inspection_factual
+    FOR EACH ROW
+    EXECUTE FUNCTION update_inspection_original_dataset_protection();
 
     -- Insert the default types : [instruction, caution,first_aid, warranty]
     INSERT INTO "fertiscan_0.0.12".sub_type(type_fr,type_en) VALUES

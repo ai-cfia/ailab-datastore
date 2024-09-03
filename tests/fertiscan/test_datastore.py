@@ -174,6 +174,13 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIsNotNone(sub_labels)
 
+        # Test for original_dataset
+        inspection.get_inspection(self.cursor, inspection_id)
+
+        original_dataset = inspection.get_inspection_original_dataset(self.cursor, inspection_id)
+        self.maxDiff = None
+        self.assertDictEqual(analysis, original_dataset)
+
         # Verify OLAP Layer
 
         query = "SELECT EXISTS (SELECT 1 FROM inspection_factual WHERE inspection_factual.inspection_id = %s)"

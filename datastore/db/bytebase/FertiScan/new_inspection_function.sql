@@ -314,7 +314,7 @@ BEGIN
 
 	-- Create the Inspection_factual entry
 	INSERT INTO "fertiscan_0.0.12".inspection_factual (
-		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
+		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id, original_dataset
 	) VALUES (
 		inspection_id,
 		user_id,
@@ -323,7 +323,8 @@ BEGIN
 		NULL, -- NOT handled yet
 		NULL, -- IS not defined yet
 		NULL, -- IS not defined yet
-		picture_set_id
+		picture_set_id,
+		input_json
 	);
 -- INSPECTION END
 	RETURN input_json;

@@ -124,6 +124,12 @@ async def update_inspection(
     if not isinstance(updated_data, data_inspection.Inspection):
         updated_data = data_inspection.Inspection.model_validate(updated_data)
 
+    # The inspection record must exist before updating it
+    if not inspection.is_a_inspection_id(cursor, str(inspection_id)):
+        raise inspection.InspectionNotFoundError(
+            f"Inspection not found based on the given id: {inspection_id}"
+        )
+
     updated_result = inspection.update_inspection(
         cursor, inspection_id, user_id, updated_data
     )
