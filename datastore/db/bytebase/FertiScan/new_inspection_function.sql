@@ -300,7 +300,7 @@ BEGIN
 
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.12".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id, original_dataset
+        inspector_id, label_info_id, sample_id, picture_set_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
@@ -314,7 +314,7 @@ BEGIN
 
 	-- Create the Inspection_factual entry
 	INSERT INTO "fertiscan_0.0.12".inspection_factual (
-		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
+		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id, original_dataset
 	) VALUES (
 		inspection_id,
 		user_id,

@@ -289,7 +289,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     EXECUTE FUNCTION update_fertilizer_timestamp();
 
     -- Trigger function for the `inspection` table
-    CREATE OR REPLACE FUNCTION update_inspection_original_dataset_protection()
+    CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection_original_dataset_protection()
     RETURNS TRIGGER AS $$
     BEGIN
     IF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NULL) THEN
@@ -304,7 +304,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Trigger for the `inspection` table
     CREATE TRIGGER inspection_update_protect_original_dataset
-    BEFORE UPDATE ON  "fertiscan_0.0.12".inspection
+    BEFORE UPDATE ON  "fertiscan_0.0.12".inspection_factual
     FOR EACH ROW
     EXECUTE FUNCTION update_inspection_original_dataset_protection();
 
