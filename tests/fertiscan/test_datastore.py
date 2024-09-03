@@ -23,7 +23,6 @@ from datastore.db.queries import (
     metric,
 )
 import os
-import psycopg
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -356,7 +355,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         metrics = metric.get_metric_by_label(self.cursor, label_id)
         for metric_data in metrics:
             if metric_data[4]=="weight":
-                if metric_data[3]== True:
+                if metric_data[3] is True:
                     self.assertEqual(metric_data[1],new_weight)
                 else:
                     self.assertEqual(metric_data[1],untouched_weight)
