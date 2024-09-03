@@ -268,20 +268,11 @@ BEGIN
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
 
-	-- Create the Inspection_factual entry
-	INSERT INTO "fertiscan_0.0.12".inspection_factual (
-		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id, original_dataset
-	) VALUES (
-		inspection_id,
-		user_id,
-		label_info_id,
-		time_id,
-		NULL, -- NOT handled yet
-		NULL, -- IS not defined yet
-		NULL, -- IS not defined yet
-		picture_set_id,
-		input_json
-	);
+	-- Update the Inspection_factual entry with the json
+	UPDATE "fertiscan_0.0.12".inspection_factual
+	SET original_dataset = input_json
+	WHERE "inspection_id" = inspection_id;
+
 -- INSPECTION END
 	RETURN input_json;
 
