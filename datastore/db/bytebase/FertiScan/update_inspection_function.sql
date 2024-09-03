@@ -388,7 +388,7 @@ BEGIN
 
     -- Upsert inspection information
     INSERT INTO inspection (
-        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at, original_dataset
+        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
     )
     VALUES (
         inspection_id,
@@ -398,8 +398,7 @@ BEGIN
         p_picture_set_id,
         p_verified,
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP,
-        p_original_dataset
+        CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE
     SET 

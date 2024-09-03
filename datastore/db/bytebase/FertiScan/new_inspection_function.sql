@@ -9,7 +9,7 @@ DECLARE
     fr_values jsonb;
     en_values jsonb;
     record jsonb;
-    inspection_id uuid;
+    inspection_id_value uuid;
     company_id uuid;
     location_id uuid;
 	weight_id uuid;
@@ -255,23 +255,22 @@ BEGIN
 
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.12".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id, original_dataset
+        inspector_id, label_info_id, sample_id, picture_set_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
-        picture_set_id,  -- Assuming picture_set_id is handled separately
-		input_json
+        picture_set_id  -- Assuming picture_set_id is handled separately
     )
-    RETURNING id INTO inspection_id;
+    RETURNING id INTO inspection_id_value;
    
 	-- Update input_json with company_id
-	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
+	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
 
 	-- Update the Inspection_factual entry with the json
 	UPDATE "fertiscan_0.0.12".inspection_factual
 	SET original_dataset = input_json
-	WHERE "inspection_id" = inspection_id;
+	WHERE inspection_factual."inspection_id" = inspection_id_value;
 
 -- INSPECTION END
 	RETURN input_json;

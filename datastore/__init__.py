@@ -107,8 +107,8 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
     except ContainerCreationError:
         raise
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        #print(e)
+        raise Exception("Datastore Unhandled Error " + str(e))
 
 
 async def get_user_container_client(
@@ -250,8 +250,8 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
     ) as e:
         raise e
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        #print(e)
+        raise Exception("Datastore Unhandled Error " + str(e))
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
@@ -302,8 +302,8 @@ async def delete_picture_set_permanently(
     ) as e:
         raise e
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        #print(e)
+        raise Exception("Datastore Unhandled Error "+ str(e))
 
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None
@@ -365,4 +365,4 @@ async def upload_pictures(
         raise
     except Exception as e:
         print(e)
-        raise Exception("Datastore Unhandled Error")
+        raise Exception("Datastore Unhandled Error " + str(e))
