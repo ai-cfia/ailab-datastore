@@ -17,7 +17,7 @@ BEGIN
             ) RETURNING id INTO time_id;
             -- Create the Inspection_factual entry
             INSERT INTO "fertiscan_0.0.12".inspection_factual (
-                inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
+                inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id, original_dataset
             ) VALUES (
                 NEW.id,
                 NEW.inspector_id,
@@ -26,7 +26,8 @@ BEGIN
                 NULL, -- NOT handled yet
                 NULL, -- IS not defined yet
                 NULL, -- IS not defined yet
-                NEW.picture_set_id
+                NEW.picture_set_id,
+                NULL
             );
         ELSE
             -- Raise a warning if the condition is not met
