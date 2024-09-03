@@ -72,7 +72,6 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
         self.image.save(self.image_byte_array, format="TIFF")
@@ -175,12 +174,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(sub_labels)
 
         # Test for original_dataset
-        inspection_data = inspection.get_inspection(self.cursor, inspection_id)
+        inspection.get_inspection(self.cursor, inspection_id)
 
-        #original_dataset = inspection_data[8]
-        #original_dataset["inspection_id"] = inspection_id
+        # original_dataset = inspection_data[8]
+        # original_dataset["inspection_id"] = inspection_id
         self.maxDiff = None
-        #self.assertDictEqual(analysis, original_dataset)
+        # self.assertDictEqual(analysis, original_dataset)
 
         # Verify OLAP Layer
 
@@ -281,32 +280,21 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         new_density = 10.0
         old_npk = analysis["product"]["npk"]
         new_npk = "10-10-10"
-        new_instruction_en = [
-            "3. of",
-            "2. set"
-        ]
-        new_instruction_fr = [
-            "3. de",
-            "2. ensemble"
-        ]
+        new_instruction_en = ["3. of", "2. set"]
+        new_instruction_fr = ["3. de", "2. ensemble"]
         new_instruction_nb = 2
         new_value = 100.0
         old_value = analysis["specifications"]["en"][0]["humidity"]
         new_specification_en = [
-            {
-                "humidity": new_value,
-                "ph": 6.5,
-                "solubility": 100,
-                "edited": True
-            }
+            {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         ]
         new_first_aid_en = [
             "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice.",
-            "NEWLY ADDED FIRST AID"
+            "NEWLY ADDED FIRST AID",
         ]
         new_first_aid_fr = [
             "En cas de contact avec les yeux, rincer immédiatement à l'eau et consulter un médecin.",
-            "NOUVELLE PREMIÈRE AIDE AJOUTÉE"
+            "NOUVELLE PREMIÈRE AIDE AJOUTÉE",
         ]
         new_first_aid_number = 2
         new_guaranteed_analysis = [
@@ -314,14 +302,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 "value": new_value,
                 "unit": "%",
                 "name": "Total Nitrogen (N)",
-                "edited": True
+                "edited": True,
             },
             {
                 "value": 20.0,
                 "unit": "%",
                 "name": "Available Phosphate (P2O5)",
-                "edited": False
-            }
+                "edited": False,
+            },
         ]
         new_guaranteed_nb = 2
         # update the dataset
@@ -337,45 +325,49 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["first_aid"]["en"] = new_first_aid_en
         analysis["first_aid"]["fr"] = new_first_aid_fr
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
-            
+
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
 
-        asyncio.run(fertiscan.update_inspection(self.cursor, inspection_id,self.user_id, analysis))
-        
-        #check if specifications are updated
+        asyncio.run(
+            fertiscan.update_inspection(
+                self.cursor, inspection_id, self.user_id, analysis
+            )
+        )
+
+        # check if specifications are updated
         specifications = specification.get_all_specifications(self.cursor, label_id)
         for specific in specifications:
-            if(specific[5] == "en"):
+            if specific[5] == "en":
                 self.assertTrue(specific[4])
-                self.assertEqual(specific[1],new_value)
+                self.assertEqual(specific[1], new_value)
             else:
                 self.assertFalse(specific[4])
-                self.assertEqual(specific[1],old_value)
+                self.assertEqual(specific[1], old_value)
         # check if metrics are updated correctly
         metrics = metric.get_metric_by_label(self.cursor, label_id)
         for metric_data in metrics:
-            if metric_data[4]=="weight":
+            if metric_data[4] == "weight":
                 if metric_data[3] is True:
-                    self.assertEqual(metric_data[1],new_weight)
+                    self.assertEqual(metric_data[1], new_weight)
                 else:
-                    self.assertEqual(metric_data[1],untouched_weight)
-            elif metric_data[4]=="density":
-                self.assertEqual(metric_data[1],new_density)
+                    self.assertEqual(metric_data[1], untouched_weight)
+            elif metric_data[4] == "density":
+                self.assertEqual(metric_data[1], new_density)
                 self.assertTrue(metric_data[3])
-            elif metric_data[4]=="volume":
-                self.assertEqual(metric_data[1],untouched_volume)
+            elif metric_data[4] == "volume":
+                self.assertEqual(metric_data[1], untouched_volume)
                 self.assertFalse(metric_data[3])
-        #verify npk update (label_information)
-        label_info_data = label.get_label_information(self.cursor,label_id)
-        self.assertEqual(label_info_data[3],new_npk)
-        self.assertNotEqual(label_info_data[3],old_npk)
+        # verify npk update (label_information)
+        label_info_data = label.get_label_information(self.cursor, label_id)
+        self.assertEqual(label_info_data[3], new_npk)
+        self.assertNotEqual(label_info_data[3], old_npk)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:
-            if(guaranteed[7]):
-                self.assertEqual(guaranteed[1],new_value)
+            if guaranteed[7]:
+                self.assertEqual(guaranteed[1], new_value)
             else:
-                self.assertEqual(guaranteed[1],20.0)
+                self.assertEqual(guaranteed[1], 20.0)
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)
@@ -388,7 +380,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(old_label_dimension[5]), self.nb_instructions)
         self.assertEqual(len(new_label_dimension[5]), new_instruction_nb)
         self.assertNotEqual(len(new_label_dimension[5]), len(old_label_dimension[5]))
-       # Check if the total of guaranteed is reduced after a field has been removed
+        # Check if the total of guaranteed is reduced after a field has been removed
         self.assertEqual(len(old_label_dimension[12]), self.nb_guaranteed)
         self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
@@ -398,34 +390,37 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 "value": new_value,
                 "unit": "%",
                 "name": "Total Nitrogen (N)",
-                "edited": True
+                "edited": True,
             },
             {
                 "value": 20.0,
                 "unit": "%",
                 "name": "Available Phosphate (P2O5)",
-                "edited": False
+                "edited": False,
             },
             {
                 "value": new_value,
                 "unit": "%",
                 "name": "Soluble Potash (K2O)",
-                "edited": True
+                "edited": True,
             },
             {
                 "value": new_value,
                 "unit": "%",
                 "name": "Soluble Potash (K2O)",
-                "edited": True
-            }
+                "edited": True,
+            },
         ]
         new_guaranteed_nb = 4
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
-        asyncio.run(fertiscan.update_inspection(self.cursor, inspection_id,self.user_id, analysis))
+        asyncio.run(
+            fertiscan.update_inspection(
+                self.cursor, inspection_id, self.user_id, analysis
+            )
+        )
 
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)
 
         # Check if the total of guaranteed is increased after a field has been added
         self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
-    
