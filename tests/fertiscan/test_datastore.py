@@ -175,7 +175,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(sub_labels)
 
         # Test for original_dataset
-        inspection_data = inspection.get_inspection(self.cursor, inspection_id)
+        inspection.get_inspection(self.cursor, inspection_id)
 
         original_dataset = inspection.get_inspection_original_dataset(self.cursor, inspection_id)
         self.maxDiff = None
