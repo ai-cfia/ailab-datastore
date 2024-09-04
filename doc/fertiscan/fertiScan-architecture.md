@@ -17,7 +17,6 @@
 ## FertiScan Operational Transaction Database Architecture
 
 ```mermaid
-
 ---
 title: FertiScan Operational Transaction DB Structure
 ---
@@ -228,7 +227,6 @@ erDiagram
 ### FertiScan Operational Analytic Database Architecture
 
 ```mermaid
-
 ---
 title: FertiScan Operational DB Structure
 ---

@@ -64,8 +64,11 @@ sequenceDiagram
     DB-->>-Client: Return updated inspection data
 
 ```
+
 ## Triggers to update
+
 ```mermaid
+
 sequenceDiagram
 
 participant c as Client

@@ -254,10 +254,10 @@ sequenceDiagram
     FE --> C: Build HTML page based on the received json for confirmation
 
 ```
-### new_inspection()
-```mermaid
 
- 
+### new_inspection()
+
+```mermaid
 sequenceDiagram
 
     participant User
