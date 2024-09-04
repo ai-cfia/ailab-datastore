@@ -225,7 +225,6 @@ erDiagram
 
 ```
 
-
 ### FertiScan Operational Analytic Database Architecture
 
 ```mermaid

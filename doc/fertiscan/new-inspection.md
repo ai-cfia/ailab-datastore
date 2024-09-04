@@ -349,6 +349,4 @@ sequenceDiagram
 
     Function-->>User: Return input_json
     deactivate Function
-
-
 ```

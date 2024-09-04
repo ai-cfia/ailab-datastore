@@ -171,6 +171,7 @@ def get_inspection(cursor, inspection_id):
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
+
 def get_inspection_original_dataset(cursor, inspection_id):
     """
     This function gets the inspection from the database.
@@ -409,6 +410,7 @@ def update_inspection(
         raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+
 
 def get_inspection_factual(cursor, inspection_id):
     """
