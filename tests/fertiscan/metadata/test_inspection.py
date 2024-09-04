@@ -297,3 +297,43 @@ class test_inspection_export(unittest.TestCase):
 
         self.assertIsNotNone(data["guaranteed_analysis"])
         self.assertListEqual(data["guaranteed_analysis"], [])
+
+    def test_no_empty_specifications(self):
+        # Set specifications with one empty and one valid specification
+        self.analyse["specifications_en"] = [
+            {"humidity": None, "ph": None, "solubility": None},
+            {"humidity": 10.0, "ph": 7.0, "solubility": 5.0},
+        ]
+        self.analyse["specifications_fr"] = [
+            {"humidity": None, "ph": None, "solubility": None},
+            {"humidity": 15.0, "ph": 6.5, "solubility": 3.5},
+        ]
+
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_information_id = inspection_dict["product"]["label_id"]
+
+        if inspection_id is None:
+            self.fail("Inspection not created")
+
+        data = metadata.build_inspection_export(
+            self.cursor, str(inspection_id), label_information_id
+        )
+        data = json.loads(data)
+
+        # Check that no empty specification (all fields None) is present
+        for spec in data["specifications"]["en"]:
+            self.assertFalse(
+                all(value is None for value in spec.values()),
+                "Empty specification found in 'en' list"
+            )
+        
+        for spec in data["specifications"]["fr"]:
+            self.assertFalse(
+                all(value is None for value in spec.values()),
+                "Empty specification found in 'fr' list"
+            )

@@ -251,8 +251,16 @@ def build_inspection_import(analysis_form: dict) -> str:
         ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
 
         specifications = Specifications(
-            en=[Specification(**s) for s in analysis_form.get("specifications_en", [])],
-            fr=[Specification(**s) for s in analysis_form.get("specifications_fr", [])],
+            en=[
+                Specification(**s)
+                for s in analysis_form.get("specifications_en", [])
+                if any(value is not None for _, value in s.items())
+            ],
+            fr=[
+                Specification(**s)
+                for s in analysis_form.get("specifications_fr", [])
+                if any(value is not None for _, value in s.items())
+            ],
         )
 
         first_aid = SubLabel(
