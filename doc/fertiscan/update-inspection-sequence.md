@@ -37,7 +37,7 @@ sequenceDiagram
     DB->>+OrganizationInfoTable: upsert_organization_info(manufacturer_data)
     OrganizationInfoTable-->>DB: manufacturer_info_id
 
-    DB->>+LabelTable: upsert_label_information(product_data, company_info_id, manufacturer_info_id)
+    DB->>+LabelTable: UPDATE label_information WHERE id=label_info_id
     LabelTable-->>DB: label_info_id
 
     DB->>+MetricsTable: update_metrics(label_info_id, metrics_data)
@@ -52,7 +52,7 @@ sequenceDiagram
 
     DB->>+SubLabelsTable: update_sub_labels(label_info_id, sub_labels_data)
 
-    DB->>+InspectionTable: update_inspection_record(inspection_id, label_info_id, inspector_id, sample_id, picture_set_id, verified)
+    DB->>+InspectionTable: UPDATE inspection WHERE id=inspection_id
 
     alt verified is true
         DB->>+OrganizationTable: insert_organization(name, company_info_id, location_id)
@@ -62,6 +62,45 @@ sequenceDiagram
     end
 
     DB-->>-Client: Return updated inspection data
+
+```
+## Triggers to update
+```mermaid
+sequenceDiagram
+
+participant c as Client
+participant db as Database
+
+box lightgreen OLTP
+participant cli as label_children_Table
+participant in as inspection_Table
+end
+
+links cli: {"instruction": "","caution": "","first_aid": "","warrantie": "","specification": "","ingredient": "","micronutrients": "","guaranteed_analysis": "","metrics": "","organization_information": ""}
+    
+box pink OLAP
+participant ld as label_Dimension
+participant if as inspection_Factual
+end 
+c ->> db: update label_id children
+db ->> cli: call update f() of table
+activate cli
+cli -) cli: delete old record
+cli -) ld: TRIGGER: remove OLD.child_label_id where label_id=label_info_id
+cli -) cli: insert new record
+cli -) ld: TRIGGER: add NEW.child_label_id where label_id=label_info_id
+deactivate cli
+
+c ->> db: update inspection <br>(NEW.verified=True)
+db ->> in: UPDATE inspection
+activate in
+in -) if: TRIGGER: update company_id & manufacturer_id
+activate if
+if -) if: TRIGGER: protect original_data <br>(NEW.original_dataset = OLD.original_dataset)
+deactivate if
+
+deactivate in
+
 
 ```
 

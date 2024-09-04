@@ -14,13 +14,26 @@
 
 - The application needs to register the structure of the Blob Storage used.
 
-This is the doc about the FertiScan Database Architecture
+## FertiScan Operational Transaction Database Architecture
 
 ```mermaid
 
 ---
-title: FertiScan DB Structure
+title: FertiScan Operational Transaction DB Structure
 ---
+
+%%{init: {
+  "theme": "default",
+  "themeCSS": [
+    ".er.relationshipLabel { fill: black; }", 
+    ".er.relationshipLabelBox { fill: white; }", 
+    ".er.entityBox { fill: lightgray; }",
+    "[id^=entity-] .er.entityBox { fill: lightgreen;}",
+    "[id^=entity-timedimension] .er.entityBox { fill: pink;} ",
+    "[id^=entity-labeldimension] .er.entityBox { fill: pink;} ",
+    "[id^=entity-inspectionfactual] .er.entityBox { fill: pink;} "
+    ]
+}}%%
 erDiagram
   users {
     uuid id PK
@@ -209,5 +222,73 @@ erDiagram
 
   micronutrient ||--|| element_compound: is
   guaranteed ||--|| element_compound: is
+
+```
+
+
+### FertiScan Operational Analytic Database Architecture
+
+```mermaid
+
+---
+title: FertiScan Operational DB Structure
+---
+
+%%{init: {
+  "theme": "default",
+  "themeCSS": [
+    ".er.relationshipLabel { fill: black; }", 
+    ".er.relationshipLabelBox { fill: white; }", 
+    ".er.entityBox { fill: lightgray; }",
+    "[id^=entity-] .er.entityBox { fill: lightgreen;}",
+    "[id^=entity-timedimension] .er.entityBox { fill: pink;} ",
+    "[id^=entity-labeldimension] .er.entityBox { fill: pink;} ",
+    "[id^=entity-inspectionfactual] .er.entityBox { fill: pink;} "
+    ]
+}}%%
+erDiagram
+  
+  inspection_factual {
+    uuid inspection_id PK
+    uuid inspector_id
+    uuid label_info_id
+    uuid time_id FK
+    uuid sample_id
+    uuid company_id
+    uuid manufacturer_id
+    uuid picture_set_id
+    timestamp inspection_date
+    json original_dataset
+  }
+  label_dimension {
+    uuid label_id PK
+    uuid company_info_id
+    uuid company_location_id
+    uuid manufacturer_info_id
+    uuid manufacturer_location_id
+    uuid[] instructions_ids "DEFAULT '{}'"
+    uuid[] cautions_ids "DEFAULT '{}'"
+    uuid[] first_aid_ids "DEFAULT '{}'"
+    uuid[] warranties_ids "DEFAULT '{}'"
+    uuid[] specification_ids "DEFAULT '{}'"
+    uuid[] ingredient_ids "DEFAULT '{}'"
+    uuid[] micronutrient_ids "DEFAULT '{}'"
+    uuid[] guaranteed_ids "DEFAULT '{}'"
+    uuid[] weight_ids "DEFAULT '{}'"
+    uuid[] volume_ids "DEFAULT '{}'"
+    uuid[] density_ids "DEFAULT '{}'"
+  }
+  time_dimension {
+    uuid id PK
+    date date_value
+    int year
+    int month
+    int day
+    text month_name
+    text day_name
+  }
+
+  inspection_factual ||--o{ time_dimension : "References"
+  inspection_factual ||--o{ label_dimension : "References"
 
 ```
