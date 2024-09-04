@@ -69,22 +69,22 @@ class Metrics(BaseModel):
 
 
 class ProductInformation(BaseModel):
-    name: str
-    label_id: Optional[str] = None
-    registration_number: str
-    lot_number: str
+    name: str | None = None
+    label_id: str | None = None
+    registration_number: str | None = None
+    lot_number: str | None = None
     metrics: Metrics
-    npk: str
-    warranty: str
-    n: float
-    p: float
-    k: float
+    npk: str | None = None
+    warranty: str | None = None
+    n: float | None = None
+    p: float | None = None
+    k: float | None = None
 
 
 class Specification(BaseModel):
-    humidity: float
-    ph: float
-    solubility: float
+    humidity: float | None = None
+    ph: float | None = None
+    solubility: float | None = None
     edited: Optional[bool] = False
 
 
@@ -159,67 +159,45 @@ def build_inspection_import(analysis_form: dict) -> str:
             raise MissingKeyError(missing_keys)
 
         npk = extract_npk(analysis_form.get("npk"))
-        if (
-            (analysis_form.get("company_name") is None)
-            or (analysis_form.get("company_address") is None)
-            or (analysis_form.get("company_website") is None)
-            or (analysis_form.get("company_phone_number") is None)
-        ):
-            company = OrganizationInformation()
-        else:
-            company = OrganizationInformation(
-                name=analysis_form.get("company_name"),
-                address=analysis_form["company_address"],
-                website=analysis_form["company_website"],
-                phone_number=analysis_form["company_phone_number"],
-            )
-        if (
-            (analysis_form.get("manufacturer_name") is None)
-            or (analysis_form.get("manufacturer_address") is None)
-            or (analysis_form.get("manufacturer_website") is None)
-            or (analysis_form.get("manufacturer_phone_number") is None)
-        ):
-            manufacturer = OrganizationInformation()
-        #    raise MissingKeyError("Missing keys: manufacturer_name, manufacturer_address, manufacturer_website, manufacturer_phone_number")
-        else:
-            manufacturer = OrganizationInformation(
-                name=analysis_form["manufacturer_name"],
-                address=analysis_form["manufacturer_address"],
-                website=analysis_form["manufacturer_website"],
-                phone_number=analysis_form["manufacturer_phone_number"],
-            )
-        weights: List[Metric] = []
 
-        if analysis_form["weight"] != []:
-            for i in range(len(analysis_form["weight"])):
-                weights.append(
-                    Metric(
-                        unit=analysis_form["weight"][i].get("unit"),
-                        value=analysis_form["weight"][i].get("value"),
-                    )
-                )
-        if analysis_form["volume"] is not None:
-            volume_obj = Metric(
-                unit=analysis_form["volume"].get("unit"),
-                value=analysis_form["volume"].get("value"),
+        company = OrganizationInformation(
+            name=analysis_form.get("company_name"),
+            address=analysis_form.get("company_address"),
+            website=analysis_form.get("company_website"),
+            phone_number=analysis_form.get("company_phone_number"),
+        )
+        manufacturer = OrganizationInformation(
+            name=analysis_form.get("manufacturer_name"),
+            address=analysis_form.get("manufacturer_address"),
+            website=analysis_form.get("manufacturer_website"),
+            phone_number=analysis_form.get("manufacturer_phone_number"),
+        )
+
+        weights: list[Metric] = [
+            Metric(
+                unit=weight.get("unit"),
+                value=weight.get("value"),
             )
-        else:
-            volume_obj = Metric()
-        if analysis_form["density"] is not None:
-            density_obj = Metric(
-                unit=analysis_form["density"].get("unit"),
-                value=analysis_form["density"].get("value"),
-            )
-        else:
-            density_obj = Metric()
+            for weight in analysis_form.get("weight", [])
+        ]
+
+        volume_obj = Metric()
+        if volume := analysis_form.get("volume"):
+            volume_obj = Metric(unit=volume.get("unit"), value=volume.get("value"))
+
+        density_obj = Metric()
+        if density := analysis_form.get("density"):
+            density_obj = Metric(unit=density.get("unit"), value=density.get("value"))
+
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
+
         product = ProductInformation(
-            name=analysis_form["fertiliser_name"],
-            registration_number=analysis_form["registration_number"],
-            lot_number=analysis_form["lot_number"],
+            name=analysis_form.get("fertiliser_name"),
+            registration_number=analysis_form.get("registration_number"),
+            lot_number=analysis_form.get("lot_number"),
             metrics=metrics,
-            npk=analysis_form["npk"],
-            warranty=analysis_form["warranty"],
+            npk=analysis_form.get("npk"),
+            warranty=analysis_form.get("warranty"),
             n=npk[0],
             p=npk[1],
             k=npk[2],
@@ -227,109 +205,69 @@ def build_inspection_import(analysis_form: dict) -> str:
         )
 
         cautions = SubLabel(
-            en=analysis_form["cautions_en"], fr=analysis_form["cautions_fr"]
+            en=analysis_form.get("cautions_en", []),
+            fr=analysis_form.get("cautions_fr", []),
         )
 
         instructions = SubLabel(
-            en=analysis_form["instructions_en"], fr=analysis_form["instructions_fr"]
+            en=analysis_form.get("instructions_en", []),
+            fr=analysis_form.get("instructions_fr", []),
         )
-        micro_en: List[Value] = []
-        micro_fr: List[Value] = []
-        for i in range(len(analysis_form["micronutrients_en"])):
-            micro_en.append(
-                Value(
-                    unit=(
-                        None
-                        if analysis_form["micronutrients_en"][i].get("unit") == ""
-                        else analysis_form["micronutrients_en"][i].get("unit")
-                    ),
-                    value=(
-                        None
-                        if analysis_form["micronutrients_fr"][i].get("value") == ""
-                        else analysis_form["micronutrients_fr"][i].get("value")
-                    ),
-                    name=analysis_form["micronutrients_en"][i]["nutrient"],
-                )
+
+        micro_en: list[Value] = [
+            Value(
+                unit=nutrient.get("unit") or None,
+                value=nutrient.get("value") or None,
+                name=nutrient.get("nutrient"),
             )
-        for i in range(len(analysis_form["micronutrients_fr"])):
-            micro_fr.append(
-                Value(
-                    unit=(
-                        None
-                        if analysis_form["micronutrients_fr"][i].get("unit") == ""
-                        else analysis_form["micronutrients_fr"][i].get("unit")
-                    ),
-                    value=(
-                        None
-                        if analysis_form["micronutrients_fr"][i].get("value") == ""
-                        else analysis_form["micronutrients_fr"][i].get("value")
-                    ),
-                    name=analysis_form["micronutrients_fr"][i]["nutrient"],
-                )
+            for nutrient in analysis_form.get("micronutrients_en", [])
+        ]
+        micro_fr: list[Value] = [
+            Value(
+                unit=nutrient.get("unit") or None,
+                value=nutrient.get("value") or None,
+                name=nutrient.get("nutrient"),
             )
+            for nutrient in analysis_form.get("micronutrients_fr", [])
+        ]
         micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
-        ingredients_en: List[Value] = []
-        ingredients_fr: List[Value] = []
-        for i in range(len(analysis_form["ingredients_en"])):
-            ingredients_en.append(
-                Value(
-                    unit=(
-                        None
-                        if analysis_form["ingredients_en"][i].get("unit") == ""
-                        else analysis_form["ingredients_en"][i].get("unit")
-                    ),
-                    value=(
-                        None
-                        if analysis_form["ingredients_en"][i].get("value") == ""
-                        else analysis_form["ingredients_en"][i].get("value")
-                    ),
-                    name=analysis_form["ingredients_en"][i]["nutrient"],
-                )
+
+        ingredients_en: list[Value] = [
+            Value(
+                unit=ingredient.get("unit") or None,
+                value=ingredient.get("value") or None,
+                name=ingredient.get("nutrient"),
             )
-        for i in range(len(analysis_form["ingredients_fr"])):
-            ingredients_fr.append(
-                Value(
-                    unit=(
-                        None
-                        if analysis_form["ingredients_fr"][i].get("unit") == ""
-                        else analysis_form["ingredients_fr"][i].get("unit")
-                    ),
-                    value=(
-                        None
-                        if analysis_form["ingredients_fr"][i].get("value") == ""
-                        else analysis_form["ingredients_fr"][i].get("value")
-                    ),
-                    name=analysis_form["ingredients_fr"][i]["nutrient"],
-                )
+            for ingredient in analysis_form.get("ingredients_en", [])
+        ]
+        ingredients_fr: list[Value] = [
+            Value(
+                unit=ingredient.get("unit") or None,
+                value=ingredient.get("value") or None,
+                name=ingredient.get("nutrient"),
             )
+            for ingredient in analysis_form.get("ingredients_fr", [])
+        ]
         ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
 
         specifications = Specifications(
-            en=extract_specifications(analysis_form["specifications_en"]),
-            fr=extract_specifications(analysis_form["specifications_fr"]),
+            en=[Specification(**s) for s in analysis_form.get("specifications_en", [])],
+            fr=[Specification(**s) for s in analysis_form.get("specifications_fr", [])],
         )
 
         first_aid = SubLabel(
-            en=analysis_form["first_aid_en"], fr=analysis_form["first_aid_fr"]
+            en=analysis_form.get("first_aid_en", []),
+            fr=analysis_form.get("first_aid_fr", []),
         )
 
-        guaranteed: List[Value] = []
-        for i in range(len(analysis_form["guaranteed_analysis"])):
-            guaranteed.append(
-                Value(
-                    unit=(
-                        None
-                        if analysis_form["guaranteed_analysis"][i].get("unit") == ""
-                        else analysis_form["guaranteed_analysis"][i].get("unit")
-                    ),
-                    value=(
-                        None
-                        if analysis_form["guaranteed_analysis"][i].get("value") == ""
-                        else analysis_form["guaranteed_analysis"][i].get("value")
-                    ),
-                    name=analysis_form["guaranteed_analysis"][i]["nutrient"],
-                )
+        guaranteed: list[Value] = [
+            Value(
+                unit=item.get("unit") or None,
+                value=item.get("value") or None,
+                name=item.get("nutrient"),
             )
+            for item in analysis_form.get("guaranteed_analysis", [])
+        ]
 
         inspection_formatted = Inspection(
             company=company,
@@ -508,27 +446,3 @@ def extract_npk(npk: str):
         float(npk_reformated[1]),
         float(npk_reformated[2]),
     ]
-
-
-def extract_specifications(specifications: list) -> list:
-    """
-    This function extracts the specifications from the list of strings.
-    The strings must be in the format of "value unit".
-
-    Parameters:
-    - specifications: (list) The list of strings to split.
-
-    Returns:
-    - A list containing the specifications.
-    """
-    output = []
-    if specifications is None or specifications == []:
-        return output
-    for specification_obj in specifications:
-        res = Specification(
-            humidity=specification_obj["humidity"],
-            ph=specification_obj["ph"],
-            solubility=specification_obj["solubility"],
-        )
-        output.append(res)
-    return output
