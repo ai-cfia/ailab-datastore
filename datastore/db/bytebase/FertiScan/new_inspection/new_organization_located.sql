@@ -14,11 +14,17 @@ DECLARE
     record RECORD;
     organization_id uuid;
 BEGIN
-	-- Check if organization location exists by address
-    SELECT id INTO location_id
-    FROM location
-    WHERE location.address ILIKE address_str
-    LIMIT 1;
+    -- CHECK IF ADRESS IS NULL
+    IF address_str IS NULL THEN
+        RAISE WARNING 'Address cannot be null';
+    ELSE 
+        -- Check if organization location exists by address
+        SELECT id INTO location_id
+        FROM location
+        WHERE location.address ILIKE address_str
+        LIMIT 1;
+    END IF;
+
    
 	IF location_id IS NULL THEN 
         INSERT INTO location (address)

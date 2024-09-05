@@ -24,20 +24,26 @@ RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
     location_id uuid;
+    address_str text;
 BEGIN
     -- Skip processing if the input JSON object is empty or null
     IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
         RETURN NULL;
     END IF;
-
-    -- Fetch location_id from the address if it exists
-    SELECT id INTO location_id
-    FROM location
-    WHERE address = input_org_info->>'address'
-    LIMIT 1;
-
-    -- Use upsert_location to insert or update the location
-    location_id := upsert_location(location_id, input_org_info->>'address');
+    address_str := input_org_info->>'address';
+    
+    -- CHECK IF ADRESS IS NULL
+    IF address_str IS NULL THEN
+        RAISE WARNING 'Address cannot be null';
+    ELSE 
+        -- Check if organization location exists by address
+        SELECT id INTO location_id
+        FROM location
+        WHERE location.address ILIKE address_str
+        LIMIT 1;
+            -- Use upsert_location to insert or update the location
+        location_id := upsert_location(location_id, address_str);
+    END IF;
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
     organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
