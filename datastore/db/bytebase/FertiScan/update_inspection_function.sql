@@ -227,7 +227,7 @@ BEGIN
                     (spec_record->>'humidity')::float,
                     (spec_record->>'ph')::float,
                     (spec_record->>'solubility')::float,
-                    FALSE,  -- not handled
+                    COALESCE(spec_record->>'edited','False')::boolean,
                     p_label_id,
                     spec_language::language
                 );

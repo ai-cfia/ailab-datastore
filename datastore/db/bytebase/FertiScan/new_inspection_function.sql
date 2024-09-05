@@ -125,10 +125,6 @@ BEGIN
 				'weight'::"fertiscan_0.0.12".metric_type,
 				FALSE
 			);
-			-- Update the label_dimension table with the new weight_id
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
-			SET weight_ids = array_append(weight_ids, weight_id)
-			WHERE label_dimension.label_id = label_info_id;
 		END IF;
 	 END LOOP;
 -- Weight end
@@ -150,10 +146,6 @@ BEGIN
 				'density'::"fertiscan_0.0.12".metric_type,
 				FALSE
 			);
-			-- Update the label_dimension table with the new density_id
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
-			SET density_ids = array_append(density_ids, density_id)
-			WHERE label_dimension.label_id = label_info_id;
 		END IF;
 	END IF;
 -- DENSITY END
@@ -177,10 +169,6 @@ BEGIN
 				'volume'::"fertiscan_0.0.12".metric_type,
 				FALSE
 			);
-			-- Update the label_dimension table with the new volume_ids
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
-			SET volume_ids = array_append(volume_ids, volume_id)
-			WHERE label_dimension.label_id = label_info_id;
 		END IF;
 	END IF;
 -- Volume end
@@ -205,10 +193,6 @@ BEGIN
 					label_info_id,
 					FALSE
 				);	
-				-- Update the label_dimension table with the new specification_id
-				UPDATE "fertiscan_0.0.12"."label_dimension" 
-				SET specification_ids = array_append(specification_ids, specification_id)
-				WHERE label_dimension.label_id = label_info_id;
 			END IF;
 		END LOOP;
 	END LOOP;
@@ -242,10 +226,6 @@ BEGIN
 					NULL,  --We cant tell atm
 					FALSE  --preset
 				);
-				-- Update the label_dimension table with the new specification_id
-				UPDATE "fertiscan_0.0.12"."label_dimension" 
-				SET ingredient_ids = array_append(ingredient_ids, ingredient_id)
-				WHERE label_dimension.label_id = label_info_id;
 			END IF;
 		END LOOP;
 	END LOOP;
@@ -297,10 +277,6 @@ BEGIN
 					label_info_id,
 					micronutrient_language::"fertiscan_0.0.12".language
 				);
-				-- Update the label_dimension table with the new Micronutrient_id
-				UPDATE "fertiscan_0.0.12"."label_dimension" 
-				SET micronutrient_ids = array_append(micronutrient_ids, micronutrient_id)
-				WHERE label_dimension.label_id = label_info_id;
 			END IF;
 		END LOOP;
 	END LOOP;
@@ -324,10 +300,6 @@ BEGIN
 				FALSE,
 				NULL -- We arent handeling element_id yet
 			);
-			-- Update the label_dimension table with the new Micronutrient_id
-			UPDATE "fertiscan_0.0.12"."label_dimension" 
-			SET guaranteed_ids = array_append(guaranteed_ids, guaranteed_analysis_id)
-			WHERE label_dimension.label_id = label_info_id;
 		END IF;
 	END LOOP;
 -- GUARANTEED END	
