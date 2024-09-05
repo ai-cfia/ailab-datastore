@@ -122,7 +122,7 @@ def new_organization_info_located(
         return cursor.fetchone()[0]
     except Exception as e:
         raise OrganizationCreationError(
-            "Datastore organization unhandeled error" + e.__str__()
+            "Datastore organization unhandeled error: " + e.__str__()
         )
 
 

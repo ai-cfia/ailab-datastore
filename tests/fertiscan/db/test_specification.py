@@ -24,7 +24,7 @@ class test_specification(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        
+
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -71,6 +71,19 @@ class test_specification(unittest.TestCase):
             str(DB_SCHEMA),
         )
         self.assertTrue(validator.is_valid_uuid(specification_id))
+
+    def test_new_specification_empty(self):
+        with self.assertRaises(specification.SpecificationCreationError):
+            specification.new_specification(
+                self.cursor,
+                None,
+                None,
+                None,
+                self.label_id,
+                self.language,
+                False,
+                str(DB_SCHEMA),
+            )
 
     def test_get_specification(self):
         specification_id = specification.new_specification(

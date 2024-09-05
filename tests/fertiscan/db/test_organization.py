@@ -14,8 +14,7 @@ DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
-# DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
-DB_SCHEMA = "fertiscan_0.0.11"
+DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
@@ -163,7 +162,7 @@ class test_organization_information(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        self.province_name = "test-province"
+        self.province_name = "a-test-province"
         self.region_name = "test-region"
         self.name = "test-organization"
         self.website = "www.test.com"
@@ -207,9 +206,25 @@ class test_organization_information(unittest.TestCase):
     def test_new_organization_info_no_location(self):
 
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone
+            self.cursor, self.name, self.website, self.phone, None
         )
         self.assertTrue(validator.is_valid_uuid(id))
+
+    def test_new_organization_located_empty(self):
+        with self.assertRaises(organization.OrganizationCreationError):
+            organization.new_organization_info_located(
+                self.cursor, None, None, None, None
+            )
+
+    def test_new_organization_located_no_address(self):
+        org_id = organization.new_organization_info_located(
+            self.cursor, None, self.name, self.website, self.phone
+        )
+        # Making sure that a location is not created
+        query = "SELECT location_id FROM organization_information WHERE id = %s"
+        self.cursor.execute(query, (org_id,))
+        location_id = self.cursor.fetchone()[0]
+        self.assertIsNone(location_id)
 
     def test_get_organization_info(self):
         id = organization.new_organization_info(
