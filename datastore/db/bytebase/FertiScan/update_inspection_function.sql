@@ -31,7 +31,7 @@ BEGIN
         RETURN NULL;
     END IF;
     address_str := input_org_info->>'address';
-    
+
     -- CHECK IF ADRESS IS NULL
     IF address_str IS NULL THEN
         RAISE WARNING 'Address cannot be null';
@@ -138,15 +138,31 @@ BEGIN
         LOOP
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
-            -- Proceed only if the value is not NULL
-            IF metric_value IS NOT NULL THEN
-                -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
-                IF unit_id IS NULL THEN
-                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
-                END IF;
+edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
 
+                -- Check if the weight_unit exists in the unit table
+                SELECT id INTO unit_id FROM unit WHERE unit ILIKE read_unit;
+                -- If unit_id is null, the unit does not exist
+                IF unit_id IS NULL THEN
+                    -- Insert the new unit
+                    INSERT INTO unit (unit, to_si_unit)
+                    VALUES (read_unit, null) -- Adjust to_si_unit value as necessary
+                    RETURNING id INTO unit_id;
+                END IF;
+            END IF;
+            
+            -- Proceed only if the value is not NULL
+            IF (metric_value IS NOT NULL) AND (metric_unit IS NOT NULL) THEN
+                -- Check if the metric unit is null
+                IF metric_unit IS NULL THEN
+                    RAISE WARNING 'Metric unit is null';
+                ELSE
+                    -- Fetch or insert the unit ID
+                    SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
+                    IF unit_id IS NULL THEN
+                        INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    END IF;
+                END IF;
                 -- Insert metric record for weight
                 INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
                 VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id,edited_value);
@@ -162,15 +178,19 @@ BEGIN
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
             edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
-            -- Proceed only if the value is not NULL
-            IF metric_value IS NOT NULL THEN
-                -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
-                IF unit_id IS NULL THEN
-                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                        -- Proceed only if the value is not NULL
+            IF (metric_value IS NOT NULL) AND (metric_unit IS NOT NULL) THEN
+                -- Check if the metric unit is null
+                IF metric_unit IS NULL THEN
+                    RAISE WARNING 'Metric unit is null';
+                ELSE
+                    -- Fetch or insert the unit ID
+                    SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
+                    IF unit_id IS NULL THEN
+                        INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    END IF;
                 END IF;
-
-                -- Insert metric record
+                -- Insert metric record for weight
                 INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
                 VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id,edited_value);
             END IF;
