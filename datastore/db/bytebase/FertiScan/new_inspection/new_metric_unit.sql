@@ -13,6 +13,9 @@ DECLARE
     record RECORD;
     metric_id UUID;
 BEGIN
+    IF COALESCE(value::text, read_unit,'') = '' THEN
+        RAISE EXCEPTION 'ALL of the input parameters are null';
+    END IF;
     -- CHECK IF UNIT IS NULL
     IF read_unit IS NULL THEN
         RAISE WARNING 'read unit is null for this metric';

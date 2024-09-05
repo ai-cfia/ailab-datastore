@@ -14,6 +14,10 @@ DECLARE
     record RECORD;
     organization_id uuid;
 BEGIN
+-- CHECK IF ANY OF THE INPUTS ARE NOT NULL
+IF COALESCE(name, address_str, website, phone_number,'') = '' THEN
+    RAISE EXCEPTION 'ALL of the input parameters are null';
+END IF;
     -- CHECK IF ADRESS IS NULL
     IF address_str IS NULL THEN
         RAISE WARNING 'Address cannot be null';

@@ -14,6 +14,9 @@ DECLARE
     record RECORD;
     _id uuid;
 BEGIN
+	IF COALESCE(name, value::text, unit,'') = '' THEN
+		RAISE EXCEPTION 'ALL of the input parameters are null';
+	END IF;
 	INSERT INTO guaranteed (read_name, value, unit, edited, label_id,element_id)
 	VALUES (
 		name,
