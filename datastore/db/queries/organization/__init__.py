@@ -220,7 +220,9 @@ def get_organizations_info_json(cursor, label_id) -> dict:
 
         res = cursor.fetchone()
         if res is None or res[0] is None:
-            raise OrganizationNotFoundError
+            # raise OrganizationNotFoundError
+            # There might not be any organization information
+            return {}
         if len(res[0]) == 2:
             return {**res[0][0], **res[0][1]}
         elif len(res[0]) == 1:

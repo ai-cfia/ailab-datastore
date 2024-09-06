@@ -318,9 +318,8 @@ class test_organization_information(unittest.TestCase):
             None,
             None,
         )
-        with self.assertRaises(organization.OrganizationNotFoundError):
-            organization.get_organizations_info_json(self.cursor, label_id)
-
+        data = organization.get_organizations_info_json(self.cursor, label_id)
+        self.assertDictEqual(data, {})
 
 class test_organization(unittest.TestCase):
     def setUp(self):
