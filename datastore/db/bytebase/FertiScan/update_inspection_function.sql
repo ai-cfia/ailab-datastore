@@ -8,7 +8,7 @@ DECLARE
 BEGIN
     -- Upsert the location
     INSERT INTO location (id, address)
-    VALUES (COALESCE(location_id, uuid_generate_v4()), address)
+    VALUES (COALESCE(location_id, public.uuid_generate_v4()), address)
     ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
     DO UPDATE SET address = EXCLUDED.address
     RETURNING id INTO new_location_id;
@@ -40,7 +40,7 @@ BEGIN
     location_id := upsert_location(location_id, input_org_info->>'address');
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
-    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, uuid_generate_v4());
+    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
     -- Upsert organization information
     INSERT INTO organization_information (id, name, website, phone_number, location_id)
@@ -74,7 +74,7 @@ DECLARE
     label_id uuid;
 BEGIN
     -- Extract or generate the label ID
-    label_id := COALESCE(NULLIF(input_label->>'label_id', '')::uuid, uuid_generate_v4());
+    label_id := NULLIF(input_label->>'label_id', '');
 
     -- Upsert label information
     INSERT INTO label_information (
@@ -121,6 +121,7 @@ DECLARE
     metric_value float;
     metric_unit text;
     unit_id uuid;
+    edited_value boolean;
 BEGIN
     -- Delete existing metrics for the given label_id
     DELETE FROM metric WHERE label_id = p_label_id;
@@ -131,7 +132,7 @@ BEGIN
         LOOP
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-            
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
@@ -141,8 +142,8 @@ BEGIN
                 END IF;
 
                 -- Insert metric record for weight
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id,edited_value);
             END IF;
         END LOOP;
     END IF;
@@ -154,7 +155,7 @@ BEGIN
             metric_record := metrics->metric_type;
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
             -- Proceed only if the value is not NULL
             IF metric_value IS NOT NULL THEN
                 -- Fetch or insert the unit ID
@@ -164,8 +165,8 @@ BEGIN
                 END IF;
 
                 -- Insert metric record
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id,edited_value);
             END IF;
         END IF;
     END LOOP;
@@ -200,7 +201,7 @@ BEGIN
                 (spec_record->>'humidity')::float,
                 (spec_record->>'ph')::float,
                 (spec_record->>'solubility')::float,
-                FALSE,  -- not handled
+                COALESCE(spec_record->>'edited','FALSE')::boolean, 
                 p_label_id,
                 spec_language::language
             );
@@ -238,7 +239,7 @@ BEGIN
                 ingredient_record->>'name',
                 NULLIF(ingredient_record->>'value', '')::float,
                 ingredient_record->>'unit',
-                FALSE, -- not yet handled
+                COALESCE(ingredient_record->>'edited','FALSE')::boolean,
                 p_label_id,
                 ingredient_language::language
             );
@@ -274,7 +275,7 @@ BEGIN
                 nutrient_record->>'name',
                 NULLIF(nutrient_record->>'value', '')::float,
                 nutrient_record->>'unit',
-                FALSE,  -- not handled
+                COALESCE(nutrient_record->>'edited','FALSE')::boolean,
                 p_label_id,
                 nutrient_language::language
             );
@@ -307,7 +308,7 @@ BEGIN
             guaranteed_record->>'name',
             NULLIF(guaranteed_record->>'value', '')::float,
             guaranteed_record->>'unit',
-            FALSE,  -- not handled
+            COALESCE(guaranteed_record->>'edited','FALSE')::boolean,
             p_label_id
         );
     END LOOP;
@@ -336,25 +337,28 @@ BEGIN
         -- Extract the French and English arrays for the current sub_type
         fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
         en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        
-        -- Ensure both arrays are of the same length
-        IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-            FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-            LOOP
-                -- Insert sub label record
-                INSERT INTO sub_label (
-                    text_content_fr, text_content_en, label_id, edited, sub_type_id
-                )
-                VALUES (
-                    fr_values->>i,
-                    en_values->>i,
-                    p_label_id,
-                    FALSE,  -- not handled
-                    sub_type_rec.id
-                );
-            END LOOP;
+        If fr_values IS NULL OR en_values IS NULL THEN
+            RAISE warning 'Sub-labels for type % are missing', sub_type_rec.type_en;
         ELSE
-            RAISE NOTICE 'Mismatch in number of French and English sub-labels for type %', sub_type_rec.type_en;
+            -- Ensure both arrays are of the same length
+            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
+                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
+                LOOP
+                    -- Insert sub label record
+                    INSERT INTO sub_label (
+                        text_content_fr, text_content_en, label_id, edited, sub_type_id
+                    )
+                    VALUES (
+                        fr_values->>i,
+                        en_values->>i,
+                        p_label_id,
+                        Null,  -- not handled
+                        sub_type_rec.id
+                    );
+                END LOOP;
+            ELSE
+                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
+            END IF;
         END IF;
     END LOOP;
 END;
@@ -375,12 +379,16 @@ RETURNS uuid AS $$
 DECLARE
     inspection_id uuid;
 BEGIN
+
+    IF p_inspection_id IS NULL THEN 
+        RAISE EXCEPTION 'Inspection ID is required';
+    END IF;
     -- Use provided inspection_id or generate a new one if not provided
-    inspection_id := COALESCE(p_inspection_id, uuid_generate_v4());
+    inspection_id := p_inspection_id;
 
     -- Upsert inspection information
     INSERT INTO inspection (
-        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at, original_dataset
+        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
     )
     VALUES (
         inspection_id,
@@ -390,8 +398,7 @@ BEGIN
         p_picture_set_id,
         p_verified,
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP,
-        p_original_dataset
+        CURRENT_TIMESTAMP
     )
     ON CONFLICT (id) DO UPDATE
     SET 
@@ -451,6 +458,7 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection(
     p_input_json jsonb
 )
 RETURNS jsonb AS $$
+#variable_conflict use_variable
 DECLARE
     inspection_id uuid := p_inspection_id;
     json_inspection_id uuid;
@@ -478,6 +486,14 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized: Inspector ID mismatch or inspection not found';
     END IF;
 
+    -- Check if the provided label_id matches the existing one
+    SELECT label_info_id INTO label_info_id_value
+    FROM inspection
+    WHERE id = p_inspection_id;
+    IF label_info_id_value IS NULL OR label_info_id_value != (p_input_json->'product'->>'label_id')::uuid THEN
+        RAISE EXCEPTION 'Label ID mismatch or inspection not found';
+    END IF;
+
     -- Upsert company information and get the ID
     company_info_id := upsert_organization_info(p_input_json->'company');
     IF company_info_id IS NOT NULL THEN
@@ -490,12 +506,21 @@ BEGIN
         updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
     END IF;
 
-    -- Upsert label information and get the ID
-    label_info_id_value := upsert_label_information(
-        p_input_json->'product',
-        company_info_id,
-        manufacturer_info_id
-    );
+    -- update Label information
+    UPDATE label_information
+    SET
+    id = label_info_id_value,
+    product_name = p_input_json->'product'->>'name', 
+    lot_number = p_input_json->'product'->>'lot_number',
+    npk = p_input_json->'product'->>'npk',
+    registration_number = p_input_json->'product'->>'registration_number',
+    n = (NULLIF(p_input_json->'product'->>'n', '')::float),
+    p = (NULLIF(p_input_json->'product'->>'p', '')::float),
+    k = (NULLIF(p_input_json->'product'->>'k', '')::float),
+    "company_info_id" = company_info_id, 
+    "manufacturer_info_id" = manufacturer_info_id
+    WHERE id = label_info_id_value;
+
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
 
     -- Update metrics related to the label
@@ -514,7 +539,7 @@ BEGIN
     PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
-    PERFORM update_sub_labels(label_info_id_value, p_input_json->'sub_labels');
+    PERFORM update_sub_labels(label_info_id_value, p_input_json);
 
     -- Update the inspection record
     verified_bool := (p_input_json->>'verified')::boolean;
@@ -522,6 +547,7 @@ BEGIN
     UPDATE 
         inspection
     SET 
+        id = inspection_id,
         label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
