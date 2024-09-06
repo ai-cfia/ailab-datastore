@@ -352,7 +352,7 @@ BEGIN
                         fr_values->>i,
                         en_values->>i,
                         p_label_id,
-                        FALSE,  -- not handled
+                        Null,  -- not handled
                         sub_type_rec.id
                     );
                 END LOOP;
