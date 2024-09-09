@@ -250,7 +250,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "company_phone_number": None,
             "manufacturer_name": None,
             "manufacturer_address": None,
-            "manufacturer_website": None,
+            "manufacturer_website": "test-website-to-trigger-adress-not-null-test-case",
             "manufacturer_phone_number": None,
             "fertiliser_name": None,
             "registration_number": None,
