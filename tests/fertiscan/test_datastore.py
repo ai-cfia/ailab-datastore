@@ -285,6 +285,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(validator.is_valid_uuid(inspection_id))
 
         label_data = label.get_label_information_json(self.cursor, label_id)
+        self.assertIsNotNone(label_data)
 
         # Verify getters
         inspection_data = metadata.build_inspection_export(self.cursor, inspection_id,label_id)
