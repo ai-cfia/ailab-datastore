@@ -50,13 +50,13 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     CREATE TABLE "fertiscan_0.0.12"."location" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text,
-    "address" text NOT NULL,
+    "address" text,
     "region_id" uuid References "fertiscan_0.0.12".region(id)
     );    
     
     CREATE TABLE "fertiscan_0.0.12"."organization_information" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "name" text NOT NULL,
+        "name" text,
         "website" text,
         "phone_number" text,
         "location_id" uuid REFERENCES "fertiscan_0.0.12".location(id),
@@ -290,7 +290,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     EXECUTE FUNCTION update_fertilizer_timestamp();
 
     -- Trigger function for the `inspection` table
-    CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".update_inspection_original_dataset_protection()
+    CREATE OR REPLACE FUNCTION update_inspection_original_dataset_protection()
     RETURNS TRIGGER AS $$
     BEGIN
     IF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NULL) THEN
