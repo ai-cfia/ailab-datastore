@@ -50,7 +50,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     CREATE TABLE "fertiscan_0.0.12"."location" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text,
-    "address" text,
+    "address" text NOT NULL,
     "region_id" uuid References "fertiscan_0.0.12".region(id)
     );    
     
@@ -183,7 +183,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "text_content_fr" text NOT NULL DEFAULT '',
         "text_content_en" text NOT NULL DEFAULT '',
         "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.12"."label_information" ("id"),
-        "edited" boolean NOT NULL,
+        "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.12"."sub_type" ("id")
     );
 
