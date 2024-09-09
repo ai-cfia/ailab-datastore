@@ -27,15 +27,14 @@ END IF;
         FROM location
         WHERE location.address ILIKE address_str
         LIMIT 1;
-    END IF;
-
-   
-	IF location_id IS NULL THEN 
-        INSERT INTO location (address)
-        VALUES (
-            address_str
-        )
-        RETURNING id INTO location_id;
+    
+        IF location_id IS NULL THEN 
+            INSERT INTO location (address)
+            VALUES (
+                address_str
+            )
+            RETURNING id INTO location_id;
+        END IF;
     END IF;   
 	INSERT INTO organization_information (name,website,phone_number,location_id)
 	VALUES (
