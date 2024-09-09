@@ -287,8 +287,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         label_id = inspection_dict["product"]["label_id"]
         self.assertTrue(validator.is_valid_uuid(inspection_id))
 
-        label_data = label.get_label_information_json(self.cursor, label_id)
+        # Make sure the manufacturer is created
+        label_data = label.get_label_information(self.cursor, label_id)
         self.assertIsNotNone(label_data)
+        self.assertIsNotNone(label_data[10])
 
         # Verify getters
         inspection_data = metadata.build_inspection_export(
@@ -298,65 +300,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Make sure the inspection data is either a empty array or None
         self.assertTrue(loop_into_empty_dict(inspection_data))
 
-    def test_register_analysis_with_organization_info(self):
-        analysis_with_company_phone = {
-            "company_name": None,
-            "company_address": None,
-            "company_website": None,
-            "company_phone_number": "phone",  # Presence of at least one field
-            "manufacturer_name": None,
-            "manufacturer_address": None,
-            "manufacturer_website": None,
-            "manufacturer_phone_number": None,
-            "fertiliser_name": None,
-            "registration_number": None,
-            "lot_number": None,
-            "weight": [],
-            "density": None,
-            "volume": None,
-            "npk": None,
-            "warranty": None,
-            "cautions_en": [],
-            "instructions_en": [],
-            "micronutrients_en": [],
-            "ingredients_en": [],
-            "specifications_en": [],
-            "first_aid_en": [],
-            "cautions_fr": [],
-            "instructions_fr": [],
-            "micronutrients_fr": [],
-            "ingredients_fr": [],
-            "specifications_fr": [],
-            "first_aid_fr": [],
-            "guaranteed_analysis": [],
-        }
 
-        # Call to format the analysis
-        formatted_analysis = metadata.build_inspection_import(
-            analysis_with_company_phone
-        )
-        picture_set_id = picture.new_picture_set(
-            self.cursor, json.dumps({}), self.user_id
-        )
-
-        inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user_id, picture_set_id, formatted_analysis
-        )
-
-        # Get company and manufacturer data from the inspection_dict
-        company_info = inspection_dict["company"]
-        manufacturer_info = inspection_dict["manufacturer"]
-
-        # Verify the company exists using the company id
-        self.cursor.execute(
-            "SELECT * FROM organization_information WHERE id = %s",
-            (company_info["id"],),
-        )
-        company = self.cursor.fetchone()
-        self.assertIsNotNone(company)
-
-        # Verify that manufacturer was not created using the manufacturer id
-        self.assertIsNone(manufacturer_info["id"])
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
