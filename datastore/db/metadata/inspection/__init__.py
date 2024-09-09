@@ -42,7 +42,7 @@ class OrganizationInformation(BaseModel):
 class Value(BaseModel):
     value: Optional[float] = None
     unit: Optional[str] = None
-    name: str
+    name: Optional[str] = None
     edited: Optional[bool] = False
 
 
@@ -336,9 +336,15 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
 
         # Get all the sub labels
         sub_label_json = sub_label.get_sub_label_json(cursor, label_info_id)
-
-        for key in sub_label_json:
-            SubLabel(**sub_label_json[key])
+        if sub_label_json is None:
+            sub_label_json = {
+                "cautions": {"en": [], "fr": []},
+                "instructions": {"en": [], "fr": []},
+                "first_aid": {"en": [], "fr": []},
+            }
+        else:
+            for key in sub_label_json:
+                SubLabel(**sub_label_json[key])
 
         inspection_json.update(sub_label_json)
         # Get the ingredients
@@ -392,7 +398,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         raise
     except Exception as e:
         raise MetadataFormattingError(
-            "Error InspectionCreationError not created: " + str(e)
+            "Error Inspection Form not created: " + str(e)
         ) from None
 
 

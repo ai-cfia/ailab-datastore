@@ -161,6 +161,19 @@ class test_micronutrient(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(micronutrient_id))
 
+    def test_new_micronutrient_empty(self):
+        with self.assertRaises(nutrients.MicronutrientCreationError):
+            nutrients.new_micronutrient(
+                self.cursor,
+                None,
+                None,
+                None,
+                self.label_information_id,
+                self.language,
+                self.element_id,
+                False,
+            )
+
     def test_get_micronutrient_json(self):
         name_fr = "test-nutriment"
         name_en = "test-nutrient"
@@ -357,6 +370,18 @@ class test_guaranteed_analysis(unittest.TestCase):
             False,
         )
         self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
+
+    def test_new_guaranteed_analysis_empty(self):
+        with self.assertRaises(nutrients.GuaranteedCreationError):
+            nutrients.new_guaranteed_analysis(
+                self.cursor,
+                None,
+                None,
+                None,
+                self.label_information_id,
+                self.element_id,
+                False,
+            )
 
     def test_get_guaranteed_analysis_json(self):
         nutrients.new_guaranteed_analysis(

@@ -45,6 +45,31 @@ if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
 
+def loop_into_empty_dict(dict_data):
+    passing = True
+    for key, value in dict_data.items():
+        if isinstance(value, dict):
+            loop_into_empty_dict(value)
+        elif isinstance(value, list):
+            if len(value) == 0:
+                continue
+            else:
+                passing = False
+        elif isinstance(value, bool):
+            if not value:
+                continue
+            else:
+                passing = False
+        else:
+            if value is None:
+                continue
+            elif validator.is_valid_uuid(value):
+                continue
+            else:
+                passing = False
+    return passing
+
+
 class TestDatastore(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -214,6 +239,60 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(label_dimension[13]), self.nb_weight)
         self.assertEqual(len(label_dimension[14]), 1)
         self.assertEqual(len(label_dimension[15]), 1)
+
+    def test_register_analysis_empty(self):
+        empty_analysis = {
+        "company_name": None,
+        "company_address": None,
+        "company_website": None,
+        "company_phone_number": None,
+        "manufacturer_name": None,
+        "manufacturer_address": None,
+        "manufacturer_website": None,
+        "manufacturer_phone_number": None,
+        "fertiliser_name": None,
+        "registration_number": None,
+        "lot_number": None,
+        "weight": [],
+        "density": None,
+        "volume": None,
+        "npk": None,
+        "warranty": None,
+        "cautions_en": [],
+        "instructions_en": [],
+        "micronutrients_en": [],
+        "ingredients_en": [],
+        "specifications_en": [],
+        "first_aid_en": [],
+        "cautions_fr": [],
+        "instructions_fr": [],
+        "micronutrients_fr": [],
+        "ingredients_fr": [],
+        "specifications_fr": [],
+        "first_aid_fr": [],
+        "guaranteed_analysis": []
+    }
+        formatted_analysis = metadata.build_inspection_import(empty_analysis)
+        picture_set_id = picture.new_picture_set(
+            self.cursor, json.dumps({}), self.user_id
+        )
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+        self.assertTrue(validator.is_valid_uuid(inspection_id))
+
+        label_data = label.get_label_information_json(self.cursor, label_id)
+        self.assertIsNotNone(label_data)
+
+        # Verify getters
+        inspection_data = metadata.build_inspection_export(self.cursor, inspection_id,label_id)
+        inspection_data = json.loads(inspection_data)
+        # Make sure the inspection data is either a empty array or None
+        self.assertTrue(loop_into_empty_dict(inspection_data))
+    
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):

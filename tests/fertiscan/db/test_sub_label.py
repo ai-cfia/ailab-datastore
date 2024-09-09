@@ -158,9 +158,11 @@ class test_sub_label(unittest.TestCase):
         self.assertTrue(self.type_en in sub_label_data.keys())
 
     def test_get_sub_label_not_found(self):
-        with self.assertRaises(sub_label.SubLabelNotFoundError):
-            sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
-
+        data = sub_label.get_sub_label_json(self.cursor, str(uuid.uuid4()))
+        for key in data.keys():
+            for item in data[key]:
+                self.assertEqual(data[key][item], [])
+        
     def test_has_sub_label(self):
         sub_label.new_sub_label(
             self.cursor,

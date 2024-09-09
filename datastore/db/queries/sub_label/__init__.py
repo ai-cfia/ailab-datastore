@@ -117,9 +117,11 @@ def get_sub_label_json(cursor, label_id) -> dict:
     """
     try:
         if not has_sub_label(cursor, label_id):
-            raise SubLabelNotFoundError(
-                "Error: could not get the sub label for label: " + str(label_id)
-            )
+            return {
+                "cautions": {"en": [], "fr": []},
+                "instructions": {"en": [], "fr": []},
+                "first_aid": {"en": [], "fr": []},
+            }
         query = """
             SELECT get_sub_label_json(%s);
             """

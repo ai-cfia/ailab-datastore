@@ -154,7 +154,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.12"."metric" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "value" float NOT NULL,
+    "value" float,
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.12".unit(id),
     "metric_type" "fertiscan_0.0.12".metric_type,
@@ -189,9 +189,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.12"."micronutrient" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
+    "read_name" text,
+    "value" float,
+    "unit" text ,
     "element_id" int REFERENCES "fertiscan_0.0.12".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.12".label_information(id),
     "edited" boolean,
@@ -200,9 +200,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.12"."guaranteed" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
+    "read_name" text,
+    "value" float ,
+    "unit" text ,
     "element_id" int REFERENCES "fertiscan_0.0.12".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.12".label_information(id),
     "edited" boolean
@@ -212,7 +212,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "organic" boolean,
     "active" boolean,
-    "name" text NOT NULL,
+    "name" text,
     "value" float,
     "unit" text,
     "edited" boolean,
