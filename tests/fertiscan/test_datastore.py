@@ -274,6 +274,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "first_aid_fr": [],
             "guaranteed_analysis": [],
         }
+
         formatted_analysis = metadata.build_inspection_import(empty_analysis)
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user_id
