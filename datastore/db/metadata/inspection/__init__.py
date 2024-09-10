@@ -359,39 +359,39 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
                 SubLabel(**sub_label_json[key])
 
         inspection_json.update(sub_label_json)
-        # Get the ingredients
-        ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
+        # # Get the ingredients
+        # ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
 
-        ValuesObjects(**ingredients_json)
+        # ValuesObjects(**ingredients_json)
 
-        inspection_json.update(ingredients_json)
+        # inspection_json.update(ingredients_json)
 
-        # Get the nutrients
-        nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
+        # # Get the nutrients
+        # nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
 
-        ValuesObjects(**nutrients_json)
+        # ValuesObjects(**nutrients_json)
 
-        inspection_json.update(nutrients_json)
+        # inspection_json.update(nutrients_json)
 
         # Get the guaranteed analysis
         guaranteed_analysis_json = nutrients.get_guaranteed_analysis_json(
             cursor, label_info_id
         )
         if guaranteed_analysis_json.get("guaranteed_analysis") is None:
-            guaranteed_analysis_json["guaranteed_analysis"] = []
-        for i in range(len(guaranteed_analysis_json.get("guaranteed_analysis"))):
-            Value(**(guaranteed_analysis_json.get("guaranteed_analysis")[i]))
+            guaranteed_analysis_json["guaranteed_analysis"] = GuaranteedAnalysis().model_dump()
+        else:
+            GuaranteedAnalysis(**guaranteed_analysis_json)
 
         inspection_json.update(guaranteed_analysis_json)
 
-        # Get the specifications
-        specifications_json = specification.get_specification_json(
-            cursor, label_info_id
-        )
+        # # Get the specifications
+        # specifications_json = specification.get_specification_json(
+        #     cursor, label_info_id
+        # )
 
-        Specifications(**(specifications_json.get("specifications")))
+        # Specifications(**(specifications_json.get("specifications")))
 
-        inspection_json.update(specifications_json)
+        # inspection_json.update(specifications_json)
 
         # Verify the inspection object
         inspection_formatted = Inspection(**inspection_json)
