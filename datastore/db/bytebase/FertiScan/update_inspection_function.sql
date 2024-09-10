@@ -346,30 +346,33 @@ BEGIN
     -- Delete existing guaranteed analysis for the given label_id
     DELETE FROM guaranteed WHERE label_id = p_label_id;
 
-    -- Insert new guaranteed analysis
-    FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed)
-    LOOP
-        --CHECK IF ANY OF THE VALUES ARE NOT NULL
-        IF COALESCE(
-            guaranteed_record->>'name', 
-            guaranteed_record->>'value', 
-            guaranteed_record->>'unit',
-            '') <> ''
-        THEN
-            -- Insert each guaranteed analysis record
-            INSERT INTO guaranteed (
-                read_name, value, unit, edited, label_id
-            )
-            VALUES (
-                guaranteed_record->>'name',
-                NULLIF(guaranteed_record->>'value', '')::float,
+	-- Loop through each language ('en' and 'fr')
+    FOR guaranteed_analysis_language  IN SELECT * FROM jsonb_object_keys(input_json->'guaranteed_analysis')
+	LOOP
+		FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis'->guaranteed_analysis_language)
+		LOOP
+            --CHECK IF ANY OF THE VALUES ARE NOT NULL
+            IF COALESCE(
+                guaranteed_record->>'name', 
+                guaranteed_record->>'value', 
                 guaranteed_record->>'unit',
-                FALSE,  -- not handled
-                p_label_id
-            );
-        ELSE
-            RAISE WARNING 'ALL GUARANTEED ANALYSIS VALUES WERE NULL';
-        END IF;
+                '') <> ''
+            THEN
+                -- Insert each guaranteed analysis record
+                INSERT INTO guaranteed (
+                    read_name, value, unit, edited, label_id
+                )
+                VALUES (
+                    guaranteed_record->>'name',
+                    NULLIF(guaranteed_record->>'value', '')::float,
+                    guaranteed_record->>'unit',
+                    FALSE,  -- not handled
+                    p_label_id
+                );
+            ELSE
+                RAISE WARNING 'ALL GUARANTEED ANALYSIS VALUES WERE NULL';
+            END IF;
+        END LOOP;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
@@ -576,6 +579,9 @@ BEGIN
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
+    guaranteed_title = p_input_json->'product'->>'guaranteed_title',
+    guaranteed_titre = p_input_json->'product'->>'guaranteed_titre',
+    title_is_minimum = (p_input_json->'product'->>'title_is_minimum')::boolean,
     "company_info_id" = company_info_id, 
     "manufacturer_info_id" = manufacturer_info_id
     WHERE id = label_info_id_value;
@@ -586,13 +592,13 @@ BEGIN
     PERFORM update_metrics(label_info_id_value, p_input_json->'product'->'metrics');
 
     -- Update specifications related to the label
-    PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
+    -- PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
+    -- PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
-    PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
+    -- PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
 
     -- Update guaranteed analysis related to the label
     PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
