@@ -45,10 +45,12 @@
             }
         },
         "npk": "20-20-20",
-        "warranty": "Guaranteed analysis of nutrients.",
         "n": 20.0,
         "p": 20.0,
-        "k": 20.0
+        "k": 20.0,
+        "guaranteed_title": "Guaranteed Analysis",
+        "guaranteed_titre": "Analyse Garantie",
+        "title_is_minimum": false
     },
     "cautions": {
         "en": [
@@ -72,170 +74,40 @@
             "1. Dissoudre 50g dans 10L d'eau."
         ]
     },
-    "micronutrients": {
-        "en": [
+    "guaranteed_analysis" : {
+        "en" : [
             {
-                "value": 0.1,
-                "unit": "%",
-                "name": "Iron (Fe)",
-                "edited": false
+              "nutrient": "Total Nitrogen (N)",
+              "value": "20",
+              "unit": "%"
             },
             {
-                "value": 0.05,
-                "unit": "%",
-                "name": "Zinc (Zn)",
-                "edited": false
+              "nutrient": "Available Phosphate (P2O5)",
+              "value": "20",
+              "unit": "%"
             },
             {
-                "value": 0.05,
-                "unit": "%",
-                "name": "Manganese (Mn)",
-                "edited": false
+              "nutrient": "Soluble Potash (K2O)",
+              "value": "20",
+              "unit": "%"
             }
-        ],
-        "fr": [
+          ],
+        "fr" : [
             {
-                "value": 0.1,
-                "unit": "%",
-                "name": "Fer (Fe)",
-                "edited": false
+              "nutrient": "Azote total (N)",
+              "value": "20",
+              "unit": "%"
             },
             {
-                "value": 0.05,
-                "unit": "%",
-                "name": "Zinc (Zn)",
-                "edited": false
+              "nutrient": "Phosphate assimilable (P2O5)",
+              "value": "20",
+              "unit": "%"
             },
             {
-                "value": 0.05,
-                "unit": "%",
-                "name": "Mangan\u00e8se (Mn)",
-                "edited": false
+              "nutrient": "Potasse soluble (K2O)",
+              "value": "20",
+              "unit": "%"
             }
         ]
-    },
-    "ingredients": {
-        "en": [
-            {
-                "value": 5.0,
-                "unit": "%",
-                "name": "Bone meal",
-                "edited": false
-            },
-            {
-                "value": 3.0,
-                "unit": "%",
-                "name": "Seaweed extract",
-                "edited": false
-            },
-            {
-                "value": 2.0,
-                "unit": "%",
-                "name": "Humic acid",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Clay",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Sand",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Perlite",
-                "edited": false
-            }
-        ],
-        "fr": [
-            {
-                "value": 5.0,
-                "unit": "%",
-                "name": "Farine d'os",
-                "edited": false
-            },
-            {
-                "value": 3.0,
-                "unit": "%",
-                "name": "Extrait d'algues",
-                "edited": false
-            },
-            {
-                "value": 2.0,
-                "unit": "%",
-                "name": "Acide humique",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Argile",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Sable",
-                "edited": false
-            },
-            {
-                "value": null,
-                "unit": null,
-                "name": "Perlite",
-                "edited": false
-            }
-        ]
-    },
-    "specifications": {
-        "en": [
-            {
-                "humidity": 10.0,
-                "ph": 6.5,
-                "solubility": 100.0,
-                "edited": false
-            }
-        ],
-        "fr": [
-            {
-                "humidity": 10.0,
-                "ph": 6.5,
-                "solubility": 100.0,
-                "edited": false
-            }
-        ]
-    },
-    "first_aid": {
-        "en": [
-            "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
-        ],
-        "fr": [
-            "En cas de contact avec les yeux, rincer imm\u00e9diatement \u00e0 grande eau et consulter un m\u00e9decin."
-        ]
-    },
-    "guaranteed_analysis": [
-        {
-            "value": 20.0,
-            "unit": "%",
-            "name": "Total Nitrogen (N)",
-            "edited": false
-        },
-        {
-            "value": 20.0,
-            "unit": "%",
-            "name": "Available Phosphate (P2O5)",
-            "edited": false
-        },
-        {
-            "value": 20.0,
-            "unit": "%",
-            "name": "Soluble Potash (K2O)",
-            "edited": false
-        }
-    ]
+    }
 }

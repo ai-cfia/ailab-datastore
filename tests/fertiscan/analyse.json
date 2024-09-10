@@ -39,65 +39,6 @@
     "2. Apply every 2 weeks.",
     "3. Store in a cool, dry place."
   ],
-  "micronutrients_en":[
-    {
-      "nutrient":"Iron (Fe)",
-      "value":"0.10",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Zinc (Zn)",
-      "value":"0.05",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Manganese (Mn)",
-      "value":"0.05",
-      "unit":"%"
-    }
-  ],
-  "ingredients_en":[
-    {
-      "nutrient":"Bone meal",
-      "value":"5",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Seaweed extract",
-      "value":"3",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Humic acid",
-      "value":"2",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Clay",
-      "value":"",
-      "unit":""
-    },
-    {
-      "nutrient":"Sand",
-      "value":"",
-      "unit":""
-    },
-    {
-      "nutrient":"Perlite",
-      "value":"",
-      "unit":""
-    }
-  ],
-  "specifications_en":[
-    {
-      "humidity":"10",
-      "ph":"6.5",
-      "solubility":"100"
-    }
-  ],
-  "first_aid_en":[
-    "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
-  ],
   "cautions_fr":[
     "Tenir hors de portée des enfants.",
     "Éviter le contact avec la peau et les yeux."
@@ -107,67 +48,7 @@
     "2. Appliquer toutes les 2 semaines.",
     "3. Conserver dans un endroit frais et sec."
   ],
-  "micronutrients_fr":[
-    {
-      "nutrient":"Fer (Fe)",
-      "value":"0.10",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Zinc (Zn)",
-      "value":"0.05",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Manganèse (Mn)",
-      "value":"0.05",
-      "unit":"%"
-    }
-  ],
-  "ingredients_fr":[
-    {
-      "nutrient":"Farine d'os",
-      "value":"5",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Extrait d'algues",
-      "value":"3",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Acide humique",
-      "value":"2",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Argile",
-      "value":"",
-      "unit":""
-    },
-    {
-      "nutrient":"Sable",
-      "value":"",
-      "unit":""
-    },
-    {
-      "nutrient":"Perlite",
-      "value":"",
-      "unit":""
-    }
-  ],
-  "specifications_fr":[
-    {
-      "humidity":"10",
-      "ph":"6.5",
-      "solubility":"100"
-    }
-  ],
-  "first_aid_fr":[
-    "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."
-  ],
-  
-  "guaranteed_is_minimal": "False",
+  "guaranteed_is_minimal": false,
   "guaranteed_analysis_en": {
     "title": "Guaranteed Analysis",
     "nutrients": [
