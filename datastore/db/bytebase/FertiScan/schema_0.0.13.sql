@@ -314,9 +314,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     -- Insert the default types : [instruction, caution,first_aid, warranty]
     INSERT INTO "fertiscan_0.0.13".sub_type(type_fr,type_en) VALUES
     ('instructions','instructions'),
-    ('mises_en_garde','cautions'),
-    ('premier_soin','first_aid'),
-    ('garanties','warranties');
+    ('mises_en_garde','cautions')
+ --   ('premier_soin','first_aid'), -- We are not using this anymore
+ --   ('garanties','warranties'); -- we are not using this anymore
 end if;
 END
 $do$;
