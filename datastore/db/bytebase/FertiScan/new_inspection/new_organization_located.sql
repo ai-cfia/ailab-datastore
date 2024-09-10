@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".new_organization_info_located(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_organization_info_located(
     name TEXT,
     address_str TEXT,
     website TEXT,

@@ -305,7 +305,8 @@ BEGIN
 					record->>'unit',
 					label_info_id,
 					FALSE,
-					NULL -- We arent handeling element_id yet
+					NULL, -- We arent handeling element_id yet
+					guaranteed_analysis_language::"fertiscan_0.0.13".language
 				);
 			END IF;
 		END LOOP;

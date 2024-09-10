@@ -16,7 +16,9 @@ def new_label_information(
     n: float,
     p: float,
     k: float,
-    warranty,
+    title: str,
+    titre: str,
+    is_minimal: bool,
     company_info_id,
     manufacturer_info_id,
 ):
@@ -31,7 +33,9 @@ def new_label_information(
     - n (float): The n of the label_information.
     - p (float): The p of the label_information.
     - k (float): The k of the label_information.
-    - warranty (str): The warranty of the label_information.
+    - title (str): The english title of the guaranteed analysis.
+    - titre (str): The french title of the guaranteed analysis.
+    - is_minimal (bool): if the tital is minimal for the guaranteed analysis.
     - company_info_id (str): The UUID of the company.
     - manufacturer_info_id (str): The UUID of the manufacturer.
 
@@ -40,7 +44,7 @@ def new_label_information(
     """
     try:
         query = """
-        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s. %s);
             """
         cursor.execute(
             query,
@@ -52,7 +56,9 @@ def new_label_information(
                 n,
                 p,
                 k,
-                warranty,
+                title,
+                titre,
+                is_minimal,
                 company_info_id,
                 manufacturer_info_id,
             ),

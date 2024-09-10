@@ -313,6 +313,7 @@ def new_guaranteed_analysis(
     value,
     unit,
     label_id,
+    language: str,
     element_id: int = None,
     edited: bool = False,
 ):
@@ -333,9 +334,9 @@ def new_guaranteed_analysis(
 
     try:
         query = """
-            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s);
+            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s, %s);
             """
-        cursor.execute(query, (read_name, value, unit, label_id, edited, element_id))
+        cursor.execute(query, (read_name, value, unit, label_id, edited, element_id, language))
         return cursor.fetchone()[0]
     except Exception:
         raise GuaranteedCreationError

@@ -205,6 +205,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "read_name" text,
     "value" float ,
     "unit" text ,
+    "language" "fertiscan_0.0.13".LANGUAGE,
     "element_id" int REFERENCES "fertiscan_0.0.13".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
     "edited" boolean
