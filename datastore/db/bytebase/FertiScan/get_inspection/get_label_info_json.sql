@@ -16,7 +16,6 @@ BEGIN
         n, 
         p, 
         k,
-        warranty, 
         company_info_id,
         manufacturer_info_id
     INTO 
@@ -46,7 +45,6 @@ BEGIN
         'n', record.n,
         'p', record.p,
         'npk', record.npk,
-        'warranty', record.warranty,  
         'lot_number', record.lot_number,
         'registration_number', record.registration_number,
         'verified', verified_bool
