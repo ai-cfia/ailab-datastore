@@ -136,20 +136,12 @@ def build_inspection_import(analysis_form: dict) -> str:
             "density",
             "volume",
             "npk",
-            "warranty",
             "cautions_en",
             "instructions_en",
-            "micronutrients_en",
-            "ingredients_en",
-            "specifications_en",
-            "first_aid_en",
             "cautions_fr",
             "instructions_fr",
-            "micronutrients_fr",
-            "ingredients_fr",
-            "specifications_fr",
-            "first_aid_fr",
-            "guaranteed_analysis",
+            "guaranteed_analysis_fr",
+            "guaranteed_analysis_en"
         ]
         missing_keys = []
         for key in requiered_keys:
