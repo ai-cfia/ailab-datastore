@@ -79,6 +79,9 @@ class ProductInformation(BaseModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
+    guaranteed_title: Optional[str] = None
+    guaranteed_titre: Optional[str] = None
+    guaranteed_is_minimal: Optional[bool] = False
 
 
 class Specification(BaseModel):
@@ -101,11 +104,7 @@ class Inspection(BaseModel):
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
-    micronutrients: ValuesObjects
-    ingredients: ValuesObjects
-    specifications: Specifications
-    first_aid: SubLabel
-    guaranteed_analysis: List[Value]
+    guaranteed_analysis: ValuesObjects
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -194,6 +193,9 @@ def build_inspection_import(analysis_form: dict) -> str:
             p=npk[1],
             k=npk[2],
             verified=False,
+            guaranteed_title=analysis_form.get("guaranteed_title"),
+            guaranteed_titre=analysis_form.get("guaranteed_titre"),
+            guaranteed_is_minimal=analysis_form.get("guaranteed_is_minimal"),
         )
 
         cautions = SubLabel(
@@ -206,68 +208,80 @@ def build_inspection_import(analysis_form: dict) -> str:
             fr=analysis_form.get("instructions_fr", []),
         )
 
-        micro_en: list[Value] = [
-            Value(
-                unit=nutrient.get("unit") or None,
-                value=nutrient.get("value") or None,
-                name=nutrient.get("nutrient"),
-            )
-            for nutrient in analysis_form.get("micronutrients_en", [])
-        ]
-        micro_fr: list[Value] = [
-            Value(
-                unit=nutrient.get("unit") or None,
-                value=nutrient.get("value") or None,
-                name=nutrient.get("nutrient"),
-            )
-            for nutrient in analysis_form.get("micronutrients_fr", [])
-        ]
-        micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
+        # Commented and kept as reference for future implementation, but not used at the moment
+        # micro_en: list[Value] = [
+        #     Value(
+        #         unit=nutrient.get("unit") or None,
+        #         value=nutrient.get("value") or None,
+        #         name=nutrient.get("nutrient"),
+        #     )
+        #     for nutrient in analysis_form.get("micronutrients_en", [])
+        # ]
+        # micro_fr: list[Value] = [
+        #     Value(
+        #         unit=nutrient.get("unit") or None,
+        #         value=nutrient.get("value") or None,
+        #         name=nutrient.get("nutrient"),
+        #     )
+        #     for nutrient in analysis_form.get("micronutrients_fr", [])
+        # ]
+        # micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
 
-        ingredients_en: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_en", [])
-        ]
-        ingredients_fr: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_fr", [])
-        ]
-        ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
+        # ingredients_en: list[Value] = [
+        #     Value(
+        #         unit=ingredient.get("unit") or None,
+        #         value=ingredient.get("value") or None,
+        #         name=ingredient.get("nutrient"),
+        #     )
+        #     for ingredient in analysis_form.get("ingredients_en", [])
+        # ]
+        # ingredients_fr: list[Value] = [
+        #     Value(
+        #         unit=ingredient.get("unit") or None,
+        #         value=ingredient.get("value") or None,
+        #         name=ingredient.get("nutrient"),
+        #     )
+        #     for ingredient in analysis_form.get("ingredients_fr", [])
+        # ]
+        # ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
 
-        specifications = Specifications(
-            en=[
-                Specification(**s)
-                for s in analysis_form.get("specifications_en", [])
-                if any(value is not None for _, value in s.items())
-            ],
-            fr=[
-                Specification(**s)
-                for s in analysis_form.get("specifications_fr", [])
-                if any(value is not None for _, value in s.items())
-            ],
-        )
+        # specifications = Specifications(
+        #     en=[
+        #         Specification(**s)
+        #         for s in analysis_form.get("specifications_en", [])
+        #         if any(value is not None for _, value in s.items())
+        #     ],
+        #     fr=[
+        #         Specification(**s)
+        #         for s in analysis_form.get("specifications_fr", [])
+        #         if any(value is not None for _, value in s.items())
+        #     ],
+        # )
 
-        first_aid = SubLabel(
-            en=analysis_form.get("first_aid_en", []),
-            fr=analysis_form.get("first_aid_fr", []),
-        )
+        # first_aid = SubLabel(
+        #     en=analysis_form.get("first_aid_en", []),
+        #     fr=analysis_form.get("first_aid_fr", []),
+        # )
 
-        guaranteed: list[Value] = [
+        guaranteed_fr: list[Value] = [
             Value(
                 unit=item.get("unit") or None,
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis", [])
+            for item in analysis_form.get("guaranteed_analysis_fr", [])
         ]
+
+        guaranteed_en: list[Value] = [
+            Value(
+                unit=item.get("unit") or None,
+                value=item.get("value") or None,
+                name=item.get("nutrient"),
+            )
+            for item in analysis_form.get("guaranteed_analysis_en", [])
+        ]
+
+        guaranteed = ValuesObjects(en=guaranteed_en, fr=guaranteed_fr)
 
         inspection_formatted = Inspection(
             company=company,
@@ -275,10 +289,6 @@ def build_inspection_import(analysis_form: dict) -> str:
             product=product,
             cautions=cautions,
             instructions=instructions,
-            micronutrients=micronutrients,
-            ingredients=ingredients,
-            specifications=specifications,
-            first_aid=first_aid,
             guaranteed_analysis=guaranteed,
         )
         Inspection(**inspection_formatted.model_dump())
