@@ -337,3 +337,28 @@ class test_inspection_export(unittest.TestCase):
                 all(value is None for value in spec.values()),
                 "Empty specification found in 'fr' list"
             )
+
+class test_inspection_import(unittest.TestCase):
+    def setUp(self):
+
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
+        self.cursor = self.con.cursor()
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
+
+        with open("tests/fertiscan/analyse.json") as f:
+            self.analyse = json.load(f)
+
+        self.user_id = user.register_user(self.cursor, "test-email@email")
+
+        self.picture_set_id = picture.new_picture_set(
+            self.cursor, json.dumps({}), self.user_id
+        )
+
+    def tearDown(self):
+        self.con.rollback()
+        db.end_query(self.con, self.cursor)
+
+    def test_perfect_inspection(self):
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        self.assertIsNotNone(formatted_analysis)

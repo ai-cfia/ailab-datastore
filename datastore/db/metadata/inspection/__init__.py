@@ -81,7 +81,7 @@ class ProductInformation(BaseModel):
     k: float | None = None
     guaranteed_title: Optional[str] = None
     guaranteed_titre: Optional[str] = None
-    guaranteed_is_minimal: Optional[bool] = False
+    guaranteed_analysis_is_minimal: Optional[bool] = False
 
 
 class Specification(BaseModel):
@@ -140,7 +140,8 @@ def build_inspection_import(analysis_form: dict) -> str:
             "cautions_fr",
             "instructions_fr",
             "guaranteed_analysis_fr",
-            "guaranteed_analysis_en"
+            "guaranteed_analysis_en",
+            
         ]
         missing_keys = []
         for key in requiered_keys:
@@ -193,9 +194,9 @@ def build_inspection_import(analysis_form: dict) -> str:
             p=npk[1],
             k=npk[2],
             verified=False,
-            guaranteed_title=analysis_form.get("guaranteed_title"),
-            guaranteed_titre=analysis_form.get("guaranteed_titre"),
-            guaranteed_is_minimal=analysis_form.get("guaranteed_is_minimal"),
+            guaranteed_title = analysis_form.get("guaranteed_analysis_en", {}).get("title"),
+            guaranteed_titre = analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
+            guaranteed_analysis_is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
         )
 
         cautions = SubLabel(
@@ -269,7 +270,7 @@ def build_inspection_import(analysis_form: dict) -> str:
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis_fr", [])
+            for item in analysis_form.get("guaranteed_analysis_fr", []).get("nutrients", [])
         ]
 
         guaranteed_en: list[Value] = [
@@ -278,7 +279,7 @@ def build_inspection_import(analysis_form: dict) -> str:
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis_en", [])
+            for item in analysis_form.get("guaranteed_analysis_en", []).get("nutrients", [])
         ]
 
         guaranteed = ValuesObjects(en=guaranteed_en, fr=guaranteed_fr)

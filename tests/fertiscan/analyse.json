@@ -166,21 +166,46 @@
   "first_aid_fr":[
     "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."
   ],
-  "guaranteed_analysis":[
-    {
-      "nutrient":"Total Nitrogen (N)",
-      "value":"20",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Available Phosphate (P2O5)",
-      "value":"20",
-      "unit":"%"
-    },
-    {
-      "nutrient":"Soluble Potash (K2O)",
-      "value":"20",
-      "unit":"%"
-    }
-  ]
+  
+  "guaranteed_is_minimal": "False",
+  "guaranteed_analysis_en": {
+    "title": "Guaranteed Analysis",
+    "nutrients": [
+      {
+        "nutrient": "Total Nitrogen (N)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "nutrient": "Available Phosphate (P2O5)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "nutrient": "Soluble Potash (K2O)",
+        "value": "20",
+        "unit": "%"
+      }
+    ]
+  },
+  "guaranteed_analysis_fr": {
+    "title": "Analyse Garantie",
+    "nutrients": [
+      {
+        "nutrient": "Azote total (N)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "nutrient": "Phosphate assimilable (P2O5)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "nutrient": "Potasse soluble (K2O)",
+        "value": "20",
+        "unit": "%"
+      }
+    ]
+  }
 }
