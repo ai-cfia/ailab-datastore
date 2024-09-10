@@ -579,9 +579,9 @@ BEGIN
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
-    guaranteed_title = p_input_json->'product'->>'guaranteed_title',
-    guaranteed_titre = p_input_json->'product'->>'guaranteed_titre',
-    title_is_minimum = (p_input_json->'product'->>'title_is_minimum')::boolean,
+    guaranteed_title = p_input_json->'guaranteed_analysis'->>'title',
+    guaranteed_titre = p_input_json->'guaranteed_analysis'->>'titre',
+    title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
     "manufacturer_info_id" = manufacturer_info_id
     WHERE id = label_info_id_value;

@@ -48,7 +48,7 @@
     "2. Appliquer toutes les 2 semaines.",
     "3. Conserver dans un endroit frais et sec."
   ],
-  "guaranteed_is_minimal": false,
+  "guaranteed_analysis_is_minimal": false,
   "guaranteed_analysis_en": {
     "title": "Guaranteed Analysis",
     "nutrients": [

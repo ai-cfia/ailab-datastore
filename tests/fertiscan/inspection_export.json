@@ -47,10 +47,7 @@
         "npk": "20-20-20",
         "n": 20.0,
         "p": 20.0,
-        "k": 20.0,
-        "guaranteed_title": "Guaranteed Analysis",
-        "guaranteed_titre": "Analyse Garantie",
-        "title_is_minimum": false
+        "k": 20.0
     },
     "cautions": {
         "en": [
@@ -75,6 +72,9 @@
         ]
     },
     "guaranteed_analysis" : {
+        "title": "Guaranteed Analysis",
+        "titre": "Analyse Garantie",
+        "is_minimal" : false,
         "en" : [
             {
               "nutrient": "Total Nitrogen (N)",

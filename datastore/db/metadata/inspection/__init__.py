@@ -45,6 +45,12 @@ class Value(BaseModel):
     name: Optional[str] = None
     edited: Optional[bool] = False
 
+class GuaranteedAnalysis(BaseModel):
+    title: Optional[str] = None
+    titre: Optional[str] = None
+    is_minimal: Optional[bool] = False
+    en: List[Value] = []
+    fr: List[Value] = []
 
 class ValuesObjects(BaseModel):
     en: List[Value] = []
@@ -79,9 +85,6 @@ class ProductInformation(BaseModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
-    guaranteed_title: Optional[str] = None
-    guaranteed_titre: Optional[str] = None
-    guaranteed_analysis_is_minimal: Optional[bool] = False
 
 
 class Specification(BaseModel):
@@ -141,7 +144,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             "instructions_fr",
             "guaranteed_analysis_fr",
             "guaranteed_analysis_en",
-            
+            "guaranteed_analysis_is_minimal",
         ]
         missing_keys = []
         for key in requiered_keys:
@@ -282,7 +285,13 @@ def build_inspection_import(analysis_form: dict) -> str:
             for item in analysis_form.get("guaranteed_analysis_en", []).get("nutrients", [])
         ]
 
-        guaranteed = ValuesObjects(en=guaranteed_en, fr=guaranteed_fr)
+        guaranteed = GuaranteedAnalysis(
+            title= analysis_form.get("guaranteed_analysis_en", {}).get("title"),
+            titre= analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
+            is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
+            en=guaranteed_en,
+            fr=guaranteed_fr,
+        )
 
         inspection_formatted = Inspection(
             company=company,
