@@ -277,11 +277,11 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         formatted_analysis = metadata.build_inspection_import(empty_analysis)
         picture_set_id = picture.new_picture_set(
-            self.cursor, json.dumps({}), self.user_id
+            self.cursor, json.dumps({}), self.user.id
         )
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user_id, picture_set_id, formatted_analysis
+            self.cursor, self.user.id, picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
         label_id = inspection_dict["product"]["label_id"]
@@ -413,7 +413,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             fertiscan.register_analysis(
                 self.cursor,
                 self.container_client,
-                self.user_id,
+                self.user.id,
                 [self.pic_encoded, self.pic_encoded],
                 self.analysis_json,
             )
@@ -480,7 +480,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         asyncio.run(
             fertiscan.update_inspection(
-                self.cursor, inspection_id, self.user_id, analysis
+                self.cursor, inspection_id, self.user.id, analysis
             )
         )
 
@@ -565,7 +565,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
         asyncio.run(
             fertiscan.update_inspection(
-                self.cursor, inspection_id, self.user_id, analysis
+                self.cursor, inspection_id, self.user.id, analysis
             )
         )
 

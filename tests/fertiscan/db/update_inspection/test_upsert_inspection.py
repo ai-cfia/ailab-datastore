@@ -1,5 +1,6 @@
 import os
 import unittest
+import uuid
 
 import psycopg
 from dotenv import load_dotenv
@@ -50,7 +51,7 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Insert a new inspection with minimal required fields
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, False, None),
+            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
         )
         inspection_id = self.cursor.fetchone()[0]
 
@@ -75,7 +76,7 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Insert a new inspection first
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, False, None),
+            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
         )
         inspection_id = self.cursor.fetchone()[0]
 
@@ -102,7 +103,7 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Test handling of null values in optional fields
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, True, None),
+            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, True, None),
         )
         inspection_id = self.cursor.fetchone()[0]
 

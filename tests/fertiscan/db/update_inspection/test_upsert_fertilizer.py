@@ -3,6 +3,7 @@ import unittest
 
 import psycopg
 from dotenv import load_dotenv
+import uuid
 
 load_dotenv()
 
@@ -70,7 +71,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         # Insert an inspection record
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, False, None),
+            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
         )
         self.inspection_id = self.cursor.fetchone()[0]
 

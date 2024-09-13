@@ -51,7 +51,7 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
                 verified
                 )
             VALUES 
-                (%s, %s, %s, NULL)
+                (%s, %s, %s)
             RETURNING 
                 id
             """
