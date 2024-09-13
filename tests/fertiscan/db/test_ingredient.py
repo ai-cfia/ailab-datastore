@@ -72,6 +72,20 @@ class test_ingredient(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(ingredient_id))
 
+    def test_new_ingredient_empty(self):
+        with self.assertRaises(ingredient.IngredientCreationError):
+            ingredient.new_ingredient(
+                self.cursor,
+                None,
+                None,
+                None,
+                None,
+                self.language,
+                False,
+                False,
+                False,
+            )
+
     def test_get_ingredient_json(self):
         nom = "nom_ingredient"
         name = "ingredient_name"

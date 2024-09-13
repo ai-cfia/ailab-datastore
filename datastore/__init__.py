@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class UserAlreadyExistsError(Exception):
     pass
 
@@ -107,13 +108,11 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
     except ContainerCreationError:
         raise
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        # print(e)
+        raise Exception("Datastore Unhandled Error " + str(e))
 
 
-async def get_user_container_client(
-    user_id, storage_url, account, key, tier="user"
-):
+async def get_user_container_client(user_id, storage_url, account, key, tier="user"):
     """
     Get the container client of a user
 
@@ -182,7 +181,8 @@ async def create_picture_set(
         raise e
     except Exception:
         raise BlobUploadError("An error occured during the upload of the picture set")
-    
+
+
 async def get_picture_sets_info(cursor, user_id: str):
     """This function retrieves the picture sets names and number of pictures from the database.
 
@@ -202,7 +202,8 @@ async def get_picture_sets_info(cursor, user_id: str):
         result[str(picture_set_id)] = [picture_set_name, nb_picture]
     return result
 
-async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_client):
+
+async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_client):
     """
     This function retrieves the pictures of a picture set from the database.
     """
@@ -218,23 +219,31 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
                 f"Picture set not found based on the given id: {picture_set_id}"
             )
         # Check user is owner of the picture set
-        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != str(user_id):
-            raise UserNotOwnerError(    
+        if str(picture.get_picture_set_owner_id(cursor, picture_set_id)) != str(
+            user_id
+        ):
+            raise UserNotOwnerError(
                 f"User can't access this folder, user uuid :{user_id}, folder name : {picture_set_id}"
             )
         picture_set_name = picture.get_picture_set_name(cursor, picture_set_id)
         # Get the pictures
         pictures = picture.get_picture_set_pictures(cursor, picture_set_id)
         result = []
-        if len(pictures)==0:
+        if len(pictures) == 0:
             return result
-        elif len(pictures)!= await azure_storage.get_image_count(container_client, picture_set_name):
-            raise Warning("The number of pictures in the database '" + str(len(pictures)) + "' does not match the number of pictures in the blob storage")
+        elif len(pictures) != await azure_storage.get_image_count(
+            container_client, picture_set_name
+        ):
+            raise Warning(
+                "The number of pictures in the database '"
+                + str(len(pictures))
+                + "' does not match the number of pictures in the blob storage"
+            )
         for pic in pictures:
             pic_id = pic[0]
             pic_metadata = pic[1]
             pic_metadata["id"] = pic_id
-            if "link" in  pic_metadata:
+            if "link" in pic_metadata:
                 blob_link = pic_metadata["link"]
             else:
                 blob_link = f"{picture_set_name}/{pic_id}"
@@ -250,8 +259,9 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id,container_cli
     ) as e:
         raise e
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        # print(e)
+        raise Exception("Datastore Unhandled Error " + str(e))
+
 
 async def delete_picture_set_permanently(
     cursor, user_id, picture_set_id, container_client
@@ -302,8 +312,9 @@ async def delete_picture_set_permanently(
     ) as e:
         raise e
     except Exception as e:
-        print(e)
-        raise Exception("Datastore Unhandled Error")
+        # print(e)
+        raise Exception("Datastore Unhandled Error " + str(e))
+
 
 async def upload_pictures(
     cursor, user_id, hashed_pictures, container_client, picture_set_id=None
@@ -324,7 +335,9 @@ async def upload_pictures(
                 f"User not found based on the given id: {user_id}"
             )
 
-        empty_picture = data_picture_set.build_picture_set(user_id, len(hashed_pictures))
+        empty_picture = data_picture_set.build_picture_set(
+            user_id, len(hashed_pictures)
+        )
 
         default_picture_set = str(user.get_default_picture_set(cursor, user_id))
         if picture_set_id is None or str(picture_set_id) == default_picture_set:
@@ -345,7 +358,11 @@ async def upload_pictures(
             )
             # Upload the picture to the Blob Storage
             response = await azure_storage.upload_image(
-                container_client, str(folder_name), picture_set_id, picture_hash, picture_id
+                container_client,
+                str(folder_name),
+                picture_set_id,
+                picture_hash,
+                picture_id,
             )
             # Update the picture metadata in the DB
             data = {
@@ -356,7 +373,9 @@ async def upload_pictures(
             if not response:
                 raise BlobUploadError("Error uploading the picture")
 
-            picture.update_picture_metadata(cursor, picture_id, json.dumps(data), len(hashed_pictures))
+            picture.update_picture_metadata(
+                cursor, picture_id, json.dumps(data), len(hashed_pictures)
+            )
             pic_ids.append(picture_id)
         return pic_ids
     except BlobUploadError or azure_storage.UploadImageError:
@@ -365,4 +384,4 @@ async def upload_pictures(
         raise
     except Exception as e:
         print(e)
-        raise Exception("Datastore Unhandled Error")
+        raise Exception("Datastore Unhandled Error " + str(e))

@@ -16,6 +16,9 @@ DECLARE
     record RECORD;
     _id uuid;
 BEGIN
+    IF COALESCE(name, value::text, read_unit,'') = '' THEN
+        RAISE EXCEPTION 'ALL of the input parameters are null';
+    END IF;
     INSERT INTO ingredient (
         organic, 
         active, 

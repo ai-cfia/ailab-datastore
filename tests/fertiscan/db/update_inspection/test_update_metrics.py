@@ -3,6 +3,7 @@ import os
 import unittest
 
 import psycopg
+import datastore.db.queries.label as label
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,21 +58,19 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         )
         self.company_info_id = self.cursor.fetchone()[0]
 
-        sample_label_info = json.dumps(
-            {
-                "lot_number": "L123456789",
-                "npk": "10-20-30",
-                "registration_number": "R123456",
-                "n": 10.0,
-                "p": 20.0,
-                "k": 30.0,
-            }
+        self.label_id = label.new_label_information(
+            self.cursor,
+            "test-label",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "test-warranty",
+            self.company_info_id,
+            self.company_info_id,
         )
-        self.cursor.execute(
-            'SELECT upsert_label_information(%s, %s, %s);',
-            (sample_label_info, self.company_info_id, self.company_info_id),
-        )
-        self.label_id = self.cursor.fetchone()[0]
 
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test

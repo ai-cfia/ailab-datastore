@@ -100,6 +100,17 @@ class test_metric(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(metric_id))
 
+    def test_new_metric_empty(self):
+        with self.assertRaises(metric.MetricCreationError):
+            metric.new_metric(
+                self.cursor,
+                None,
+                None,
+                self.label_id,
+                self.metric_type,
+                False,
+            )
+
     def test_new_metric_new_unit(self):
         unit = "milli-new-unite"
         metric_id = metric.new_metric(

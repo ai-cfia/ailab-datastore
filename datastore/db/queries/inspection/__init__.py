@@ -48,8 +48,8 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
             INSERT INTO inspection (
                 inspector_id,
                 picture_set_id,
-                verified,
-                original_dataset)
+                verified
+                )
             VALUES 
                 (%s, %s, %s, NULL)
             RETURNING 
@@ -170,6 +170,33 @@ def get_inspection(cursor, inspection_id):
                 inspection
             WHERE 
                 id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_inspection_original_dataset(cursor, inspection_id):
+    """
+    This function gets the inspection from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The inspection.
+    """
+
+    try:
+        query = """
+            SELECT 
+                original_dataset
+            FROM 
+                inspection_factial
+            WHERE 
+                inspection_id = %s
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
@@ -427,3 +454,38 @@ def delete_inspection(
         raise InspectionDeleteError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
+
+
+def get_inspection_factual(cursor, inspection_id):
+    """
+    This function gets the inspection from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The inspection.
+    """
+    if not is_a_inspection_id(cursor, inspection_id):
+        raise InspectionNotFoundError(f"Inspection with id {inspection_id} not found")
+    try:
+        query = """
+            SELECT 
+                inspection_id,
+                inspector_id,
+                label_info_id,
+                time_id,
+                sample_id,
+                company_id,
+                manufacturer_id,
+                picture_set_id
+            FROM 
+                inspection_factual
+            WHERE 
+                inspection_id = %s
+            """
+        cursor.execute(query, (inspection_id,))
+        return cursor.fetchone()
+    except Exception as e:
+        raise Exception("Datastore.db.inspection unhandeled error" + e.__str__())

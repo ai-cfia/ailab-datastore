@@ -161,7 +161,8 @@ def get_all_specifications(cursor, label_id):
                 humidity,
                 ph,
                 solubility,
-                edited
+                edited,
+                language
             FROM 
                 specification
             WHERE 

@@ -6,9 +6,13 @@ RETURNS uuid AS $$
 DECLARE
     new_location_id uuid;
 BEGIN
+    IF address IS NULL THEN
+        RAISE EXCEPTION 'Address cannot be null';
+        RETURN NULL;
+    END IF;
     -- Upsert the location
     INSERT INTO location (id, address)
-    VALUES (COALESCE(location_id, uuid_generate_v4()), address)
+    VALUES (COALESCE(location_id, public.uuid_generate_v4()), address)
     ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
     DO UPDATE SET address = EXCLUDED.address
     RETURNING id INTO new_location_id;
@@ -24,23 +28,29 @@ RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
     location_id uuid;
+    address_str text;
 BEGIN
     -- Skip processing if the input JSON object is empty or null
     IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
         RETURN NULL;
     END IF;
+    address_str := input_org_info->>'address';
 
-    -- Fetch location_id from the address if it exists
-    SELECT id INTO location_id
-    FROM location
-    WHERE address = input_org_info->>'address'
-    LIMIT 1;
-
-    -- Use upsert_location to insert or update the location
-    location_id := upsert_location(location_id, input_org_info->>'address');
+    -- CHECK IF ADRESS IS NULL
+    IF address_str IS NULL THEN
+        RAISE WARNING 'Address cannot be null';
+    ELSE 
+        -- Check if organization location exists by address
+        SELECT id INTO location_id
+        FROM location
+        WHERE location.address ILIKE address_str
+        LIMIT 1;
+            -- Use upsert_location to insert or update the location
+        location_id := upsert_location(location_id, address_str);
+    END IF;
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
-    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, uuid_generate_v4());
+    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
     -- Upsert organization information
     INSERT INTO organization_information (id, name, website, phone_number, location_id)
@@ -74,7 +84,7 @@ DECLARE
     label_id uuid;
 BEGIN
     -- Extract or generate the label ID
-    label_id := COALESCE(NULLIF(input_label->>'label_id', '')::uuid, uuid_generate_v4());
+    label_id := NULLIF(input_label->>'label_id', '');
 
     -- Upsert label information
     INSERT INTO label_information (
@@ -121,6 +131,7 @@ DECLARE
     metric_value float;
     metric_unit text;
     unit_id uuid;
+    edited_value boolean;
 BEGIN
     -- Delete existing metrics for the given label_id
     DELETE FROM metric WHERE label_id = p_label_id;
@@ -131,18 +142,23 @@ BEGIN
         LOOP
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
             
             -- Proceed only if the value is not NULL
-            IF metric_value IS NOT NULL THEN
-                -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
-                IF unit_id IS NULL THEN
-                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+            IF (metric_value IS NOT NULL) AND (metric_unit IS NOT NULL) THEN
+                -- Check if the metric unit is null
+                IF metric_unit IS NULL THEN
+                    RAISE WARNING 'Metric unit is null';
+                ELSE
+                    -- Fetch or insert the unit ID
+                    SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
+                    IF unit_id IS NULL THEN
+                        INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    END IF;
                 END IF;
-
                 -- Insert metric record for weight
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id);
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, 'weight'::metric_type, p_label_id,edited_value);
             END IF;
         END LOOP;
     END IF;
@@ -154,18 +170,22 @@ BEGIN
             metric_record := metrics->metric_type;
             metric_value := NULLIF(metric_record->>'value', '')::float;
             metric_unit := metric_record->>'unit';
-
-            -- Proceed only if the value is not NULL
-            IF metric_value IS NOT NULL THEN
-                -- Fetch or insert the unit ID
-                SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
-                IF unit_id IS NULL THEN
-                    INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+            edited_value := COALESCE((metric_record->>'edited')::boolean, FALSE);
+                        -- Proceed only if the value is not NULL
+            IF (metric_value IS NOT NULL) AND (metric_unit IS NOT NULL) THEN
+                -- Check if the metric unit is null
+                IF metric_unit IS NULL THEN
+                    RAISE WARNING 'Metric unit is null';
+                ELSE
+                    -- Fetch or insert the unit ID
+                    SELECT id INTO unit_id FROM unit WHERE unit = metric_unit LIMIT 1;
+                    IF unit_id IS NULL THEN
+                        INSERT INTO unit (unit) VALUES (metric_unit) RETURNING id INTO unit_id;
+                    END IF;
                 END IF;
-
-                -- Insert metric record
-                INSERT INTO metric (id, value, unit_id, metric_type, label_id)
-                VALUES (uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id);
+                -- Insert metric record for weight
+                INSERT INTO metric (id, value, unit_id, metric_type, label_id,edited)
+                VALUES (public.uuid_generate_v4(), metric_value, unit_id, metric_type::metric_type, p_label_id,edited_value);
             END IF;
         END IF;
     END LOOP;
@@ -192,18 +212,28 @@ BEGIN
     LOOP
         FOR spec_record IN SELECT * FROM jsonb_array_elements(new_specifications -> spec_language)
         LOOP
-            -- Insert each specification record
-            INSERT INTO specification (
-                humidity, ph, solubility, edited, label_id, language
-            )
-            VALUES (
-                (spec_record->>'humidity')::float,
-                (spec_record->>'ph')::float,
-                (spec_record->>'solubility')::float,
-                FALSE,  -- not handled
-                p_label_id,
-                spec_language::language
-            );
+            -- CHECK IF ANY OF THE VALUES ARE NOT NULL
+            IF COALESCE(
+                spec_record->>'humidity', 
+                spec_record->>'ph', 
+                spec_record->>'solubility',
+                '') <> ''
+            THEN
+                -- Insert each specification record
+                INSERT INTO specification (
+                    humidity, ph, solubility, edited, label_id, language
+                )
+                VALUES (
+                    (spec_record->>'humidity')::float,
+                    (spec_record->>'ph')::float,
+                    (spec_record->>'solubility')::float,
+                    COALESCE(spec_record->>'edited','False')::boolean,
+                    p_label_id,
+                    spec_language::language
+                );
+            ELSE
+                RAISE WARNING 'ALL SPECIFICATION VALUES WERE NULL';
+            END IF;
         END LOOP;
     END LOOP;
 END;
@@ -228,20 +258,30 @@ BEGIN
     LOOP
         FOR ingredient_record IN SELECT * FROM jsonb_array_elements(new_ingredients -> ingredient_language)
         LOOP
-            -- Insert each ingredient record
-            INSERT INTO ingredient (
-                organic, active, name, value, unit, edited, label_id, language
-            )
-            VALUES (
-                NULL, -- not yet handled
-                NULL, -- not yet handled
-                ingredient_record->>'name',
-                NULLIF(ingredient_record->>'value', '')::float,
+            -- CHECK IF ANY OF THE VALUES ARE NOT NULL
+            IF COALESCE(
+                ingredient_record->>'name', 
+                ingredient_record->>'value', 
                 ingredient_record->>'unit',
-                FALSE, -- not yet handled
-                p_label_id,
-                ingredient_language::language
-            );
+                '') <> ''
+            THEN
+                -- Insert each ingredient record
+                INSERT INTO ingredient (
+                    organic, active, name, value, unit, edited, label_id, language
+                )
+                VALUES (
+                    NULL, -- not yet handled
+                    NULL, -- not yet handled
+                    ingredient_record->>'name',
+                    NULLIF(ingredient_record->>'value', '')::float,
+                    ingredient_record->>'unit',
+                    FALSE, -- not yet handled
+                    p_label_id,
+                    ingredient_language::language
+                );
+            ELSE
+                RAISE WARNING 'ALL INGREDIENT VALUES WERE NULL';
+            END IF;
         END LOOP;
     END LOOP;
 END;
@@ -266,18 +306,28 @@ BEGIN
     LOOP
         FOR nutrient_record IN SELECT * FROM jsonb_array_elements(new_micronutrients -> nutrient_language)
         LOOP
-            -- Insert each micronutrient record
-            INSERT INTO micronutrient (
-                read_name, value, unit, edited, label_id, language
-            )
-            VALUES (
-                nutrient_record->>'name',
-                NULLIF(nutrient_record->>'value', '')::float,
+            -- CHECK IF ANY OF THE VALUES ARE NOT NULL
+            IF COALESCE(
+                nutrient_record->>'name', 
+                nutrient_record->>'value', 
                 nutrient_record->>'unit',
-                FALSE,  -- not handled
-                p_label_id,
-                nutrient_language::language
-            );
+                '') <> ''
+            THEN
+                -- Insert each micronutrient record
+                INSERT INTO micronutrient (
+                    read_name, value, unit, edited, label_id, language
+                )
+                VALUES (
+                    nutrient_record->>'name',
+                    NULLIF(nutrient_record->>'value', '')::float,
+                    nutrient_record->>'unit',
+                    FALSE,  -- not handled
+                    p_label_id,
+                    nutrient_language::language
+                );
+            ELSE
+                RAISE WARNING 'ALL MICRONUTRIENT VALUES WERE NULL';
+            END IF;
         END LOOP;
     END LOOP;
 END;
@@ -299,17 +349,27 @@ BEGIN
     -- Insert new guaranteed analysis
     FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed)
     LOOP
-        -- Insert each guaranteed analysis record
-        INSERT INTO guaranteed (
-            read_name, value, unit, edited, label_id
-        )
-        VALUES (
-            guaranteed_record->>'name',
-            NULLIF(guaranteed_record->>'value', '')::float,
+        --CHECK IF ANY OF THE VALUES ARE NOT NULL
+        IF COALESCE(
+            guaranteed_record->>'name', 
+            guaranteed_record->>'value', 
             guaranteed_record->>'unit',
-            FALSE,  -- not handled
-            p_label_id
-        );
+            '') <> ''
+        THEN
+            -- Insert each guaranteed analysis record
+            INSERT INTO guaranteed (
+                read_name, value, unit, edited, label_id
+            )
+            VALUES (
+                guaranteed_record->>'name',
+                NULLIF(guaranteed_record->>'value', '')::float,
+                guaranteed_record->>'unit',
+                FALSE,  -- not handled
+                p_label_id
+            );
+        ELSE
+            RAISE WARNING 'ALL GUARANTEED ANALYSIS VALUES WERE NULL';
+        END IF;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
@@ -336,25 +396,28 @@ BEGIN
         -- Extract the French and English arrays for the current sub_type
         fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
         en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        
-        -- Ensure both arrays are of the same length
-        IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-            FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-            LOOP
-                -- Insert sub label record
-                INSERT INTO sub_label (
-                    text_content_fr, text_content_en, label_id, edited, sub_type_id
-                )
-                VALUES (
-                    fr_values->>i,
-                    en_values->>i,
-                    p_label_id,
-                    FALSE,  -- not handled
-                    sub_type_rec.id
-                );
-            END LOOP;
+        If fr_values IS NULL OR en_values IS NULL THEN
+            RAISE warning 'Sub-labels for type % are missing', sub_type_rec.type_en;
         ELSE
-            RAISE NOTICE 'Mismatch in number of French and English sub-labels for type %', sub_type_rec.type_en;
+            -- Ensure both arrays are of the same length
+            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
+                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
+                LOOP
+                    -- Insert sub label record
+                    INSERT INTO sub_label (
+                        text_content_fr, text_content_en, label_id, edited, sub_type_id
+                    )
+                    VALUES (
+                        fr_values->>i,
+                        en_values->>i,
+                        p_label_id,
+                        Null,  -- not handled
+                        sub_type_rec.id
+                    );
+                END LOOP;
+            ELSE
+                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
+            END IF;
         END IF;
     END LOOP;
 END;
@@ -375,8 +438,12 @@ RETURNS uuid AS $$
 DECLARE
     inspection_id uuid;
 BEGIN
+
+    IF p_inspection_id IS NULL THEN 
+        RAISE EXCEPTION 'Inspection ID is required';
+    END IF;
     -- Use provided inspection_id or generate a new one if not provided
-    inspection_id := COALESCE(p_inspection_id, uuid_generate_v4());
+    inspection_id := p_inspection_id;
 
     -- Upsert inspection information
     INSERT INTO inspection (
@@ -451,6 +518,7 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_inspection(
     p_input_json jsonb
 )
 RETURNS jsonb AS $$
+#variable_conflict use_variable
 DECLARE
     inspection_id uuid := p_inspection_id;
     json_inspection_id uuid;
@@ -478,6 +546,14 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized: Inspector ID mismatch or inspection not found';
     END IF;
 
+    -- Check if the provided label_id matches the existing one
+    SELECT label_info_id INTO label_info_id_value
+    FROM inspection
+    WHERE id = p_inspection_id;
+    IF label_info_id_value IS NULL OR label_info_id_value != (p_input_json->'product'->>'label_id')::uuid THEN
+        RAISE EXCEPTION 'Label ID mismatch or inspection not found';
+    END IF;
+
     -- Upsert company information and get the ID
     company_info_id := upsert_organization_info(p_input_json->'company');
     IF company_info_id IS NOT NULL THEN
@@ -490,12 +566,21 @@ BEGIN
         updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
     END IF;
 
-    -- Upsert label information and get the ID
-    label_info_id_value := upsert_label_information(
-        p_input_json->'product',
-        company_info_id,
-        manufacturer_info_id
-    );
+    -- update Label information
+    UPDATE label_information
+    SET
+    id = label_info_id_value,
+    product_name = p_input_json->'product'->>'name', 
+    lot_number = p_input_json->'product'->>'lot_number',
+    npk = p_input_json->'product'->>'npk',
+    registration_number = p_input_json->'product'->>'registration_number',
+    n = (NULLIF(p_input_json->'product'->>'n', '')::float),
+    p = (NULLIF(p_input_json->'product'->>'p', '')::float),
+    k = (NULLIF(p_input_json->'product'->>'k', '')::float),
+    "company_info_id" = company_info_id, 
+    "manufacturer_info_id" = manufacturer_info_id
+    WHERE id = label_info_id_value;
+
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
 
     -- Update metrics related to the label
@@ -514,7 +599,7 @@ BEGIN
     PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
-    PERFORM update_sub_labels(label_info_id_value, p_input_json->'sub_labels');
+    PERFORM update_sub_labels(label_info_id_value, p_input_json);
 
     -- Update the inspection record
     verified_bool := (p_input_json->>'verified')::boolean;
@@ -522,6 +607,7 @@ BEGIN
     UPDATE 
         inspection
     SET 
+        id = inspection_id,
         label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,

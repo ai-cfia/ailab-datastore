@@ -15,6 +15,9 @@ DECLARE
     record RECORD;
     _id uuid;
 BEGIN
+	IF COALESCE(name, value::text, unit,'') = '' THEN
+		RAISE EXCEPTION 'ALL of the input parameters are null';
+	END IF;
 	INSERT INTO micronutrient (read_name, value, unit, edited, label_id,language,element_id)
 	VALUES (
 		name,

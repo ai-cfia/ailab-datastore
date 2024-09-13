@@ -56,7 +56,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     
     CREATE TABLE "fertiscan_0.0.12"."organization_information" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "name" text NOT NULL,
+        "name" text,
         "website" text,
         "phone_number" text,
         "location_id" uuid REFERENCES "fertiscan_0.0.12".location(id),
@@ -145,7 +145,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "company_id" uuid,
     "manufacturer_id" uuid,
     "picture_set_id" uuid,
-    "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP
+    "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP,
+    "original_dataset" json
     );
 
 
@@ -153,7 +154,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.12"."metric" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "value" float NOT NULL,
+    "value" float,
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.12".unit(id),
     "metric_type" "fertiscan_0.0.12".metric_type,
@@ -182,15 +183,15 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "text_content_fr" text NOT NULL DEFAULT '',
         "text_content_en" text NOT NULL DEFAULT '',
         "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.12"."label_information" ("id"),
-        "edited" boolean NOT NULL,
+        "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.12"."sub_type" ("id")
     );
 
     CREATE TABLE "fertiscan_0.0.12"."micronutrient" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
+    "read_name" text,
+    "value" float,
+    "unit" text ,
     "element_id" int REFERENCES "fertiscan_0.0.12".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.12".label_information(id),
     "edited" boolean,
@@ -199,9 +200,9 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.12"."guaranteed" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "read_name" text NOT NULL,
-    "value" float NOT NULL,
-    "unit" text NOT NULL,
+    "read_name" text,
+    "value" float ,
+    "unit" text ,
     "element_id" int REFERENCES "fertiscan_0.0.12".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.12".label_information(id),
     "edited" boolean
@@ -211,7 +212,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "organic" boolean,
     "active" boolean,
-    "name" text NOT NULL,
+    "name" text,
     "value" float,
     "unit" text,
     "edited" boolean,
@@ -287,6 +288,26 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     BEFORE UPDATE ON  "fertiscan_0.0.12".fertilizer
     FOR EACH ROW
     EXECUTE FUNCTION update_fertilizer_timestamp();
+
+    -- Trigger function for the `inspection` table
+    CREATE OR REPLACE FUNCTION update_inspection_original_dataset_protection()
+    RETURNS TRIGGER AS $$
+    BEGIN
+    IF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NULL) THEN
+        RETURN NEW;
+    ELSIF (TG_OP = 'UPDATE') AND (OLD.original_dataset IS NOT NULL) THEN
+        -- Protect the original dataset from being updated
+        NEW.original_dataset = OLD.original_dataset;
+        RETURN NEW;
+    END IF;
+    END;
+    $$ LANGUAGE plpgsql;
+
+    -- Trigger for the `inspection` table
+    CREATE TRIGGER inspection_update_protect_original_dataset
+    BEFORE UPDATE ON  "fertiscan_0.0.12".inspection_factual
+    FOR EACH ROW
+    EXECUTE FUNCTION update_inspection_original_dataset_protection();
 
     -- Insert the default types : [instruction, caution,first_aid, warranty]
     INSERT INTO "fertiscan_0.0.12".sub_type(type_fr,type_en) VALUES

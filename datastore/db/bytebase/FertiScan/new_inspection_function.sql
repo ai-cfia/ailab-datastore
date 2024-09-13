@@ -9,7 +9,7 @@ DECLARE
     fr_values jsonb;
     en_values jsonb;
     record jsonb;
-    inspection_id uuid;
+    inspection_id_value uuid;
     company_id uuid;
     location_id uuid;
 	weight_id uuid;
@@ -44,12 +44,13 @@ BEGIN
 	address_string := input_json->'company'->>'address';
 	website_string := input_json->'company'->>'website';
 	phone_number_string := input_json->'company'->>'phone_number';
-	If((COALESCE(name_string, '') <> '' ) OR
-		(COALESCE(address_string,'' ) <> '' ) OR
-		(COALESCE(website_string , '') <> '') OR
-		(COALESCE(phone_number_string , '') <> ''))
-		THEN
-		company_id := "fertiscan_0.0.13".new_organization_info_located(
+	IF COALESCE(name_string, 
+		address_string, 
+		website_string, 
+		phone_number_string,
+		 '') <> ''
+	THEN
+		company_id := "fertiscan_0.0.12".new_organization_info_located(
 			input_json->'company'->>'name',
 			input_json->'company'->>'address',
 			input_json->'company'->>'website',
@@ -67,12 +68,14 @@ BEGIN
 	address_string := input_json->'manufacturer'->>'address';
 	website_string := input_json->'manufacturer'->>'website';
 	phone_number_string := input_json->'manufacturer'->>'phone_number';
-	If((COALESCE(name_string, '') <> '' ) OR
-		(COALESCE(address_string,'' ) <> '' ) OR
-		(COALESCE(website_string , '') <> '') OR
-		(COALESCE(phone_number_string , '') <> ''))
-		THEN
-		manufacturer_id := "fertiscan_0.0.13".new_organization_info_located(
+	-- Check if any of the manufacturer fields are not null
+	IF COALESCE(name_string, 
+		address_string, 
+		website_string, 
+		phone_number_string,
+		 '') <> '' 
+	THEN
+		manufacturer_id := "fertiscan_0.0.12".new_organization_info_located(
 			input_json->'manufacturer'->>'name',
 			input_json->'manufacturer'->>'address',
 			input_json->'manufacturer'->>'website',
@@ -109,18 +112,20 @@ BEGIN
     LOOP
         -- Extract the value and unit from the current weight record
         read_value := record->>'value';
-       
-       weight_id = "fertiscan_0.0.13".new_metric_unit(
-			read_value::float,
+       -- CHECK IF ANY FIELD IS NOT NULL
+		IF COALESCE(read_value,
 			record->>'unit',
-			label_info_id,
-			'weight'::"fertiscan_0.0.13".metric_type,
-			FALSE
-		);
-		-- Update the label_dimension table with the new weight_id
-		UPDATE "fertiscan_0.0.13"."label_dimension" 
-		SET weight_ids = array_append(weight_ids, weight_id)
-		WHERE label_dimension.label_id = label_info_id;
+			'') <> '' 
+		THEN
+			-- Insert the new weight
+			weight_id = "fertiscan_0.0.12".new_metric_unit(
+				read_value::float,
+				record->>'unit',
+				label_info_id,
+				'weight'::"fertiscan_0.0.12".metric_type,
+				FALSE
+			);
+		END IF;
 	 END LOOP;
 -- Weight end
 	
@@ -129,18 +134,19 @@ BEGIN
  	read_unit := input_json -> 'product' -> 'metrics' -> 'density'->> 'unit';
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
-	    
-		density_id := "fertiscan_0.0.13".new_metric_unit(
-			read_value::float,
+	    --CHECK IS ANY FIELD IS NOT NULL
+		IF COALESCE(read_value,
 			read_unit,
-			label_info_id,
-			'density'::"fertiscan_0.0.13".metric_type,
-			FALSE
-		);
-		-- Update the label_dimension table with the new density_id
-		UPDATE "fertiscan_0.0.13"."label_dimension" 
-		SET density_ids = array_append(density_ids, density_id)
-		WHERE label_dimension.label_id = label_info_id;
+			'') <> ''
+		THEN
+			density_id := "fertiscan_0.0.12".new_metric_unit(
+				read_value::float,
+				read_unit,
+				label_info_id,
+				'density'::"fertiscan_0.0.12".metric_type,
+				FALSE
+			);
+		END IF;
 	END IF;
 -- DENSITY END
 
@@ -150,18 +156,20 @@ BEGIN
 	-- Check if density_value is not null and handle density_unit
 	IF read_value IS NOT NULL THEN
 		value_float = read_value::float;
-	  
-		volume_id := "fertiscan_0.0.13".new_metric_unit(
-			value_float,
+	  	-- CHECK IF ANY FIELD IS NOT NULL
+		IF COALESCE(read_value,
 			read_unit,
-			label_info_id,
-			'volume'::"fertiscan_0.0.13".metric_type,
-			FALSE
-		);
-		-- Update the label_dimension table with the new volume_ids
-		UPDATE "fertiscan_0.0.13"."label_dimension" 
-		SET volume_ids = array_append(volume_ids, volume_id)
-		WHERE label_dimension.label_id = label_info_id;
+			'') <> '' 
+		THEN
+			-- Insert the new volume
+			volume_id := "fertiscan_0.0.12".new_metric_unit(
+				value_float,
+				read_unit,
+				label_info_id,
+				'volume'::"fertiscan_0.0.12".metric_type,
+				FALSE
+			);
+		END IF;
 	END IF;
 -- Volume end
    
@@ -170,18 +178,22 @@ BEGIN
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'specifications'->ingredient_language)
 		LOOP
-			specification_id := "fertiscan_0.0.13".new_specification(
-				(record->>'humidity')::float,
-				(record->>'ph')::float,
-				(record->>'solubility')::float,
-				ingredient_language::"fertiscan_0.0.13".language,
-				label_info_id,
-				FALSE
-			);		
-		-- Update the label_dimension table with the new specification_id
-		UPDATE "fertiscan_0.0.13"."label_dimension" 
-		SET specification_ids = array_append(specification_ids, specification_id)
-		WHERE label_dimension.label_id = label_info_id;
+			-- Check if any of the fields are not null
+			IF COALESCE(record->>'humidity', 
+				record->>'ph', 
+				record->>'solubility',
+				'') <> '' 
+			THEN
+				-- Insert the new specification
+				specification_id := "fertiscan_0.0.12".new_specification(
+					(record->>'humidity')::float,
+					(record->>'ph')::float,
+					(record->>'solubility')::float,
+					ingredient_language::"fertiscan_0.0.12".language,
+					label_info_id,
+					FALSE
+				);	
+			END IF;
 		END LOOP;
 	END LOOP;
 -- SPECIFICATION END
@@ -197,21 +209,24 @@ BEGIN
  -- Extract values from the current ingredient record
 	        read_value := record->> 'value';
  			read_unit := record ->> 'unit';
-	        
-			ingredient_id := "fertiscan_0.0.13".new_ingredient(
-				record->>'name',
-				read_value::float,
+			-- Check if ANY field is not null
+			IF COALESCE(record->>'name', 
+				read_value, 
 				read_unit,
-				label_info_id,
-				ingredient_language::"fertiscan_0.0.13".language,
-				NULL, --We cant tell atm
-				NULL,  --We cant tell atm
-				FALSE  --preset
-			);
-			-- Update the label_dimension table with the new specification_id
-			UPDATE "fertiscan_0.0.13"."label_dimension" 
-			SET ingredient_ids = array_append(ingredient_ids, ingredient_id)
-			WHERE label_dimension.label_id = label_info_id;
+				'') <> '' 
+			THEN
+				-- Insert the new ingredient
+				ingredient_id := "fertiscan_0.0.12".new_ingredient(
+					record->>'name',
+					read_value::float,
+					read_unit,
+					label_info_id,
+					ingredient_language::"fertiscan_0.0.12".language,
+					NULL, --We cant tell atm
+					NULL,  --We cant tell atm
+					FALSE  --preset
+				);
+			END IF;
 		END LOOP;
 	END LOOP;
 --INGREDIENTS ENDS
@@ -237,12 +252,6 @@ BEGIN
 					sub_type_rec.id,
 					FALSE
 				);
-				-- Update the label_dimension table with the new sub_label_id
-
-				EXECUTE format('UPDATE "fertiscan_0.0.13".label_dimension 
-					SET %I = array_append(%I, %L) 
-					WHERE label_id = %L;',
-					key_string, key_string, sub_label_id, label_info_id);
 			END LOOP;
 		END IF;
    END LOOP;    
@@ -254,17 +263,21 @@ BEGIN
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'micronutrients'->micronutrient_language)
 		LOOP
-			micronutrient_id := "fertiscan_0.0.13".new_micronutrient(
-				record->> 'name',
-				(record->> 'value')::float,
-				record->> 'unit',
-				label_info_id,
-				micronutrient_language::"fertiscan_0.0.13".language
-			);
-			-- Update the label_dimension table with the new Micronutrient_id
-			UPDATE "fertiscan_0.0.13"."label_dimension" 
-			SET micronutrient_ids = array_append(micronutrient_ids, micronutrient_id)
-			WHERE label_dimension.label_id = label_info_id;
+			-- Check if any of the fields are not null
+			IF COALESCE(record->>'name', 
+				record->>'value', 
+				record->>'unit',
+				'') <> '' 
+			THEN
+				-- Insert the new Micronutrient
+				micronutrient_id := "fertiscan_0.0.12".new_micronutrient(
+					record->> 'name',
+					(record->> 'value')::float,
+					record->> 'unit',
+					label_info_id,
+					micronutrient_language::"fertiscan_0.0.12".language
+				);
+			END IF;
 		END LOOP;
 	END LOOP;
 --MICRONUTRIENTS ENDS
@@ -272,31 +285,24 @@ BEGIN
 -- GUARANTEED
 	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis')
 	LOOP
-		guaranteed_analysis_id := "fertiscan_0.0.13".new_guaranteed_analysis(
-			record->>'name',
-			(record->>'value')::float,
+		-- Check if any of the fields are not null
+		IF COALESCE(record->>'name', 
+			record->>'value', 
 			record->>'unit',
-			label_info_id,
-			FALSE,
-			NULL -- We arent handeling element_id yet
-		);
-		-- Update the label_dimension table with the new Micronutrient_id
-		UPDATE "fertiscan_0.0.13"."label_dimension" 
-		SET guaranteed_ids = array_append(guaranteed_ids, guaranteed_analysis_id)
-		WHERE label_dimension.label_id = label_info_id;
+			'') <> '' 
+		THEN
+			-- Insert the new guaranteed_analysis
+			guaranteed_analysis_id := "fertiscan_0.0.12".new_guaranteed_analysis(
+				record->>'name',
+				(record->>'value')::float,
+				record->>'unit',
+				label_info_id,
+				FALSE,
+				NULL -- We arent handeling element_id yet
+			);
+		END IF;
 	END LOOP;
 -- GUARANTEED END	
-
--- Time Dimension
-	INSERT INTO "fertiscan_0.0.13".time_dimension (
-		date_value, year,month,day) 
-	VALUES (
-		CURRENT_DATE,
-		EXTRACT(YEAR FROM CURRENT_DATE),
-		EXTRACT(MONTH FROM CURRENT_DATE),
-  		EXTRACT(DAY FROM CURRENT_DATE)	
-	) RETURNING id INTO time_id;
--- Time Dimension End
 
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.13".inspection (
@@ -308,24 +314,16 @@ BEGIN
         picture_set_id,  -- Assuming picture_set_id is handled separately
 		input_json
     )
-    RETURNING id INTO inspection_id;
+    RETURNING id INTO inspection_id_value;
    
 	-- Update input_json with company_id
-	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id));
+	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
 
-	-- Create the Inspection_factual entry
-	INSERT INTO "fertiscan_0.0.13".inspection_factual (
-		inspection_id, inspector_id, label_info_id, time_id, sample_id, company_id, manufacturer_id, picture_set_id
-	) VALUES (
-		inspection_id,
-		user_id,
-		label_info_id,
-		time_id,
-		NULL, -- NOT handled yet
-		NULL, -- IS not defined yet
-		NULL, -- IS not defined yet
-		picture_set_id
-	);
+	-- Update the Inspection_factual entry with the json
+	UPDATE "fertiscan_0.0.12".inspection_factual
+	SET original_dataset = input_json
+	WHERE inspection_factual."inspection_id" = inspection_id_value;
+
 -- INSPECTION END
 	RETURN input_json;
 
