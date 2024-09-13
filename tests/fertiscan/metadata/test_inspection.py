@@ -1,13 +1,10 @@
-import unittest
-import datastore.db.metadata.inspection as metadata
-from datastore.db.queries import (
-    inspection,
-    user,
-    picture,
-)
-import os
-import datastore.db.__init__ as db
 import json
+import os
+import unittest
+
+import datastore.db.__init__ as db
+import datastore.db.metadata.inspection as metadata
+from datastore.db.queries import inspection, picture, user
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -40,7 +37,6 @@ class test_inspection_export(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -186,6 +182,44 @@ class test_inspection_export(unittest.TestCase):
         self.assertListEqual(data["instructions"]["fr"], [])
         self.assertListEqual(data["instructions"]["en"], [])
 
+    def test_unequal_sub_label_lengths_and_order(self):
+        self.analyse["instructions_en"] = ["one"]
+        self.analyse["instructions_fr"] = ["un", "deux"]
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        label_information_id = inspection_dict["product"]["label_id"]
+
+        if inspection_id is None:
+            self.fail("Inspection not created")
+
+        data = metadata.build_inspection_export(
+            self.cursor, str(inspection_id), label_information_id
+        )
+        data = json.loads(data)
+
+        self.assertIsNotNone(data["instructions"])
+        self.assertIsNotNone(data["instructions"]["en"])
+        self.assertIsNotNone(data["instructions"]["fr"])
+
+        expected_instructions_en = ["one", ""]
+        expected_instructions_fr = ["un", "deux"]
+
+        self.assertEqual(
+            set(data["instructions"]["en"]),
+            set(expected_instructions_en),
+            "Instructions EN mismatch",
+        )
+        self.assertEqual(
+            set(data["instructions"]["fr"]),
+            set(expected_instructions_fr),
+            "Instructions FR mismatch",
+        )
+
     def test_missing_specification(self):
         self.analyse["specifications_en"] = []
         self.analyse["specifications_fr"] = []
@@ -329,11 +363,11 @@ class test_inspection_export(unittest.TestCase):
         for spec in data["specifications"]["en"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'en' list"
+                "Empty specification found in 'en' list",
             )
-        
+
         for spec in data["specifications"]["fr"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'fr' list"
+                "Empty specification found in 'fr' list",
             )

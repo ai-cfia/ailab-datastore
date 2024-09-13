@@ -37,6 +37,9 @@ DECLARE
 	website_string text;
 	phone_number_string text;
     result_json jsonb := '{}';
+	max_length int;
+    fr_value text;
+    en_value text;
 BEGIN
 	
 -- COMPANY
@@ -233,28 +236,36 @@ BEGIN
 
 -- SUB LABELS
 	-- Loop through each sub_type
-    FOR sub_type_rec IN SELECT id,type_en FROM sub_type
-    LOOP
+   FOR sub_type_rec IN SELECT id, type_en FROM sub_type
+	LOOP
 		-- Extract the French and English arrays for the current sub_type
-
 		key_string := sub_type_rec.type_en;
-        en_values := input_json -> key_string -> 'en';
-    	fr_values := input_json -> key_string -> 'fr';
-		key_string := key_string || '_ids';
-        -- Ensure both arrays are of the same length
-        IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-		  	FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-	   		LOOP
-	   			sub_label_id := "fertiscan_0.0.12".new_sub_label(
-					fr_values->>i,
-					en_values->>i,
-					label_info_id,
-					sub_type_rec.id,
-					FALSE
-				);
-			END LOOP;
-		END IF;
-   END LOOP;    
+		en_values := COALESCE(input_json -> key_string -> 'en', '[]'::jsonb);
+		fr_values := COALESCE(input_json -> key_string -> 'fr', '[]'::jsonb);
+
+		-- Determine the maximum length of the arrays
+		max_length := GREATEST(
+			jsonb_array_length(fr_values),
+			jsonb_array_length(en_values)
+		);
+
+		-- Loop through the indices up to the maximum length
+		FOR i IN 0..(max_length - 1)
+		LOOP
+			-- Extract values or set to empty string if not present
+			fr_value := COALESCE(fr_values->>i, '');
+			en_value := COALESCE(en_values->>i, '');
+
+			-- Insert sub-label without deleting existing data
+			sub_label_id := "fertiscan_0.0.12".new_sub_label(
+				fr_value,
+				en_value,
+				label_info_id,
+				sub_type_rec.id,
+				FALSE
+			);
+		END LOOP;
+	END LOOP;
   -- SUB_LABEL END
   
   -- MICRO NUTRIENTS

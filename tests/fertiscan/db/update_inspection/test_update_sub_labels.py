@@ -3,8 +3,9 @@ import os
 import unittest
 
 import psycopg
-import datastore.db.queries.label as label
 from dotenv import load_dotenv
+
+import datastore.db.queries.label as label
 
 load_dotenv()
 
@@ -170,7 +171,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         for expected_item in expected_data:
             self.assertTrue(
                 expected_item in saved_data,
-                f"Expected item {expected_item} was not found in the saved data"
+                f"Expected item {expected_item} was not found in the saved data",
             )
 
         # Update sub labels
@@ -206,8 +207,84 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         for expected_updated_item in expected_updated_data:
             self.assertTrue(
                 expected_updated_item in updated_data,
-                f"Expected updated item {expected_updated_item} was not found in the updated data"
+                f"Expected updated item {expected_updated_item} was not found in the updated data",
             )
+
+    def test_update_sub_labels_with_mismatched_arrays(self):
+        # Create sub labels with mismatched 'fr' and 'en' arrays
+        mismatched_sub_labels = json.dumps(
+            {
+                "instructions": {
+                    "fr": [
+                        "1. Dissoudre 50g dans 10L d'eau.",
+                        "2. Appliquer toutes les 2 semaines.",
+                    ],
+                    "en": [
+                        "1. Dissolve 50g in 10L of water.",
+                        "2. Apply every 2 weeks.",
+                        "3. Store in a cool, dry place.",
+                    ],
+                }
+            }
+        )
+
+        try:
+            # Execute the function with mismatched sub labels
+            self.cursor.execute(
+                "SELECT update_sub_labels(%s, %s);",
+                (self.label_id, mismatched_sub_labels),
+            )
+        except Exception as e:
+            self.fail(f"update_sub_labels raised an exception unexpectedly: {e}")
+
+        # Verify that no exception was raised and check the data integrity
+        self.cursor.execute(
+            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
+            (self.label_id,),
+        )
+        saved_data = self.cursor.fetchall()
+
+        # Expected data should still be saved even though the arrays were mismatched
+        expected_data = [
+            ("1. Dissoudre 50g dans 10L d'eau.", "1. Dissolve 50g in 10L of water."),
+            ("2. Appliquer toutes les 2 semaines.", "2. Apply every 2 weeks."),
+            ("", "3. Store in a cool, dry place."),
+        ]
+        self.assertEqual(
+            len(saved_data),
+            3,
+            "There should be 3 sub label records inserted despite mismatched arrays",
+        )
+        for expected_item in expected_data:
+            self.assertTrue(
+                expected_item in saved_data,
+                f"Expected item {expected_item} was not found in the saved data",
+            )
+
+    def test_update_sub_labels_with_empty_arrays(self):
+        # Test with empty 'fr' and 'en' arrays
+        empty_sub_labels = json.dumps({"instructions": {"fr": [], "en": []}})
+
+        try:
+            # Execute the function with empty sub labels
+            self.cursor.execute(
+                "SELECT update_sub_labels(%s, %s);", (self.label_id, empty_sub_labels)
+            )
+        except Exception as e:
+            self.fail(f"update_sub_labels raised an exception with empty arrays: {e}")
+
+        # Verify that no new data was inserted
+        self.cursor.execute(
+            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
+            (self.label_id,),
+        )
+        saved_data_empty = self.cursor.fetchall()
+
+        self.assertEqual(
+            len(saved_data_empty),
+            0,
+            "No sub label records should be inserted when arrays are empty",
+        )
 
 
 if __name__ == "__main__":

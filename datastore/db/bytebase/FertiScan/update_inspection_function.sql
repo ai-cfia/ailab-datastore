@@ -386,6 +386,9 @@ DECLARE
     fr_values jsonb;
     en_values jsonb;
     i int;
+    max_length int;
+    fr_value text;
+    en_value text;
 BEGIN
     -- Delete existing sub labels for the given label_id
     DELETE FROM sub_label WHERE label_id = p_label_id;
@@ -394,31 +397,34 @@ BEGIN
     FOR sub_type_rec IN SELECT id, type_en FROM sub_type
     LOOP
         -- Extract the French and English arrays for the current sub_type
-        fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
-        en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        If fr_values IS NULL OR en_values IS NULL THEN
-            RAISE warning 'Sub-labels for type % are missing', sub_type_rec.type_en;
-        ELSE
-            -- Ensure both arrays are of the same length
-            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-                LOOP
-                    -- Insert sub label record
-                    INSERT INTO sub_label (
-                        text_content_fr, text_content_en, label_id, edited, sub_type_id
-                    )
-                    VALUES (
-                        fr_values->>i,
-                        en_values->>i,
-                        p_label_id,
-                        Null,  -- not handled
-                        sub_type_rec.id
-                    );
-                END LOOP;
-            ELSE
-                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
-            END IF;
-        END IF;
+        fr_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'fr', '[]'::jsonb);
+        en_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'en', '[]'::jsonb);
+
+        -- Determine the maximum length of the arrays
+        max_length := GREATEST(
+            jsonb_array_length(fr_values),
+            jsonb_array_length(en_values)
+        );
+
+        -- Loop through the indices up to the maximum length
+        FOR i IN 0..(max_length - 1)
+        LOOP
+            -- Extract values or set to empty string if not present
+            fr_value := COALESCE(fr_values->>i, '');
+            en_value := COALESCE(en_values->>i, '');
+
+            -- Insert sub label record
+            INSERT INTO sub_label (
+                text_content_fr, text_content_en, label_id, edited, sub_type_id
+            )
+            VALUES (
+                fr_value,
+                en_value,
+                p_label_id,
+                NULL,  -- not handled
+                sub_type_rec.id
+            );
+        END LOOP;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
