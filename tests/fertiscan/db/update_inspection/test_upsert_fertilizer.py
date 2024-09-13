@@ -5,6 +5,7 @@ import psycopg
 from dotenv import load_dotenv
 
 from datastore.db.queries import inspection
+import uuid
 
 load_dotenv()
 
