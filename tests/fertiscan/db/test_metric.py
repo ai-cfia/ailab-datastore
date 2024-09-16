@@ -79,7 +79,9 @@ class test_metric(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
             None,
             None,
         )

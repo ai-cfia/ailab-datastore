@@ -28,7 +28,9 @@ class test_label(unittest.TestCase):
         self.n = 10.0
         self.p = 20.0
         self.k = 30.0
-        self.warranty = "warranty"
+        self.guaranteed_analysis_title = "guaranteed_analysis"
+        self.guaranteed_analysis_titre = "analyse_garantie"
+        self.guaranteed_is_minimal = False
         self.company_info_id = None
         self.manufacturer_info_id = None
 
@@ -46,7 +48,9 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            self.guaranteed_analysis_title,
+            self.guaranteed_analysis_titre,
+            self.guaranteed_is_minimal,
             self.company_info_id,
             self.manufacturer_info_id,
         )
@@ -62,7 +66,9 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            self.guaranteed_analysis_title,
+            self.guaranteed_analysis_titre,
+            self.guaranteed_is_minimal,
             self.company_info_id,
             self.manufacturer_info_id,
         )
@@ -76,9 +82,11 @@ class test_label(unittest.TestCase):
         self.assertEqual(label_data[5], self.n)
         self.assertEqual(label_data[6], self.p)
         self.assertEqual(label_data[7], self.k)
-        self.assertEqual(label_data[8], self.warranty)
-        self.assertIsNone(label_data[9])
-        self.assertIsNone(label_data[10])
+        self.assertEqual(label_data[8], self.guaranteed_analysis_title)
+        self.assertEqual(label_data[9], self.guaranteed_analysis_titre)
+        self.assertEqual(label_data[10], self.guaranteed_is_minimal)
+        self.assertIsNone(label_data[11])
+        self.assertIsNone(label_data[12])
 
     def test_get_label_information_json(self):
         label_information_id = label.new_label_information(
@@ -90,7 +98,9 @@ class test_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            self.guaranteed_analysis_title,
+            self.guaranteed_analysis_titre,
+            self.guaranteed_is_minimal,
             None,
             None,
         )
@@ -103,7 +113,6 @@ class test_label(unittest.TestCase):
         self.assertEqual(label_data["n"], self.n)
         self.assertEqual(label_data["p"], self.p)
         self.assertEqual(label_data["k"], self.k)
-        self.assertEqual(label_data["warranty"], self.warranty)
 
     def test_get_label_information_json_wrong_label_id(self):
         with self.assertRaises(label.LabelInformationNotFoundError):

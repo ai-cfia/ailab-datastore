@@ -107,7 +107,7 @@ class Inspection(BaseModel):
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
-    guaranteed_analysis: ValuesObjects
+    guaranteed_analysis: GuaranteedAnalysis
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -377,6 +377,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         guaranteed_analysis_json = nutrients.get_guaranteed_analysis_json(
             cursor, label_info_id
         )
+        # print(guaranteed_analysis_json)
         if guaranteed_analysis_json.get("guaranteed_analysis") is None:
             guaranteed_analysis_json["guaranteed_analysis"] = GuaranteedAnalysis().model_dump()
         else:
@@ -396,6 +397,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         # Verify the inspection object
         inspection_formatted = Inspection(**inspection_json)
         # Return the inspection object
+        print("done")
         return inspection_formatted.model_dump_json()
     except (
         label.LabelInformationNotFoundError

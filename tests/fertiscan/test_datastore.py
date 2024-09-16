@@ -122,28 +122,28 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         ):
             self.nb_instructions = len(self.analysis_json.get("instructions_fr"))
 
-        if len(self.analysis_json.get("first_aid_en")) >= len(
-            self.analysis_json.get("first_aid_fr")
-        ):
-            self.nb_first_aid = len(self.analysis_json.get("first_aid_en"))
-        elif len(self.analysis_json.get("first_aid_en")) < len(
-            self.analysis_json.get("first_aid_fr")
-        ):
-            self.nb_first_aid = len(self.analysis_json.get("first_aid_fr"))
+        # if len(self.analysis_json.get("first_aid_en")) >= len(
+            # self.analysis_json.get("first_aid_fr")
+        # ):
+            # self.nb_first_aid = len(self.analysis_json.get("first_aid_en"))
+        # elif len(self.analysis_json.get("first_aid_en")) < len(
+            # self.analysis_json.get("first_aid_fr")
+        # ):
+            # self.nb_first_aid = len(self.analysis_json.get("first_aid_fr"))
 
-        self.nb_specifications = len(self.analysis_json.get("specifications_en")) + len(
-            self.analysis_json.get("specifications_fr")
-        )
+        # self.nb_specifications = len(self.analysis_json.get("specifications_en")) + len(
+            # self.analysis_json.get("specifications_fr")
+        # )
 
-        self.nb_guaranteed = len(self.analysis_json.get("guaranteed_analysis"))
+        self.nb_guaranteed = len(self.analysis_json.get("guaranteed_analysis_en").get("nutrients")) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
-        self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-            self.analysis_json.get("ingredients_fr")
-        )
+        # self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
+            # self.analysis_json.get("ingredients_fr")
+        # )
 
-        self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
-            self.analysis_json.get("micronutrients_fr")
-        )
+        # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
+            # self.analysis_json.get("micronutrients_fr")
+        # )
 
         self.nb_weight = len(self.analysis_json.get("weight"))
 
@@ -179,22 +179,22 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        specifications = specification.get_all_specifications(
-            cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
-        )
-        self.assertIsNotNone(specifications)
-        self.assertEqual(
-            len(specifications), self.nb_specifications
-        )  # There are 2 specifications in the analysis_json
+        # specifications = specification.get_all_specifications(
+            # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
+        # )
+        # self.assertIsNotNone(specifications)
+        # self.assertEqual(
+            # len(specifications), self.nb_specifications
+        # )  # There are 2 specifications in the analysis_json
 
-        nutrients_data = nutrients.get_all_micronutrients(
-            cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
-        )
-        self.assertIsNotNone(nutrients_data)
+        # nutrients_data = nutrients.get_all_micronutrients(
+            # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
+        # )
+        # self.assertIsNotNone(nutrients_data)
 
-        self.assertEqual(
-            len(nutrients_data), self.nb_micronutrients
-        )  # There are 2 nutrients in the analysis_json
+        # self.assertEqual(
+            # len(nutrients_data), self.nb_micronutrients
+        # )  # There are 2 nutrients in the analysis_json
         sub_labels = sub_label.get_sub_label_json(
             self.cursor, str(analysis["product"]["label_id"])
         )
@@ -231,12 +231,13 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(str(manufacturer_info_id), analysis["manufacturer"]["id"])
 
         self.assertEqual(len(label_dimension[5]), self.nb_instructions)
-        self.assertEqual(len(label_dimension[6]), self.nb_cautions)
-        self.assertEqual(len(label_dimension[7]), self.nb_first_aid)
 
-        self.assertEqual(len(label_dimension[9]), self.nb_specifications)
-        self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
-        self.assertEqual(len(label_dimension[11]), self.nb_micronutrients)
+        self.assertEqual(len(label_dimension[6]), self.nb_cautions)
+        # self.assertEqual(len(label_dimension[7]), self.nb_first_aid)
+
+        # self.assertEqual(len(label_dimension[9]), self.nb_specifications)
+        # self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
+        # self.assertEqual(len(label_dimension[11]), self.nb_micronutrients)
         self.assertEqual(len(label_dimension[12]), self.nb_guaranteed)
         self.assertEqual(len(label_dimension[13]), self.nb_weight)
         self.assertEqual(len(label_dimension[14]), 1)
@@ -259,20 +260,19 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "density": None,
             "volume": None,
             "npk": None,
-            "warranty": None,
             "cautions_en": [],
             "instructions_en": [],
-            "micronutrients_en": [],
-            "ingredients_en": [],
-            "specifications_en": [],
-            "first_aid_en": [],
             "cautions_fr": [],
             "instructions_fr": [],
-            "micronutrients_fr": [],
-            "ingredients_fr": [],
-            "specifications_fr": [],
-            "first_aid_fr": [],
-            "guaranteed_analysis": [],
+            "guaranteed_analysis_is_minimal": False,
+            "guaranteed_analysis_en": {
+                "title": None,
+                "nutrients": []
+                },
+            "guaranteed_analysis_fr": {
+                "title": None,
+                "nutrients": []
+            },
         }
 
         formatted_analysis = metadata.build_inspection_import(empty_analysis)
@@ -369,35 +369,49 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         new_npk = "10-10-10"
         new_instruction_en = ["3. of", "2. set"]
         new_instruction_fr = ["3. de", "2. ensemble"]
-        new_instruction_nb = 2
+        new_instruction_nb = (len(new_instruction_en)+len(new_instruction_fr))/2
         new_value = 100.0
-        old_value = analysis["specifications"]["en"][0]["humidity"]
-        new_specification_en = [
-            {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
-        ]
-        new_first_aid_en = [
+        old_value = analysis["guaranteed_analysis"]["fr"][0]["value"]
+        new_title = "Nouveau titre"
+        old_title = analysis["guaranteed_analysis"]["titre"]
+        old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
+        new_name = "Nouveau nom"
+        # new_specification_en = [
+        #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
+        # ]
+        new_cautions_en = [
             "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice.",
             "NEWLY ADDED FIRST AID",
+            "test",
+            "test",
+            "test",
         ]
-        new_first_aid_fr = [
+        new_cautions_fr = [
             "En cas de contact avec les yeux, rincer immédiatement à l'eau et consulter un médecin.",
             "NOUVELLE PREMIÈRE AIDE AJOUTÉE",
+            "test",
+            "test",
+            "test",
         ]
-        new_first_aid_number = 2
-        new_guaranteed_analysis = [
-            {
+        new_caution_number = (len(new_cautions_en) + len(new_cautions_fr))/2
+        new_guaranteed_analysis = {
+            "title": new_title,
+            "titre": old_title,
+            "is_minimal": False,
+            "en": [{
                 "value": new_value,
                 "unit": "%",
-                "name": "Total Nitrogen (N)",
+                "name": new_name,
                 "edited": True,
-            },
-            {
-                "value": 20.0,
+            },],
+            "fr": [{
+                "value": old_value,
                 "unit": "%",
-                "name": "Available Phosphate (P2O5)",
+                "name": old_name,
                 "edited": False,
-            },
-        ]
+            },],
+        }
+            
         new_guaranteed_nb = 2
         # update the dataset
         analysis["product"]["name"] = new_product_name
@@ -408,9 +422,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["product"]["npk"] = new_npk
         analysis["instructions"]["en"] = new_instruction_en
         analysis["instructions"]["fr"] = new_instruction_fr
-        analysis["specifications"]["en"] = new_specification_en
-        analysis["first_aid"]["en"] = new_first_aid_en
-        analysis["first_aid"]["fr"] = new_first_aid_fr
+        # analysis["specifications"]["en"] = new_specification_en
+        analysis["cautions"]["en"] = new_cautions_en
+        analysis["cautions"]["fr"] = new_cautions_fr
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
 
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
@@ -422,14 +436,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
 
         # check if specifications are updated
-        specifications = specification.get_all_specifications(self.cursor, label_id)
-        for specific in specifications:
-            if specific[5] == "en":
-                self.assertTrue(specific[4])
-                self.assertEqual(specific[1], new_value)
-            else:
-                self.assertFalse(specific[4])
-                self.assertEqual(specific[1], old_value)
+        # specifications = specification.get_all_specifications(self.cursor, label_id)
+        # for specific in specifications:
+        #     if specific[5] == "en":
+        #         self.assertTrue(specific[4])
+        #         self.assertEqual(specific[1], new_value)
+        #     else:
+        #         self.assertFalse(specific[4])
+        #         self.assertEqual(specific[1], old_value)
         # check if metrics are updated correctly
         metrics = metric.get_metric_by_label(self.cursor, label_id)
         for metric_data in metrics:
@@ -444,25 +458,29 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             elif metric_data[4] == "volume":
                 self.assertEqual(metric_data[1], untouched_volume)
                 self.assertFalse(metric_data[3])
-        # verify npk update (label_information)
+        # verify npk update & guaranteed title updates(label_information)
         label_info_data = label.get_label_information(self.cursor, label_id)
         self.assertEqual(label_info_data[3], new_npk)
         self.assertNotEqual(label_info_data[3], old_npk)
+        self.assertEqual(label_info_data[8], new_title)
+        self.assertNotEqual(label_info_data[8], old_title)
+        self.assertEqual(label_info_data[9], old_title)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:
             if guaranteed[7]:
                 self.assertEqual(guaranteed[1], new_value)
             else:
-                self.assertEqual(guaranteed[1], 20.0)
+                self.assertEqual(guaranteed[1], old_value)
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)
-
+        
         # Check if sub_label created a new id if there is a field that is not in the old label_dimension
-        self.assertEqual(len(old_label_dimension[7]), self.nb_first_aid)
-        self.assertEqual(len(new_label_dimension[7]), new_first_aid_number)
-        self.assertNotEqual(len(new_label_dimension[7]), len(old_label_dimension[7]))
+        self.assertEqual(len(old_label_dimension[6]), self.nb_cautions)
+
+        self.assertEqual(len(new_label_dimension[6]), new_caution_number)
+        self.assertNotEqual(len(new_label_dimension[6]), len(old_label_dimension[6]))
         # Check if the total of sub_label reduced after a field has been removed
         self.assertEqual(len(old_label_dimension[5]), self.nb_instructions)
         self.assertEqual(len(new_label_dimension[5]), new_instruction_nb)
@@ -472,33 +490,61 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
 
-        new_guaranteed_analysis = [
-            {
+        new_guaranteed_analysis = {
+            "title": new_title,
+            "titre": old_title,
+            "is_minimal": False,
+            "en": [{
                 "value": new_value,
                 "unit": "%",
-                "name": "Total Nitrogen (N)",
+                "name": new_name,
                 "edited": True,
             },
             {
-                "value": 20.0,
+                "value": new_value,
                 "unit": "%",
-                "name": "Available Phosphate (P2O5)",
+                "name": new_name,
+                "edited": True,
+            },
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": new_name,
+                "edited": True,
+            },
+            {
+                "value": new_value,
+                "unit": "%",
+                "name": new_name,
+                "edited": True,
+            },],
+            "fr": [{
+                "value": old_value,
+                "unit": "%",
+                "name": old_name,
                 "edited": False,
             },
             {
-                "value": new_value,
+                "value": old_value,
                 "unit": "%",
-                "name": "Soluble Potash (K2O)",
-                "edited": True,
+                "name": old_name,
+                "edited": False,
             },
             {
-                "value": new_value,
+                "value": old_value,
                 "unit": "%",
-                "name": "Soluble Potash (K2O)",
-                "edited": True,
+                "name": old_name,
+                "edited": False,
             },
-        ]
-        new_guaranteed_nb = 4
+            {
+                "value": old_value,
+                "unit": "%",
+                "name": old_name,
+                "edited": False,
+            },],
+        }
+        old_guaranteed_nb = new_guaranteed_nb
+        new_guaranteed_nb = 8
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
         asyncio.run(
             fertiscan.update_inspection(
@@ -511,3 +557,4 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Check if the total of guaranteed is increased after a field has been added
         self.assertEqual(len(new_label_dimension[12]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
+        self.assertNotEqual(len(new_label_dimension[12]), old_guaranteed_nb)

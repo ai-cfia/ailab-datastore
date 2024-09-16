@@ -4,6 +4,8 @@ import unittest
 
 import psycopg
 import datastore.db.queries.label as label
+import datastore.db.queries.sub_label as sub_label
+import datastore.db.queries.organization as organization
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,45 +30,16 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Set up test data for sub labels
+        with open("tests/fertiscan/inspection_export.json") as f:
+            inspection_data = json.load(f)
         self.sample_sub_labels = json.dumps(
-            {
-                "instructions": {
-                    "fr": [
-                        "1. Dissoudre 50g dans 10L d'eau.",
-                        "2. Appliquer toutes les 2 semaines.",
-                        "3. Conserver dans un endroit frais et sec.",
-                    ],
-                    "en": [
-                        "1. Dissolve 50g in 10L of water.",
-                        "2. Apply every 2 weeks.",
-                        "3. Store in a cool, dry place.",
-                    ],
-                },
-                "cautions": {
-                    "fr": [
-                        "Tenir hors de portée des enfants.",
-                        "Éviter le contact avec la peau et les yeux.",
-                    ],
-                    "en": [
-                        "Keep out of reach of children.",
-                        "Avoid contact with skin and eyes.",
-                    ],
-                },
-                "first_aid": {
-                    "fr": [
-                        "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."
-                    ],
-                    "en": [
-                        "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
-                    ],
-                },
-                "warranties": {
-                    "fr": ["Garantie limitée de 1 an."],
-                    "en": ["Limited warranty of 1 year."],
-                },
-            }
-        )
-
+            {"instructions" : inspection_data["instructions"],
+                "cautions" : inspection_data["cautions"]
+            })
+        self.nb_sub_labels = len(inspection_data["instructions"]["en"]) + len(inspection_data["cautions"]["en"])
+        # self.updated_sub_labels = self.sample_sub_labels
+        
+        
         self.updated_sub_labels = json.dumps(
             {
                 "instructions": {
@@ -74,33 +47,37 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                         "1. Dissoudre 50g dans 10L d'eau.",
                         "2. Appliquer toutes les 2 semaines.",
                         "3. Conserver dans un endroit frais.",
+                        "4. Test instruction.",
+                        "5. Test instruction.",
                     ],
                     "en": [
                         "1. Dissolve 50g in 10L of water.",
                         "2. Apply every 2 weeks.",
                         "3. Store in a cool place.",
+                        "4. Test instruction.",
+                        "5. Test instruction.",
+                        
                     ],
                 },
                 "cautions": {
                     "fr": [
                         "Tenir hors de portée des enfants.",
                         "Éviter le contact avec la peau et les yeux.",
+                        "En cas de contact avec les yeux, rincer immédiatement.",
+                        "Garantie limitée de 1 an.",
+                        "Test caution.",
                     ],
                     "en": [
                         "Keep out of reach of children.",
                         "Avoid contact with skin and eyes.",
+                        "If in eyes, rinse immediately.",
+                        "Limited warranty of 1 year.",
+                        "Test caution.",
                     ],
-                },
-                "first_aid": {
-                    "fr": ["En cas de contact avec les yeux, rincer immédiatement."],
-                    "en": ["If in eyes, rinse immediately."],
-                },
-                "warranties": {
-                    "fr": ["Garantie limitée de 2 ans."],
-                    "en": ["Limited warranty of 2 years."],
-                },
+                }
             }
         )
+        self.nb_updated = 10
 
         sample_org_info = json.dumps(
             {
@@ -122,7 +99,9 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             None,
             None,
             None,
-            "test-warranty",
+            None,
+            None,
+            None,
             self.company_info_id,
             self.company_info_id,
         )
@@ -140,38 +119,12 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             (self.label_id, self.sample_sub_labels),
         )
 
-        # Verify that the data is correctly saved
-        self.cursor.execute(
-            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
-            (self.label_id,),
-        )
-        saved_data = self.cursor.fetchall()
-        expected_data = [
-            ("1. Dissoudre 50g dans 10L d'eau.", "1. Dissolve 50g in 10L of water."),
-            ("2. Appliquer toutes les 2 semaines.", "2. Apply every 2 weeks."),
-            (
-                "3. Conserver dans un endroit frais et sec.",
-                "3. Store in a cool, dry place.",
-            ),
-            ("Tenir hors de portée des enfants.", "Keep out of reach of children."),
-            (
-                "Éviter le contact avec la peau et les yeux.",
-                "Avoid contact with skin and eyes.",
-            ),
-            (
-                "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin.",
-                "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice.",
-            ),
-            ("Garantie limitée de 1 an.", "Limited warranty of 1 year."),
-        ]
+        saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        nb_sub_labels = len(saved_data["instructions"]["en"]) + len(saved_data["cautions"]["en"])
+
         self.assertEqual(
-            len(saved_data), 7, "There should be seven sub label records inserted"
+            nb_sub_labels, self.nb_sub_labels, f"There should be {self.nb_sub_labels} sub label records inserted"
         )
-        for expected_item in expected_data:
-            self.assertTrue(
-                expected_item in saved_data,
-                f"Expected item {expected_item} was not found in the saved data"
-            )
 
         # Update sub labels
         self.cursor.execute(
@@ -184,30 +137,12 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
             (self.label_id,),
         )
-        updated_data = self.cursor.fetchall()
-        expected_updated_data = [
-            ("1. Dissoudre 50g dans 10L d'eau.", "1. Dissolve 50g in 10L of water."),
-            ("2. Appliquer toutes les 2 semaines.", "2. Apply every 2 weeks."),
-            ("3. Conserver dans un endroit frais.", "3. Store in a cool place."),
-            ("Tenir hors de portée des enfants.", "Keep out of reach of children."),
-            (
-                "Éviter le contact avec la peau et les yeux.",
-                "Avoid contact with skin and eyes.",
-            ),
-            (
-                "En cas de contact avec les yeux, rincer immédiatement.",
-                "If in eyes, rinse immediately.",
-            ),
-            ("Garantie limitée de 2 ans.", "Limited warranty of 2 years."),
-        ]
+        updated_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        nb_updated = len(updated_data["instructions"]["en"]) + len(updated_data["cautions"]["en"])
+
         self.assertEqual(
-            len(updated_data), 7, "There should be seven sub label records after update"
+            nb_updated, self.nb_updated, f"There should be {self.nb_sub_labels} sub label records inserted"
         )
-        for expected_updated_item in expected_updated_data:
-            self.assertTrue(
-                expected_updated_item in updated_data,
-                f"Expected updated item {expected_updated_item} was not found in the updated data"
-            )
 
 
 if __name__ == "__main__":

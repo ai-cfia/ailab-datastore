@@ -3,6 +3,8 @@ import unittest
 
 import psycopg
 from dotenv import load_dotenv
+import datastore.db as db
+import datastore.db.queries.inspection as inspection
 
 load_dotenv()
 
@@ -19,11 +21,10 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 class TestUpsertInspectionFunction(unittest.TestCase):
     def setUp(self):
         # Connect to the PostgreSQL database with the specified schema
-        self.conn = psycopg.connect(
-            DB_CONNECTION_STRING, options=f"-c search_path={DB_SCHEMA},public"
-        )
+        self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.conn.autocommit = False  # Ensure transaction is managed manually
-        self.cursor = self.conn.cursor()
+        self.cursor = db.cursor(connection=self.conn)
+        db.create_search_path(connection=self.conn, cur=self.cursor, schema=DB_SCHEMA)
 
         # Insert a user to act as the inspector
         self.cursor.execute(
@@ -52,6 +53,7 @@ class TestUpsertInspectionFunction(unittest.TestCase):
             'SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);',
             (None, self.label_info_id, self.inspector_id, None, None, False),
         )
+        inspection_id = inspection.new_inspection(self.cursor, self.inspector_id)
         inspection_id = self.cursor.fetchone()[0]
 
         # Verify that the inspection data is correctly saved

@@ -67,7 +67,9 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             None,
             None,
             None,
-            "test-warranty",
+            None,
+            None,
+            None,
             self.company_info_id,
             self.company_info_id,
         )

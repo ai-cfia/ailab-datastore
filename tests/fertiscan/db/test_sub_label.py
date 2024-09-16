@@ -80,7 +80,9 @@ class test_sub_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
             None,
             None,
         )
@@ -217,4 +219,4 @@ class test_sub_label(unittest.TestCase):
         self.assertEqual(sub_label_data[1][0], sub_id)
 
         self.assertEqual(sub_label_data[0][1], self.text_fr)
-        self.assertEqual(sub_label_data[1][1], other_fr)
+        self.assertEqual(sub_label_data[1][1], other_fr) 

@@ -44,7 +44,7 @@ def new_label_information(
     """
     try:
         query = """
-        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s. %s);
+        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
             """
         cursor.execute(
             query,
@@ -60,7 +60,7 @@ def new_label_information(
                 titre,
                 is_minimal,
                 company_info_id,
-                manufacturer_info_id,
+                manufacturer_info_id
             ),
         )
         return cursor.fetchone()[0]
@@ -97,7 +97,9 @@ def get_label_information(cursor, label_information_id):
                 n, 
                 p, 
                 k, 
-                warranty,
+                guaranteed_title,
+                guaranteed_titre,
+                title_is_minimal,
                 company_info_id,
                 manufacturer_info_id
             FROM 

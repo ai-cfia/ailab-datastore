@@ -296,7 +296,9 @@ class test_organization_information(unittest.TestCase):
             10,
             10,
             10,
-            "warranty",
+            "title",
+            "titre",
+            False,
             company_id,
             manufacturer_id,
         )
@@ -314,7 +316,9 @@ class test_organization_information(unittest.TestCase):
             10,
             10,
             10,
-            "warranty",
+            "title",
+            "titre",
+            False,
             None,
             None,
         )

@@ -288,7 +288,7 @@ BEGIN
 -- GUARANTEED
 
 		-- Loop through each language ('en' and 'fr')
-    FOR guaranteed_analysis_language  IN SELECT * FROM jsonb_object_keys(input_json->'guaranteed_analysis')
+    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.13".LANGUAGE))
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis'->guaranteed_analysis_language)
 		LOOP
@@ -304,9 +304,9 @@ BEGIN
 					(record->>'value')::float,
 					record->>'unit',
 					label_info_id,
+					guaranteed_analysis_language::"fertiscan_0.0.13".language,
 					FALSE,
-					NULL, -- We arent handeling element_id yet
-					guaranteed_analysis_language::"fertiscan_0.0.13".language
+					NULL -- We arent handeling element_id yet
 				);
 			END IF;
 		END LOOP;

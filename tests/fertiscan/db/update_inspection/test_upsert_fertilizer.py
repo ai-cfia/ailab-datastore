@@ -4,6 +4,8 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
+from datastore.db.queries import inspection, user, picture
+
 load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
@@ -68,11 +70,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         self.label_info_id = self.cursor.fetchone()[0]
 
         # Insert an inspection record
-        self.cursor.execute(
-            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s);",
-            (None, self.label_info_id, self.inspector_id, None, None, False),
-        )
-        self.inspection_id = self.cursor.fetchone()[0]
+        self.inspection_id = inspection.new_inspection(self.cursor, self.inspector_id, None, False)
 
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test

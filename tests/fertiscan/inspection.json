@@ -218,24 +218,44 @@
             }
         ]
     },
-    "guaranteed_analysis": [
-        {
-            "name": "Total Nitrogen (N)",
-            "unit": "%",
-            "value": 20.0,
-            "edited": false
-        },
-        {
-            "name": "Available Phosphate (P2O5)",
-            "unit": "%",
-            "value": 20.0,
-            "edited": false
-        },
-        {
-            "name": "Soluble Potash (K2O)",
-            "unit": "%",
-            "value": 20.0,
-            "edited": false
-        }
-    ]
+    "guaranteed_analysis" : {
+        "title": "Guaranteed Analysis",
+        "titre": "Analyse Garantie",
+        "is_minimal" : false,
+        "en" : [
+            {
+              "nutrient": "Total Nitrogen (N)",
+              "value": "20",
+              "unit": "%"
+            },
+            {
+              "nutrient": "Available Phosphate (P2O5)",
+              "value": "20",
+              "unit": "%"
+            },
+            {
+              "nutrient": "Soluble Potash (K2O)",
+              "value": "20",
+              "unit": "%"
+            }
+          ],
+        "fr" : [
+            {
+              "nutrient": "Azote total (N)",
+              "value": "20",
+              "unit": "%"
+            },
+            {
+              "nutrient": "Phosphate assimilable (P2O5)",
+              "value": "20",
+              "unit": "%"
+            },
+            {
+              "nutrient": "Potasse soluble (K2O)",
+              "value": "20",
+              "unit": "%"
+            }
+        ]
+    }
 }
+

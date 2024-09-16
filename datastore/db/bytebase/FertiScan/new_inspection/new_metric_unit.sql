@@ -1,4 +1,4 @@
-BOOLEANCREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_metric_unit(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_metric_unit(
     value FLOAT,
     read_unit TEXT,
     label_id UUID,

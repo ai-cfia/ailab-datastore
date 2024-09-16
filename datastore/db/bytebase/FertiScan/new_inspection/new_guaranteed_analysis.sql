@@ -3,9 +3,9 @@ name TEXT,
 value FLOAT,
 unit TEXT,
 label_id UUID,
-edited BOOLEAN = FALSE,
-element_id int = NULL,
 language "fertiscan_0.0.13".language,
+edited BOOLEAN = FALSE,
+element_id int = NULL
 )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -26,8 +26,8 @@ BEGIN
 		edited,
 		label_id,
 		element_id,
-		language
-    ) RETURNING id INTO guaranteed_id;
+		language)
+	RETURNING id INTO guaranteed_id;
     RETURN guaranteed_id;
 END;
 $function$;
