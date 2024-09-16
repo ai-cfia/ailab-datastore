@@ -71,7 +71,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         updated_input_json["ingredients"]["en"][0]["value"] = new_value
         updated_input_json["guaranteed_analysis"]["en"][0]["value"] = new_value
         updated_input_json["verified"] = False
-        label_id = updated_input_json["product"]["label_id"]
+        # label_id = updated_input_json["product"]["label_id"]
         try:
             updated_data = Inspection(**updated_input_json)
             updated_result = update_inspection(

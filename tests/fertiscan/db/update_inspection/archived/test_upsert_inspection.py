@@ -1,7 +1,6 @@
 import os
 import unittest
 
-import psycopg
 from dotenv import load_dotenv
 import datastore.db as db
 import datastore.db.queries.inspection as inspection
