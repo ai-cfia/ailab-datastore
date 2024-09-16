@@ -4,7 +4,7 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from datastore.db.queries import inspection, user, picture
+from datastore.db.queries import inspection
 
 load_dotenv()
 

@@ -5,7 +5,6 @@ import unittest
 from dotenv import load_dotenv
 from psycopg import connect
 
-import datastore.db.queries.nutrients as nutrients
 from datastore.db.metadata.inspection import Inspection
 from datastore.db.queries.inspection import InspectionUpdateError, update_inspection
 

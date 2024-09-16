@@ -5,7 +5,6 @@ import unittest
 import psycopg
 import datastore.db.queries.label as label
 import datastore.db.queries.sub_label as sub_label
-import datastore.db.queries.organization as organization
 from dotenv import load_dotenv
 
 load_dotenv()
