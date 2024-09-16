@@ -70,7 +70,9 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         self.label_info_id = self.cursor.fetchone()[0]
 
         # Insert an inspection record
-        self.inspection_id = inspection.new_inspection(self.cursor, self.inspector_id, None, False)
+        self.inspection_id = inspection.new_inspection(
+            self.cursor, self.inspector_id, None, False
+        )
 
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test

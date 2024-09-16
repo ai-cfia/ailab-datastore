@@ -33,13 +33,16 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         with open("tests/fertiscan/inspection_export.json") as f:
             inspection_data = json.load(f)
         self.sample_sub_labels = json.dumps(
-            {"instructions" : inspection_data["instructions"],
-                "cautions" : inspection_data["cautions"]
-            })
-        self.nb_sub_labels = len(inspection_data["instructions"]["en"]) + len(inspection_data["cautions"]["en"])
+            {
+                "instructions": inspection_data["instructions"],
+                "cautions": inspection_data["cautions"],
+            }
+        )
+        self.nb_sub_labels = len(inspection_data["instructions"]["en"]) + len(
+            inspection_data["cautions"]["en"]
+        )
         # self.updated_sub_labels = self.sample_sub_labels
-        
-        
+
         self.updated_sub_labels = json.dumps(
             {
                 "instructions": {
@@ -56,7 +59,6 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                         "3. Store in a cool place.",
                         "4. Test instruction.",
                         "5. Test instruction.",
-                        
                     ],
                 },
                 "cautions": {
@@ -74,7 +76,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                         "Limited warranty of 1 year.",
                         "Test caution.",
                     ],
-                }
+                },
             }
         )
         self.nb_updated = 10
@@ -120,10 +122,14 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         )
 
         saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
-        nb_sub_labels = len(saved_data["instructions"]["en"]) + len(saved_data["cautions"]["en"])
+        nb_sub_labels = len(saved_data["instructions"]["en"]) + len(
+            saved_data["cautions"]["en"]
+        )
 
         self.assertEqual(
-            nb_sub_labels, self.nb_sub_labels, f"There should be {self.nb_sub_labels} sub label records inserted"
+            nb_sub_labels,
+            self.nb_sub_labels,
+            f"There should be {self.nb_sub_labels} sub label records inserted",
         )
 
         # Update sub labels
@@ -138,10 +144,14 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             (self.label_id,),
         )
         updated_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
-        nb_updated = len(updated_data["instructions"]["en"]) + len(updated_data["cautions"]["en"])
+        nb_updated = len(updated_data["instructions"]["en"]) + len(
+            updated_data["cautions"]["en"]
+        )
 
         self.assertEqual(
-            nb_updated, self.nb_updated, f"There should be {self.nb_sub_labels} sub label records inserted"
+            nb_updated,
+            self.nb_updated,
+            f"There should be {self.nb_sub_labels} sub label records inserted",
         )
 
 

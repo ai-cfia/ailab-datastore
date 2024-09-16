@@ -65,7 +65,11 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
         with self.assertRaises(psycopg.errors.Error):
             self.cursor.execute(
                 "SELECT upsert_label_information(%s, %s, %s);",
-                (sample_label_info, self.organization_info_id, self.organization_info_id),
+                (
+                    sample_label_info,
+                    self.organization_info_id,
+                    self.organization_info_id,
+                ),
             )
         # label_info_id = self.cursor.fetchone()[0]
 
@@ -138,7 +142,11 @@ class TestUpsertLabelInformationFunction(unittest.TestCase):
         with self.assertRaises(psycopg.errors.Error):
             self.cursor.execute(
                 "SELECT upsert_label_information(%s, %s, %s);",
-                (sample_label_info, self.organization_info_id, self.organization_info_id),
+                (
+                    sample_label_info,
+                    self.organization_info_id,
+                    self.organization_info_id,
+                ),
             )
         # label_info_id = self.cursor.fetchone()[0]
 

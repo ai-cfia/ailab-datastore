@@ -53,9 +53,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
                 "phone_number": "+1 800 555 0123",
             }
         )
-        self.cursor.execute(
-            'SELECT upsert_organization_info(%s);', (sample_org_info,)
-        )
+        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
         self.label_id = label.new_label_information(
@@ -83,13 +81,13 @@ class TestUpdateMetricsFunction(unittest.TestCase):
     def test_update_metrics(self):
         # Insert initial metrics
         self.cursor.execute(
-            'SELECT update_metrics(%s, %s);',
+            "SELECT update_metrics(%s, %s);",
             (self.label_id, self.sample_metrics),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
+            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -108,13 +106,13 @@ class TestUpdateMetricsFunction(unittest.TestCase):
 
         # Update metrics
         self.cursor.execute(
-            'SELECT update_metrics(%s, %s);',
+            "SELECT update_metrics(%s, %s);",
             (self.label_id, self.updated_metrics),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
+            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()
@@ -135,9 +133,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
 
     def _get_unit_name(self, unit_id):
         # Helper function to fetch the unit name by unit_id
-        self.cursor.execute(
-            'SELECT unit FROM unit WHERE id = %s;', (unit_id,)
-        )
+        self.cursor.execute("SELECT unit FROM unit WHERE id = %s;", (unit_id,))
         return self.cursor.fetchone()[0]
 
 

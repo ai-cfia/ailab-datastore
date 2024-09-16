@@ -32,20 +32,33 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         with open("tests/fertiscan/inspection_export.json") as f:
             inspection_data = json.load(f)
         self.sample_guaranteed = json.dumps(inspection_data["guaranteed_analysis"])
-        self.nb_guaranteed = len(inspection_data["guaranteed_analysis"]["en"]) + len(inspection_data["guaranteed_analysis"]["fr"])
-        self.updated_guaranteed = {"inspection":{"guaranteed_analysis": {
-            "en": [
-                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
-                {"name": "Available Phosphate (P2O5)", "value": 22, "unit": "%"},
-                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
-            ],
-            "fr": [
-                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
-                {"name": "Available Phosphate (P2O5)", "value": 22, "unit": "%"},
-                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
-            ]
-        }}}
-
+        self.nb_guaranteed = len(inspection_data["guaranteed_analysis"]["en"]) + len(
+            inspection_data["guaranteed_analysis"]["fr"]
+        )
+        self.updated_guaranteed = {
+            "inspection": {
+                "guaranteed_analysis": {
+                    "en": [
+                        {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                        {
+                            "name": "Available Phosphate (P2O5)",
+                            "value": 22,
+                            "unit": "%",
+                        },
+                        {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+                    ],
+                    "fr": [
+                        {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                        {
+                            "name": "Available Phosphate (P2O5)",
+                            "value": 22,
+                            "unit": "%",
+                        },
+                        {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+                    ],
+                }
+            }
+        }
 
         # Insert test data to obtain a valid label_id
         sample_org_info = json.dumps(
@@ -83,7 +96,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
     def test_update_guaranteed(self):
         # Insert initial guaranteed analysis
-        
+
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.sample_guaranteed),
@@ -92,11 +105,11 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         # Verify that the data is correctly saved
         basic_data = guaranteed.get_guaranteed_analysis_json(self.cursor, self.label_id)
         self.assertEqual(
-            len(basic_data["guaranteed_analysis"]["en"]) + len(basic_data["guaranteed_analysis"]["fr"]),
+            len(basic_data["guaranteed_analysis"]["en"])
+            + len(basic_data["guaranteed_analysis"]["fr"]),
             self.nb_guaranteed,
             f"There should be {self.nb_guaranteed} guaranteed analysis records inserted",
         )
-
 
         # Update guaranteed analysis
         self.cursor.execute(
@@ -105,7 +118,9 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         )
 
         # Verify that the data is correctly updated
-        updated_data = guaranteed.get_guaranteed_analysis_json(self.cursor, self.label_id)
+        updated_data = guaranteed.get_guaranteed_analysis_json(
+            self.cursor, self.label_id
+        )
         for value in updated_data["guaranteed_analysis"]["en"]:
             self.assertEqual(value["value"], 22)
 

@@ -164,7 +164,7 @@ class test_sub_label(unittest.TestCase):
         for key in data.keys():
             for item in data[key]:
                 self.assertEqual(data[key][item], [])
-        
+
     def test_has_sub_label(self):
         sub_label.new_sub_label(
             self.cursor,
@@ -219,4 +219,4 @@ class test_sub_label(unittest.TestCase):
         self.assertEqual(sub_label_data[1][0], sub_id)
 
         self.assertEqual(sub_label_data[0][1], self.text_fr)
-        self.assertEqual(sub_label_data[1][1], other_fr) 
+        self.assertEqual(sub_label_data[1][1], other_fr)

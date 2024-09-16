@@ -69,8 +69,8 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         updated_input_json["company"]["name"] = "Updated Company Name"
         updated_input_json["product"]["metrics"]["weight"][0]["value"] = new_value
         updated_input_json["product"]["metrics"]["density"]["value"] = new_value
-        #updated_input_json["specifications"]["en"][0]["ph"] = 6.8
-        #updated_input_json["ingredients"]["en"][0]["value"] = 5.5
+        # updated_input_json["specifications"]["en"][0]["ph"] = 6.8
+        # updated_input_json["ingredients"]["en"][0]["value"] = 5.5
         updated_input_json["guaranteed_analysis"]["en"][0]["value"] = new_value
         updated_input_json["verified"] = False  # Ensure verified is false
 
@@ -381,9 +381,9 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Update the JSON data with empty company and manufacturer for testing
         updated_input_json = self.created_data.copy()
         updated_input_json["company"] = {}  # Company is set to an empty object
-        updated_input_json[
-            "manufacturer"
-        ] = {}  # Manufacturer is set to an empty object
+        updated_input_json["manufacturer"] = (
+            {}
+        )  # Manufacturer is set to an empty object
         updated_input_json["verified"] = False  # Ensure verified is false
 
         updated_input_json_str = json.dumps(updated_input_json)

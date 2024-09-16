@@ -123,26 +123,28 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             self.nb_instructions = len(self.analysis_json.get("instructions_fr"))
 
         # if len(self.analysis_json.get("first_aid_en")) >= len(
-            # self.analysis_json.get("first_aid_fr")
+        # self.analysis_json.get("first_aid_fr")
         # ):
-            # self.nb_first_aid = len(self.analysis_json.get("first_aid_en"))
+        # self.nb_first_aid = len(self.analysis_json.get("first_aid_en"))
         # elif len(self.analysis_json.get("first_aid_en")) < len(
-            # self.analysis_json.get("first_aid_fr")
+        # self.analysis_json.get("first_aid_fr")
         # ):
-            # self.nb_first_aid = len(self.analysis_json.get("first_aid_fr"))
+        # self.nb_first_aid = len(self.analysis_json.get("first_aid_fr"))
 
         # self.nb_specifications = len(self.analysis_json.get("specifications_en")) + len(
-            # self.analysis_json.get("specifications_fr")
+        # self.analysis_json.get("specifications_fr")
         # )
 
-        self.nb_guaranteed = len(self.analysis_json.get("guaranteed_analysis_en").get("nutrients")) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
+        self.nb_guaranteed = len(
+            self.analysis_json.get("guaranteed_analysis_en").get("nutrients")
+        ) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
         # self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-            # self.analysis_json.get("ingredients_fr")
+        # self.analysis_json.get("ingredients_fr")
         # )
 
         # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
-            # self.analysis_json.get("micronutrients_fr")
+        # self.analysis_json.get("micronutrients_fr")
         # )
 
         self.nb_weight = len(self.analysis_json.get("weight"))
@@ -180,20 +182,20 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
         # specifications = specification.get_all_specifications(
-            # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
+        # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
         # )
         # self.assertIsNotNone(specifications)
         # self.assertEqual(
-            # len(specifications), self.nb_specifications
+        # len(specifications), self.nb_specifications
         # )  # There are 2 specifications in the analysis_json
 
         # nutrients_data = nutrients.get_all_micronutrients(
-            # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
+        # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
         # )
         # self.assertIsNotNone(nutrients_data)
 
         # self.assertEqual(
-            # len(nutrients_data), self.nb_micronutrients
+        # len(nutrients_data), self.nb_micronutrients
         # )  # There are 2 nutrients in the analysis_json
         sub_labels = sub_label.get_sub_label_json(
             self.cursor, str(analysis["product"]["label_id"])
@@ -265,14 +267,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "cautions_fr": [],
             "instructions_fr": [],
             "guaranteed_analysis_is_minimal": False,
-            "guaranteed_analysis_en": {
-                "title": None,
-                "nutrients": []
-                },
-            "guaranteed_analysis_fr": {
-                "title": None,
-                "nutrients": []
-            },
+            "guaranteed_analysis_en": {"title": None, "nutrients": []},
+            "guaranteed_analysis_fr": {"title": None, "nutrients": []},
         }
 
         formatted_analysis = metadata.build_inspection_import(empty_analysis)
@@ -299,8 +295,6 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         inspection_data = json.loads(inspection_data)
         # Make sure the inspection data is either a empty array or None
         self.assertTrue(loop_into_empty_dict(inspection_data))
-
-
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
@@ -369,7 +363,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         new_npk = "10-10-10"
         new_instruction_en = ["3. of", "2. set"]
         new_instruction_fr = ["3. de", "2. ensemble"]
-        new_instruction_nb = (len(new_instruction_en)+len(new_instruction_fr))/2
+        new_instruction_nb = (len(new_instruction_en) + len(new_instruction_fr)) / 2
         new_value = 100.0
         old_value = analysis["guaranteed_analysis"]["fr"][0]["value"]
         new_title = "Nouveau titre"
@@ -393,25 +387,29 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "test",
             "test",
         ]
-        new_caution_number = (len(new_cautions_en) + len(new_cautions_fr))/2
+        new_caution_number = (len(new_cautions_en) + len(new_cautions_fr)) / 2
         new_guaranteed_analysis = {
             "title": new_title,
             "titre": old_title,
             "is_minimal": False,
-            "en": [{
-                "value": new_value,
-                "unit": "%",
-                "name": new_name,
-                "edited": True,
-            },],
-            "fr": [{
-                "value": old_value,
-                "unit": "%",
-                "name": old_name,
-                "edited": False,
-            },],
+            "en": [
+                {
+                    "value": new_value,
+                    "unit": "%",
+                    "name": new_name,
+                    "edited": True,
+                },
+            ],
+            "fr": [
+                {
+                    "value": old_value,
+                    "unit": "%",
+                    "name": old_name,
+                    "edited": False,
+                },
+            ],
         }
-            
+
         new_guaranteed_nb = 2
         # update the dataset
         analysis["product"]["name"] = new_product_name
@@ -475,7 +473,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)
-        
+
         # Check if sub_label created a new id if there is a field that is not in the old label_dimension
         self.assertEqual(len(old_label_dimension[6]), self.nb_cautions)
 
@@ -494,54 +492,58 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "title": new_title,
             "titre": old_title,
             "is_minimal": False,
-            "en": [{
-                "value": new_value,
-                "unit": "%",
-                "name": new_name,
-                "edited": True,
-            },
-            {
-                "value": new_value,
-                "unit": "%",
-                "name": new_name,
-                "edited": True,
-            },
-            {
-                "value": new_value,
-                "unit": "%",
-                "name": new_name,
-                "edited": True,
-            },
-            {
-                "value": new_value,
-                "unit": "%",
-                "name": new_name,
-                "edited": True,
-            },],
-            "fr": [{
-                "value": old_value,
-                "unit": "%",
-                "name": old_name,
-                "edited": False,
-            },
-            {
-                "value": old_value,
-                "unit": "%",
-                "name": old_name,
-                "edited": False,
-            },
-            {
-                "value": old_value,
-                "unit": "%",
-                "name": old_name,
-                "edited": False,
-            },
-            {
-                "value": old_value,
-                "unit": "%",
-                "name": old_name,
-                "edited": False,
-            },],
+            "en": [
+                {
+                    "value": new_value,
+                    "unit": "%",
+                    "name": new_name,
+                    "edited": True,
+                },
+                {
+                    "value": new_value,
+                    "unit": "%",
+                    "name": new_name,
+                    "edited": True,
+                },
+                {
+                    "value": new_value,
+                    "unit": "%",
+                    "name": new_name,
+                    "edited": True,
+                },
+                {
+                    "value": new_value,
+                    "unit": "%",
+                    "name": new_name,
+                    "edited": True,
+                },
+            ],
+            "fr": [
+                {
+                    "value": old_value,
+                    "unit": "%",
+                    "name": old_name,
+                    "edited": False,
+                },
+                {
+                    "value": old_value,
+                    "unit": "%",
+                    "name": old_name,
+                    "edited": False,
+                },
+                {
+                    "value": old_value,
+                    "unit": "%",
+                    "name": old_name,
+                    "edited": False,
+                },
+                {
+                    "value": old_value,
+                    "unit": "%",
+                    "name": old_name,
+                    "edited": False,
+                },
+            ],
         }
         old_guaranteed_nb = new_guaranteed_nb
         new_guaranteed_nb = 8
