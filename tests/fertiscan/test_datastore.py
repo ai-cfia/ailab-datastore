@@ -22,7 +22,6 @@ from datastore.db.queries import (
     metric,
     nutrients,
     picture,
-    specification,
     sub_label,
 )
 
