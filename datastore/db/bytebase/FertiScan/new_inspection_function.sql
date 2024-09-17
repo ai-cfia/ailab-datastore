@@ -249,6 +249,12 @@ BEGIN
 			jsonb_array_length(en_values)
 		);
 
+		-- Check if lengths are not equal, and raise a notice
+		IF jsonb_array_length(en_values) != jsonb_array_length(fr_values) THEN
+			RAISE NOTICE 'Array length mismatch for sub_type: %, EN length: %, FR length: %', 
+				sub_type_rec.type_en, jsonb_array_length(en_values), jsonb_array_length(fr_values);
+		END IF;
+
 		-- Loop through the indices up to the maximum length
 		FOR i IN 0..(max_length - 1)
 		LOOP
@@ -257,7 +263,7 @@ BEGIN
 			en_value := COALESCE(en_values->>i, '');
 
 			-- Insert sub-label without deleting existing data
-			sub_label_id := "fertiscan_0.0.12".new_sub_label(
+			sub_label_id := "fertiscan_0.0.14".new_sub_label(
 				fr_value,
 				en_value,
 				label_info_id,
@@ -266,7 +272,7 @@ BEGIN
 			);
 		END LOOP;
 	END LOOP;
-  -- SUB_LABEL END
+-- SUB_LABEL END
   
   -- MICRO NUTRIENTS
 		-- Loop through each language ('en' and 'fr')
