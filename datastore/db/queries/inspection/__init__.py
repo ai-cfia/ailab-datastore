@@ -10,7 +10,7 @@ from psycopg import Cursor, DatabaseError, Error, OperationalError
 from psycopg.sql import SQL
 from pydantic_core import ValidationError
 
-from datastore.db.metadata.inspection import Inspection
+from datastore.db.metadata.inspection import DBInspection, Inspection
 
 
 class InspectionCreationError(Exception):
@@ -18,6 +18,10 @@ class InspectionCreationError(Exception):
 
 
 class InspectionUpdateError(Exception):
+    pass
+
+
+class InspectionDeleteError(Exception):
     pass
 
 
@@ -160,7 +164,8 @@ def get_inspection(cursor, inspection_id):
                 label_info_id,
                 sample_id,
                 picture_set_id,
-                fertilizer_id
+                fertilizer_id,
+                original_dataset
             FROM 
                 inspection
             WHERE 
@@ -389,7 +394,6 @@ def update_inspection(
     try:
         updated_data_dict = updated_data.model_dump()
 
-        # Prepare and execute the SQL function call
         query = SQL("SELECT update_inspection(%s, %s, %s)")
         cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
         result = cursor.fetchone()
@@ -399,7 +403,6 @@ def update_inspection(
                 "Failed to update inspection. No data returned."
             )
 
-        # Convert the JSON result back to an Inspection object
         return Inspection.model_validate(result[0])
 
     except (Error, DatabaseError, OperationalError) as e:
@@ -410,6 +413,47 @@ def update_inspection(
         raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+
+
+def delete_inspection(
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    user_id: str | UUID,
+) -> DBInspection:
+    """
+    Delete an inspection from the database and return the deleted inspection record.
+
+    Parameters:
+    - cursor (Cursor): Database cursor for executing queries.
+    - inspection_id (str | UUID): UUID of the inspection to delete.
+    - user_id (str | UUID): UUID of the user performing the deletion.
+
+    Returns:
+    - DBInspection: A DBInspection object representing the deleted inspection.
+
+    Raises:
+    - InspectionDeleteError: Custom error for handling specific delete issues.
+    """
+    try:
+        query = SQL("SELECT delete_inspection(%s, %s);")
+        cursor.execute(query, (inspection_id, user_id))
+        result = cursor.fetchone()
+
+        if result is None:
+            raise InspectionDeleteError(
+                "Failed to delete inspection. No data returned."
+            )
+
+        return DBInspection.model_validate(result[0])
+
+    except (Error, DatabaseError, OperationalError) as e:
+        raise InspectionDeleteError(f"Database error occurred: {str(e)}") from e
+    except ValidationError as e:
+        raise InspectionDeleteError(f"Validation failed: {str(e)}") from e
+    except (ValueError, TypeError) as e:
+        raise InspectionDeleteError(f"Invalid input: {str(e)}") from e
+    except Exception as e:
+        raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
 
 
 def get_inspection_factual(cursor, inspection_id):
