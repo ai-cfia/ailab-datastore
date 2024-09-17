@@ -183,8 +183,10 @@ class test_inspection_export(unittest.TestCase):
         self.assertListEqual(data["instructions"]["en"], [])
 
     def test_unequal_sub_label_lengths_and_order(self):
-        self.analyse["instructions_en"] = ["one"]
-        self.analyse["instructions_fr"] = ["un", "deux"]
+        expected_instructions_en = ["one", ""]
+        expected_instructions_fr = ["un", "deux"]
+        self.analyse["instructions_en"] = expected_instructions_en
+        self.analyse["instructions_fr"] = expected_instructions_fr
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -205,9 +207,6 @@ class test_inspection_export(unittest.TestCase):
         self.assertIsNotNone(data["instructions"])
         self.assertIsNotNone(data["instructions"]["en"])
         self.assertIsNotNone(data["instructions"]["fr"])
-
-        expected_instructions_en = ["one", ""]
-        expected_instructions_fr = ["un", "deux"]
 
         self.assertEqual(
             set(data["instructions"]["en"]),

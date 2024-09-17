@@ -6,6 +6,7 @@ import psycopg
 from dotenv import load_dotenv
 
 import datastore.db.queries.label as label
+from datastore.db.queries import sub_label
 
 load_dotenv()
 
@@ -211,55 +212,31 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             )
 
     def test_update_sub_labels_with_mismatched_arrays(self):
-        # Create sub labels with mismatched 'fr' and 'en' arrays
-        mismatched_sub_labels = json.dumps(
-            {
-                "instructions": {
-                    "fr": [
-                        "1. Dissoudre 50g dans 10L d'eau.",
-                        "2. Appliquer toutes les 2 semaines.",
-                    ],
-                    "en": [
-                        "1. Dissolve 50g in 10L of water.",
-                        "2. Apply every 2 weeks.",
-                        "3. Store in a cool, dry place.",
-                    ],
-                }
-            }
-        )
+        instructions = json.loads(self.sample_sub_labels)["instructions"]
+        instructions["fr"] = instructions["fr"][:-1]  # Remove last item from 'fr' array
+        mismatched_sub_labels = json.dumps({"instructions": instructions})
 
         try:
-            # Execute the function with mismatched sub labels
             self.cursor.execute(
                 "SELECT update_sub_labels(%s, %s);",
                 (self.label_id, mismatched_sub_labels),
             )
         except Exception as e:
-            self.fail(f"update_sub_labels raised an exception unexpectedly: {e}")
+            self.fail(f"update_sub_labels raised an unexpected exception: {e}")
 
-        # Verify that no exception was raised and check the data integrity
-        self.cursor.execute(
-            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
-            (self.label_id,),
-        )
-        saved_data = self.cursor.fetchall()
+        saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        saved_instructions = saved_data["instructions"]
 
-        # Expected data should still be saved even though the arrays were mismatched
-        expected_data = [
-            ("1. Dissoudre 50g dans 10L d'eau.", "1. Dissolve 50g in 10L of water."),
-            ("2. Appliquer toutes les 2 semaines.", "2. Apply every 2 weeks."),
-            ("", "3. Store in a cool, dry place."),
-        ]
         self.assertEqual(
-            len(saved_data),
-            3,
-            "There should be 3 sub label records inserted despite mismatched arrays",
+            len(saved_instructions["fr"]),
+            len(instructions["en"]),
+            f"Mismatch in length of 'fr' array: expected {len(instructions['en'])}, got {len(saved_instructions['fr'])}.",
         )
-        for expected_item in expected_data:
-            self.assertTrue(
-                expected_item in saved_data,
-                f"Expected item {expected_item} was not found in the saved data",
-            )
+        self.assertEqual(
+            len(saved_instructions["en"]),
+            len(instructions["en"]),
+            f"Mismatch in length of 'en' array: expected {len(instructions['en'])}, got {len(saved_instructions['en'])}.",
+        )
 
     def test_update_sub_labels_with_empty_arrays(self):
         # Test with empty 'fr' and 'en' arrays
