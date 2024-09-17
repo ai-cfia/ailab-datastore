@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".get_sub_label_json(label_info_id uuid)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".get_sub_label_json(label_info_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
