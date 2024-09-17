@@ -160,7 +160,8 @@ def get_inspection(cursor, inspection_id):
                 label_info_id,
                 sample_id,
                 picture_set_id,
-                fertilizer_id
+                fertilizer_id,
+                user_comment
             FROM 
                 inspection
             WHERE 

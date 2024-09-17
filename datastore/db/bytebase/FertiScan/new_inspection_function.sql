@@ -315,17 +315,19 @@ BEGIN
 
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.13".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id
+        inspector_id, label_info_id, sample_id, picture_set_id, user_comment
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
-        picture_set_id  -- Assuming picture_set_id is handled separately
+        picture_set_id,  -- Assuming picture_set_id is handled separately
+		Null
     )
     RETURNING id INTO inspection_id_value;
    
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
+	input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(""));
 
 	-- Update the Inspection_factual entry with the json
 	UPDATE "fertiscan_0.0.13".inspection_factual

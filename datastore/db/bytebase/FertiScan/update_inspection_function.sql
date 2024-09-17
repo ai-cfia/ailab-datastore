@@ -624,6 +624,7 @@ BEGIN
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
         verified = verified_bool,
         updated_at = CURRENT_TIMESTAMP  -- Update timestamp on conflict
+        user_comment = p_input_json->> 'inspection_comment'
     WHERE 
         id = p_inspection_id;
 

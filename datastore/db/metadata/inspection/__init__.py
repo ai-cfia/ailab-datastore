@@ -16,6 +16,7 @@ from datastore.db.queries import (
     organization,
     specification,
     sub_label,
+    inspection
 )
 
 
@@ -101,6 +102,7 @@ class Specifications(BaseModel):
 
 class Inspection(BaseModel):
     inspection_id: Optional[str] = None
+    inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
     company: Optional[OrganizationInformation] = OrganizationInformation()
     manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
@@ -392,7 +394,11 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
 
         # Specifications(**(specifications_json.get("specifications")))
 
-        # inspection_json.update(specifications_json)
+        # inspection_json.update(specifications_json)è
+
+        # Get inspection comment
+        inspection_comment = inspection.get_inspection(cursor,inspection_id)[8]
+        inspection_json['inspection_comment'] = inspection_comment
 
         # Verify the inspection object
         inspection_formatted = Inspection(**inspection_json)
