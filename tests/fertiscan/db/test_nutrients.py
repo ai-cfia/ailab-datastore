@@ -1,14 +1,14 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
+import os
 import unittest
 
-from datastore.db.queries import nutrients, label
-from datastore.db.metadata import validator
 import datastore.db.__init__ as db
-import os
+from datastore.db.metadata import validator
+from datastore.db.queries import label, nutrients
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -300,11 +300,12 @@ class test_micronutrient(unittest.TestCase):
             self.cursor, self.label_information_id
         )
         self.assertEqual(len(micronutrient_data), 2)
-        self.assertEqual(micronutrient_data[0][0], micronutrient_id)
-        self.assertEqual(micronutrient_data[1][0], micro_id)
 
-        self.assertEqual(micronutrient_data[0][1], self.micronutrient_name)
-        self.assertEqual(micronutrient_data[1][1], other_name)
+        data_by_id = {item[0]: item for item in micronutrient_data}
+        self.assertIn(micronutrient_id, data_by_id)
+        self.assertIn(micro_id, data_by_id)
+        self.assertEqual(data_by_id[micronutrient_id][1], self.micronutrient_name)
+        self.assertEqual(data_by_id[micro_id][1], other_name)
 
 
 class test_guaranteed_analysis(unittest.TestCase):
@@ -491,8 +492,11 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.cursor, self.label_information_id
         )
         self.assertEqual(len(guaranteed_analysis_data), 2)
-        self.assertEqual(guaranteed_analysis_data[0][0], guaranteed_analysis_id)
-        self.assertEqual(guaranteed_analysis_data[1][0], guaranteed_id)
 
-        self.assertEqual(guaranteed_analysis_data[0][1], self.guaranteed_analysis_name)
-        self.assertEqual(guaranteed_analysis_data[1][1], other_name)
+        data_by_id = {item[0]: item for item in guaranteed_analysis_data}
+        self.assertIn(guaranteed_analysis_id, data_by_id)
+        self.assertIn(guaranteed_id, data_by_id)
+        self.assertEqual(
+            data_by_id[guaranteed_analysis_id][1], self.guaranteed_analysis_name
+        )
+        self.assertEqual(data_by_id[guaranteed_id][1], other_name)
