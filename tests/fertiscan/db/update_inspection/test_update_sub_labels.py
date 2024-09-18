@@ -229,8 +229,8 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         self.assertEqual(
             len(saved_instructions["fr"]),
-            len(instructions["en"]),
-            f"Mismatch in length of 'fr' array: expected {len(instructions['en'])}, got {len(saved_instructions['fr'])}.",
+            len(instructions["fr"]),
+            f"Mismatch in length of 'fr' array: expected {len(instructions['fr'])}, got {len(saved_instructions['fr'])}.",
         )
         self.assertEqual(
             len(saved_instructions["en"]),

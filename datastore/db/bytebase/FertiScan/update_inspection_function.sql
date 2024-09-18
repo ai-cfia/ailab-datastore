@@ -375,6 +375,30 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function to check if both text_content_fr and text_content_en are NULL, and skip insertion if true
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_sub_label()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if both text_content_fr and text_content_en are NULL
+    IF NEW.text_content_fr IS NULL AND NEW.text_content_en IS NULL THEN
+        -- Raise a notice and skip the insertion by returning NULL
+        RAISE NOTICE 'Skipping insertion because both text_content_fr and text_content_en are NULL';
+        RETURN NULL;
+    END IF;
+    -- Allow the insert if at least one is not NULL
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Trigger to call check_null_sub_label() before inserting into sub_label
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.14".sub_label;
+CREATE TRIGGER before_insert_sub_label
+BEFORE INSERT ON "fertiscan_0.0.14".sub_label
+FOR EACH ROW
+EXECUTE FUNCTION check_null_sub_label();
+
+
 -- Function to update sub labels: delete old and insert new
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_sub_labels(
     p_label_id uuid,
@@ -416,8 +440,8 @@ BEGIN
         FOR i IN 0..(max_length - 1)
         LOOP
             -- Extract values or set to empty string if not present
-            fr_value := COALESCE(fr_values->>i, '');
-            en_value := COALESCE(en_values->>i, '');
+            fr_value := fr_values->>i;
+            en_value := en_values->>i;
 
             -- Insert sub label record
             INSERT INTO sub_label (

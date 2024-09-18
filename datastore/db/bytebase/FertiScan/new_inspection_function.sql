@@ -259,8 +259,8 @@ BEGIN
 		FOR i IN 0..(max_length - 1)
 		LOOP
 			-- Extract values or set to empty string if not present
-			fr_value := COALESCE(fr_values->>i, '');
-			en_value := COALESCE(en_values->>i, '');
+			fr_value := fr_values->>i;
+			en_value := en_values->>i;
 
 			-- Insert sub-label without deleting existing data
 			sub_label_id := "fertiscan_0.0.14".new_sub_label(

@@ -218,3 +218,38 @@ class test_sub_label(unittest.TestCase):
 
         self.assertEqual(sub_label_data[0][1], self.text_fr)
         self.assertEqual(sub_label_data[1][1], other_fr)
+
+    def test_get_sub_label_json_with_null_values(self):
+        # Insert a sub-label with NULL for text_fr
+        sub_label.new_sub_label(
+            self.cursor,
+            None,  # Null French text
+            self.text_en,  # English text
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+        # Insert a sub-label with NULL for text_en
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,  # French text
+            None,  # Null English text
+            self.label_id,
+            self.sub_type_2_id,
+            False,
+        )
+
+        # Fetch sub-label data as JSON
+        sub_label_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+
+        # Assert that the 'en' value for the first sub-label is not empty
+        self.assertEqual(len(sub_label_data[self.type_en]['en']), 1, "Expected 'en' field to have content")
+        
+        # Assert that the 'fr' value for the first sub-label is empty (since it was NULL)
+        self.assertEqual(len(sub_label_data[self.type_en]['fr']), 0,  "Expected 'fr' field to be empty")
+
+        # Assert that the 'fr' value for the second sub-label is not empty
+        self.assertEqual(len(sub_label_data[self.type_2_en]['fr']), 1, "Expected 'fr' field to have content")
+
+        # Assert that the 'en' value for the second sub-label is empty (since it was NULL)
+        self.assertEqual(len(sub_label_data[self.type_2_en]['en']), 0, "Expected 'en' field to be empty")

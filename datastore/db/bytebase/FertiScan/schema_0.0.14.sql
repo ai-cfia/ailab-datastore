@@ -180,8 +180,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.14"."sub_label" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "text_content_fr" text NOT NULL DEFAULT '',
-        "text_content_en" text NOT NULL DEFAULT '',
+        "text_content_fr" text,
+        "text_content_en" text,
         "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14"."sub_type" ("id")
