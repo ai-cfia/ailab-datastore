@@ -66,6 +66,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # Update the JSON data for testing the update function
         updated_input_json = self.created_data.copy()
         new_value = 66.3
+        user_feedback = "Updated feedback for inspection."
         updated_input_json["company"]["name"] = "Updated Company Name"
         updated_input_json["product"]["metrics"]["weight"][0]["value"] = new_value
         updated_input_json["product"]["metrics"]["density"]["value"] = new_value
@@ -73,6 +74,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         # updated_input_json["ingredients"]["en"][0]["value"] = 5.5
         updated_input_json["guaranteed_analysis"]["en"][0]["value"] = new_value
         updated_input_json["verified"] = False  # Ensure verified is false
+        updated_input_json["inspection_comments"] = user_feedback
 
         updated_input_json_str = json.dumps(updated_input_json)
 
@@ -84,7 +86,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the inspection record was updated in the database
         self.cursor.execute(
-            "SELECT id, label_info_id, inspector_id, verified FROM inspection WHERE id = %s;",
+            "SELECT id, label_info_id, inspector_id, verified, user_commment FROM inspection WHERE id = %s;",
             (self.inspection_id,),
         )
         updated_inspection = self.cursor.fetchone()
@@ -103,6 +105,10 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             updated_inspection[3],
             "The verified status should be False as updated.",
         )
+        
+        self.assertEqual(updated_inspection[4], 
+                         user_feedback, 
+                         "The user feedback should be updated.")
 
         # Verify that no fertilizer record was created
         self.cursor.execute(

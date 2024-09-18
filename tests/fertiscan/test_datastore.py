@@ -369,6 +369,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         old_title = analysis["guaranteed_analysis"]["titre"]
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
+        user_feedback = "This is a feedback"
         # new_specification_en = [
         #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         # ]
@@ -423,6 +424,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["cautions"]["en"] = new_cautions_en
         analysis["cautions"]["fr"] = new_cautions_fr
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
+        
+        analysis["inspection_comment"] = user_feedback
 
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
 
@@ -469,6 +472,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(guaranteed[1], new_value)
             else:
                 self.assertEqual(guaranteed[1], old_value)
+                
+        # Verify user's comment are saved
+        inspection_data = inspection.get_inspection(self.cursor, inspection_id)
+        self.assertEqual(inspection_data[8], user_feedback)
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)
