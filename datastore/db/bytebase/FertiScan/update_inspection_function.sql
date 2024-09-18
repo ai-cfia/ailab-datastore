@@ -382,7 +382,7 @@ BEGIN
     -- Check if both text_content_fr and text_content_en are NULL
     IF NEW.text_content_fr IS NULL AND NEW.text_content_en IS NULL THEN
         -- Raise a notice and skip the insertion by returning NULL
-        RAISE NOTICE 'Skipping insertion because both text_content_fr and text_content_en are NULL';
+        RAISE Exception 'Skipping insertion because both text_content_fr and text_content_en are NULL';
         RETURN NULL;
     END IF;
     -- Allow the insert if at least one is not NULL
