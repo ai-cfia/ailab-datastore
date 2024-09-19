@@ -7,6 +7,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+    CREATE EXTENSION IF NOT EXISTS "pg_background";
+
     CREATE TABLE "fertiscan_0.0.12"."users" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "email" text NOT NULL UNIQUE,

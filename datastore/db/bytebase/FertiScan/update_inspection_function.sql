@@ -414,7 +414,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+DROP FUNCTION IF EXISTS "fertiscan_0.0.12".upsert_fertilizer;
 -- Function to upsert fertilizer information based on unique fertilizer name
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".upsert_fertilizer(
     p_name text,
@@ -588,3 +588,98 @@ BEGIN
 
 END;
 $$ LANGUAGE plpgsql;
+
+DROP FUNCTION IF EXISTS "fertiscan_0.0.12".inspection_verified_trigger;
+-- trigger when an inspection is newly verified
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".inspection_verified_trigger()
+RETURNS TRIGGER AS $$
+DECLARE
+    fertilizer_name text;
+    registration_number text;
+    manufacturer_info_id uuid;
+    company_info_id uuid;
+    inspection_id uuid;
+    location_id uuid;
+    organization_id uuid;
+BEGIN
+     -- Check if the verified field is true, and upsert fertilizer if so
+    IF NEW.verified and NOT OLD.verified THEN
+        -- Select the inspection data
+        SELECT 
+            label_information.product_name, 
+            label_information.registration_number, 
+            label_information.company_info_id, 
+            label_information.manufacturer_info_id,
+            organization_information.        
+        INTO
+            fertilizer_name,
+            registration_number,
+            organization_id,
+            manufacturer_info_id;
+            location_id
+        FROM
+            label_information
+        LEFT JOIN
+            organization_information
+        ON
+            label_information.manufacturer_info_id = organization_information.id
+        WHERE
+            id = NEW.label_info_id;
+        
+        IF manufacturer_info_id IS NOT NULL THEN
+            SELECT id 
+            INTO organization_id
+            FROM organization
+            WHERE main_location_id = location_id
+            LIMIT 1;
+            -- We dont want to duplicate the same organization
+            IF organization_id IS NOT NULL THEN
+                -- Update the organization record with the manufacturer information
+                UPDATE organization 
+                SET information_id = manufacturer_info_id;
+                WHERE id = organization_id;
+            ELSE
+                -- Create new organization and get the organization_id
+                INSERT INTO organization (information_id, main_location_id)
+                VALUES (manufacturer_info_id, location_id) -- TODO: main_location_id not yet handled
+                RETURNING id INTO organization_id;
+            END IF;
+        ELSIF company_info_id IS NOT NULL THEN
+            SELECT id 
+            INTO organization_id
+            FROM organization
+            WHERE main_location_id = location_id
+            LIMIT 1;
+            -- We dont want to duplicate the same organization
+            IF organization_id IS NOT NULL THEN
+                -- Update the organization record with the manufacturer information
+                UPDATE organization 
+                SET information_id = company_info_id;
+                WHERE id = organization_id;
+            ELSE
+                -- Create new organization and get the organization_id
+                INSERT INTO organization (information_id, main_location_id)
+                VALUES (company_info_id, location_id) -- TODO: main_location_id not yet handled
+                RETURNING id INTO organization_id;
+            END IF;
+        ELSE
+            organization_id := NULL;
+        END IF;
+        -- Upsert the fertilizer record
+        PERFORM upsert_fertilizer(
+            fertilizer_name,
+            registration_number,
+            organization_id,
+            NEW.id
+        );
+        -- Call the function in the background
+        PERFORM pg_background_launch('SELECT inspection_evaluation(' || NEW.id || ');');
+    END IF;
+    RETURN NEW;
+END;
+
+DROP TRIGGER IF EXISTS inspection_verified_trigger ON inspection;
+CREATE TRIGGER inspection_verified_trigger
+AFTER UPDATE OF verified ON inspection
+FOR EACH ROW
+EXECUTE FUNCTION "fertiscan_0.0.12".inspection_verified_trigger();
