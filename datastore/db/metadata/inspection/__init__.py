@@ -144,7 +144,6 @@ def build_inspection_import(analysis_form: dict) -> str:
             "instructions_fr",
             "guaranteed_analysis_fr",
             "guaranteed_analysis_en",
-            "guaranteed_analysis_is_minimal",
         ]
         missing_keys = []
         for key in requiered_keys:
@@ -199,7 +198,6 @@ def build_inspection_import(analysis_form: dict) -> str:
             verified=False,
             guaranteed_title = analysis_form.get("guaranteed_analysis_en", {}).get("title"),
             guaranteed_titre = analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
-            guaranteed_analysis_is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
         )
 
         cautions = SubLabel(
@@ -288,7 +286,8 @@ def build_inspection_import(analysis_form: dict) -> str:
         guaranteed = GuaranteedAnalysis(
             title= analysis_form.get("guaranteed_analysis_en", {}).get("title"),
             titre= analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
-            is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
+            # is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
+            is_minimal = None, # Not processed yet by the pipeline
             en=guaranteed_en,
             fr=guaranteed_fr,
         )
