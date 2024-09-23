@@ -9,6 +9,11 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel, ValidationError
 
+from datastore.db.metadata.inspection.pipeline_models import (
+    FertilizerInspection,
+    NutrientValue,
+    PipelineValue,
+)
 from datastore.db.queries import (
     ingredient,
     label,
@@ -41,32 +46,29 @@ class OrganizationInformation(BaseModel):
 
 
 class Value(BaseModel):
-    value: Optional[float] = None
-    unit: Optional[str] = None
-    name: Optional[str] = None
-    edited: Optional[bool] = False
+    value: float | None = None
+    unit: str | None = None
+    edited: bool = False
 
 
-class ValuesObjects(BaseModel):
-    en: List[Value] = []
-    fr: List[Value] = []
+class NamedValue(Value):
+    name: str | None = None
+
+
+class LocalizedNamedValue(BaseModel):
+    en: list[NamedValue] = []
+    fr: list[NamedValue] = []
 
 
 class SubLabel(BaseModel):
-    en: List[str] = []
-    fr: List[str] = []
-
-
-class Metric(BaseModel):
-    value: Optional[float] = None
-    unit: Optional[str] = None
-    edited: Optional[bool] = False
+    en: list[str] = []
+    fr: list[str] = []
 
 
 class Metrics(BaseModel):
-    weight: Optional[List[Metric]] = []
-    volume: Optional[Metric] = Metric()
-    density: Optional[Metric] = Metric()
+    weight: list[Value] = []
+    volume: Value | None = None
+    density: Value | None = None
 
 
 class ProductInformation(BaseModel):
@@ -94,6 +96,18 @@ class Specifications(BaseModel):
     fr: List[Specification]
 
 
+class LocalizedTitle(BaseModel):
+    en: str | None = None
+    fr: str | None = None
+
+
+class GuaranteedAnalysis(BaseModel):
+    title: LocalizedTitle | None = LocalizedTitle()
+    is_minimal: bool | None = None
+    en: list[NamedValue] = []
+    fr: list[NamedValue] = []
+
+
 # Awkwardly named so to avoid name conflict
 class DBInspection(BaseModel):
     id: UUID4
@@ -114,11 +128,177 @@ class Inspection(BaseModel):
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
-    micronutrients: ValuesObjects
-    ingredients: ValuesObjects
+    micronutrients: LocalizedNamedValue
+    ingredients: LocalizedNamedValue
     specifications: Specifications
     first_aid: SubLabel
     guaranteed_analysis: List[Value]
+
+
+# Temporary
+class InspectionV2(BaseModel):
+    inspection_id: str | None = None
+    inspection_comment: str | None = None
+    verified: bool = False
+    company: OrganizationInformation | None = OrganizationInformation()
+    manufacturer: OrganizationInformation | None = OrganizationInformation()
+    product: ProductInformation | None = None
+    cautions: SubLabel | None = None
+    instructions: SubLabel | None = None
+    micronutrients: LocalizedNamedValue | None = None
+    ingredients: LocalizedNamedValue | None = None
+    specifications: Specifications | None = None
+    first_aid: SubLabel | None = None
+    guaranteed_analysis: GuaranteedAnalysis | None = None
+
+
+def transform_pipeline_value(value: PipelineValue):
+    if value is None:
+        return None
+    return Value(value=value.value, unit=value.unit)
+
+
+def transform_nutrient_to_named_value(nv: NutrientValue) -> NamedValue:
+    if nv is None:
+        return None
+    return NamedValue(name=nv.nutrient, value=nv.value, unit=nv.unit, edited=False)
+
+
+def transform_analysis_to_inspection(analysis_form: FertilizerInspection):
+    # Map company information
+    company = (
+        OrganizationInformation(
+            name=analysis_form.company_name,
+            address=analysis_form.company_address,
+            website=analysis_form.company_website,
+            phone_number=analysis_form.company_phone_number,
+        )
+        if any(
+            [
+                analysis_form.company_name,
+                analysis_form.company_address,
+                analysis_form.company_website,
+                analysis_form.company_phone_number,
+            ]
+        )
+        else None
+    )
+
+    # Map manufacturer information
+    manufacturer = (
+        OrganizationInformation(
+            name=analysis_form.manufacturer_name,
+            address=analysis_form.manufacturer_address,
+            website=analysis_form.manufacturer_website,
+            phone_number=analysis_form.manufacturer_phone_number,
+        )
+        if any(
+            [
+                analysis_form.manufacturer_name,
+                analysis_form.manufacturer_address,
+                analysis_form.manufacturer_website,
+                analysis_form.manufacturer_phone_number,
+            ]
+        )
+        else None
+    )
+
+    # Map weight, density, volume
+    weight_values = (
+        [transform_pipeline_value(w) for w in analysis_form.weight]
+        if analysis_form.weight
+        else []
+    )
+    density_value = transform_pipeline_value(analysis_form.density)
+    volume_value = transform_pipeline_value(analysis_form.volume)
+
+    metrics = Metrics(weight=weight_values, density=density_value, volume=volume_value)
+
+    # Extract NPK values
+    n, p, k = extract_npk(analysis_form.npk)
+
+    # Map product information
+    product = (
+        ProductInformation(
+            name=analysis_form.fertiliser_name,
+            registration_number=analysis_form.registration_number,
+            lot_number=analysis_form.lot_number,
+            metrics=metrics,
+            npk=analysis_form.npk,
+            n=n,
+            p=p,
+            k=k,
+            warranty=None,
+        )
+        if any(
+            [
+                analysis_form.fertiliser_name,
+                analysis_form.registration_number,
+                analysis_form.lot_number,
+                metrics.weight,
+                metrics.density,
+                metrics.volume,
+                analysis_form.npk,
+            ]
+        )
+        else None
+    )
+
+    # Map cautions and instructions
+    cautions = SubLabel(
+        en=analysis_form.cautions_en or [], fr=analysis_form.cautions_fr or []
+    )
+    instructions = SubLabel(
+        en=analysis_form.instructions_en or [], fr=analysis_form.instructions_fr or []
+    )
+
+    # Map ingredients
+    ingredients_en_values = [
+        transform_nutrient_to_named_value(nv) for nv in analysis_form.ingredients_en
+    ]
+    ingredients_fr_values = [
+        transform_nutrient_to_named_value(nv) for nv in analysis_form.ingredients_fr
+    ]
+    ingredients = (
+        LocalizedNamedValue(en=ingredients_en_values, fr=ingredients_fr_values)
+        if ingredients_en_values or ingredients_fr_values
+        else None
+    )
+
+    # Map guaranteed analysis
+    guaranteed_analysis = None
+    if any(
+        [analysis_form.guaranteed_analysis_en, analysis_form.guaranteed_analysis_fr]
+    ):
+        guaranteed_analysis = GuaranteedAnalysis()
+        if guaranteed_analysis_en := analysis_form.guaranteed_analysis_en:
+            guaranteed_analysis.title.en = guaranteed_analysis_en.title
+            guaranteed_analysis.en = [
+                transform_nutrient_to_named_value(nv)
+                for nv in analysis_form.guaranteed_analysis_en.nutrients
+            ]
+        if guaranteed_analysis_fr := analysis_form.guaranteed_analysis_fr:
+            guaranteed_analysis.title.en = guaranteed_analysis_fr.title
+            guaranteed_analysis.fr = [
+                transform_nutrient_to_named_value(nv)
+                for nv in analysis_form.guaranteed_analysis_fr.nutrients
+            ]
+        guaranteed_analysis.is_minimal = None  # TODO: Logic to be implemented
+
+    # Create the Inspection instance
+    inspection = InspectionV2(
+        inspection_id=None,
+        verified=False,
+        company=company,
+        manufacturer=manufacturer,
+        product=product,
+        cautions=cautions,
+        instructions=instructions,
+        ingredients=ingredients,
+        guaranteed_analysis=guaranteed_analysis,
+    )
+
+    return inspection
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -186,21 +366,21 @@ def build_inspection_import(analysis_form: dict) -> str:
             phone_number=analysis_form.get("manufacturer_phone_number"),
         )
 
-        weights: list[Metric] = [
-            Metric(
+        weights: list[Value] = [
+            Value(
                 unit=weight.get("unit"),
                 value=weight.get("value"),
             )
             for weight in analysis_form.get("weight", [])
         ]
 
-        volume_obj = Metric()
+        volume_obj = Value()
         if volume := analysis_form.get("volume"):
-            volume_obj = Metric(unit=volume.get("unit"), value=volume.get("value"))
+            volume_obj = Value(unit=volume.get("unit"), value=volume.get("value"))
 
-        density_obj = Metric()
+        density_obj = Value()
         if density := analysis_form.get("density"):
-            density_obj = Metric(unit=density.get("unit"), value=density.get("value"))
+            density_obj = Value(unit=density.get("unit"), value=density.get("value"))
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
@@ -227,41 +407,41 @@ def build_inspection_import(analysis_form: dict) -> str:
             fr=analysis_form.get("instructions_fr", []),
         )
 
-        micro_en: list[Value] = [
-            Value(
+        micro_en: list[NamedValue] = [
+            NamedValue(
                 unit=nutrient.get("unit") or None,
                 value=nutrient.get("value") or None,
                 name=nutrient.get("nutrient"),
             )
             for nutrient in analysis_form.get("micronutrients_en", [])
         ]
-        micro_fr: list[Value] = [
-            Value(
+        micro_fr: list[NamedValue] = [
+            NamedValue(
                 unit=nutrient.get("unit") or None,
                 value=nutrient.get("value") or None,
                 name=nutrient.get("nutrient"),
             )
             for nutrient in analysis_form.get("micronutrients_fr", [])
         ]
-        micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
+        micronutrients = LocalizedNamedValue(en=micro_en, fr=micro_fr)
 
-        ingredients_en: list[Value] = [
-            Value(
+        ingredients_en: list[NamedValue] = [
+            NamedValue(
                 unit=ingredient.get("unit") or None,
                 value=ingredient.get("value") or None,
                 name=ingredient.get("nutrient"),
             )
             for ingredient in analysis_form.get("ingredients_en", [])
         ]
-        ingredients_fr: list[Value] = [
-            Value(
+        ingredients_fr: list[NamedValue] = [
+            NamedValue(
                 unit=ingredient.get("unit") or None,
                 value=ingredient.get("value") or None,
                 name=ingredient.get("nutrient"),
             )
             for ingredient in analysis_form.get("ingredients_fr", [])
         ]
-        ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
+        ingredients = LocalizedNamedValue(en=ingredients_en, fr=ingredients_fr)
 
         specifications = Specifications(
             en=[
@@ -281,8 +461,8 @@ def build_inspection_import(analysis_form: dict) -> str:
             fr=analysis_form.get("first_aid_fr", []),
         )
 
-        guaranteed: list[Value] = [
-            Value(
+        guaranteed: list[NamedValue] = [
+            NamedValue(
                 unit=item.get("unit") or None,
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
@@ -326,9 +506,9 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         if metrics_json["metrics"]["weight"] is None:
             metrics_json["metrics"]["weight"] = []
         if metrics_json["metrics"]["volume"] is None:
-            metrics_json["metrics"]["volume"] = Metric()
+            metrics_json["metrics"]["volume"] = Value()
         if metrics_json["metrics"]["density"] is None:
-            metrics_json["metrics"]["density"] = Metric()
+            metrics_json["metrics"]["density"] = Value()
         label_json.update(metrics_json)
         ProductInformation(**label_json)
 
@@ -363,14 +543,14 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         # Get the ingredients
         ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
 
-        ValuesObjects(**ingredients_json)
+        LocalizedNamedValue(**ingredients_json)
 
         inspection_json.update(ingredients_json)
 
         # Get the nutrients
         nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
 
-        ValuesObjects(**nutrients_json)
+        LocalizedNamedValue(**nutrients_json)
 
         inspection_json.update(nutrients_json)
 
@@ -381,7 +561,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         if guaranteed_analysis_json.get("guaranteed_analysis") is None:
             guaranteed_analysis_json["guaranteed_analysis"] = []
         for i in range(len(guaranteed_analysis_json.get("guaranteed_analysis"))):
-            Value(**(guaranteed_analysis_json.get("guaranteed_analysis")[i]))
+            NamedValue(**(guaranteed_analysis_json.get("guaranteed_analysis")[i]))
 
         inspection_json.update(guaranteed_analysis_json)
 

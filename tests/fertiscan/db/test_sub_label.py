@@ -1,15 +1,19 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
-import unittest
-
-from datastore.db.queries import sub_label, label
-from datastore.db.metadata import validator
-import datastore.db.__init__ as db
 import os
+import unittest
 import uuid
+
+from dotenv import load_dotenv
+
+import datastore.db.__init__ as db
+from datastore.db.metadata import validator
+from datastore.db.queries import label, sub_label
+
+load_dotenv()
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -162,7 +166,7 @@ class test_sub_label(unittest.TestCase):
         for key in data.keys():
             for item in data[key]:
                 self.assertEqual(data[key][item], [])
-        
+
     def test_has_sub_label(self):
         sub_label.new_sub_label(
             self.cursor,
@@ -209,12 +213,11 @@ class test_sub_label(unittest.TestCase):
             self.cursor, other_fr, other_en, self.label_id, self.sub_type_id, False
         )
         sub_label_data = sub_label.get_all_sub_label(self.cursor, self.label_id)
+
         self.assertEqual(len(sub_label_data), 2)
 
-        self.assertTrue(validator.is_valid_uuid(sub_label_data[0][0]))
-        self.assertEqual(sub_label_data[0][0], sub_label_id)
-        self.assertTrue(validator.is_valid_uuid(sub_label_data[1][0]))
-        self.assertEqual(sub_label_data[1][0], sub_id)
+        # Convert to sets to ignore order
+        expected_set = {(sub_label_id, self.text_fr), (sub_id, other_fr)}
+        result_set = set((item[0], item[1]) for item in sub_label_data)
 
-        self.assertEqual(sub_label_data[0][1], self.text_fr)
-        self.assertEqual(sub_label_data[1][1], other_fr)
+        self.assertEqual(expected_set, result_set)

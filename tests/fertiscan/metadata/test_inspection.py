@@ -1,13 +1,20 @@
+import json
+import os
 import unittest
+
+import datastore.db as db
 import datastore.db.metadata.inspection as metadata
+from datastore.db.metadata.inspection.pipeline_models import (
+    FertilizerInspection,
+    NutrientValue,
+    PipelineGuaranteedAnalysis,
+    PipelineValue,
+)
 from datastore.db.queries import (
     inspection,
-    user,
     picture,
+    user,
 )
-import os
-import datastore.db.__init__ as db
-import json
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -40,7 +47,6 @@ class test_inspection_export(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -329,11 +335,272 @@ class test_inspection_export(unittest.TestCase):
         for spec in data["specifications"]["en"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'en' list"
+                "Empty specification found in 'en' list",
             )
-        
+
         for spec in data["specifications"]["fr"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'fr' list"
+                "Empty specification found in 'fr' list",
             )
+
+
+class TestTransformAnalysisToInspection(unittest.TestCase):
+    def setUp(self):
+        self.valid_analysis_form = FertilizerInspection(
+            company_name="Test Company",
+            company_address="123 Test St",
+            company_website="http://test.com",
+            company_phone_number="123456789",
+            manufacturer_name="Test Manufacturer",
+            manufacturer_address="456 Manufacturer St",
+            manufacturer_website="http://manufacturer.com",
+            manufacturer_phone_number="987654321",
+            fertiliser_name="Test Fertilizer",
+            registration_number="1234",
+            lot_number="5678",
+            weight=[PipelineValue(value=100, unit="kg")],
+            density=PipelineValue(value=1.2, unit="g/cm3"),
+            volume=PipelineValue(value=50, unit="L"),
+            npk="10-20-30",
+            cautions_en=["Keep away from children"],
+            cautions_fr=["Tenir loin des enfants"],
+            instructions_en=["Apply evenly"],
+            instructions_fr=["Appliquer uniformément"],
+            ingredients_en=[NutrientValue(nutrient="N", value=10, unit="%")],
+            ingredients_fr=[NutrientValue(nutrient="P", value=20, unit="%")],
+            guaranteed_analysis_en=PipelineGuaranteedAnalysis(
+                title="Guaranteed Analysis",
+                nutrients=[
+                    NutrientValue(nutrient="Nitrogen", value=10, unit="%"),
+                    NutrientValue(nutrient="Phosphorus", value=20, unit="%"),
+                    NutrientValue(nutrient="Potassium", value=30, unit="%"),
+                ],
+            ),
+            guaranteed_analysis_fr=PipelineGuaranteedAnalysis(
+                title="Analyse Garantie",
+                nutrients=[
+                    NutrientValue(nutrient="Azote", value=10, unit="%"),
+                    NutrientValue(nutrient="Phosphore", value=20, unit="%"),
+                    NutrientValue(nutrient="Potassium", value=30, unit="%"),
+                ],
+            ),
+        )
+
+        self.partial_analysis_form = FertilizerInspection(
+            company_name=None,
+            company_address=None,
+            company_website=None,
+            company_phone_number=None,
+            manufacturer_name=None,
+            manufacturer_address=None,
+            manufacturer_website=None,
+            manufacturer_phone_number=None,
+            fertiliser_name=None,
+            registration_number=None,
+            lot_number=None,
+            weight=[],
+            density=None,
+            volume=None,
+            npk=None,
+            cautions_en=[],
+            cautions_fr=[],
+            instructions_en=[],
+            instructions_fr=[],
+            ingredients_en=[],
+            ingredients_fr=[],
+            guaranteed_analysis_en=None,
+            guaranteed_analysis_fr=None,
+        )
+
+    def test_valid_transformation(self):
+        inspection = metadata.transform_analysis_to_inspection(self.valid_analysis_form)
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.product.name, "Test Fertilizer")
+        self.assertEqual(inspection.product.npk, "10-20-30")
+        self.assertEqual(inspection.product.metrics.weight[0].value, 100)
+        self.assertEqual(inspection.cautions.en[0], "Keep away from children")
+        self.assertEqual(inspection.ingredients.en[0].name, "N")
+        self.assertEqual(inspection.ingredients.fr[0].name, "P")
+        self.assertIsNotNone(inspection.guaranteed_analysis)
+        self.assertEqual(inspection.guaranteed_analysis.en[0].name, "Nitrogen")
+        self.assertEqual(inspection.guaranteed_analysis.en[0].value, 10)
+        self.assertEqual(inspection.guaranteed_analysis.fr[0].name, "Azote")
+        self.assertEqual(inspection.guaranteed_analysis.fr[0].value, 10)
+
+    def test_partial_transformation(self):
+        inspection = metadata.transform_analysis_to_inspection(
+            self.partial_analysis_form
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNone(inspection.company)
+        self.assertIsNone(inspection.manufacturer)
+        self.assertIsNone(inspection.product)
+        self.assertEqual(inspection.cautions.en, [])
+        self.assertIsNone(inspection.ingredients)
+        self.assertIsNone(inspection.guaranteed_analysis)
+
+    def test_missing_npk(self):
+        analysis_form_no_npk = self.valid_analysis_form.model_copy(update={"npk": None})
+        inspection = metadata.transform_analysis_to_inspection(analysis_form_no_npk)
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNone(inspection.product.npk)
+
+    def test_empty_lists_in_analysis(self):
+        analysis_form_empty_lists = self.valid_analysis_form.model_copy(
+            update={"weight": [], "instructions_en": [], "cautions_fr": []}
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_empty_lists
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.product.metrics.weight, [])
+        self.assertEqual(inspection.instructions.en, [])
+        self.assertEqual(inspection.cautions.fr, [])
+
+    def test_none_guaranteed_analysis(self):
+        inspection = metadata.transform_analysis_to_inspection(
+            self.valid_analysis_form.model_copy(
+                update={"guaranteed_analysis_en": None, "guaranteed_analysis_fr": None}
+            )
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNone(inspection.guaranteed_analysis)
+
+    def test_company_but_no_manufacturer(self):
+        analysis_form_no_manufacturer = self.valid_analysis_form.model_copy(
+            update={
+                "manufacturer_name": None,
+                "manufacturer_address": None,
+                "manufacturer_website": None,
+                "manufacturer_phone_number": None,
+            }
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_no_manufacturer
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.company)
+        self.assertIsNone(inspection.manufacturer)
+
+    def test_manufacturer_but_no_company(self):
+        analysis_form_no_company = self.valid_analysis_form.model_copy(
+            update={
+                "company_name": None,
+                "company_address": None,
+                "company_website": None,
+                "company_phone_number": None,
+            }
+        )
+        inspection = metadata.transform_analysis_to_inspection(analysis_form_no_company)
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.manufacturer)
+        self.assertIsNone(inspection.company)
+
+    def test_partial_product_information(self):
+        analysis_form_partial_product = self.valid_analysis_form.model_copy(
+            update={
+                "fertiliser_name": "Test Fertilizer",
+                "registration_number": None,
+                "lot_number": None,
+            }
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_partial_product
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.product.name, "Test Fertilizer")
+        self.assertIsNone(inspection.product.registration_number)
+        self.assertIsNone(inspection.product.lot_number)
+
+    def test_no_metrics(self):
+        analysis_form_no_metrics = self.valid_analysis_form.model_copy(
+            update={"weight": [], "density": None, "volume": None}
+        )
+        inspection = metadata.transform_analysis_to_inspection(analysis_form_no_metrics)
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.product.metrics.weight, [])
+        self.assertIsNone(inspection.product.metrics.density)
+        self.assertIsNone(inspection.product.metrics.volume)
+
+    def test_some_metrics_but_not_all(self):
+        analysis_form_some_metrics = self.valid_analysis_form.model_copy(
+            update={
+                "weight": [PipelineValue(value=100, unit="kg")],
+                "density": None,
+                "volume": None,
+            }
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_some_metrics
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.product.metrics.weight[0].value, 100)
+        self.assertIsNone(inspection.product.metrics.density)
+        self.assertIsNone(inspection.product.metrics.volume)
+
+    def test_partial_cautions_and_instructions(self):
+        analysis_form_partial_cautions = self.valid_analysis_form.model_copy(
+            update={
+                "cautions_en": ["Keep away from children"],
+                "cautions_fr": [],
+                "instructions_en": [],
+                "instructions_fr": ["Appliquer uniformément"],
+            }
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_partial_cautions
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertEqual(inspection.cautions.en, ["Keep away from children"])
+        self.assertEqual(inspection.cautions.fr, [])
+        self.assertEqual(inspection.instructions.fr, ["Appliquer uniformément"])
+        self.assertEqual(inspection.instructions.en, [])
+
+    def test_only_english_ingredients(self):
+        analysis_form_english_ingredients = self.valid_analysis_form.model_copy(
+            update={"ingredients_fr": []}
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_english_ingredients
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.ingredients.en)
+        self.assertEqual(inspection.ingredients.en[0].name, "N")
+        self.assertEqual(inspection.ingredients.fr, [])
+
+    def test_only_french_ingredients(self):
+        analysis_form_french_ingredients = self.valid_analysis_form.model_copy(
+            update={"ingredients_en": []}
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_french_ingredients
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.ingredients.fr)
+        self.assertEqual(inspection.ingredients.fr[0].name, "P")
+        self.assertEqual(inspection.ingredients.en, [])
+
+    def test_only_english_guaranteed_analysis(self):
+        analysis_form_english_guaranteed_analysis = self.valid_analysis_form.model_copy(
+            update={"guaranteed_analysis_fr": None}
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_english_guaranteed_analysis
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.guaranteed_analysis)
+        self.assertEqual(inspection.guaranteed_analysis.en[0].name, "Nitrogen")
+        self.assertEqual(inspection.guaranteed_analysis.fr, [])
+
+    def test_only_french_guaranteed_analysis(self):
+        analysis_form_french_guaranteed_analysis = self.valid_analysis_form.model_copy(
+            update={"guaranteed_analysis_en": None}
+        )
+        inspection = metadata.transform_analysis_to_inspection(
+            analysis_form_french_guaranteed_analysis
+        )
+        self.assertIsInstance(inspection, metadata.InspectionV2)
+        self.assertIsNotNone(inspection.guaranteed_analysis)
+        self.assertEqual(inspection.guaranteed_analysis.fr[0].name, "Azote")
+        self.assertEqual(inspection.guaranteed_analysis.en, [])
