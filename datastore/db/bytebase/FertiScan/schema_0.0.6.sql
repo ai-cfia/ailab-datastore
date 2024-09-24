@@ -220,7 +220,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     EXECUTE FUNCTION update_fertilizer_timestamp();
 
     -- Insert the default types : [instruction, caution,first_aid, warranty]
-    INSERT INTO "fertiscan_0.0.6".sub_type(type_fr,type_en) VALUES
+    INSERT INTO "fertiscan_0.0.6".sub_label(type_fr,type_en) VALUES
     ('Instruction','Instruction'),
     ('Mise en garde','Caution'),
     ('Premier soin','First aid'),
