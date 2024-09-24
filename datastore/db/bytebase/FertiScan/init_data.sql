@@ -1,6 +1,6 @@
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM "fertiscan_0.0.6".sub_label WHERE type_fr = 'Instruction' AND type_en = 'Instruction') THEN
+    IF NOT EXISTS (SELECT 1 FROM "fertiscan_0.0.6".sub_type WHERE type_fr = 'Instruction' AND type_en = 'Instruction') THEN
         INSERT INTO "fertiscan_0.0.6".sub_label(type_fr,type_en) VALUES
         ('Instruction','Instruction'),
         ('Mise en garde','Caution'),
