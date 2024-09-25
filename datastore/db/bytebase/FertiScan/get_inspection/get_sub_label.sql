@@ -17,8 +17,8 @@ BEGIN
     LEFT JOIN (
         SELECT 
             sub_type_id,
-            array_agg(sub_label.text_content_en ORDER BY sub_label.id) FILTER (WHERE sub_label.text_content_en IS NOT NULL) AS texts_en,
-            array_agg(sub_label.text_content_fr ORDER BY sub_label.id) FILTER (WHERE sub_label.text_content_fr IS NOT NULL) AS texts_fr
+            array_agg(sub_label.text_content_en) AS texts_en,
+            array_agg(sub_label.text_content_fr) AS texts_fr
         FROM sub_label
         WHERE sub_label.label_id = label_info_id 
         GROUP BY sub_label.sub_type_id
@@ -27,4 +27,4 @@ BEGIN
 
     RETURN result_json;
 END;
-$function$
+$function$;

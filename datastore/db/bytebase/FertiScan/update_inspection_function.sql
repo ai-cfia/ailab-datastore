@@ -375,28 +375,39 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- Function to check if both text_content_fr and text_content_en are NULL, and skip insertion if true
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_sub_label()
+-- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_or_empty_sub_label()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Check if both text_content_fr and text_content_en are NULL
-    IF NEW.text_content_fr IS NULL AND NEW.text_content_en IS NULL THEN
-        -- Raise a notice and skip the insertion by returning NULL
-        RAISE Exception 'Skipping insertion because both text_content_fr and text_content_en are NULL';
+    -- Check if both text_content_fr and text_content_en are NULL or empty
+    IF (NEW.text_content_fr IS NULL OR NEW.text_content_fr = '') AND 
+       (NEW.text_content_en IS NULL OR NEW.text_content_en = '') THEN
+        -- Raise an exception and skip the insertion
+        RAISE EXCEPTION 'Skipping insertion because both text_content_fr and text_content_en are NULL or empty';
         RETURN NULL;
     END IF;
-    -- Allow the insert if at least one is not NULL
+
+    -- Replace NULL with empty strings
+    IF NEW.text_content_fr IS NULL THEN
+        NEW.text_content_fr := '';
+    END IF;
+
+    IF NEW.text_content_en IS NULL THEN
+        NEW.text_content_en := '';
+    END IF;
+
+    -- Allow the insert if at least one is not NULL or empty
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 
--- Trigger to call check_null_sub_label() before inserting into sub_label
+-- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
 DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.14".sub_label;
 CREATE TRIGGER before_insert_sub_label
 BEFORE INSERT ON "fertiscan_0.0.14".sub_label
 FOR EACH ROW
-EXECUTE FUNCTION check_null_sub_label();
+EXECUTE FUNCTION check_null_or_empty_sub_label();
 
 
 -- Function to update sub labels: delete old and insert new
