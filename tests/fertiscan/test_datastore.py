@@ -285,7 +285,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Make sure the manufacturer is created
         label_data = label.get_label_information(self.cursor, label_id)
         self.assertIsNotNone(label_data)
-        self.assertIsNotNone(label_data[10])
+        self.assertIsNotNone(label_data[12])
 
         # Verify getters
         inspection_data = metadata.build_inspection_export(
@@ -366,7 +366,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         new_value = 100.0
         old_value = analysis["guaranteed_analysis"]["fr"][0]["value"]
         new_title = "Nouveau titre"
-        old_title = analysis["guaranteed_analysis"]["titre"]
+        old_title = analysis["guaranteed_analysis"]["title"]["fr"]
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
         # new_specification_en = [
@@ -388,8 +388,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         ]
         new_caution_number = (len(new_cautions_en) + len(new_cautions_fr)) / 2
         new_guaranteed_analysis = {
-            "title": new_title,
-            "titre": old_title,
+            "title": {
+                "en": new_title,
+                "fr": old_title
+            },
             "is_minimal": False,
             "en": [
                 {
@@ -488,8 +490,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(len(new_label_dimension[12]), len(old_label_dimension[12]))
 
         new_guaranteed_analysis = {
-            "title": new_title,
-            "titre": old_title,
+            "title": {
+                "en":new_title,
+                "fr": old_title
+            },
             "is_minimal": False,
             "en": [
                 {

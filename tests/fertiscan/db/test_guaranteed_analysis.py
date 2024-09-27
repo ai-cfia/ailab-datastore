@@ -207,7 +207,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         )
         metadata.GuaranteedAnalysis(**data["guaranteed_analysis"])
         self.assertIsNotNone(data["guaranteed_analysis"]["title"])
-        self.assertIsNotNone(data["guaranteed_analysis"]["titre"])
+        self.assertIsNotNone(data["guaranteed_analysis"]["title"]["en"])
 
     def test_get_guaranteed_analysis(self):
         guaranteed_analysis_id = nutrients.new_guaranteed_analysis(

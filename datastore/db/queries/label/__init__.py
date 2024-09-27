@@ -97,8 +97,8 @@ def get_label_information(cursor, label_information_id):
                 n, 
                 p, 
                 k, 
-                guaranteed_title,
-                guaranteed_titre,
+                guaranteed_title_en,
+                guaranteed_title_fr,
                 title_is_minimal,
                 company_info_id,
                 manufacturer_info_id

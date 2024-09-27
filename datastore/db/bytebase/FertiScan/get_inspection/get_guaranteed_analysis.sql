@@ -37,8 +37,8 @@ begin
     -- build Guaranteed_analysis title json
     SELECT jsonb_build_object(
      'guaranteed_analysis', jsonb_build_object(
- 		'title', COALESCE(guaranteed_title, Null),
- 		'titre', COALESCE(guaranteed_titre, Null), 
+ 		'title', COALESCE(guaranteed_title_en, Null),
+ 		'titre', COALESCE(guaranteed_title_en, Null), 
  		'is_minimal', COALESCE(title_is_minimal, Null)
  		)
  	)
@@ -53,7 +53,7 @@ begin
  		'title', jsonb_build_object( 
             'en',COALESCE(result_json_title->'guaranteed_analysis'->'title', Null),
  		    'fr', COALESCE(result_json_title->'guaranteed_analysis'->'titre', Null)
-        )
+        ),
  		'is_minimal', COALESCE(result_json_title->'guaranteed_analysis'->'is_minimal', Null),
  		'en', COALESCE(result_json->'guaranteed_analysis'->'en','[]'::jsonb),
  		'fr',COALESCE(result_json->'guaranteed_analysis'->'fr','[]'::jsonb)
