@@ -1,13 +1,10 @@
-import unittest
-import datastore.db.metadata.inspection as metadata
-from datastore.db.queries import (
-    inspection,
-    user,
-    picture,
-)
-import os
-import datastore.db.__init__ as db
 import json
+import os
+import unittest
+
+import datastore.db.__init__ as db
+import datastore.db.metadata.inspection as metadata
+from datastore.db.queries import inspection, picture, user
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -40,7 +37,6 @@ class test_inspection_export(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -186,6 +182,43 @@ class test_inspection_export(unittest.TestCase):
         self.assertListEqual(data["instructions"]["fr"], [])
         self.assertListEqual(data["instructions"]["en"], [])
 
+    def test_unequal_sub_label_lengths_and_order(self):
+        expected_instructions_en = ["one", ""]
+        expected_instructions_fr = ["un", "deux"]
+        self.analyse["instructions_en"] = expected_instructions_en
+        self.analyse["instructions_fr"] = expected_instructions_fr
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        label_information_id = inspection_dict["product"]["label_id"]
+
+        if inspection_id is None:
+            self.fail("Inspection not created")
+
+        data = metadata.build_inspection_export(
+            self.cursor, str(inspection_id), label_information_id
+        )
+        data = json.loads(data)
+
+        self.assertIsNotNone(data["instructions"])
+        self.assertIsNotNone(data["instructions"]["en"])
+        self.assertIsNotNone(data["instructions"]["fr"])
+
+        self.assertEqual(
+            set(data["instructions"]["en"]),
+            set(expected_instructions_en),
+            "Instructions EN mismatch",
+        )
+        self.assertEqual(
+            set(data["instructions"]["fr"]),
+            set(expected_instructions_fr),
+            "Instructions FR mismatch",
+        )
+
     def test_missing_specification(self):
         self.analyse["specifications_en"] = []
         self.analyse["specifications_fr"] = []
@@ -329,11 +362,164 @@ class test_inspection_export(unittest.TestCase):
         for spec in data["specifications"]["en"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'en' list"
+                "Empty specification found in 'en' list",
             )
-        
+
         for spec in data["specifications"]["fr"]:
             self.assertFalse(
                 all(value is None for value in spec.values()),
-                "Empty specification found in 'fr' list"
+                "Empty specification found in 'fr' list",
             )
+
+    def test_empty_sub_label(self):
+        # Modify analyse data to have empty cautions_en and cautions_fr
+        self.analyse["cautions_en"] = []
+        self.analyse["cautions_fr"] = []
+
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Assert that cautions in both 'en' and 'fr' are empty
+        self.assertIsNotNone(inspection_data["cautions"])
+        self.assertEqual(inspection_data["cautions"]["en"], [])
+        self.assertEqual(inspection_data["cautions"]["fr"], [])
+
+    def test_null_in_middle_of_sub_label_en(self):
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Convert the JSON string to a dictionary
+        formatted_analysis_dict = json.loads(formatted_analysis)
+
+        # Apply alterations to the dictionary
+        formatted_analysis_dict["cautions"]["en"] = ["Warning 1", None, "Warning 2"]
+        formatted_analysis_dict["cautions"]["fr"] = [
+            "Avertissement 1",
+            "Avertissement 2",
+            "Avertissement 3",
+        ]
+
+        # Convert the dictionary back to a JSON string
+        formatted_analysis = json.dumps(formatted_analysis_dict)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Assert that null in cautions_en is replaced by an empty string
+        self.assertIsNotNone(inspection_data["cautions"])
+        self.assertEqual(
+            inspection_data["cautions"]["en"],
+            [
+                formatted_analysis_dict["cautions"]["en"][0],
+                "",
+                formatted_analysis_dict["cautions"]["en"][2],
+            ],
+        )
+        self.assertEqual(
+            inspection_data["cautions"]["fr"],
+            formatted_analysis_dict["cautions"]["fr"],
+        )
+
+    def test_mismatched_sub_label_lengths_en_longer(self):
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Convert the JSON string to a dictionary
+        formatted_analysis_dict = json.loads(formatted_analysis)
+
+        # Apply alterations: cautions_en longer than cautions_fr
+        formatted_analysis_dict["cautions"]["en"] = [
+            "Warning 1",
+            "Warning 2",
+            "Warning 3",
+        ]
+        formatted_analysis_dict["cautions"]["fr"] = ["Avertissement 1"]
+
+        # Convert the dictionary back to a JSON string
+        formatted_analysis = json.dumps(formatted_analysis_dict)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Assert that both cautions_en and cautions_fr are padded to the same length
+        self.assertIsNotNone(inspection_data["cautions"])
+        self.assertEqual(
+            inspection_data["cautions"]["en"],
+            formatted_analysis_dict["cautions"]["en"],
+        )
+        self.assertEqual(
+            inspection_data["cautions"]["fr"],
+            [formatted_analysis_dict["cautions"]["fr"][0], "", ""],
+        )
+
+    def test_mismatched_sub_label_lengths_fr_longer(self):
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Convert the JSON string to a dictionary
+        formatted_analysis_dict = json.loads(formatted_analysis)
+
+        # Apply alterations: cautions_fr longer than cautions_en
+        formatted_analysis_dict["cautions"]["en"] = ["Warning 1"]
+        formatted_analysis_dict["cautions"]["fr"] = [
+            "Avertissement 1",
+            "Avertissement 2",
+            "Avertissement 3",
+        ]
+
+        # Convert the dictionary back to a JSON string
+        formatted_analysis = json.dumps(formatted_analysis_dict)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Print the inspection data
+        # Assert that both cautions_en and cautions_fr are padded to the same length
+        self.assertIsNotNone(inspection_data["cautions"])
+        self.assertEqual(
+            inspection_data["cautions"]["en"],
+            [formatted_analysis_dict["cautions"]["en"][0], "", ""],
+        )
+        self.assertEqual(
+            inspection_data["cautions"]["fr"],
+            formatted_analysis_dict["cautions"]["fr"],
+        )
