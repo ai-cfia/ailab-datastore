@@ -45,9 +45,12 @@ class Value(BaseModel):
     name: Optional[str] = None
     edited: Optional[bool] = False
 
+class Title(BaseModel):
+    en: Optional[str] = None
+    fr: Optional[str] = None
+
 class GuaranteedAnalysis(BaseModel):
-    title: Optional[str] = None
-    titre: Optional[str] = None
+    title: Title
     is_minimal: Optional[bool] = False
     en: List[Value] = []
     fr: List[Value] = []
@@ -195,9 +198,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             n=npk[0],
             p=npk[1],
             k=npk[2],
-            verified=False,
-            guaranteed_title = analysis_form.get("guaranteed_analysis_en", {}).get("title"),
-            guaranteed_titre = analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
+            verified=False
         )
 
         cautions = SubLabel(

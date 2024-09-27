@@ -97,8 +97,8 @@ BEGIN
 		(input_json->'product'->>'n')::float,
 		(input_json->'product'->>'p')::float,
 		(input_json->'product'->>'k')::float,
-		input_json->'guaranteed_analysis'->>'title',
-		input_json->'guaranteed_analysis'->>'titre',
+		input_json->'guaranteed_analysis'->'title'->>'en',
+		input_json->'guaranteed_analysis'->'titre'->>'fr',
 		(input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
 		company_id,
 		manufacturer_id
