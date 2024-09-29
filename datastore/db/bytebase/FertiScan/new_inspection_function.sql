@@ -339,4 +339,4 @@ BEGIN
 	RETURN input_json;
 
 END;
-$function$
+$function$;

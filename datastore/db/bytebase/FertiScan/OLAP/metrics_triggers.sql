@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION olap_metrics_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_metrics_creation()
 RETURNS TRIGGER AS $$
 DECLARE
     metric_type TEXT;
@@ -30,7 +30,7 @@ AFTER INSERT ON "fertiscan_0.0.15".metric
 FOR EACH ROW
 EXECUTE FUNCTION olap_metrics_creation();
 
-CREATE OR REPLACE FUNCTION olap_metrics_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_metrics_deletion()
 RETURNS TRIGGER AS $$
 DECLARE
     metric_type TEXT;

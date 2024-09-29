@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION olap_guaranteed_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_guaranteed_creation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
@@ -23,7 +23,7 @@ AFTER INSERT ON "fertiscan_0.0.15".guaranteed
 FOR EACH ROW
 EXECUTE FUNCTION olap_guaranteed_creation();
 
-CREATE OR REPLACE FUNCTION olap_guaranteed_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_guaranteed_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'DELETE') THEN

@@ -50,4 +50,4 @@ BEGIN
         'verified', verified_bool
     );
 END;
-$function$
+$function$;

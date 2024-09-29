@@ -33,4 +33,4 @@ BEGIN
     WHERE micronutrient.label_id = label_info_id;
     RETURN result_json;
 END;
-$function$
+$function$;

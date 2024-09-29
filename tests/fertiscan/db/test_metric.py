@@ -8,7 +8,7 @@ import unittest
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import validator
-from datastore.db.metadata.inspection import Metrics, Value
+from datastore.db.metadata.inspection import Metrics
 from datastore.db.queries import label, metric
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")

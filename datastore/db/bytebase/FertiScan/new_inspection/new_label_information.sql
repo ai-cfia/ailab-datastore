@@ -44,7 +44,7 @@ END;
 $function$;
 
 
-CREATE OR REPLACE FUNCTION handle_null_titles()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".handle_null_titles()
 RETURNS TRIGGER AS $$
 BEGIN
     -- If guaranteed_title_en is NULL, set it to an empty string

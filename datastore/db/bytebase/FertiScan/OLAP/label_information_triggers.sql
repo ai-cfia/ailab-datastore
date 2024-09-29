@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION olap_label_information_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_label_information_creation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
@@ -24,7 +24,7 @@ AFTER INSERT ON "fertiscan_0.0.15".label_information
 FOR EACH ROW
 EXECUTE FUNCTION olap_label_information_creation();
 
-CREATE OR REPLACE FUNCTION olap_label_information_update()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_label_information_update()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'UPDATE') THEN
@@ -49,7 +49,7 @@ BEFORE UPDATE ON "fertiscan_0.0.15".label_information
 FOR EACH ROW
 EXECUTE FUNCTION olap_label_information_update();
 
-CREATE OR REPLACE FUNCTION olap_label_information_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_label_information_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'DELETE') THEN

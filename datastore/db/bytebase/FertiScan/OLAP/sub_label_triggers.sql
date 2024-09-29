@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION olap_sub_label_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_sub_label_creation()
 RETURNS TRIGGER AS $$
 DECLARE
     type_str TEXT;
@@ -29,7 +29,7 @@ AFTER INSERT ON "fertiscan_0.0.15".sub_label
 FOR EACH ROW
 EXECUTE FUNCTION olap_sub_label_creation();
 
-CREATE OR REPLACE FUNCTION olap_sub_label_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_sub_label_deletion()
 RETURNS TRIGGER AS $$
 DECLARE
     type_str TEXT;

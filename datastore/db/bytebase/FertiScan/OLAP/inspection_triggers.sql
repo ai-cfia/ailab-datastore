@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION olap_inspection_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_inspection_creation()
 RETURNS TRIGGER AS $$
 DECLARE
     time_id UUID;
@@ -44,7 +44,7 @@ AFTER INSERT ON "fertiscan_0.0.15".inspection
 FOR EACH ROW
 EXECUTE FUNCTION olap_inspection_creation();
 
-CREATE OR REPLACE FUNCTION olap_inspection_update()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_inspection_update()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'UPDATE') THEN
@@ -69,7 +69,7 @@ BEFORE UPDATE ON "fertiscan_0.0.15".inspection
 FOR EACH ROW
 EXECUTE FUNCTION olap_inspection_update();
 
-CREATE OR REPLACE FUNCTION olap_inspection_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_inspection_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'DELETE') THEN

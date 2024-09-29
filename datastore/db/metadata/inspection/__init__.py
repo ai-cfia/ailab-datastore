@@ -5,7 +5,6 @@ The metadata is generated in a json format and is used to store the metadata in 
 """
 
 from datetime import datetime
-from itertools import product
 from typing import List, Optional
 
 from pydantic import UUID4, BaseModel, ValidationError
