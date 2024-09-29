@@ -1,13 +1,14 @@
+import json
+import os
 import unittest
+
+import datastore.db.__init__ as db
 import datastore.db.metadata.inspection as metadata
 from datastore.db.queries import (
     inspection,
-    user,
     picture,
+    user,
 )
-import os
-import datastore.db.__init__ as db
-import json
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -40,7 +41,6 @@ class test_inspection_export(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -295,8 +295,10 @@ class test_inspection_export(unittest.TestCase):
 
         if inspection_id is None:
             self.fail("Inspection not created")
-        data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), str(label_information_id)
+        data = json.loads(
+            metadata.build_inspection_export(
+                self.cursor, str(inspection_id), str(label_information_id)
+            )
         )
 
         self.assertIsNotNone(data["inspection_id"])
@@ -306,9 +308,12 @@ class test_inspection_export(unittest.TestCase):
         self.assertIsNotNone(data["guaranteed_analysis"])
         self.assertListEqual(data["guaranteed_analysis"]["en"], [])
         self.assertListEqual(data["guaranteed_analysis"]["fr"], [])
-        self.assertIsNotNone(data["guaranteed_analysis"]["title"])
-        self.assertIsNone(data["guaranteed_analysis"]["titre"])
-        self.assertIsNotNone(data["guaranteed_analysis"]["is_minimal"])
+        self.assertEqual(
+            data["guaranteed_analysis"]["title"]["en"],
+            self.analyse["guaranteed_analysis_en"]["title"],
+        )
+        self.assertEqual(data["guaranteed_analysis"]["title"]["fr"], "")
+        self.assertIsNone(data["guaranteed_analysis"]["is_minimal"])
 
     # def test_no_empty_specifications(self):
     # # Set specifications with one empty and one valid specification
@@ -353,7 +358,6 @@ class test_inspection_export(unittest.TestCase):
 
 class test_inspection_import(unittest.TestCase):
     def setUp(self):
-
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)

@@ -1,15 +1,15 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
+import os
 import unittest
 
-from datastore.db.queries import nutrients, label
-from datastore.db.metadata import validator
-from datastore.db.metadata import inspection as metadata
 import datastore.db.__init__ as db
-import os
+from datastore.db.metadata import inspection as metadata
+from datastore.db.metadata import validator
+from datastore.db.queries import label, nutrients
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -25,7 +25,7 @@ class test_element(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        
+
         self.element_name_fr = "test-nutriment"
         self.element_name_en = "test-nutrient"
         self.element_symbol = "Xy"
@@ -97,7 +97,6 @@ class test_element(unittest.TestCase):
         )
 
 
-
 class test_guaranteed_analysis(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
@@ -120,8 +119,8 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.guaranteed_analysis_value = 10
         self.guaranteed_analysis_unit = "%"
 
-        self.title = "title"
-        self.titre = "titre"
+        self.title_en = "title_en"
+        self.title_fr = "title_fr"
         self.is_minimal = False
 
         self.lot_number = "lot_number"
@@ -135,7 +134,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.density = None
         self.volume = None
         self.warranty = "warranty"
-        
+
         self.label_information_id = label.new_label_information(
             self.cursor,
             self.product_name,
@@ -145,8 +144,8 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.title,
-            self.titre,
+            self.title_en,
+            self.title_fr,
             self.is_minimal,
             None,
             None,
@@ -180,34 +179,37 @@ class test_guaranteed_analysis(unittest.TestCase):
                 self.label_information_id,
                 self.language,
                 self.element_id,
-                False
+                False,
             )
 
     def test_get_guaranteed_analysis_json(self):
         nutrients.new_guaranteed_analysis(
-                self.cursor,
-                self.guaranteed_analysis_name,
-                self.guaranteed_analysis_value,
-                self.guaranteed_analysis_unit,
-                self.label_information_id,
-                self.language,
-                self.element_id,
-                False
-            )
+            self.cursor,
+            self.guaranteed_analysis_name,
+            self.guaranteed_analysis_value,
+            self.guaranteed_analysis_unit,
+            self.label_information_id,
+            self.language,
+            self.element_id,
+            False,
+        )
         data = nutrients.get_guaranteed_analysis_json(
             self.cursor, label_id=self.label_information_id
         )
-        self.assertEqual(data["guaranteed_analysis"][self.language][0]["name"], self.guaranteed_analysis_name)
-        metadata.GuaranteedAnalysis(**data["guaranteed_analysis"])
-        self.assertIsNotNone(data["guaranteed_analysis"])
+        data = metadata.GuaranteedAnalysis.model_validate(data)
+        self.assertEqual(
+            data.fr[0].name,
+            self.guaranteed_analysis_name,
+        )
+        self.assertIsNotNone(data)
 
     def test_get_guaranteed_analysis_json_empty(self):
         data = nutrients.get_guaranteed_analysis_json(
             self.cursor, label_id=self.label_information_id
         )
-        metadata.GuaranteedAnalysis(**data["guaranteed_analysis"])
-        self.assertIsNotNone(data["guaranteed_analysis"]["title"])
-        self.assertIsNotNone(data["guaranteed_analysis"]["title"]["en"])
+        data = metadata.GuaranteedAnalysis.model_validate(data)
+        self.assertIsNotNone(data.title)
+        self.assertIsNotNone(data.title.en)
 
     def test_get_guaranteed_analysis(self):
         guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
@@ -218,7 +220,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.label_information_id,
             self.language,
             self.element_id,
-            False
+            False,
         )
         guaranteed_analysis_data = nutrients.get_guaranteed(
             self.cursor, guaranteed_analysis_id
@@ -275,7 +277,8 @@ class test_guaranteed_analysis(unittest.TestCase):
 
     def test_get_all_guaranteed_analysis(self):
         other_name = "other-nutrient"
-        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
+        # Create two guaranteed analysis entries
+        guaranteed_analysis_id_1 = nutrients.new_guaranteed_analysis(
             self.cursor,
             self.guaranteed_analysis_name,
             self.guaranteed_analysis_value,
@@ -285,7 +288,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.element_id,
             False,
         )
-        guaranteed_id = nutrients.new_guaranteed_analysis(
+        guaranteed_analysis_id_2 = nutrients.new_guaranteed_analysis(
             self.cursor,
             other_name,
             self.guaranteed_analysis_value,
@@ -295,12 +298,22 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.element_id,
             False,
         )
+        # Fetch all guaranteed analysis entries
         guaranteed_analysis_data = nutrients.get_all_guaranteeds(
             self.cursor, self.label_information_id
         )
-        self.assertEqual(len(guaranteed_analysis_data), 2)
-        self.assertEqual(guaranteed_analysis_data[0][0], guaranteed_analysis_id)
-        self.assertEqual(guaranteed_analysis_data[1][0], guaranteed_id)
+        # Convert the list of tuples into a dictionary where the key is the ID
+        guaranteed_analysis_dict = {item[0]: item for item in guaranteed_analysis_data}
 
-        self.assertEqual(guaranteed_analysis_data[0][1], self.guaranteed_analysis_name)
-        self.assertEqual(guaranteed_analysis_data[1][1], other_name)
+        # Assert we have the expected number of entries
+        self.assertEqual(len(guaranteed_analysis_dict), 2)
+
+        # Verify the first guaranteed analysis
+        self.assertIn(guaranteed_analysis_id_1, guaranteed_analysis_dict)
+        guaranteed_analysis_item = guaranteed_analysis_dict[guaranteed_analysis_id_1]
+        self.assertEqual(guaranteed_analysis_item[1], self.guaranteed_analysis_name)
+
+        # Verify the second guaranteed analysis
+        self.assertIn(guaranteed_analysis_id_2, guaranteed_analysis_dict)
+        guaranteed_item = guaranteed_analysis_dict[guaranteed_analysis_id_2]
+        self.assertEqual(guaranteed_item[1], other_name)

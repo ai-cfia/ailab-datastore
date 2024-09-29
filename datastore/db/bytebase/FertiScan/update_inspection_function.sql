@@ -73,52 +73,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- Function to upsert label information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_label_information(
-    input_label jsonb,
-    company_info_id uuid,
-    manufacturer_info_id uuid
-)
-RETURNS uuid AS $$
-DECLARE
-    label_id uuid;
-BEGIN
-    -- Extract or generate the label ID
-    label_id := NULLIF(input_label->>'label_id', '');
-
-    -- Upsert label information
-    INSERT INTO label_information (
-        id, product_name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id, warranty
-    )
-    VALUES (
-        label_id,
-        input_label->>'name',
-        input_label->>'lot_number',
-        input_label->>'npk',
-        input_label->>'registration_number',
-        (NULLIF(input_label->>'n', '')::float),
-        (NULLIF(input_label->>'p', '')::float),
-        (NULLIF(input_label->>'k', '')::float),
-        company_info_id,
-        manufacturer_info_id,
-        input_label->>'warranty'
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET lot_number = EXCLUDED.lot_number,
-        npk = EXCLUDED.npk,
-        registration_number = EXCLUDED.registration_number,
-        n = EXCLUDED.n,
-        p = EXCLUDED.p,
-        k = EXCLUDED.k,
-        company_info_id = EXCLUDED.company_info_id,
-        manufacturer_info_id = EXCLUDED.manufacturer_info_id
-    RETURNING id INTO label_id;
-
-    RETURN label_id;
-END;
-$$ LANGUAGE plpgsql;
-
-
 -- Function to update metrics: delete old and insert new
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_metrics(
     p_label_id uuid,
@@ -623,8 +577,8 @@ BEGIN
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
         verified = verified_bool,
-        updated_at = CURRENT_TIMESTAMP  -- Update timestamp on conflict
-        user_comment = p_input_json->> 'inspection_comment'
+        updated_at = CURRENT_TIMESTAMP,  -- Update timestamp on conflict
+        inspection_comment = p_input_json->>'inspection_comment'
     WHERE 
         id = p_inspection_id;
 

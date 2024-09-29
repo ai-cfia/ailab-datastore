@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import unittest
@@ -6,7 +7,8 @@ from dotenv import load_dotenv
 from psycopg import connect
 
 from datastore.db.metadata.inspection import Inspection
-from datastore.db.queries.inspection import InspectionUpdateError, update_inspection
+from datastore.db.queries.inspection import update_inspection
+from datastore.fertiscan import get_full_inspection_json
 
 load_dotenv()
 
@@ -33,10 +35,16 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
 
         # Create a user to act as inspector
         self.cursor.execute(
-            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
+            """
+            INSERT INTO users (email) 
+            VALUES (%s)
+            ON CONFLICT (email) DO UPDATE 
+            SET email = EXCLUDED.email 
+            RETURNING id;
+            """,
             ("inspector@example.com",),
         )
-        self.inspector_id = str(self.cursor.fetchone()[0])
+        self.inspector_id = self.cursor.fetchone()[0]
 
         # Load the JSON data for creating a new inspection
         with open(TEST_INPUT_JSON_PATH, "r") as file:
@@ -51,6 +59,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
             (self.inspector_id, self.picture_set_id, create_input_json_str),
         )
         self.created_data = self.cursor.fetchone()[0]
+        self.created_inspection = Inspection.model_validate(self.created_data)
 
         # Store the inspection ID for later use
         self.inspection_id = str(self.created_data.get("inspection_id"))
@@ -62,75 +71,87 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         self.conn.close()
 
     def test_python_function_update_inspection_with_verified_false(self):
-        updated_input_json = self.created_data.copy()
+        # Create a model copy and update fields directly via the model
+        altered_inspection = self.created_inspection.model_copy()
         new_value = 66.6
-        updated_input_json["company"]["name"] = "Updated Company Name"
-        updated_input_json["product"]["metrics"]["weight"][0]["value"] = new_value
-        updated_input_json["product"]["metrics"]["density"]["value"] = new_value
-        updated_input_json["specifications"]["en"][0]["ph"] = new_value
-        updated_input_json["ingredients"]["en"][0]["value"] = new_value
-        updated_input_json["guaranteed_analysis"]["en"][0]["value"] = new_value
-        updated_input_json["verified"] = False
-        # label_id = updated_input_json["product"]["label_id"]
-        try:
-            updated_data = Inspection(**updated_input_json)
-            updated_result = update_inspection(
-                self.cursor,
-                self.inspection_id,
-                self.inspector_id,
-                updated_data,
-            ).model_dump()
-        except InspectionUpdateError as e:
-            self.fail(f"update_inspection raised an unexpected error: {str(e)}")
 
+        # Update model fields instead of dictionary keys
+        altered_inspection.company.name = "Updated Company Name"
+        altered_inspection.product.metrics.weight[0].value = new_value
+        altered_inspection.product.metrics.density.value = new_value
+        altered_inspection.guaranteed_analysis.en[0].value = new_value
+        altered_inspection.verified = False  # Ensure verified is false
+
+        # Use the updated model for the update
+        update_inspection(
+            self.cursor,
+            self.inspection_id,
+            self.inspector_id,
+            altered_inspection.model_dump(),
+        )
+
+        # Fetch the updated inspection data from the database using asyncio
+        task = get_full_inspection_json(self.cursor, self.inspection_id)
+        updated_inspection = asyncio.run(task)
+        updated_inspection = json.loads(updated_inspection)
+        updated_inspection = Inspection.model_validate(updated_inspection)
+
+        # Assertions using the Inspection model
         self.assertEqual(
-            updated_result["company"]["name"],
+            updated_inspection.company.name,
             "Updated Company Name",
             "The company name should reflect the update.",
         )
         self.assertEqual(
-            updated_result["product"]["metrics"]["weight"][0]["value"],
+            updated_inspection.product.metrics.weight[0].value,
             new_value,
             "The weight metric should reflect the updated value.",
         )
         self.assertEqual(
-            updated_result["product"]["metrics"]["density"]["value"],
+            updated_inspection.product.metrics.density.value,
             new_value,
             "The density metric should reflect the updated value.",
         )
-        # self.assertEqual(
-        #     updated_result["specifications"]["en"][0]["ph"],
-        #     new_value,
-        #     "The pH specification should reflect the updated value.",
-        # )
-        # self.assertEqual(
-        #     updated_result["ingredients"]["en"][0]["value"],
-        #     new_value,
-        #     "The ingredient value should reflect the updated amount.",
-        # )
         self.assertEqual(
-            updated_result["guaranteed_analysis"]["en"][0]["value"],
+            updated_inspection.guaranteed_analysis.en[0].value,
             new_value,
-            "The guaranteed analysis value for Total Nitrogen (N) should reflect the updated amount.",
+            "The guaranteed analysis value should reflect the updated amount.",
+        )
+
+        # Verify that no fertilizer record was created
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
+            (self.inspection_id,),
+        )
+        fertilizer_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            fertilizer_count,
+            0,
+            "No fertilizer should be created when verified is false.",
         )
 
     def test_python_function_update_inspection_with_verified_true(self):
-        updated_input_json = self.created_data.copy()
-        updated_input_json["verified"] = True
+        # Create a model copy and update the verified status via the model
+        altered_inspection = self.created_inspection.model_copy()
+        altered_inspection.verified = True
 
-        try:
-            updated_data = Inspection(**updated_input_json)
-            updated_result = update_inspection(
-                self.cursor,
-                self.inspection_id,
-                self.inspector_id,
-                updated_data,
-            ).model_dump()
-        except InspectionUpdateError as e:
-            self.fail(f"update_inspection raised an unexpected error: {str(e)}")
+        # Use the updated model for the update
+        update_inspection(
+            self.cursor,
+            self.inspection_id,
+            self.inspector_id,
+            altered_inspection.model_dump(),
+        )
 
+        # Fetch the updated inspection data from the database using asyncio
+        task = get_full_inspection_json(self.cursor, self.inspection_id)
+        updated_inspection = asyncio.run(task)
+        updated_inspection = json.loads(updated_inspection)
+        updated_inspection = Inspection.model_validate(updated_inspection)
+
+        # Assertions using the Inspection model
         self.assertTrue(
-            updated_result["verified"],
+            updated_inspection.verified,
             "The verified status should be True as updated.",
         )
 

@@ -3,9 +3,15 @@ import os
 import unittest
 
 import psycopg
+from dotenv import load_dotenv
+
 import datastore.db.queries.label as label
 import datastore.db.queries.sub_label as sub_label
-from dotenv import load_dotenv
+from datastore.db.metadata.inspection import (
+    Inspection,
+    OrganizationInformation,
+    SubLabel,
+)
 
 load_dotenv()
 
@@ -19,6 +25,9 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
 
+TEST_INPUT_JSON_PATH = "tests/fertiscan/inspection_export.json"
+
+
 class TestUpdateSubLabelsFunction(unittest.TestCase):
     def setUp(self):
         # Connect to the PostgreSQL database with the specified schema
@@ -28,69 +37,72 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.conn.autocommit = False  # Ensure transaction is managed manually
         self.cursor = self.conn.cursor()
 
-        # Set up test data for sub labels
-        with open("tests/fertiscan/inspection_export.json") as f:
+        # Load and validate the inspection data from the JSON file using the Inspection model
+        with open(TEST_INPUT_JSON_PATH) as f:
             inspection_data = json.load(f)
-        self.sample_sub_labels = json.dumps(
-            {
-                "instructions": inspection_data["instructions"],
-                "cautions": inspection_data["cautions"],
-            }
-        )
-        self.nb_sub_labels = len(inspection_data["instructions"]["en"]) + len(
-            inspection_data["cautions"]["en"]
-        )
-        # self.updated_sub_labels = self.sample_sub_labels
+        inspection_data = Inspection.model_validate(inspection_data)
 
-        self.updated_sub_labels = json.dumps(
-            {
-                "instructions": {
-                    "fr": [
-                        "1. Dissoudre 50g dans 10L d'eau.",
-                        "2. Appliquer toutes les 2 semaines.",
-                        "3. Conserver dans un endroit frais.",
-                        "4. Test instruction.",
-                        "5. Test instruction.",
-                    ],
-                    "en": [
-                        "1. Dissolve 50g in 10L of water.",
-                        "2. Apply every 2 weeks.",
-                        "3. Store in a cool place.",
-                        "4. Test instruction.",
-                        "5. Test instruction.",
-                    ],
-                },
-                "cautions": {
-                    "fr": [
-                        "Tenir hors de portée des enfants.",
-                        "Éviter le contact avec la peau et les yeux.",
-                        "En cas de contact avec les yeux, rincer immédiatement.",
-                        "Garantie limitée de 1 an.",
-                        "Test caution.",
-                    ],
-                    "en": [
-                        "Keep out of reach of children.",
-                        "Avoid contact with skin and eyes.",
-                        "If in eyes, rinse immediately.",
-                        "Limited warranty of 1 year.",
-                        "Test caution.",
-                    ],
-                },
-            }
+        # Set up test data for sub labels using the SubLabel Pydantic model
+        self.sample_sub_labels = {
+            "instructions": inspection_data.instructions.model_dump(),
+            "cautions": inspection_data.cautions.model_dump(),
+        }
+
+        # Calculate the number of sub-labels for the initial insertion
+        self.nb_sub_labels = len(inspection_data.instructions.en) + len(
+            inspection_data.cautions.en
         )
+
+        # Set up updated sub labels using the SubLabel Pydantic model
+        self.updated_sub_labels = {
+            "instructions": SubLabel(
+                en=[
+                    "1. Dissolve 50g in 10L of water.",
+                    "2. Apply every 2 weeks.",
+                    "3. Store in a cool place.",
+                    "4. Test instruction.",
+                    "5. Test instruction.",
+                ],
+                fr=[
+                    "1. Dissoudre 50g dans 10L d'eau.",
+                    "2. Appliquer toutes les 2 semaines.",
+                    "3. Conserver dans un endroit frais.",
+                    "4. Test instruction.",
+                    "5. Test instruction.",
+                ],
+            ).model_dump(),
+            "cautions": SubLabel(
+                en=[
+                    "Keep out of reach of children.",
+                    "Avoid contact with skin and eyes.",
+                    "If in eyes, rinse immediately.",
+                    "Limited warranty of 1 year.",
+                    "Test caution.",
+                ],
+                fr=[
+                    "Tenir hors de portée des enfants.",
+                    "Éviter le contact avec la peau et les yeux.",
+                    "En cas de contact avec les yeux, rincer immédiatement.",
+                    "Garantie limitée de 1 an.",
+                    "Test caution.",
+                ],
+            ).model_dump(),
+        }
         self.nb_updated = 10
 
-        sample_org_info = json.dumps(
-            {
-                "name": "Test Company",
-                "address": "123 Test Address",
-                "website": "http://www.testcompany.com",
-                "phone_number": "+1 800 555 0123",
-            }
-        )
+        # Set up organization information using the Pydantic model
+        sample_org_info = OrganizationInformation(
+            name="Test Company",
+            address="123 Test Address",
+            website="http://www.testcompany.com",
+            phone_number="+1 800 555 0123",
+        ).model_dump_json()
+
+        # Insert organization info and retrieve company_info_id
         self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
         self.company_info_id = self.cursor.fetchone()[0]
 
+        # Insert label information
         self.label_id = label.new_label_information(
             self.cursor,
             "test-label",
@@ -117,7 +129,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         # Insert initial sub labels
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
-            (self.label_id, self.sample_sub_labels),
+            (self.label_id, json.dumps(self.sample_sub_labels)),
         )
 
         saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
@@ -134,14 +146,10 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         # Update sub labels
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
-            (self.label_id, self.updated_sub_labels),
+            (self.label_id, json.dumps(self.updated_sub_labels)),
         )
 
         # Verify that the data is correctly updated
-        self.cursor.execute(
-            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
-            (self.label_id,),
-        )
         updated_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
         nb_updated = len(updated_data["instructions"]["en"]) + len(
             updated_data["cautions"]["en"]
@@ -150,7 +158,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.assertEqual(
             nb_updated,
             self.nb_updated,
-            f"There should be {self.nb_sub_labels} sub label records inserted",
+            f"There should be {self.nb_updated} sub label records updated",
         )
 
 

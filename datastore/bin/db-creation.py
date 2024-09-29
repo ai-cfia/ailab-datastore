@@ -31,6 +31,12 @@ def create_db(DB_URL, SCHEMA : str):
 
         path = "datastore/db/bytebase/FertiScan/update_inspection_function.sql"
         execute_sql_file(cur, path)
+
+        # path = "datastore/db/bytebase/FertiScan/delete_inspection_function.sql"
+        # execute_sql_file(cur, path)
+
+        path = "datastore/db/bytebase/FertiScan/OLAP"
+        loop_for_sql_files(cur, path)
     except Exception as e:
         conn.rollback()
         print(e)

@@ -335,12 +335,18 @@ def new_guaranteed_analysis(
     try:
         if language.lower() not in ["fr", "en"]:
             raise GuaranteedCreationError("Language not supported")
-        if (read_name is None or read_name == "") and (value is None or value == "") and (unit is None or unit == ""):
+        if (
+            (read_name is None or read_name == "")
+            and (value is None or value == "")
+            and (unit is None or unit == "")
+        ):
             raise GuaranteedCreationError("Read name and value cannot be empty")
         query = """
             SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s, %s);
             """
-        cursor.execute(query, (read_name, value, unit, label_id, language, edited, element_id))
+        cursor.execute(
+            query, (read_name, value, unit, label_id, language, edited, element_id)
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise GuaranteedCreationError
@@ -398,19 +404,14 @@ def get_guaranteed_analysis_json(cursor, label_id) -> dict:
         cursor.execute(query, (label_id,))
         data = cursor.fetchone()[0]
         if data is None:
-            data = {"guaranteed_analysis": {
-                        "title" : None,
-                        "titre" : None,
-                        "is_minimal": False,
-                        "en": [],
-                        "fr": []
-                        }
-                    }
+            data = {"title": None, "is_minimal": False, "en": [], "fr": []}
         return data
     except GuaranteedNotFoundError as e:
         raise e
     except Exception:
-        raise GuaranteedNotFoundError("Error: could not get the guaranteed for label: " + str(label_id))
+        raise GuaranteedNotFoundError(
+            "Error: could not get the guaranteed for label: " + str(label_id)
+        )
 
 
 def get_full_guaranteed(cursor, guaranteed):

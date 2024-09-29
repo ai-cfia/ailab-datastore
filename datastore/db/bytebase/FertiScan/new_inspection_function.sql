@@ -98,7 +98,7 @@ BEGIN
 		(input_json->'product'->>'p')::float,
 		(input_json->'product'->>'k')::float,
 		input_json->'guaranteed_analysis'->'title'->>'en',
-		input_json->'guaranteed_analysis'->'titre'->>'fr',
+		input_json->'guaranteed_analysis'->'title'->>'fr',
 		(input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
 		company_id,
 		manufacturer_id
@@ -315,20 +315,21 @@ BEGIN
 
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.13".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id, user_comment
+        inspector_id, label_info_id, sample_id, picture_set_id, inspection_comment
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
         picture_set_id,  -- Assuming picture_set_id is handled separately
-		Null
+		to_jsonb(''::text)
     )
     RETURNING id INTO inspection_id_value;
    
 	-- Update input_json with company_id
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
-	input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(""));
+	input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(''::text));
 
+	-- TODO: remove olap transactions from Operational transactions
 	-- Update the Inspection_factual entry with the json
 	UPDATE "fertiscan_0.0.13".inspection_factual
 	SET original_dataset = input_json

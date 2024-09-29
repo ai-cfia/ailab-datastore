@@ -4,19 +4,21 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
+from datetime import datetime
+from itertools import product
 from typing import List, Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import UUID4, BaseModel, ValidationError
 
 from datastore.db.queries import (
     ingredient,
+    inspection,
     label,
     metric,
     nutrients,
     organization,
     specification,
     sub_label,
-    inspection
 )
 
 
@@ -46,15 +48,18 @@ class Value(BaseModel):
     name: Optional[str] = None
     edited: Optional[bool] = False
 
+
 class Title(BaseModel):
     en: Optional[str] = None
     fr: Optional[str] = None
 
+
 class GuaranteedAnalysis(BaseModel):
-    title: Title
+    title: Title | None = None
     is_minimal: Optional[bool] = False
     en: List[Value] = []
     fr: List[Value] = []
+
 
 class ValuesObjects(BaseModel):
     en: List[Value] = []
@@ -83,7 +88,7 @@ class ProductInformation(BaseModel):
     label_id: str | None = None
     registration_number: str | None = None
     lot_number: str | None = None
-    metrics: Metrics
+    metrics: Metrics | None = Metrics()
     npk: str | None = None
     warranty: str | None = None
     n: float | None = None
@@ -101,6 +106,19 @@ class Specification(BaseModel):
 class Specifications(BaseModel):
     en: List[Specification]
     fr: List[Specification]
+
+
+# Awkwardly named so to avoid name conflict
+class DBInspection(BaseModel):
+    id: UUID4
+    verified: bool = False
+    upload_date: datetime | None = None
+    updated_at: datetime | None = None
+    inspector_id: UUID4 | None = None
+    label_info_id: UUID4 | None = None
+    sample_id: UUID4 | None = None
+    picture_set_id: UUID4 | None = None
+    inspection_comment: str | None = None
 
 
 class Inspection(BaseModel):
@@ -200,7 +218,7 @@ def build_inspection_import(analysis_form: dict) -> str:
             n=npk[0],
             p=npk[1],
             k=npk[2],
-            verified=False
+            verified=False,
         )
 
         cautions = SubLabel(
@@ -274,7 +292,9 @@ def build_inspection_import(analysis_form: dict) -> str:
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis_fr", []).get("nutrients", [])
+            for item in analysis_form.get("guaranteed_analysis_fr", []).get(
+                "nutrients", []
+            )
         ]
 
         guaranteed_en: list[Value] = [
@@ -283,16 +303,18 @@ def build_inspection_import(analysis_form: dict) -> str:
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis_en", []).get("nutrients", [])
+            for item in analysis_form.get("guaranteed_analysis_en", []).get(
+                "nutrients", []
+            )
         ]
 
         guaranteed = GuaranteedAnalysis(
-            title= Title(
+            title=Title(
                 en=analysis_form.get("guaranteed_analysis_en", {}).get("title"),
                 fr=analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
             ),
             # is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
-            is_minimal = None, # Not processed yet by the pipeline
+            is_minimal=None,  # Not processed yet by the pipeline
             en=guaranteed_en,
             fr=guaranteed_fr,
         )
@@ -321,92 +343,49 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
-        inspection_json = {"inspection_id": str(inspection_id)}
         # get the label information
-        label_json = label.get_label_information_json(cursor, label_info_id)
+        product_info = label.get_label_information_json(cursor, label_info_id)
+        product_info = ProductInformation(**product_info)
 
-        metrics_json = metric.get_metrics_json(cursor, label_info_id)
-        if metrics_json["metrics"]["weight"] is None:
-            metrics_json["metrics"]["weight"] = []
-        if metrics_json["metrics"]["volume"] is None:
-            metrics_json["metrics"]["volume"] = Metric()
-        if metrics_json["metrics"]["density"] is None:
-            metrics_json["metrics"]["density"] = Metric()
-        label_json.update(metrics_json)
-        ProductInformation(**label_json)
-
-        product_json = {"product": label_json}
-
-        inspection_json.update(product_json)
+        # get metrics information
+        metrics = metric.get_metrics_json(cursor, label_info_id)
+        metrics = Metrics.model_validate(metrics)
+        product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
-        organization_json = organization.get_organizations_info_json(
-            cursor, label_info_id
+        org = organization.get_organizations_info_json(cursor, label_info_id)
+        manufacturer = OrganizationInformation.model_validate(
+            org.get("manufacturer", {})
         )
-        if "company" in organization_json.keys():
-            OrganizationInformation(**organization_json.get("company"))
-        if "manufacturer" in organization_json.keys():
-            OrganizationInformation(**organization_json.get("manufacturer"))
-
-        inspection_json.update(organization_json)
+        company = OrganizationInformation.model_validate(org.get("company", {}))
 
         # Get all the sub labels
-        sub_label_json = sub_label.get_sub_label_json(cursor, label_info_id)
-        if sub_label_json is None:
-            sub_label_json = {
-                "cautions": {"en": [], "fr": []},
-                "instructions": {"en": [], "fr": []},
-                "first_aid": {"en": [], "fr": []},
-            }
-        else:
-            for key in sub_label_json:
-                SubLabel(**sub_label_json[key])
-
-        inspection_json.update(sub_label_json)
-        # # Get the ingredients
-        # ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
-
-        # ValuesObjects(**ingredients_json)
-
-        # inspection_json.update(ingredients_json)
-
-        # # Get the nutrients
-        # nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
-
-        # ValuesObjects(**nutrients_json)
-
-        # inspection_json.update(nutrients_json)
+        sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
+        cautions = SubLabel.model_validate(sub_labels.get("cautions", {}))
+        instructions = SubLabel.model_validate(sub_labels.get("instructions", {}))
 
         # Get the guaranteed analysis
-        guaranteed_analysis_json = nutrients.get_guaranteed_analysis_json(
-            cursor, label_info_id
+        guaranteed_analysis = (
+            nutrients.get_guaranteed_analysis_json(cursor, label_info_id) or {}
         )
-        
-        # print(guaranteed_analysis_json)
-        if guaranteed_analysis_json.get("guaranteed_analysis") is None:
-            guaranteed_analysis_json["guaranteed_analysis"] = GuaranteedAnalysis().model_dump()
-        else:
-            GuaranteedAnalysis(**guaranteed_analysis_json.get("guaranteed_analysis"))
+        guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
-        inspection_json.update(guaranteed_analysis_json)
+        # Get the inspection information
+        db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
+        db_inspection = DBInspection.model_validate(db_inspection)
 
-        # # Get the specifications
-        # specifications_json = specification.get_specification_json(
-        #     cursor, label_info_id
-        # )
+        inspection_formatted = Inspection(
+            inspection_id=str(inspection_id),
+            inspection_comment=db_inspection.inspection_comment,
+            cautions=cautions,
+            company=company,
+            guaranteed_analysis=guaranteed_analysis,
+            instructions=instructions,
+            manufacturer=manufacturer,
+            product=product_info,
+            verified=db_inspection.verified,
+        )
 
-        # Specifications(**(specifications_json.get("specifications")))
-
-        # inspection_json.update(specifications_json)è
-
-        # Get inspection comment
-        inspection_comment = inspection.get_inspection(cursor,inspection_id)[8]
-        inspection_json['inspection_comment'] = inspection_comment
-
-        # Verify the inspection object
-        inspection_formatted = Inspection(**inspection_json)
-        # Return the inspection object
-        
         return inspection_formatted.model_dump_json()
     except (
         label.LabelInformationNotFoundError
@@ -422,7 +401,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     except Exception as e:
         raise MetadataFormattingError(
             "Error Inspection Form not created: " + str(e)
-        ) from None
+        ) from e
 
 
 def split_value_unit(value_unit: str) -> dict:
