@@ -11,7 +11,7 @@ BEGIN
         IF (metric_type ILIKE 'test%') THEN
                 RETURN NEW;
         END IF;
-        EXECUTE format('UPDATE "fertiscan_0.0.13"."label_dimension" 
+        EXECUTE format('UPDATE "fertiscan_0.0.15"."label_dimension" 
                     SET %I = array_append(%I, %L) 
                     WHERE label_dimension.label_id = %L', 
                     metric_type, metric_type, NEW.id, NEW.label_id);
@@ -24,9 +24,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS metrics_creation ON "fertiscan_0.0.13".metric;
+DROP TRIGGER IF EXISTS metrics_creation ON "fertiscan_0.0.15".metric;
 CREATE TRIGGER metrics_creation
-AFTER INSERT ON "fertiscan_0.0.13".metric
+AFTER INSERT ON "fertiscan_0.0.15".metric
 FOR EACH ROW
 EXECUTE FUNCTION olap_metrics_creation();
 
@@ -42,7 +42,7 @@ BEGIN
         IF (metric_type ILIKE 'test%') THEN
                 RETURN OLD;
         END IF;
-        EXECUTE format('UPDATE "fertiscan_0.0.13"."label_dimension" 
+        EXECUTE format('UPDATE "fertiscan_0.0.15"."label_dimension" 
                     SET %I = array_remove(%I, %L) 
                     WHERE label_dimension.label_id = %L', 
                     metric_type, metric_type, OLD.id, OLD.label_id);
@@ -55,8 +55,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS metrics_deletion ON "fertiscan_0.0.13".metric;
+DROP TRIGGER IF EXISTS metrics_deletion ON "fertiscan_0.0.15".metric;
 CREATE TRIGGER metrics_deletion
-AFTER DELETE ON "fertiscan_0.0.13".metric
+AFTER DELETE ON "fertiscan_0.0.15".metric
 FOR EACH ROW
 EXECUTE FUNCTION olap_metrics_deletion();
