@@ -7,7 +7,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, ValidationError
+from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
 from datastore.db.queries import (
     ingredient,
@@ -33,7 +33,15 @@ class MetadataFormattingError(Exception):
     pass
 
 
-class OrganizationInformation(BaseModel):
+class ValidatedModel(BaseModel):
+    @model_validator(mode="before")
+    def handle_none(cls, values):
+        if values is None:
+            return {}
+        return values
+
+
+class OrganizationInformation(ValidatedModel):
     id: Optional[str] = None
     name: Optional[str] = None
     address: Optional[str] = None
@@ -41,48 +49,48 @@ class OrganizationInformation(BaseModel):
     phone_number: Optional[str] = None
 
 
-class Value(BaseModel):
+class Value(ValidatedModel):
     value: Optional[float] = None
     unit: Optional[str] = None
     name: Optional[str] = None
     edited: Optional[bool] = False
 
 
-class Title(BaseModel):
+class Title(ValidatedModel):
     en: Optional[str] = None
     fr: Optional[str] = None
 
 
-class GuaranteedAnalysis(BaseModel):
+class GuaranteedAnalysis(ValidatedModel):
     title: Title | None = None
     is_minimal: Optional[bool] = False
     en: List[Value] = []
     fr: List[Value] = []
 
 
-class ValuesObjects(BaseModel):
+class ValuesObjects(ValidatedModel):
     en: List[Value] = []
     fr: List[Value] = []
 
 
-class SubLabel(BaseModel):
+class SubLabel(ValidatedModel):
     en: List[str] = []
     fr: List[str] = []
 
 
-class Metric(BaseModel):
+class Metric(ValidatedModel):
     value: Optional[float] = None
     unit: Optional[str] = None
     edited: Optional[bool] = False
 
 
-class Metrics(BaseModel):
+class Metrics(ValidatedModel):
     weight: Optional[List[Metric]] = []
     volume: Optional[Metric] = Metric()
     density: Optional[Metric] = Metric()
 
 
-class ProductInformation(BaseModel):
+class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
     registration_number: str | None = None
@@ -95,20 +103,20 @@ class ProductInformation(BaseModel):
     k: float | None = None
 
 
-class Specification(BaseModel):
+class Specification(ValidatedModel):
     humidity: float | None = None
     ph: float | None = None
     solubility: float | None = None
     edited: Optional[bool] = False
 
 
-class Specifications(BaseModel):
+class Specifications(ValidatedModel):
     en: List[Specification]
     fr: List[Specification]
 
 
 # Awkwardly named so to avoid name conflict
-class DBInspection(BaseModel):
+class DBInspection(ValidatedModel):
     id: UUID4
     verified: bool = False
     upload_date: datetime | None = None
@@ -120,7 +128,7 @@ class DBInspection(BaseModel):
     inspection_comment: str | None = None
 
 
-class Inspection(BaseModel):
+class Inspection(ValidatedModel):
     inspection_id: Optional[str] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
@@ -349,23 +357,23 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         # get metrics information
         metrics = metric.get_metrics_json(cursor, label_info_id)
         metrics = Metrics.model_validate(metrics)
+        metrics.volume = metrics.volume or Metric()
+        metrics.density = metrics.density or Metric()
         product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
         org = organization.get_organizations_info_json(cursor, label_info_id)
-        manufacturer = OrganizationInformation.model_validate(
-            org.get("manufacturer", {})
-        )
-        company = OrganizationInformation.model_validate(org.get("company", {}))
+        manufacturer = OrganizationInformation.model_validate(org.get("manufacturer"))
+        company = OrganizationInformation.model_validate(org.get("company"))
 
         # Get all the sub labels
         sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
-        cautions = SubLabel.model_validate(sub_labels.get("cautions", {}))
-        instructions = SubLabel.model_validate(sub_labels.get("instructions", {}))
+        cautions = SubLabel.model_validate(sub_labels.get("cautions"))
+        instructions = SubLabel.model_validate(sub_labels.get("instructions"))
 
         # Get the guaranteed analysis
-        guaranteed_analysis = (
-            nutrients.get_guaranteed_analysis_json(cursor, label_info_id) or {}
+        guaranteed_analysis = nutrients.get_guaranteed_analysis_json(
+            cursor, label_info_id
         )
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 

@@ -8,7 +8,6 @@ import unittest
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import validator
-from datastore.db.metadata.inspection import Metrics
 from datastore.db.queries import label, metric
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -191,19 +190,17 @@ class test_metric(unittest.TestCase):
             self.metric_edited,
         )
         metric_data = metric.get_metrics_json(self.cursor, self.label_id)
-        metrics = Metrics.model_validate(metric_data)
 
-        self.assertEqual(metrics.volume.unit, volume_unit)
-        self.assertEqual(metrics.weight[0].unit, weight_unit_imperial)
-        self.assertEqual(metrics.weight[1].unit, weight_unit_metric)
-        self.assertEqual(metrics.density.unit, density_unit)
+        self.assertEqual(metric_data["volume"]["unit"], volume_unit)
+        self.assertEqual(metric_data["weight"][0]["unit"], weight_unit_imperial)
+        self.assertEqual(metric_data["weight"][1]["unit"], weight_unit_metric)
+        self.assertEqual(metric_data["density"]["unit"], density_unit)
 
     def test_get_metrics_json_empty(self):
         data = metric.get_metrics_json(self.cursor, self.label_id)
-        metrics = Metrics.model_validate(data)
-        self.assertIsNone(metrics.volume)
-        self.assertListEqual(metrics.weight, [])
-        self.assertIsNone(metrics.density)
+        self.assertIsNone(data.get("volume"))
+        self.assertListEqual(data.get("weight"), [])
+        self.assertIsNone(data.get("density"))
 
     def test_get_full_metric(self):
         metric_id = metric.new_metric(
