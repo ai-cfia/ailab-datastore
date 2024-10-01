@@ -23,6 +23,10 @@ class InspectionRetrievalError(Exception):
     pass
 
 
+class InspectionDeleteError(Exception):
+    pass
+
+
 class InspectionNotFoundError(Exception):
     pass
 
@@ -426,6 +430,47 @@ def update_inspection(
         raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+
+
+def delete_inspection(
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    user_id: str | UUID,
+) -> DBInspection:
+    """
+    Delete an inspection from the database and return the deleted inspection record.
+
+    Parameters:
+    - cursor (Cursor): Database cursor for executing queries.
+    - inspection_id (str | UUID): UUID of the inspection to delete.
+    - user_id (str | UUID): UUID of the user performing the deletion.
+
+    Returns:
+    - DBInspection: A DBInspection object representing the deleted inspection.
+
+    Raises:
+    - InspectionDeleteError: Custom error for handling specific delete issues.
+    """
+    try:
+        query = SQL("SELECT delete_inspection(%s, %s);")
+        cursor.execute(query, (inspection_id, user_id))
+        result = cursor.fetchone()
+
+        if result is None:
+            raise InspectionDeleteError(
+                "Failed to delete inspection. No data returned."
+            )
+
+        return DBInspection.model_validate(result[0])
+
+    except (Error, DatabaseError, OperationalError) as e:
+        raise InspectionDeleteError(f"Database error occurred: {str(e)}") from e
+    except ValidationError as e:
+        raise InspectionDeleteError(f"Validation failed: {str(e)}") from e
+    except (ValueError, TypeError) as e:
+        raise InspectionDeleteError(f"Invalid input: {str(e)}") from e
+    except Exception as e:
+        raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
 
 
 def get_inspection_factual(cursor, inspection_id):

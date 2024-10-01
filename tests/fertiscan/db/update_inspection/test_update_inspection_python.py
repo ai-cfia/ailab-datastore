@@ -21,7 +21,7 @@ TEST_DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if not TEST_DB_SCHEMA:
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
-TEST_INPUT_JSON_PATH = "tests/fertiscan/inspection.json"
+TEST_INSPECTION_JSON_PATH = "tests/fertiscan/inspection.json"
 
 
 class TestInspectionUpdatePythonFunction(unittest.TestCase):
@@ -47,7 +47,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         self.inspector_id = self.cursor.fetchone()[0]
 
         # Load the JSON data for creating a new inspection
-        with open(TEST_INPUT_JSON_PATH, "r") as file:
+        with open(TEST_INSPECTION_JSON_PATH, "r") as file:
             create_input_json = json.load(file)
 
         create_input_json_str = json.dumps(create_input_json)

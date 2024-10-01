@@ -335,6 +335,41 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_or_empty_sub_label()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if both text_content_fr and text_content_en are NULL or empty
+    IF (NEW.text_content_fr IS NULL OR NEW.text_content_fr = '') AND 
+       (NEW.text_content_en IS NULL OR NEW.text_content_en = '') THEN
+        -- Raise an exception and skip the insertion
+        RAISE EXCEPTION 'Skipping insertion because both text_content_fr and text_content_en are NULL or empty';
+        RETURN NULL;
+    END IF;
+
+    -- Replace NULL with empty strings
+    IF NEW.text_content_fr IS NULL THEN
+        NEW.text_content_fr := '';
+    END IF;
+
+    IF NEW.text_content_en IS NULL THEN
+        NEW.text_content_en := '';
+    END IF;
+
+    -- Allow the insert if at least one is not NULL or empty
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.14".sub_label;
+CREATE TRIGGER before_insert_sub_label
+BEFORE INSERT ON "fertiscan_0.0.14".sub_label
+FOR EACH ROW
+EXECUTE FUNCTION check_null_or_empty_sub_label();
+
+
 -- Function to update sub labels: delete old and insert new
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_sub_labels(
     p_label_id uuid,
@@ -346,6 +381,9 @@ DECLARE
     fr_values jsonb;
     en_values jsonb;
     i int;
+    max_length int;
+    fr_value text;
+    en_value text;
 BEGIN
     -- Delete existing sub labels for the given label_id
     DELETE FROM sub_label WHERE label_id = p_label_id;
@@ -354,34 +392,40 @@ BEGIN
     FOR sub_type_rec IN SELECT id, type_en FROM sub_type
     LOOP
         -- Extract the French and English arrays for the current sub_type
-        fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
-        en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        If fr_values IS NULL THEN
-            RAISE EXCEPTION 'Sub-labels FR for type % are missing', sub_type_rec.type_en;
-        end if;
-        if en_values IS NULL THEN
-            RAISE EXCEPTION 'Sub-labels EN for type % are missing', sub_type_rec.type_en;
-        ELSE
-            -- Ensure both arrays are of the same length
-            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-                LOOP
-                    -- Insert sub label record
-                    INSERT INTO sub_label (
-                        text_content_fr, text_content_en, label_id, edited, sub_type_id
-                    )
-                    VALUES (
-                        fr_values->>i,
-                        en_values->>i,
-                        p_label_id,
-                        Null,  -- not handled
-                        sub_type_rec.id
-                    );
-                END LOOP;
-            ELSE
-                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
-            END IF;
-        END IF;
+        fr_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'fr', '[]'::jsonb);
+        en_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'en', '[]'::jsonb);
+
+        -- Determine the maximum length of the arrays
+        max_length := GREATEST(
+            jsonb_array_length(fr_values),
+            jsonb_array_length(en_values)
+        );
+
+        -- Check if lengths are not equal, and raise a notice
+		IF jsonb_array_length(en_values) != jsonb_array_length(fr_values) THEN
+			RAISE NOTICE 'Array length mismatch for sub_type: %, EN length: %, FR length: %', 
+				sub_type_rec.type_en, jsonb_array_length(en_values), jsonb_array_length(fr_values);
+		END IF;
+
+        -- Loop through the indices up to the maximum length
+        FOR i IN 0..(max_length - 1)
+        LOOP
+            -- Extract values or set to empty string if not present
+            fr_value := fr_values->>i;
+            en_value := en_values->>i;
+
+            -- Insert sub label record
+            INSERT INTO sub_label (
+                text_content_fr, text_content_en, label_id, edited, sub_type_id
+            )
+            VALUES (
+                fr_value,
+                en_value,
+                p_label_id,
+                NULL,  -- not handled
+                sub_type_rec.id
+            );
+        END LOOP;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
@@ -409,7 +453,7 @@ BEGIN
 
     -- Upsert inspection information
     INSERT INTO inspection (
-        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
+        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at, original_dataset
     )
     VALUES (
         inspection_id,
@@ -419,7 +463,8 @@ BEGIN
         p_picture_set_id,
         p_verified,
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
+        CURRENT_TIMESTAMP,
+        p_original_dataset
     )
     ON CONFLICT (id) DO UPDATE
     SET 

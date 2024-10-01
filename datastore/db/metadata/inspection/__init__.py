@@ -338,6 +338,8 @@ def build_inspection_import(analysis_form: dict) -> str:
     except MissingKeyError as e:
         raise MissingKeyError("Missing keys:" + str(e))
     except ValidationError as e:
+        print(analysis_form.get("cautions_en", []))
+        print(analysis_form.get("cautions_fr", []))
         raise MetadataFormattingError(
             "Error InspectionCreationError not created: " + str(e)
         ) from None

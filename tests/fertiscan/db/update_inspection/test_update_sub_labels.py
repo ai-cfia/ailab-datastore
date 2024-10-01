@@ -161,6 +161,78 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             f"There should be {self.nb_updated} sub label records updated",
         )
 
+    def test_update_sub_labels_with_mismatched_arrays(self):
+        # Load the sub-labels from sample data
+        instructions = json.loads(self.sample_sub_labels)["instructions"]
+
+        # Remove the last item from 'fr' array
+        instructions["fr"] = instructions["fr"][:-1]
+
+        # Create mismatched sub-labels JSON, where 'fr' is shorter
+        mismatched_sub_labels = json.dumps({"instructions": instructions})
+
+        try:
+            # Attempt to update the sub-labels in the database
+            self.cursor.execute(
+                "SELECT update_sub_labels(%s, %s);",
+                (self.label_id, mismatched_sub_labels),
+            )
+        except Exception as e:
+            self.fail(f"update_sub_labels raised an unexpected exception: {e}")
+
+        # Retrieve the saved sub-label data from the database
+        saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        saved_instructions = saved_data["instructions"]
+
+        # Check that the 'fr' array was padded with an empty string
+        self.assertEqual(
+            len(saved_instructions["fr"]),
+            len(
+                instructions["en"]
+            ),  # 'fr' should be padded to match the length of 'en'
+            f"Mismatch in length of 'fr' array: expected {len(instructions['en'])}, got {len(saved_instructions['fr'])}.",
+        )
+
+        # Assert that the content in 'fr' is correctly padded with an empty string
+        self.assertEqual(
+            saved_instructions["fr"],
+            instructions["fr"]
+            + [""],  # Expecting the missing value replaced by an empty string
+            f"Mismatch in 'fr' content: expected {instructions['fr'] + ['']}, got {saved_instructions['fr']}.",
+        )
+
+        # Assert that the 'en' array was not modified
+        self.assertEqual(
+            saved_instructions["en"],
+            instructions["en"],
+            f"Mismatch in 'en' content: expected {instructions['en']}, got {saved_instructions['en']}.",
+        )
+
+    def test_update_sub_labels_with_empty_arrays(self):
+        # Test with empty 'fr' and 'en' arrays
+        empty_sub_labels = json.dumps({"instructions": {"fr": [], "en": []}})
+
+        try:
+            # Execute the function with empty sub labels
+            self.cursor.execute(
+                "SELECT update_sub_labels(%s, %s);", (self.label_id, empty_sub_labels)
+            )
+        except Exception as e:
+            self.fail(f"update_sub_labels raised an exception with empty arrays: {e}")
+
+        # Verify that no new data was inserted
+        self.cursor.execute(
+            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
+            (self.label_id,),
+        )
+        saved_data_empty = self.cursor.fetchall()
+
+        self.assertEqual(
+            len(saved_data_empty),
+            0,
+            "No sub label records should be inserted when arrays are empty",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
