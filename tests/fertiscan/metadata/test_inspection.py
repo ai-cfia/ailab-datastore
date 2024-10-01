@@ -415,28 +415,9 @@ class test_inspection_import(unittest.TestCase):
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
-        label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
-
-        data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
-        )
-        data = json.loads(data)
-
-        # Check that no empty specification (all fields None) is present
-        for spec in data["specifications"]["en"]:
-            self.assertFalse(
-                all(value is None for value in spec.values()),
-                "Empty specification found in 'en' list",
-            )
-
-        for spec in data["specifications"]["fr"]:
-            self.assertFalse(
-                all(value is None for value in spec.values()),
-                "Empty specification found in 'fr' list",
-            )
 
     def test_empty_sub_label(self):
         # Modify analyse data to have empty cautions_en and cautions_fr

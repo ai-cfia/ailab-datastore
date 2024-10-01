@@ -288,6 +288,7 @@ async def delete_inspection(
 
     # Delete the inspection and get the returned data
     deleted_inspection = inspection.delete_inspection(cursor, inspection_id, user_id)
+    deleted_inspection = data_inspection.DBInspection.model_validate(deleted_inspection)
 
     await datastore.delete_picture_set_permanently(
         cursor, str(user_id), str(deleted_inspection.picture_set_id), container_client

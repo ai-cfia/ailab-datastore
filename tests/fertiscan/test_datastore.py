@@ -91,7 +91,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        self.user_id = datastore.User.get_id(self.user_obj)
+        self.user_id = datastore.User.get_id(self.user)
         blob_service_client = BlobServiceClient.from_connection_string(
             BLOB_CONNECTION_STRING
         )

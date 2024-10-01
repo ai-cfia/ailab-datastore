@@ -60,6 +60,7 @@ class TestInspectionDeleteFunction(unittest.TestCase):
         deleted_inspection = delete_inspection(
             self.cursor, self.inspection_id, self.inspector_id
         )
+        deleted_inspection = DBInspection.model_validate(deleted_inspection)
 
         # Check if the returned object is a DBInspection instance
         self.assertIsInstance(deleted_inspection, DBInspection)

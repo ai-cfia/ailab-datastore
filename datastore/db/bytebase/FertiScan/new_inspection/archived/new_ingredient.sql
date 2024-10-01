@@ -1,9 +1,9 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".new_ingredient(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_ingredient(
 name TEXT,
 value FLOAt,
 read_unit TEXT,
 label_id UUID,
-language "fertiscan_0.0.14".language,
+language "fertiscan_0.0.15".language,
 organic BOOLEAN,
 active BOOLEAN,
 edited BOOLEAN = FALSE

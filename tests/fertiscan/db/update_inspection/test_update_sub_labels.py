@@ -163,7 +163,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
     def test_update_sub_labels_with_mismatched_arrays(self):
         # Load the sub-labels from sample data
-        instructions = json.loads(self.sample_sub_labels)["instructions"]
+        instructions = self.sample_sub_labels["instructions"]
 
         # Remove the last item from 'fr' array
         instructions["fr"] = instructions["fr"][:-1]

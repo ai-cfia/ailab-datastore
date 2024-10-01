@@ -336,7 +336,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_or_empty_sub_label()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Check if both text_content_fr and text_content_en are NULL or empty
@@ -363,11 +363,11 @@ $$ LANGUAGE plpgsql;
 
 
 -- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
-DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.14".sub_label;
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.15".sub_label;
 CREATE TRIGGER before_insert_sub_label
-BEFORE INSERT ON "fertiscan_0.0.14".sub_label
+BEFORE INSERT ON "fertiscan_0.0.15".sub_label
 FOR EACH ROW
-EXECUTE FUNCTION check_null_or_empty_sub_label();
+EXECUTE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label();
 
 
 -- Function to update sub labels: delete old and insert new

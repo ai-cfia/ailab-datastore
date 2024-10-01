@@ -266,7 +266,7 @@ BEGIN
 			en_value := en_values->>i;
 
 			-- Insert sub-label without deleting existing data
-			sub_label_id := "fertiscan_0.0.14".new_sub_label(
+			sub_label_id := "fertiscan_0.0.15".new_sub_label(
 				fr_value,
 				en_value,
 				label_info_id,

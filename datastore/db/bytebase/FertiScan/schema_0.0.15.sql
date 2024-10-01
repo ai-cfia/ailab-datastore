@@ -51,7 +51,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text,
     "address" text NOT NULL,
-    "region_id" uuid References "fertiscan_0.0.15".region(id)
+    "region_id" uuid REFERENCES "fertiscan_0.0.15".region(id)
     );    
     
     CREATE TABLE "fertiscan_0.0.15"."organization_information" (
@@ -142,7 +142,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "inspection_id" uuid PRIMARY KEY,
     "inspector_id" uuid ,
     "label_info_id" uuid ,
-    "time_id" uuid References "fertiscan_0.0.15".time_dimension(id),
+    "time_id" uuid REFERENCES "fertiscan_0.0.15".time_dimension(id),
     "sample_id" uuid,
     "company_id" uuid,
     "manufacturer_id" uuid,
@@ -160,7 +160,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.15".unit(id),
     "metric_type" "fertiscan_0.0.15".metric_type,
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id)
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE
     );
 
     CREATE TABLE "fertiscan_0.0.15"."sub_type" (
@@ -176,7 +176,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "ph" float,
     "solubility" float,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
     "language" "fertiscan_0.0.15".LANGUAGE
     );
 
@@ -184,7 +184,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "text_content_fr" text NOT NULL DEFAULT '',
         "text_content_en" text NOT NULL DEFAULT '',
-        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."label_information" ("id"),
+        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."sub_type" ("id")
     );
@@ -195,7 +195,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float,
     "unit" text ,
     "element_id" int REFERENCES "fertiscan_0.0.15".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
     "edited" boolean,
     "language" "fertiscan_0.0.15".LANGUAGE
     );
@@ -207,7 +207,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "unit" text ,
     "language" "fertiscan_0.0.15".LANGUAGE,
     "element_id" int REFERENCES "fertiscan_0.0.15".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
     "edited" boolean
     );
 
@@ -219,7 +219,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float,
     "unit" text,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
     "language" "fertiscan_0.0.15".LANGUAGE
     );
 
@@ -229,7 +229,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
     "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15".users(id),
-    "label_info_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id),
+    "label_info_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
     "sample_id" uuid REFERENCES "fertiscan_0.0.15".sample(id),
     "picture_set_id" uuid REFERENCES "fertiscan_0.0.15".picture_set(id),
     "inspection_comment" text
@@ -241,7 +241,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "registration_number" text,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "update_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.15".inspection(id),
+    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.15".inspection(id) ON DELETE CASCADE,
     "owner_id" uuid REFERENCES "fertiscan_0.0.15".organization(id)
     );
 
