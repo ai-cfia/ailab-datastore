@@ -52,6 +52,7 @@
         ]
     },
     "verified": false,
+    "inspection_comment": "",
     "first_aid": {
         "en": [
             "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
