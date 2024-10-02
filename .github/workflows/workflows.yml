@@ -8,10 +8,30 @@ on:
       - closed
       - synchronize
 jobs:
-  python-lint:
-    name: workflow-lint-test-python
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@main
+  nachet-lint:
+    name: nachet-lint-test-python
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
+    with:
+      pyproject-path: 'nachet_pyproject.toml'
+      package-name: 'nachet-datastore'
+      project-path: 'nachet'
+      skip-coverage: 'true'
+  fertiscan-lint:
+    name: fertiscan-lint-test-python
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    secrets: inherit
+    with:
+      pyproject-path: 'fertiscan_pyproject.toml'
+      package-name: 'fertiscan-datastore'
+      project-path: 'fertiscan'
+      skip-coverage: 'true'
+  datastore-lint:
+    name: datastore-lint-test-python
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    secrets: inherit
+    with:
+      project-path: 'datastore'
   # bytebase-sql-review:
   #   uses: ai-cfia/github-workflows/.github/workflows/workflow-bytebase-sql-review.yml@main
   #   secrets: inherit

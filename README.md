@@ -1,21 +1,25 @@
-# nachet-datastore
+# ailab-datastore
 
 ## Overview
 
-We want to define a human editable metadata format associated to captured images
-of seeds for model training and analysis.
+This monorepo contains the code for the AI Lab Datastore project. The project
+aims to provide a data store with metadata for images and other data types
+related to different projects. The datastore folder contains common code for
+projects used by Nachet and Fertiscan projects.
+
+## Nachet
 
 Capturing attributes associated to the images is essential for proper model
 training.
 
-## image format
+### image format
 
 * .npy for nachet-batch
 * .tiff for nachet-interactive
 
 We define metadata related to the file.
 
-## csv vs yaml vs json file
+### csv vs yaml vs json file
 
 These are machine readable file formats that are popular:
 
@@ -30,7 +34,7 @@ These are machine readable file formats that are popular:
 Although originally proposing JSON, we will use YAML instead as it is easier to
 edit for users.
 
-## on-disk directory/file structure
+### on-disk directory/file structure
 
 * name/
   * index.yaml
@@ -45,7 +49,7 @@ edit for users.
       * 1.yaml
         * microscope metadata
 
-## import utility
+### import utility
 
 Python script that reads from on-disk directory structure and converts it to
 database
@@ -55,7 +59,7 @@ database
 * some draft information might be filled in by the model
 * some of the metadata is filled in the user
 
-## mapping to relational model nachet-db
+### mapping to relational model nachet-db
 
 (TODO: ERD (Entity-Relationship Diagram) here)
 

@@ -13,7 +13,7 @@ import uuid
 import asyncio
 import datastore.db.__init__ as db
 import datastore.__init__ as datastore
-import datastore.nachet.__init__ as nachet
+import nachet.__init__ as nachet
 import datastore.db.metadata.validator as validator
 import datastore.db.queries.seed as seed_query
 from copy import deepcopy

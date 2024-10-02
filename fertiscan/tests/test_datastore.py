@@ -16,9 +16,9 @@ import datastore.__init__ as datastore
 import datastore.db.__init__ as db
 import datastore.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
-import datastore.fertiscan as fertiscan
+import fertiscan as fertiscan
+from fertiscan.db.queries.inspection import inspection
 from datastore.db.queries import (
-    inspection,
     label,
     metric,
     nutrients,
