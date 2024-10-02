@@ -338,7 +338,7 @@ BEGIN
         label_info_id,
         NULL, -- NOT handled yet
         picture_set_id,  -- Assuming picture_set_id is handled separately
-		to_jsonb(''::text)
+		NULL
     )
     RETURNING id INTO inspection_id_value;
    
