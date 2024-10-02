@@ -340,30 +340,6 @@ BEGIN
                             END IF;
                         END IF;
                     END LOOP;
-                    IF jsonb_array_length(original_dataset_json->language_str) > 0 THEN
-                        source_nb := jsonb_array_length(original_dataset_json->language_str);
-                        For i IN 0 .. source_nb - 1 LOOP
-                            item_json := (original_dataset_json->language_str->i);
-                            source_str := source_str || COALESCE(item_json->>'type', '') || COALESCE(item_json->>'value', '') || ' ';
-                        END LOOP;
-                    END IF;
-
-                    IF jsonb_array_length(dataset_json->language_str) > 0 THEN
-                        target_nb := jsonb_array_length(dataset_json->language_str);
-                        For i IN 0 .. target_nb - 1 LOOP
-                            item_json := (dataset_json->language_str->i);
-                            target_str := target_str || COALESCE(item_json->>'type', '') || COALESCE(item_json->>'value', '') || ' ';
-                        END LOOP;
-                    END IF;
-                    
-                    IF language_str = 'fr' THEN
-                        SELECT levenshtein(source_str, target_str) INTO sub_labels_fr_lev;
-                        sub_labels_fr_lists_modif := target_nb - source_nb;
-                    ELSE -- language_str = 'en'
-                        SELECT levenshtein(source_str, target_str) INTO sub_labels_en_lev;
-                        sub_labels_en_lists_modif := target_nb - source_nb;
-                    END IF;
-                END LOOP;
     RETURN;
 END;
 $function$;
