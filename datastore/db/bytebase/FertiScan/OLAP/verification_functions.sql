@@ -16,6 +16,7 @@ DECLARE
     sub_label_key TEXT;
     source_nb int;
     target_nb int;
+    score_value int;
     label_info_lev_total int,
     label_name_lev int,
     label_reg_num_lev int,
@@ -158,7 +159,6 @@ BEGIN
                         target_nb := target_nb + 1;
                     END IF;
                 
-                metrics_lists_edit:= source_nb != target_nb;
                 metrics_lists_modif:= target_nb - source_nb;
                 
                 SELECT levenshtein(source_str, target_str) INTO metrics_lev;
@@ -341,6 +341,61 @@ BEGIN
                             END IF;
                         END IF;
                     END LOOP;
+
+    -- Score the inspection
+
+    -- Insert the evaluation into the inspection_evaluation table
+    INSERT INTO "fertiscan_0.0.12".inspection_evaluation (
+        inspection_id,
+        score,
+        label_info_lev_total,
+        label_name_lev,
+        label_reg_num_lev,
+        label_lot_num_lev,
+        metrics_lists_edited,
+        metrics_lists_modif,
+        metrics_lev,
+        manufacturer_field_edited,
+        manufacturer_lev_total,
+        company_field_edited,
+        company_lev_total,
+        org_lev_total,
+        instructions_lists_modif,
+        instruction_lists_edit,
+        instructions_lev,
+        cautions_lists_modif,
+        cautions_lists_edit,
+        cautions_lev,
+        guaranteeds_en_lists_modif,
+        guaranteeds_fr_lists_modif,
+        guaranteeds_en_lev,
+        guaranteeds_fr_lev
+    ) VALUES (
+        id,
+        score_value,
+        label_info_lev_total,
+        label_name_lev,
+        label_reg_num_lev,
+        label_lot_num_lev,
+        metrics_lists_edited,
+        metrics_lists_modif,
+        metrics_lev,
+        manufacturer_field_edited,
+        manufacturer_lev_total,
+        company_field_edited,
+        company_lev_total,
+        org_lev_total,
+        instructions_lists_modif,
+        instruction_lists_edit,
+        instructions_lev,
+        cautions_lists_modif,
+        cautions_lists_edit,
+        cautions_lev,
+        guaranteeds_en_lists_modif,
+        guaranteeds_fr_lists_modif,
+        guaranteeds_en_lev,
+        guaranteeds_fr_lev
+    );
     RETURN;
 END;
 $function$;
