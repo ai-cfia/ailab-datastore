@@ -18,7 +18,7 @@ from datastore.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
 from datastore.db.queries import picture, seed, user,machine_learning
-from nachet.db.queries.inference import inference
+import nachet.db.queries.inference as inference
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
