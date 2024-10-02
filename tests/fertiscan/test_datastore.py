@@ -9,7 +9,6 @@ import json
 import os
 import unittest
 
-from azure.storage.blob import BlobServiceClient
 from PIL import Image
 
 import datastore.__init__ as datastore
@@ -84,25 +83,22 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.user_email = "testesss@email"
-        self.tier = "test-user"
         self.user = asyncio.run(
             datastore.new_user(
-                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
+                self.cursor, self.user_email, BLOB_CONNECTION_STRING, "test-user"
             )
         )
 
         self.user_id = datastore.User.get_id(self.user)
-        blob_service_client = BlobServiceClient.from_connection_string(
-            BLOB_CONNECTION_STRING
-        )
-        container_name = "test-user-" + str(self.user_id)
-        try:
-            self.container_client = blob_service_client.get_container_client(
-                container_name
+        self.container_client = asyncio.run(
+            datastore.get_user_container_client(
+                user_id=self.user_id,
+                storage_url=BLOB_CONNECTION_STRING,
+                account=BLOB_ACCOUNT,
+                key=BLOB_KEY,
+                tier="test-user",
             )
-            self.container_client.get_container_properties()
-        except Exception:
-            self.container_client = blob_service_client.create_container(container_name)
+        )
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
