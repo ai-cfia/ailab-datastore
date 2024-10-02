@@ -91,22 +91,3 @@ AFTER DELETE ON "fertiscan_0.0.12".inspection
 FOR EACH ROW
 EXECUTE FUNCTION olap_inspection_deletion();
 
--- Function that evaluates the inspection compared to the original_dataset
-CREATE OR REPLACE FUNCTION inspection_evaluation(
-    id UUID
-) RETURNS VOID 
-LANGUAGE plpgsql
-AS $function$
-DECLARE
-    original_dataset_json JSONB;
-BEGIN
-    -- fetch the original dataset
-    SELECT original_dataset INTO original_dataset_json
-    FROM "fertiscan_0.0.12".inspection_factual
-    WHERE inspection_id = id;
-
-    -- Evaluate the inspection
-
-    RETURN;
-END;
-$function$;

@@ -138,6 +138,34 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "day_name" text
     );
 
+    CREATE TABLE "fertiscan_0.0.12"."verification_dimension" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "score" int,
+    "label_info_lev_total" int,
+    "label_name_lev" int,
+    "label_reg_num_lev" int,
+    "label_lot_num_lev" int,
+    "metrics_lists_edited" boolean,
+    "metrics_lists_modif" int,
+    "metrics_lev" int,
+    "manufacturer_field_edited" int,
+    "manufacturer_lev_total" int,
+    "company_field_edited" boolean,
+    "company_lev_total" int,
+    "instructions_en_lists_modif" int,
+    "instructions_fr_lists_modif" int,
+    "instructions_en_lev" int,
+    "instructions_fr_lev" int,
+    "cautions_en_lists_modif" int,
+    "cautions_fr_lists_modif" int,
+    "cautions_en_lev" int,
+    "cautions_fr_lev" int,
+    "guaranteeds_en_lists_modif" int,
+    "guaranteeds_fr_lists_modif" int,
+    "guaranteeds_en_lev" int,
+    "guaranteeds_fr_lev" int,
+);
+
     CREATE TABLE "fertiscan_0.0.12"."inspection_factual" (
     "inspection_id" uuid PRIMARY KEY,
     "inspector_id" uuid ,
@@ -148,7 +176,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "manufacturer_id" uuid,
     "picture_set_id" uuid,
     "inspection_date" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "original_dataset" json
+    "original_dataset" json,
+    "verification_id" uuid REFERENCES "fertiscan_0.0.12".verification_dimension(id)
     );
 
 
