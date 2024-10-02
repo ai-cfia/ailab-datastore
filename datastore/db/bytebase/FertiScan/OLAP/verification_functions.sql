@@ -301,6 +301,7 @@ BEGIN
                 -- Loop for each language
                 FOR language_str IN ARRAY['fr', 'en']
                 LOOP
+                -- Loop for each sub_label
                     FOR sub_label_key IN ARRAY['cautions', 'instructions']
                     LOOP
                         source_str := '';
