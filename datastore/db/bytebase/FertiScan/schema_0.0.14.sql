@@ -1,13 +1,13 @@
---Schema creation "fertiscan_0.0.13"
+--Schema creation "fertiscan_0.0.14"
 DO
 $do$
 BEGIN
-IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'fertiscan_0.0.13')) THEN
+IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'fertiscan_0.0.14')) THEN
 
 
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-    CREATE TABLE "fertiscan_0.0.13"."users" (
+    CREATE TABLE "fertiscan_0.0.14"."users" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "email" text NOT NULL UNIQUE,
     "registration_date" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -15,77 +15,77 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
     -- CREATE A TYPE FOR FRENCH/ENGLISH LANGUAGE
-    CREATE TYPE "fertiscan_0.0.13".LANGUAGE AS ENUM ('fr', 'en');
+    CREATE TYPE "fertiscan_0.0.14".LANGUAGE AS ENUM ('fr', 'en');
 
-    CREATE TABLE "fertiscan_0.0.13"."picture_set" (
+    CREATE TABLE "fertiscan_0.0.14"."picture_set" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
     "picture_set" json NOT NULL,
-    "owner_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13".users(id),
+    "owner_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14".users(id),
     "upload_date" date NOT NULL DEFAULT current_timestamp,
     "name" text
     );
         
-    alter table "fertiscan_0.0.13".users ADD "default_set_id" uuid REFERENCES "fertiscan_0.0.13".picture_set(id);
+    alter table "fertiscan_0.0.14".users ADD "default_set_id" uuid REFERENCES "fertiscan_0.0.14".picture_set(id);
 
-    CREATE TABLE "fertiscan_0.0.13"."picture" (
+    CREATE TABLE "fertiscan_0.0.14"."picture" (
     "id" uuid NOT NULL DEFAULT uuid_generate_v4() PRIMARY KEY,
     "picture" json NOT NULL,
     "nb_obj" int,
-    "picture_set_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13".picture_set(id),
+    "picture_set_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14".picture_set(id),
     "verified" boolean NOT NULL DEFAULT false,
     "upload_date" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."province" (
+    CREATE TABLE "fertiscan_0.0.14"."province" (
     "id" SERIAL PRIMARY KEY,
     "name" text UNIQUE NOT NULL
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."region" (
+    CREATE TABLE "fertiscan_0.0.14"."region" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "province_id" int REFERENCES "fertiscan_0.0.13".province(id),
+    "province_id" int REFERENCES "fertiscan_0.0.14".province(id),
     "name" text NOT NULL
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."location" (
+    CREATE TABLE "fertiscan_0.0.14"."location" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text,
     "address" text NOT NULL,
-    "region_id" uuid References "fertiscan_0.0.13".region(id)
+    "region_id" uuid REFERENCES "fertiscan_0.0.14".region(id)
     );    
     
-    CREATE TABLE "fertiscan_0.0.13"."organization_information" (
+    CREATE TABLE "fertiscan_0.0.14"."organization_information" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "name" text,
         "website" text,
         "phone_number" text,
-        "location_id" uuid REFERENCES "fertiscan_0.0.13".location(id),
+        "location_id" uuid REFERENCES "fertiscan_0.0.14".location(id),
         "edited" boolean DEFAULT false
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."organization" (
+    CREATE TABLE "fertiscan_0.0.14"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "information_id" uuid REFERENCES "fertiscan_0.0.13".organization_information(id),
-    "main_location_id" uuid REFERENCES "fertiscan_0.0.13".location(id)
+    "information_id" uuid REFERENCES "fertiscan_0.0.14".organization_information(id),
+    "main_location_id" uuid REFERENCES "fertiscan_0.0.14".location(id)
     );
 
 
-    Alter table "fertiscan_0.0.13".location ADD "owner_id" uuid REFERENCES "fertiscan_0.0.13".organization(id);
+    Alter table "fertiscan_0.0.14".location ADD "owner_id" uuid REFERENCES "fertiscan_0.0.14".organization(id);
 
-    CREATE TABLE "fertiscan_0.0.13"."sample" (
+    CREATE TABLE "fertiscan_0.0.14"."sample" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "number" uuid,
     "collection_date" date,
-    "location" uuid REFERENCES "fertiscan_0.0.13".location(id)
+    "location" uuid REFERENCES "fertiscan_0.0.14".location(id)
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."unit" (
+    CREATE TABLE "fertiscan_0.0.14"."unit" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "unit" text NOT NULL,
     "to_si_unit" float
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."element_compound" (
+    CREATE TABLE "fertiscan_0.0.14"."element_compound" (
     "id" SERIAL PRIMARY KEY,
     "number" int NOT NULL,
     "name_fr" text NOT NULL,
@@ -93,7 +93,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "symbol" text NOT NULL UNIQUE
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."label_information" (
+    CREATE TABLE "fertiscan_0.0.14"."label_information" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "product_name" text,
     "lot_number" text,
@@ -102,14 +102,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "n" float,
     "p" float,
     "k" float,
-    "guaranteed_title_en" text,
-    "guaranteed_title_fr" text,
-    "title_is_minimal" boolean,
-    "company_info_id" uuid REFERENCES "fertiscan_0.0.13".organization_information(id),
-    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.13".organization_information(id)
+    "warranty" text,
+    "company_info_id" uuid REFERENCES "fertiscan_0.0.14".organization_information(id),
+    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.14".organization_information(id)
     );
     
-    CREATE TABLE "fertiscan_0.0.13"."label_dimension" (
+    CREATE TABLE "fertiscan_0.0.14"."label_dimension" (
     "label_id" uuid PRIMARY KEY,
     "company_info_id" uuid ,
     "company_location_id" uuid ,
@@ -128,7 +126,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "density_ids" uuid[] DEFAULT '{}'
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."time_dimension" (
+    CREATE TABLE "fertiscan_0.0.14"."time_dimension" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "date_value" date,
     "year" int,
@@ -138,11 +136,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "day_name" text
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."inspection_factual" (
+    CREATE TABLE "fertiscan_0.0.14"."inspection_factual" (
     "inspection_id" uuid PRIMARY KEY,
     "inspector_id" uuid ,
     "label_info_id" uuid ,
-    "time_id" uuid References "fertiscan_0.0.13".time_dimension(id),
+    "time_id" uuid REFERENCES "fertiscan_0.0.14".time_dimension(id),
     "sample_id" uuid,
     "company_id" uuid,
     "manufacturer_id" uuid,
@@ -152,66 +150,65 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
 
-    CREATE TYPE "fertiscan_0.0.13".metric_type as ENUM ('volume', 'weight','density');
+    CREATE TYPE "fertiscan_0.0.14".metric_type as ENUM ('volume', 'weight','density');
 
-    CREATE TABLE "fertiscan_0.0.13"."metric" (
+    CREATE TABLE "fertiscan_0.0.14"."metric" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "value" float,
     "edited" boolean,
-    "unit_id" uuid REFERENCES "fertiscan_0.0.13".unit(id),
-    "metric_type" "fertiscan_0.0.13".metric_type,
-    "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id)
+    "unit_id" uuid REFERENCES "fertiscan_0.0.14".unit(id),
+    "metric_type" "fertiscan_0.0.14".metric_type,
+    "label_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."sub_type" (
+    CREATE TABLE "fertiscan_0.0.14"."sub_type" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "type_fr" text Unique NOT NULL,
         "type_en" text unique NOT NULL
     );
 
 
-    CREATE TABLE "fertiscan_0.0.13"."specification" (
+    CREATE TABLE "fertiscan_0.0.14"."specification" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "humidity" float,
     "ph" float,
     "solubility" float,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
-    "language" "fertiscan_0.0.13".LANGUAGE
+    "label_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE,
+    "language" "fertiscan_0.0.14".LANGUAGE
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."sub_label" (
+    CREATE TABLE "fertiscan_0.0.14"."sub_label" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "text_content_fr" text NOT NULL DEFAULT '',
-        "text_content_en" text NOT NULL DEFAULT '',
-        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13"."label_information" ("id"),
+        "text_content_fr" text,
+        "text_content_en" text,
+        "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
-        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13"."sub_type" ("id")
+        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14"."sub_type" ("id")
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."micronutrient" (
+    CREATE TABLE "fertiscan_0.0.14"."micronutrient" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "read_name" text,
     "value" float,
     "unit" text ,
-    "element_id" int REFERENCES "fertiscan_0.0.13".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
+    "element_id" int REFERENCES "fertiscan_0.0.14".element_compound(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE,
     "edited" boolean,
-    "language" "fertiscan_0.0.13".LANGUAGE
+    "language" "fertiscan_0.0.14".LANGUAGE
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."guaranteed" (
+    CREATE TABLE "fertiscan_0.0.14"."guaranteed" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "read_name" text,
     "value" float ,
     "unit" text ,
-    "language" "fertiscan_0.0.13".LANGUAGE,
-    "element_id" int REFERENCES "fertiscan_0.0.13".element_compound(id),
-    "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
+    "element_id" int REFERENCES "fertiscan_0.0.14".element_compound(id),
+    "label_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE,
     "edited" boolean
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."ingredient" (
+    CREATE TABLE "fertiscan_0.0.14"."ingredient" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "organic" boolean,
     "active" boolean,
@@ -219,33 +216,33 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "value" float,
     "unit" text,
     "edited" boolean,
-    "label_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
-    "language" "fertiscan_0.0.13".LANGUAGE
+    "label_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE,
+    "language" "fertiscan_0.0.14".LANGUAGE
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."inspection" (
+    CREATE TABLE "fertiscan_0.0.14"."inspection" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "verified" boolean DEFAULT false,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.13".users(id),
-    "label_info_id" uuid REFERENCES "fertiscan_0.0.13".label_information(id),
-    "sample_id" uuid REFERENCES "fertiscan_0.0.13".sample(id),
-    "picture_set_id" uuid REFERENCES "fertiscan_0.0.13".picture_set(id),
-    "inspection_comment" text
+    "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.0.14".users(id),
+    "label_info_id" uuid REFERENCES "fertiscan_0.0.14".label_information(id) ON DELETE CASCADE,
+    "sample_id" uuid REFERENCES "fertiscan_0.0.14".sample(id),
+    "picture_set_id" uuid REFERENCES "fertiscan_0.0.14".picture_set(id),
+    "original_dataset" json
     );
 
-    CREATE TABLE "fertiscan_0.0.13"."fertilizer" (
+    CREATE TABLE "fertiscan_0.0.14"."fertilizer" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
     "name" text UNIQUE NOT NULL,
     "registration_number" text,
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "update_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.13".inspection(id),
-    "owner_id" uuid REFERENCES "fertiscan_0.0.13".organization(id)
+    "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.14".inspection(id) ON DELETE CASCADE,
+    "owner_id" uuid REFERENCES "fertiscan_0.0.14".organization(id)
     );
 
-    Alter table "fertiscan_0.0.13".inspection ADD "fertilizer_id" uuid REFERENCES "fertiscan_0.0.13".fertilizer(id);
+    Alter table "fertiscan_0.0.14".inspection ADD "fertilizer_id" uuid REFERENCES "fertiscan_0.0.14".fertilizer(id);
 
     -- Trigger function for the `user` table
     CREATE OR REPLACE FUNCTION update_user_timestamp()
@@ -258,7 +255,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Trigger for the `user` table
     CREATE TRIGGER user_update_before
-    BEFORE UPDATE ON  "fertiscan_0.0.13".users
+    BEFORE UPDATE ON  "fertiscan_0.0.14".users
     FOR EACH ROW
     EXECUTE FUNCTION update_user_timestamp();
 
@@ -273,7 +270,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Trigger for the `analysis` table
     CREATE TRIGGER analysis_update_before
-    BEFORE UPDATE ON  "fertiscan_0.0.13".inspection
+    BEFORE UPDATE ON  "fertiscan_0.0.14".inspection
     FOR EACH ROW
     EXECUTE FUNCTION update_analysis_timestamp();
 
@@ -288,7 +285,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Trigger for the `fertilizer` table
     CREATE TRIGGER fertilizer_update_before
-    BEFORE UPDATE ON  "fertiscan_0.0.13".fertilizer
+    BEFORE UPDATE ON  "fertiscan_0.0.14".fertilizer
     FOR EACH ROW
     EXECUTE FUNCTION update_fertilizer_timestamp();
 
@@ -308,16 +305,16 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     -- Trigger for the `inspection` table
     CREATE TRIGGER inspection_update_protect_original_dataset
-    BEFORE UPDATE ON  "fertiscan_0.0.13".inspection_factual
+    BEFORE UPDATE ON  "fertiscan_0.0.14".inspection_factual
     FOR EACH ROW
     EXECUTE FUNCTION update_inspection_original_dataset_protection();
 
     -- Insert the default types : [instruction, caution,first_aid, warranty]
-    INSERT INTO "fertiscan_0.0.13".sub_type(type_fr,type_en) VALUES
+    INSERT INTO "fertiscan_0.0.14".sub_type(type_fr,type_en) VALUES
     ('instructions','instructions'),
-    ('mises_en_garde','cautions');
- --   ('premier_soin','first_aid'), -- We are not using this anymore
- --   ('garanties','warranties'); -- we are not using this anymore
+    ('mises_en_garde','cautions'),
+    ('premier_soin','first_aid'),
+    ('garanties','warranties');
 end if;
 END
 $do$;

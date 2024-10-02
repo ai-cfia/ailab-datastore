@@ -3,9 +3,11 @@ import os
 import unittest
 
 import psycopg
+from dotenv import load_dotenv
+
 import datastore.db.queries.label as label
 import datastore.db.queries.nutrients as guaranteed
-from dotenv import load_dotenv
+from datastore.db.metadata.inspection import GuaranteedAnalysis
 
 load_dotenv()
 
@@ -104,9 +106,9 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
         # Verify that the data is correctly saved
         basic_data = guaranteed.get_guaranteed_analysis_json(self.cursor, self.label_id)
+        basic_data = GuaranteedAnalysis.model_validate(basic_data)
         self.assertEqual(
-            len(basic_data["guaranteed_analysis"]["en"])
-            + len(basic_data["guaranteed_analysis"]["fr"]),
+            len(basic_data.en) + len(basic_data.fr),
             self.nb_guaranteed,
             f"There should be {self.nb_guaranteed} guaranteed analysis records inserted",
         )
@@ -121,8 +123,9 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         updated_data = guaranteed.get_guaranteed_analysis_json(
             self.cursor, self.label_id
         )
-        for value in updated_data["guaranteed_analysis"]["en"]:
-            self.assertEqual(value["value"], 22)
+        updated_data = GuaranteedAnalysis.model_validate(updated_data)
+        for value in updated_data.en:
+            self.assertEqual(value.value, 22)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
-SET search_path TO "fertiscan_0.0.13";
+SET search_path TO "fertiscan_0.0.15";
 
 -- Function to upsert location information based on location_id and address
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_location(location_id uuid, address text)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_location(location_id uuid, address text)
 RETURNS uuid AS $$
 DECLARE
     new_location_id uuid;
@@ -23,7 +23,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert organization information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_organization_info(input_org_info jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_organization_info(input_org_info jsonb)
 RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
@@ -73,54 +73,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- Function to upsert label information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_label_information(
-    input_label jsonb,
-    company_info_id uuid,
-    manufacturer_info_id uuid
-)
-RETURNS uuid AS $$
-DECLARE
-    label_id uuid;
-BEGIN
-    -- Extract or generate the label ID
-    label_id := NULLIF(input_label->>'label_id', '');
-
-    -- Upsert label information
-    INSERT INTO label_information (
-        id, product_name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id, warranty
-    )
-    VALUES (
-        label_id,
-        input_label->>'name',
-        input_label->>'lot_number',
-        input_label->>'npk',
-        input_label->>'registration_number',
-        (NULLIF(input_label->>'n', '')::float),
-        (NULLIF(input_label->>'p', '')::float),
-        (NULLIF(input_label->>'k', '')::float),
-        company_info_id,
-        manufacturer_info_id,
-        input_label->>'warranty'
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET lot_number = EXCLUDED.lot_number,
-        npk = EXCLUDED.npk,
-        registration_number = EXCLUDED.registration_number,
-        n = EXCLUDED.n,
-        p = EXCLUDED.p,
-        k = EXCLUDED.k,
-        company_info_id = EXCLUDED.company_info_id,
-        manufacturer_info_id = EXCLUDED.manufacturer_info_id
-    RETURNING id INTO label_id;
-
-    RETURN label_id;
-END;
-$$ LANGUAGE plpgsql;
-
-
 -- Function to update metrics: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_metrics(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_metrics(
     p_label_id uuid,
     metrics jsonb
 )
@@ -195,7 +149,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update specifications: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_specifications(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_specifications(
     p_label_id uuid,
     new_specifications jsonb
 )
@@ -241,7 +195,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update ingredients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_ingredients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_ingredients(
     p_label_id uuid,
     new_ingredients jsonb
 )
@@ -289,7 +243,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update micronutrients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_micronutrients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_micronutrients(
     p_label_id uuid,
     new_micronutrients jsonb
 )
@@ -333,9 +287,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-drop FUNCTION IF EXISTS "fertiscan_0.0.13".update_guaranteed;
+drop FUNCTION IF EXISTS "fertiscan_0.0.15".update_guaranteed;
 -- Function to update guaranteed analysis: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_guaranteed(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_guaranteed(
     p_label_id uuid,
     new_guaranteed jsonb
 )
@@ -349,7 +303,7 @@ BEGIN
     DELETE FROM guaranteed WHERE label_id = p_label_id;
 
 	-- Loop through each language ('en' and 'fr')
-    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.13".LANGUAGE))
+    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.15".LANGUAGE))
 	LOOP
 		FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed->guaranteed_analysis_language)
 		LOOP
@@ -381,8 +335,43 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if both text_content_fr and text_content_en are NULL or empty
+    IF (NEW.text_content_fr IS NULL OR NEW.text_content_fr = '') AND 
+       (NEW.text_content_en IS NULL OR NEW.text_content_en = '') THEN
+        -- Raise an exception and skip the insertion
+        RAISE EXCEPTION 'Skipping insertion because both text_content_fr and text_content_en are NULL or empty';
+        RETURN NULL;
+    END IF;
+
+    -- Replace NULL with empty strings
+    IF NEW.text_content_fr IS NULL THEN
+        NEW.text_content_fr := '';
+    END IF;
+
+    IF NEW.text_content_en IS NULL THEN
+        NEW.text_content_en := '';
+    END IF;
+
+    -- Allow the insert if at least one is not NULL or empty
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.15".sub_label;
+CREATE TRIGGER before_insert_sub_label
+BEFORE INSERT ON "fertiscan_0.0.15".sub_label
+FOR EACH ROW
+EXECUTE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label();
+
+
 -- Function to update sub labels: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_sub_labels(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_sub_labels(
     p_label_id uuid,
     new_sub_labels jsonb
 )
@@ -392,6 +381,9 @@ DECLARE
     fr_values jsonb;
     en_values jsonb;
     i int;
+    max_length int;
+    fr_value text;
+    en_value text;
 BEGIN
     -- Delete existing sub labels for the given label_id
     DELETE FROM sub_label WHERE label_id = p_label_id;
@@ -400,41 +392,47 @@ BEGIN
     FOR sub_type_rec IN SELECT id, type_en FROM sub_type
     LOOP
         -- Extract the French and English arrays for the current sub_type
-        fr_values := new_sub_labels->sub_type_rec.type_en->'fr';
-        en_values := new_sub_labels->sub_type_rec.type_en->'en';
-        If fr_values IS NULL THEN
-            RAISE EXCEPTION 'Sub-labels FR for type % are missing', sub_type_rec.type_en;
-        end if;
-        if en_values IS NULL THEN
-            RAISE EXCEPTION 'Sub-labels EN for type % are missing', sub_type_rec.type_en;
-        ELSE
-            -- Ensure both arrays are of the same length
-            IF jsonb_array_length(fr_values) = jsonb_array_length(en_values) THEN
-                FOR i IN 0..(jsonb_array_length(fr_values) - 1)
-                LOOP
-                    -- Insert sub label record
-                    INSERT INTO sub_label (
-                        text_content_fr, text_content_en, label_id, edited, sub_type_id
-                    )
-                    VALUES (
-                        fr_values->>i,
-                        en_values->>i,
-                        p_label_id,
-                        Null,  -- not handled
-                        sub_type_rec.id
-                    );
-                END LOOP;
-            ELSE
-                RAISE EXCEPTION 'Mismatch in number of French (%s) and English (%s) sub-labels for type %',jsonb_array_length(fr_values),jsonb_array_length(en_values), sub_type_rec.type_en;
-            END IF;
-        END IF;
+        fr_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'fr', '[]'::jsonb);
+        en_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'en', '[]'::jsonb);
+
+        -- Determine the maximum length of the arrays
+        max_length := GREATEST(
+            jsonb_array_length(fr_values),
+            jsonb_array_length(en_values)
+        );
+
+        -- Check if lengths are not equal, and raise a notice
+		IF jsonb_array_length(en_values) != jsonb_array_length(fr_values) THEN
+			RAISE NOTICE 'Array length mismatch for sub_type: %, EN length: %, FR length: %', 
+				sub_type_rec.type_en, jsonb_array_length(en_values), jsonb_array_length(fr_values);
+		END IF;
+
+        -- Loop through the indices up to the maximum length
+        FOR i IN 0..(max_length - 1)
+        LOOP
+            -- Extract values or set to empty string if not present
+            fr_value := fr_values->>i;
+            en_value := en_values->>i;
+
+            -- Insert sub label record
+            INSERT INTO sub_label (
+                text_content_fr, text_content_en, label_id, edited, sub_type_id
+            )
+            VALUES (
+                fr_value,
+                en_value,
+                p_label_id,
+                NULL,  -- not handled
+                sub_type_rec.id
+            );
+        END LOOP;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
-Drop FUNCTION IF EXISTS "fertiscan_0.0.13".upsert_inspection;
+Drop FUNCTION IF EXISTS "fertiscan_0.0.15".upsert_inspection;
 -- Function to upsert inspection information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_inspection(
     p_inspection_id uuid,
     p_label_info_id uuid,
     p_inspector_id uuid,
@@ -455,7 +453,7 @@ BEGIN
 
     -- Upsert inspection information
     INSERT INTO inspection (
-        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at
+        id, label_info_id, inspector_id, sample_id, picture_set_id, verified, upload_date, updated_at, original_dataset
     )
     VALUES (
         inspection_id,
@@ -465,7 +463,8 @@ BEGIN
         p_picture_set_id,
         p_verified,
         CURRENT_TIMESTAMP,
-        CURRENT_TIMESTAMP
+        CURRENT_TIMESTAMP,
+        p_original_dataset
     )
     ON CONFLICT (id) DO UPDATE
     SET 
@@ -483,7 +482,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert fertilizer information based on unique fertilizer name
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".upsert_fertilizer(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_fertilizer(
     p_name text,
     p_registration_number text,
     p_owner_id uuid,
@@ -519,7 +518,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update inspection data and related entities, returning an updated JSON
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".update_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid,
     p_input_json jsonb
@@ -584,8 +583,8 @@ BEGIN
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
-    guaranteed_title = p_input_json->'guaranteed_analysis'->>'title',
-    guaranteed_titre = p_input_json->'guaranteed_analysis'->>'titre',
+    guaranteed_title_en = p_input_json->'guaranteed_analysis'->'title'->>'en',
+    guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
     title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
     "manufacturer_info_id" = manufacturer_info_id
@@ -623,8 +622,8 @@ BEGIN
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
         verified = verified_bool,
-        updated_at = CURRENT_TIMESTAMP  -- Update timestamp on conflict
-        user_comment = p_input_json->> 'inspection_comment'
+        updated_at = CURRENT_TIMESTAMP,  -- Update timestamp on conflict
+        inspection_comment = p_input_json->>'inspection_comment'
     WHERE 
         id = p_inspection_id;
 

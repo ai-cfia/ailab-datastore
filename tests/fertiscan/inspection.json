@@ -219,8 +219,10 @@
         ]
     },
     "guaranteed_analysis" : {
-        "title": "Guaranteed Analysis",
-        "titre": "Analyse Garantie",
+        "title": {
+            "en" : "Guaranteed Analysis",
+            "fr" : "Analyse Garantie"
+        },
         "is_minimal" : false,
         "en" : [
             {

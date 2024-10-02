@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.13".new_sub_label(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_sub_label(
 content_fr TEXT,
 content_en TEXT,
 label_id UUID,

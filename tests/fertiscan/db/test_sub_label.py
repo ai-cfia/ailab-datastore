@@ -1,15 +1,15 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
-import unittest
-
-from datastore.db.queries import sub_label, label
-from datastore.db.metadata import validator
-import datastore.db.__init__ as db
 import os
+import unittest
 import uuid
+
+import datastore.db.__init__ as db
+from datastore.db.metadata import validator
+from datastore.db.queries import label, sub_label
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -199,7 +199,7 @@ class test_sub_label(unittest.TestCase):
         other_fr = "other_fr"
         other_en = "other_en"
 
-        sub_label_id = sub_label.new_sub_label(
+        sub_label_id_1 = sub_label.new_sub_label(
             self.cursor,
             self.text_fr,
             self.text_en,
@@ -207,16 +207,115 @@ class test_sub_label(unittest.TestCase):
             self.sub_type_id,
             False,
         )
-        sub_id = sub_label.new_sub_label(
+        sub_label_id_2 = sub_label.new_sub_label(
             self.cursor, other_fr, other_en, self.label_id, self.sub_type_id, False
         )
+
+        # Fetch all sub_labels
         sub_label_data = sub_label.get_all_sub_label(self.cursor, self.label_id)
+
+        # Assert the length of results is 2
         self.assertEqual(len(sub_label_data), 2)
 
-        self.assertTrue(validator.is_valid_uuid(sub_label_data[0][0]))
-        self.assertEqual(sub_label_data[0][0], sub_label_id)
-        self.assertTrue(validator.is_valid_uuid(sub_label_data[1][0]))
-        self.assertEqual(sub_label_data[1][0], sub_id)
+        # Extract the IDs and their corresponding data from the returned result set
+        result_dict = {row[0]: row for row in sub_label_data}
 
-        self.assertEqual(sub_label_data[0][1], self.text_fr)
-        self.assertEqual(sub_label_data[1][1], other_fr)
+        # Verify that both IDs exist in the returned results
+        self.assertIn(sub_label_id_1, result_dict)
+        self.assertIn(sub_label_id_2, result_dict)
+
+        # Check that the data for sub_label_id_1 matches the expected values
+        self.assertEqual(result_dict[sub_label_id_1][1], self.text_fr)
+        self.assertEqual(result_dict[sub_label_id_1][2], self.text_en)
+
+        # Check that the data for sub_label_id_2 matches the expected values
+        self.assertEqual(result_dict[sub_label_id_2][1], other_fr)
+        self.assertEqual(result_dict[sub_label_id_2][2], other_en)
+
+        # Ensure both sub_label_id_1 and sub_label_id_2 are valid UUIDs
+        self.assertTrue(validator.is_valid_uuid(sub_label_id_1))
+        self.assertTrue(validator.is_valid_uuid(sub_label_id_2))
+
+    def test_get_sub_label_json_with_null_values(self):
+        # Insert a sub-label with NULL for text_fr
+        sub_label.new_sub_label(
+            self.cursor,
+            None,  # Null French text
+            self.text_en,  # English text
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+
+        # Insert a sub-label with NULL for text_en
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,  # French text
+            None,  # Null English text
+            self.label_id,
+            self.sub_type_2_id,
+            False,
+        )
+
+        # Fetch sub-label data as JSON
+        sub_label_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
+
+        # Get the result dict to map sub-type to sub-label data
+        result_dict = {
+            sub_type: sub_label_data[sub_type] for sub_type in sub_label_data
+        }
+
+        # Check that the 'en' array for the first sub-label (sub_type_id) contains the correct English text
+        self.assertIn(self.type_en, result_dict)
+        self.assertEqual(
+            result_dict[self.type_en]["en"],
+            [self.text_en],
+            "Expected 'en' array to contain the correct English text for sub_type_id",
+        )
+
+        # Check that the 'fr' array for the first sub-label (sub_type_id) contains an empty string
+        self.assertEqual(
+            result_dict[self.type_en]["fr"],
+            [""],  # Since None should be replaced by an empty string
+            "Expected 'fr' array to contain an empty string for sub_type_id since it was NULL",
+        )
+
+        # Check that the 'fr' array for the second sub-label (sub_type_2_id) contains the correct French text
+        self.assertIn(self.type_2_en, result_dict)
+        self.assertEqual(
+            result_dict[self.type_2_en]["fr"],
+            [self.text_fr],
+            "Expected 'fr' array to contain the correct French text for sub_type_2_id",
+        )
+
+        # Check that the 'en' array for the second sub-label (sub_type_2_id) contains an empty string
+        self.assertEqual(
+            result_dict[self.type_2_en]["en"],
+            [""],  # Since None should be replaced by an empty string
+            "Expected 'en' array to contain an empty string for sub_type_2_id since it was NULL",
+        )
+
+    def test_sub_label_insertion_raises_exception_for_null_or_empty_texts(self):
+        # Test that an exception is raised when both 'text_content_fr' and 'text_content_en' are None or empty
+
+        # Attempt to insert a sub-label with both English and French texts as NULL
+        with self.assertRaises(Exception):
+            sub_label.new_sub_label(
+                self.cursor,
+                None,  # Null French text
+                None,  # Null English text
+                self.label_id,
+                self.sub_type_id,
+                False,
+            )
+
+        # Attempt to insert a sub-label with both English and French texts as empty strings
+        with self.assertRaises(Exception):
+            sub_label.new_sub_label(
+                self.cursor,
+                "",  # Empty French text
+                "",  # Empty English text
+                self.label_id,
+                self.sub_type_id,
+                False,
+            )

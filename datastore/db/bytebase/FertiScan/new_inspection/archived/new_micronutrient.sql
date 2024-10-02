@@ -1,9 +1,9 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.12".new_micronutrient(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_micronutrient(
 name TEXT,
 value FLOAT,
 unit TEXT,
 label_id UUID,
-language "fertiscan_0.0.12".language,
+language "fertiscan_0.0.15".language,
 edited BOOLEAN = FALSE,
 element_id int = NULL
 )

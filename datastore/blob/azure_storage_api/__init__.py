@@ -1,8 +1,10 @@
-import json
-import hashlib
-import os
 import datetime
-from azure.storage.blob import BlobServiceClient
+import hashlib
+import json
+import os
+
+from azure.storage.blob import BlobServiceClient, ContainerClient, BlobProperties
+
 
 class GenerateHashError(Exception):
     pass
@@ -394,7 +396,7 @@ async def download_container(container_client, container_name, local_dir):
         raise Exception("Error downloading container")
 
 
-async def get_blobs_from_tag(container_client, tag: str):
+async def get_blobs_from_tag(container_client: ContainerClient, tag: str):
     """
     This function gets the names of blobs in a picture set folder
 
@@ -406,16 +408,19 @@ async def get_blobs_from_tag(container_client, tag: str):
     """
     try:
         # The find_blobs_by_tags methods should return a list of blobs with the given tag
-        #blob_list = list(container_client.find_blobs_by_tags(filter_expression=tag))
-        
+        # blob_list = list(container_client.find_blobs_by_tags(filter_expression=tag))
+
         # Without the find_blobs_by_tags method
-        blob_list = list(container_client.list_blobs(include=['tags']))
-        result = []
+        blob_list = list(container_client.list_blobs(include=["tags"]))
+        result: list[BlobProperties] = []
         for blob in blob_list:
-            if blob.get('tags') and 'picture_set_uuid' in blob.get('tags') and blob.get('tags').get('picture_set_uuid') == tag:
+            if (
+                blob.get("tags")
+                and "picture_set_uuid" in blob.get("tags")
+                and blob.get("tags").get("picture_set_uuid") == tag
+            ):
                 result.append(blob)
 
-    
         if len(result) > 0:
             return result
         else:
@@ -424,7 +429,7 @@ async def get_blobs_from_tag(container_client, tag: str):
         print(f"Exception during find_blobs_by_tags: {e}")
         raise GetBlobError(f"Error getting blobs: {str(e)}")
 
-async def delete_folder(container_client, picture_set_id):
+async def delete_folder(container_client: ContainerClient, picture_set_id):
     """
     This function deletes a folder in the user's container
 
@@ -437,7 +442,8 @@ async def delete_folder(container_client, picture_set_id):
     try:
         blobs = await get_blobs_from_tag(container_client, picture_set_id)
         for blob in blobs:
-            container_client.delete_blob(blob)
+            container_client.delete_blob(blob.name)
+        return True
         
     except GetFolderUUIDError:
         return False
