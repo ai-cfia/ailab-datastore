@@ -4,7 +4,8 @@ import unittest
 
 import datastore.db.__init__ as db
 import datastore.db.metadata.inspection as metadata
-from datastore.db.queries import inspection, picture, user
+import fertiscan.db.queries.inspection as inspection
+from datastore.db.queries import picture, user
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
