@@ -80,7 +80,7 @@ jobs:
             fi
           done
 
-          # Generate the final changelog
+          # Generate final changelog
           changelog="Changelog:\n"
 
           if [ -n "$datastore_changelog" ]; then
