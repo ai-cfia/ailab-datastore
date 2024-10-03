@@ -9,7 +9,7 @@ authors = [
   { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" },
   { name="Sylvanie You", email="Sylvanie.You@inspection.gc.ca"}
 ]
-description = "Data management python layer"
+description = "Nachet Data management python layer"
 readme = "README.md"
 requires-python = ">=3.11"
 classifiers = [
@@ -32,11 +32,7 @@ include = ["nachet*", "datastore*"]
 [tool.setuptools.dynamic]
 dependencies = {file = ["./requirements.txt"]}
 
-# https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
-# [tool.setuptools.packages.find]
-# where = ["ailab"]
-
 [project.urls]
-"Homepage" = "https://github.com/ai-cfia/nachet-datastore"
-"Bug Tracker" = "https://github.com/ai-cfia/nachet-datastore/issues"
-Repository = "https://github.com/ai-cfia/nachet-datastore"  
+"Homepage" = "https://github.com/ai-cfia/ailab-datastore/nachet"
+"Bug Tracker" = "https://github.com/ai-cfia/ailab-datastore/issues"
+Repository = "https://github.com/ai-cfia/ailab-datastore"  
