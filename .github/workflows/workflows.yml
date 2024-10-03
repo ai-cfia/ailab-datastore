@@ -24,28 +24,24 @@ jobs:
           files: |
             nachet/**
             fertiscan/**
-  nachet-lint:
+  nachet-pyproject-version-bump:
     needs: get-changed-files
     if: contains(needs.get-changed-files.outputs.files, 'nachet/')
-    name: nachet-lint-test-python
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    name: nachet-datastore-pyproject-version-bump
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-version-bump-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
     with:
       pyproject-path: 'nachet_pyproject.toml'
       package-name: 'nachet-datastore'
-      project-path: 'nachet'
-      skip-coverage: 'true'
-  fertiscan-lint:
+  fertiscan-pyproject-version-bump:
     needs: get-changed-files
     if: contains(needs.get-changed-files.outputs.files, 'fertiscan/')
-    name: fertiscan-lint-test-python
-    uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
+    name: fertiscan-datastore-pyproject-version-bump
+    uses: ai-cfia/github-workflows/.github/workflows/workflow-version-bump-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
     with:
       pyproject-path: 'fertiscan_pyproject.toml'
       package-name: 'fertiscan-datastore'
-      project-path: 'fertiscan'
-      skip-coverage: 'true'
   datastore-lint:
     name: datastore-lint-test-python
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
