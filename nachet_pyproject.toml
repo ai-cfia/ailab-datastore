@@ -30,7 +30,7 @@ include = ["nachet*", "datastore*"]
 
 
 [tool.setuptools.dynamic]
-dependencies = {file = ["./datastore/requirements.txt"]}
+dependencies = {file = ["./requirements.txt"]}
 
 # https://setuptools.pypa.io/en/latest/userguide/pyproject_config.html
 # [tool.setuptools.packages.find]

@@ -28,7 +28,7 @@ where = ["."]
 include = ["fertiscan*", "datastore*"]
 
 [tool.setuptools.dynamic]
-dependencies = {file = ["./datastore/requirements.txt"]}
+dependencies = {file = ["./requirements.txt"]}
 
 [project.urls]
 "Homepage" = "https://github.com/ai-cfia/ailab-datastore/fertiscan"
