@@ -8,7 +8,25 @@ on:
       - closed
       - synchronize
 jobs:
+  get-changed-files:
+    name: Get Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      files: ${{ steps.changed-files.outputs.all_changed_files }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get Changed Files
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            nachet/**
+            fertiscan/**
   nachet-lint:
+    needs: get-changed-files
+    if: contains(needs.get-changed-files.outputs.files, 'nachet/')
     name: nachet-lint-test-python
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
@@ -18,6 +36,8 @@ jobs:
       project-path: 'nachet'
       skip-coverage: 'true'
   fertiscan-lint:
+    needs: get-changed-files
+    if: contains(needs.get-changed-files.outputs.files, 'fertiscan/')
     name: fertiscan-lint-test-python
     uses: ai-cfia/github-workflows/.github/workflows/workflow-lint-test-python.yml@141-add-optional-checks-in-python-lint-if-the-version-in-pyprojecttoml-file-has-been-bumped-fails-pipeline-if-not-bumped
     secrets: inherit
@@ -32,6 +52,7 @@ jobs:
     secrets: inherit
     with:
       project-path: 'datastore'
+      skip-coverage: 'true'
   # bytebase-sql-review:
   #   uses: ai-cfia/github-workflows/.github/workflows/workflow-bytebase-sql-review.yml@main
   #   secrets: inherit
