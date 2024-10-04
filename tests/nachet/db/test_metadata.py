@@ -1,6 +1,6 @@
 import os
-import datastore.db.metadata.inference as inference
-import datastore.db.metadata.machine_learning as ml_data
+import .db.metadata.inference as inference
+import nachet.db.metadata.machine_learning as ml_data
 import json
 import unittest
 

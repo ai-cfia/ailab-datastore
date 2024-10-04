@@ -5,7 +5,7 @@ import unittest
 from dotenv import load_dotenv
 from psycopg import connect
 
-from datastore.db.metadata.inspection import Inspection
+from fertiscan.db.metadata.inspection import Inspection
 from fertiscan.db.queries.inspection import InspectionUpdateError, update_inspection
 
 load_dotenv()

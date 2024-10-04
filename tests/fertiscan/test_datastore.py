@@ -14,7 +14,7 @@ from PIL import Image
 
 import datastore.__init__ as datastore
 import datastore.db.__init__ as db
-import datastore.db.metadata.inspection as metadata
+import fertiscan.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
 import fertiscan as fertiscan
 import fertiscan.db.queries.inspection as inspection

@@ -4,14 +4,14 @@ import os
 from dotenv import load_dotenv
 
 import datastore.blob.azure_storage_api as azure_storage
-import datastore.db.metadata.inference as inference_metadata
-import datastore.db.metadata.machine_learning as ml_metadata
+import nachet.db.metadata.inference as inference_metadata
+import nachet.db.metadata.machine_learning as ml_metadata
 import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.metadata.validator as validator
 import nachet.db.queries.inference as inference
-import datastore.db.queries.machine_learning as machine_learning
+import nachet.db.queries.machine_learning as machine_learning
 import datastore.db.queries.picture as picture
-import datastore.db.queries.seed as seed
+import nachet.db.queries.seed as seed
 import datastore.db.queries.user as user
 from datastore import (
     BlobUploadError,

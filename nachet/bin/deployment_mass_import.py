@@ -4,11 +4,11 @@ import io
 import base64
 import warnings
 from PIL import Image
-import datastore.db.queries.seed as seed
+import nachet.db.queries.seed as seed
 import datastore.db.queries.user as user
 import datastore.db.queries.picture as picture_query
 import datastore.db.metadata.picture_set as picture_set_metadata
-import datastore.db.metadata.picture as picture_metadata
+import nachet.db.metadata.picture as picture_metadata
 import datastore.db.metadata.validator as validator
 
 """ This script is used to import the missing metadata from an Azure container to the database """

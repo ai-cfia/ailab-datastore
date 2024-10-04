@@ -3,7 +3,7 @@ import os
 import unittest
 
 import datastore.db.__init__ as db
-import datastore.db.metadata.inspection as metadata
+import fertiscan.db.metadata.inspection as metadata
 import fertiscan.db.queries.inspection as inspection
 from datastore.db.queries import picture, user
 

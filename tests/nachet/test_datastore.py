@@ -15,7 +15,7 @@ import datastore.db.__init__ as db
 import datastore.__init__ as datastore
 import nachet.__init__ as nachet
 import datastore.db.metadata.validator as validator
-import datastore.db.queries.seed as seed_query
+import nachet.db.queries.seed as seed_query
 from copy import deepcopy
 
 
