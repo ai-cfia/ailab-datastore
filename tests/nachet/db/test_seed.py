@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import validator
-from datastore.db.queries import seed
+from nachet.db.queries import seed
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

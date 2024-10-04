@@ -17,15 +17,15 @@ import datastore.db.__init__ as db
 import fertiscan.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
 import fertiscan as fertiscan
-import fertiscan.db.queries.inspection as inspection
-from datastore.db.queries import (
+from fertiscan.db.queries import (
     label,
     metric,
+    inspection,
     nutrients,
-    picture,
     specification,
     sub_label,
 )
+from datastore.db.queries import picture
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":

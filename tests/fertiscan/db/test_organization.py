@@ -5,7 +5,7 @@ It tests the functions in the organization module.
 
 import unittest
 import uuid
-from datastore.db.queries import organization, label
+from fertiscan.db.queries import organization, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os

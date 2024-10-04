@@ -6,7 +6,7 @@ import psycopg
 from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
-from datastore.db.queries import sub_label
+from fertiscan.db.queries import sub_label
 
 load_dotenv()
 
