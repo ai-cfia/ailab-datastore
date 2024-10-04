@@ -1,5 +1,5 @@
 import os
-import .db.metadata.inference as inference
+import nachet.db.metadata.inference as inference
 import nachet.db.metadata.machine_learning as ml_data
 import json
 import unittest
