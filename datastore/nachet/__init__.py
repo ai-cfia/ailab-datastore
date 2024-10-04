@@ -378,10 +378,10 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
         #         raise InferenceFeedbackError("Error: There are more boxes than the totalBoxes")
         #     else if len(inference_dict["boxes"]) < infence_dict["totalBoxes"]:
         #         raise InferenceFeedbackError("Error: There are less boxes than the totalBoxes")
-        if inference.is_inference_verified(cursor, inference_id):
-            raise InferenceFeedbackError(
-                f"Error: Inference {inference_id} is already verified"
-            )
+        # if inference.is_inference_verified(cursor, inference_id):
+        #     raise InferenceFeedbackError(
+        #         f"Error: Inference {inference_id} is already verified"
+        #     )
         for object in inference_dict["boxes"]:
             box_id = object["boxId"]
             seed_name = object["label"]
@@ -419,10 +419,10 @@ async def new_correction_inference_feedback(cursor, inference_dict, type: int = 
                 )
                 valid = True
             else:
-                if inference.is_object_verified(cursor, box_id):
-                    raise InferenceFeedbackError(
-                        f"Error: Object {box_id} is already verified"
-                    )
+                # if inference.is_object_verified(cursor, box_id):
+                #     raise InferenceFeedbackError(
+                #         f"Error: Object {box_id} is already verified"
+                #     )
                 # This is a box that was created by the pipeline so it should be within the database
                 object_db = inference.get_inference_object(cursor, box_id)
                 object_metadata = object_db[1]
