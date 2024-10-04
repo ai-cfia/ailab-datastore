@@ -73,7 +73,7 @@ class test_mass_import(unittest.TestCase):
         """
         with self.assertRaises(mass_import.UnProcessedFilesException):
             mass_import.local_import(
-                "datastore/tests/UnProcessedFilesException_test",
+                "datastore/tests/UnProcessedFilesException",
                 self.email,
                 self.seed_name,
                 self.zoom,
