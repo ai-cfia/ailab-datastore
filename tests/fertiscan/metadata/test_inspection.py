@@ -518,6 +518,40 @@ class test_inspection_export(unittest.TestCase):
             formatted_analysis_dict["cautions"]["fr"],
         )
 
+    def test_organization_not_located(self):
+        # Modify analyse data to have empty addresses
+        test_str = "Test string"
+        self.analyse["manufacturer_address"] = None
+        self.analyse["manufacturer_name"] = test_str
+        self.analyse["manufacturer_phone_number"] = None
+        self.analyse["manufacturer_website"] = None
+        self.analyse["company_address"] = None
+        self.analyse["company_name"] = None
+        self.analyse["company_phone_number"] = None
+        self.analyse["company_website"] = test_str
+
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Assert that organization address is empty
+        self.assertIsNotNone(inspection_data["manufacturer"])
+        self.assertIsNone(inspection_data["manufacturer"]["address"])
+        self.assertIsNone(inspection_data["company"]["address"])
+        self.assertEqual(inspection_data["manufacturer"]["name"], test_str)
+        self.assertEqual(inspection_data["company"]["website"], test_str)
 
 
 class test_inspection_import(unittest.TestCase):
