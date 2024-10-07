@@ -33,7 +33,7 @@ BEGIN
         LIMIT 1
     ) AS label_info
     ON org.id = label_info.company_info_id OR org.id = label_info.manufacturer_info_id
-    JOIN (
+    Left JOIN (
         SELECT
             id,
             address
