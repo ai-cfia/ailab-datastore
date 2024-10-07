@@ -4,7 +4,7 @@ It tests the functions in the user, seed and picture modules.
 """
 
 import unittest
-from datastore.db.queries import metric, label
+from fertiscan.db.queries import metric, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os

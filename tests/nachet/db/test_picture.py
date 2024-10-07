@@ -12,10 +12,11 @@ import base64
 from unittest.mock import MagicMock
 
 import datastore.db.__init__ as db
-from datastore.db.metadata import picture as picture_data
+from nachet.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
-from datastore.db.queries import picture, seed, user
+from datastore.db.queries import picture, user
+import nachet.db.queries.seed as seed
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

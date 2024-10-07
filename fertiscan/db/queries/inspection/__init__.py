@@ -10,7 +10,7 @@ from psycopg import Cursor, DatabaseError, Error, OperationalError
 from psycopg.sql import SQL
 from pydantic_core import ValidationError
 
-from datastore.db.metadata.inspection import DBInspection, Inspection
+from fertiscan.db.metadata.inspection import DBInspection, Inspection
 
 
 class InspectionCreationError(Exception):

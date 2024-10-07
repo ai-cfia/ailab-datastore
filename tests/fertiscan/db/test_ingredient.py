@@ -4,7 +4,7 @@ It tests the functions in the ingredient module.
 """
 
 import unittest
-from datastore.db.queries import ingredient, label
+from fertiscan.db.queries import ingredient, label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os

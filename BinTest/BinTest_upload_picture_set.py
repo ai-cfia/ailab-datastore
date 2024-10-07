@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import datastore.bin.upload_picture_set as upload_picture_set
 import datastore.db as db
 import datastore.db.queries.user as user
-import datastore.db.queries.seed as seed
+import nachet.db.queries.seed as seed
 import datastore.db.queries.picture as picture_query
 import datastore as datastore
 import asyncio

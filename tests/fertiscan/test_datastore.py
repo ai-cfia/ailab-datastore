@@ -14,18 +14,18 @@ from PIL import Image
 
 import datastore.__init__ as datastore
 import datastore.db.__init__ as db
-import datastore.db.metadata.inspection as metadata
+import fertiscan.db.metadata.inspection as metadata
 import datastore.db.metadata.validator as validator
-import datastore.fertiscan as fertiscan
-from datastore.db.queries import (
-    inspection,
+import fertiscan as fertiscan
+from fertiscan.db.queries import (
     label,
     metric,
+    inspection,
     nutrients,
-    picture,
     specification,
     sub_label,
 )
+from datastore.db.queries import picture
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":

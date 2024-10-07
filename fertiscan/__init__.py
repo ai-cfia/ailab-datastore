@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 from psycopg import Cursor
 
 import datastore
-import datastore.db.metadata.inspection as data_inspection
+import fertiscan.db.metadata.inspection as data_inspection
 import datastore.db.metadata.picture_set as data_picture_set
-import datastore.db.queries.inspection as inspection
+import fertiscan.db.queries.inspection as inspection
 import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
 

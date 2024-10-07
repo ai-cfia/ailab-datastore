@@ -1,5 +1,5 @@
 import unittest
-from datastore.db.queries import label
+from fertiscan.db.queries import label
 from datastore.db.metadata import validator
 import datastore.db.__init__ as db
 import os
