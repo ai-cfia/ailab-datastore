@@ -389,62 +389,7 @@ class test_inspection_export(unittest.TestCase):
     # "Empty specification found in 'fr' list"
     # )
 
-
-class test_inspection_import(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
-        with open("tests/fertiscan/analyse.json") as f:
-            self.analyse = json.load(f)
-
-        self.user_id = user.register_user(self.cursor, "test-email@email")
-
-        self.picture_set_id = picture.new_picture_set(
-            self.cursor, json.dumps({}), self.user_id
-        )
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_perfect_inspection(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
-
-        inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
-        )
-        inspection_id = inspection_dict["inspection_id"]
-
-        if inspection_id is None:
-            self.fail("Inspection not created")
-
-    def test_empty_sub_label(self):
-        # Modify analyse data to have empty cautions_en and cautions_fr
-        self.analyse["cautions_en"] = []
-        self.analyse["cautions_fr"] = []
-
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
-
-        # Create inspection and get label information
-        inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
-        )
-        inspection_id = inspection_dict["inspection_id"]
-        label_id = inspection_dict["product"]["label_id"]
-
-        # Get inspection data using the inspection_id and label_id
-        inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
-        )
-        inspection_data = json.loads(inspection_data)
-
-        # Assert that cautions in both 'en' and 'fr' are empty
-        self.assertIsNotNone(inspection_data["cautions"])
-        self.assertEqual(inspection_data["cautions"]["en"], [])
-        self.assertEqual(inspection_data["cautions"]["fr"], [])
-
+    
     def test_null_in_middle_of_sub_label_en(self):
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
@@ -572,3 +517,60 @@ class test_inspection_import(unittest.TestCase):
             inspection_data["cautions"]["fr"],
             formatted_analysis_dict["cautions"]["fr"],
         )
+
+
+
+class test_inspection_import(unittest.TestCase):
+    def setUp(self):
+        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
+        self.cursor = self.con.cursor()
+        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
+
+        with open("tests/fertiscan/analyse.json") as f:
+            self.analyse = json.load(f)
+
+        self.user_id = user.register_user(self.cursor, "test-email@email")
+
+        self.picture_set_id = picture.new_picture_set(
+            self.cursor, json.dumps({}), self.user_id
+        )
+
+    def tearDown(self):
+        self.con.rollback()
+        db.end_query(self.con, self.cursor)
+
+    def test_perfect_inspection(self):
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        if inspection_id is None:
+            self.fail("Inspection not created")
+
+    def test_empty_sub_label(self):
+        # Modify analyse data to have empty cautions_en and cautions_fr
+        self.analyse["cautions_en"] = []
+        self.analyse["cautions_fr"] = []
+
+        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        # Create inspection and get label information
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        label_id = inspection_dict["product"]["label_id"]
+
+        # Get inspection data using the inspection_id and label_id
+        inspection_data = metadata.build_inspection_export(
+            self.cursor, inspection_id, label_id
+        )
+        inspection_data = json.loads(inspection_data)
+
+        # Assert that cautions in both 'en' and 'fr' are empty
+        self.assertIsNotNone(inspection_data["cautions"])
+        self.assertEqual(inspection_data["cautions"]["en"], [])
+        self.assertEqual(inspection_data["cautions"]["fr"], [])
