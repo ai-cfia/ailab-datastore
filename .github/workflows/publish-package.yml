@@ -43,8 +43,7 @@ jobs:
       - name: Remove unnecessary files from release branch
         run: |
           find . -path "./.git" -prune -o -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -exec rm -f {} +
-          find . -path "./.git" -prune -o -type d ! -name "datastore" ! -name "${{ inputs.package-name }}" ! -path "." -exec rm -rf {} +
-
+          find . -type d \( -path "./.git" -o -path ./"datastore" -o -path "./${{ inputs.package-name }}" \) -prune -o -type d ! -path "." -exec rm -rf {} +
       - name: Parse version from pyproject.toml
         id: parse_version
         run: |
