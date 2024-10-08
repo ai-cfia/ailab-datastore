@@ -19,27 +19,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install build dependencies
-        run: pip install build
+      - name: Switch to the release branch
+        run: |
+          git fetch origin
+          if git rev-parse --verify origin/release-${{ inputs.package-name }}-branch; then
+            git checkout release-${{ inputs.package-name }}-branch
+          else
+            git checkout -b release-${{ inputs.package-name }}-branch
+          fi
 
       - name: Configure Git for GitHub Actions
         run: |
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Action"
 
-
-      - name: Prepare pyproject.toml for build
+      - name: Move appropriate pyproject.toml for build
         run: |
           mv ${{ inputs.package-name }}_pyproject.toml pyproject.toml
 
-      - name: Create release zip file
+      - name: Remove unnecessary files from release branch
         run: |
-          zip -r release_package.zip pyproject.toml datastore ${{ inputs.package-name }}
+          find . -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -delete
+          find . -type d ! -name "datastore" ! -name "${{ inputs.package-name }}" ! -path "." -exec rm -rf {} +
 
       - name: Parse version from pyproject.toml
         id: parse_version
@@ -47,10 +48,13 @@ jobs:
           version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
           echo "version=$version" >> $GITHUB_ENV
 
-      - name: Tag the new version
+      - name: Tag the clean version on the release branch
         run: |
+          git add .
+          git commit -m "Tag version for Release ${{ env.version }} of ${{ inputs.package-name }} release"
           git tag -a v${{ env.version }}-${{ inputs.package-name }}-datastore -m "Release ${{ env.version }}"
           git push origin v${{ env.version }}-${{ inputs.package-name }}-datastore
+          git push origin release-branch
 
       - name: Generate changelog from PRs
         id: generate_changelog
@@ -114,6 +118,6 @@ jobs:
           bodyFile: "RELEASE_CHANGELOG.md"
           allowUpdates: true
           generateReleaseNotes: false
-          artifacts: "release_package.zip"
+          makeLatest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
