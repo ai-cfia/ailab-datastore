@@ -42,8 +42,8 @@ jobs:
 
       - name: Remove unnecessary files from release branch
         run: |
-          find . -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -delete
-          find . -type d ! -name "datastore" ! -name "${{ inputs.package-name }}" ! -path "." -exec rm -rf {} +
+          find . -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" ! -path "./.git/*" -delete
+          find . -type d ! -name "datastore" ! -name "${{ inputs.package-name }}" ! -name ".git" ! -path "." -exec rm -rf {} +
 
       - name: Parse version from pyproject.toml
         id: parse_version
@@ -51,18 +51,13 @@ jobs:
           version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
           echo "version=$version" >> $GITHUB_ENV
 
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v9.1.4
-        with:
-          add: "."
-          message: "Release v${{ env.version }}-${{ inputs.package-name }}-datastore"
-          author_name: GitHub Action
-          author_email: actions@github.com
-
       - name: Tag the clean version on the release branch
         run: |
+          git add .
+          git commit -m "Tag version for Release ${{ env.version }} of ${{ inputs.package-name }} release"
           git tag -a v${{ env.version }}-${{ inputs.package-name }}-datastore -m "Release ${{ env.version }}"
           git push origin v${{ env.version }}-${{ inputs.package-name }}-datastore
+          git push origin release-${{ inputs.package-name }}-branch
 
       - name: Generate changelog from PRs
         id: generate_changelog
