@@ -39,7 +39,7 @@ jobs:
       - name: Switch to the release branch
         run: |
           git checkout -b ${{ inputs.package-name }}-${{ env.version }}
-          git push origin ${{ inputs.package-name }}-${{ env.version }}
+          git push -u origin ${{ inputs.package-name }}-${{ env.version }}
 
       - name: Remove unnecessary files from release branch
         run: |
