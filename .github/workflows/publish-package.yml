@@ -41,7 +41,7 @@ jobs:
         run: |
           find . -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -delete
           find . -type d ! -name "datastore" ! -name "${{ inputs.package-name }}" ! -path "." -exec rm -rf {} +
-  
+
       - name: Parse version from pyproject.toml
         id: parse_version
         run: |
