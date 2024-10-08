@@ -81,7 +81,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        container_client = blob_service_client.create_container(f"{tier}-{user_uuid}")
+        container_client = blob_service_client.create_container(azure_storage.build_container_name(str(user_uuid), "user"))
 
         if not container_client.exists():
             raise ContainerCreationError("Error creating the user container: container does not exists")
@@ -246,7 +246,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
             if "link" in pic_metadata:
                 blob_link = pic_metadata["link"]
             else:
-                blob_link = f"{picture_set_name}/{pic_id}"
+                blob_link = azure_storage.build_blob_name(picture_set_name,pic_id,None)
             blob_obj = azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
             pic_metadata["blob"] = blob_obj
@@ -366,7 +366,7 @@ async def upload_pictures(
             )
             # Update the picture metadata in the DB
             data = {
-                "link": f"{folder_name}/" + str(picture_id),
+                "link": azure_storage.build_blob_name(folder_name, picture_id, None),
                 "description": "Uploaded through the API",
             }
 
