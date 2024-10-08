@@ -50,6 +50,18 @@ async def generate_hash(image):
         print(error.__str__())
         raise Exception("Unhandeled Datastore.blob.azure_storage Error")
 
+async def build_container_name(name:str,tier:str="user"):
+    """
+    This function builds the container name based on the tier and the name.
+    We include a tier to better structure the container names in the future. Other tiers could be 'dev' or 'test-user'
+
+    Parameters:
+    - tier (str): the tier of the container; Default is 'user'
+    - name (str): the name of the container. Usually the user uuid
+    """
+
+    return "{}-{}".format(tier, name)
+
 async def mount_container(
     connection_string,
     container_uuid,
