@@ -1,4 +1,4 @@
-name: Reusable workflow to create a release with changelog
+name: Create Release
 
 on:
   workflow_dispatch:
@@ -100,15 +100,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
+        uses: elgohr/Github-Release-Action@v5
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.version }}-${{ inputs.package-name }}-datastore
-          release_name: ${{ inputs.package-name }}-datastore v${{ env.version }}
-          body: ${{ env.changelog }}
+          title: "${{ inputs.package-name }}-datastore v${{ env.version }}"
+          tag: "v${{ env.version }}-${{ inputs.package-name }}-datastore"
+          body: "${{ env.changelog }}"
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
         uses: AButler/upload-release-assets@v3.0
