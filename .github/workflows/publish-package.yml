@@ -118,5 +118,6 @@ jobs:
           bodyFile: "RELEASE_CHANGELOG.md"
           allowUpdates: true
           generateReleaseNotes: false
+          makeLatest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
