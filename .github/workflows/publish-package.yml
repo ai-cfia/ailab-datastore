@@ -45,7 +45,7 @@ jobs:
 
       - name: Prepare pyproject.toml for build
         run: |
-          mv ${{ inputs.pyproject-path }}_pyproject.toml pyproject.toml
+          mv ${{ inputs.package-name }}_pyproject.toml pyproject.toml
 
       - name: Build wheel package
         run: python -m build
