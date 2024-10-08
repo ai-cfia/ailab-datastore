@@ -100,7 +100,7 @@ jobs:
             changelog="$changelog\n\nFertiscan:\n$fertiscan_changelog"
           fi
 
-          echo -e "changelog=$changelog" >> $GITHUB_ENV
+          echo "::set-output name=changelog::$changelog"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -111,7 +111,7 @@ jobs:
         with:
           title: "${{ inputs.package-name }}-datastore v${{ env.version }}"
           tag: "v${{ env.version }}-${{ inputs.package-name }}-datastore"
-          body: "${{ env.changelog }}"
+          body: "${{ steps.generate_changelog.outputs.changelog }}"
           draft: false
           prerelease: false
 
