@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Switch to the release branch
         run: |
@@ -26,6 +28,7 @@ jobs:
             git checkout release-${{ inputs.package-name }}-branch
           else
             git checkout -b release-${{ inputs.package-name }}-branch
+            git push origin release-${{ inputs.package-name }}-branch
           fi
 
       - name: Configure Git for GitHub Actions
@@ -54,7 +57,7 @@ jobs:
           git commit -m "Tag version for Release ${{ env.version }} of ${{ inputs.package-name }} release"
           git tag -a v${{ env.version }}-${{ inputs.package-name }}-datastore -m "Release ${{ env.version }}"
           git push origin v${{ env.version }}-${{ inputs.package-name }}-datastore
-          git push origin release-branch
+          git push origin release-${{ inputs.package-name }}-branch
 
       - name: Generate changelog from PRs
         id: generate_changelog
