@@ -44,7 +44,7 @@ jobs:
       - name: Parse version from pyproject.toml
         id: parse_version
         run: |
-          version=$(grep -Po '(?<=^version = ")[^"]*' ${{ inputs.package-name }}_pyproject.toml)
+          version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
           echo "version=$version" >> $GITHUB_ENV
 
       - name: Tag the new version
