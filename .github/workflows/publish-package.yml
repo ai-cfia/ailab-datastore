@@ -21,16 +21,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Switch to the release branch
-        run: |
-          git fetch origin
-          if git rev-parse --verify origin/release-${{ inputs.package-name }}-branch; then
-            git checkout release-${{ inputs.package-name }}-branch
-          else
-            git checkout -b release-${{ inputs.package-name }}-branch
-            git push origin release-${{ inputs.package-name }}-branch
-          fi
-
       - name: Configure Git for GitHub Actions
         run: |
           git config --global user.email "actions@github.com"
@@ -40,15 +30,21 @@ jobs:
         run: |
           mv ${{ inputs.package-name }}_pyproject.toml pyproject.toml
 
-      - name: Remove unnecessary files from release branch
-        run: |
-          find . -path "./.git" -prune -o -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -exec rm -f {} +
-          find . -type d \( -path "./.git" -o -path ./"datastore" -o -path "./${{ inputs.package-name }}" \) -prune -o -type d ! -path "." -exec rm -rf {} +
       - name: Parse version from pyproject.toml
         id: parse_version
         run: |
           version=$(grep -Po '(?<=^version = ")[^"]*' pyproject.toml)
           echo "version=$version" >> $GITHUB_ENV
+
+      - name: Switch to the release branch
+        run: |
+          git checkout -b ${{ inputs.package-name }}-${{ env.version }}
+          git push origin ${{ inputs.package-name }}-${{ env.version }}
+
+      - name: Remove unnecessary files from release branch
+        run: |
+          find . -path "./.git" -prune -o -type f ! -name "pyproject.toml" ! -name "requirements.txt" ! -path "./datastore/*" ! -path "./${{ inputs.package-name }}/*" -exec rm -f {} +
+          find . -type d \( -path "./.git" -o -path ./"datastore" -o -path "./${{ inputs.package-name }}" \) -prune -o -type d ! -path "." -exec rm -rf {} +
 
       - uses: EndBug/add-and-commit@v9
         with:
@@ -116,7 +112,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release and Replace If Exists
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: "v${{ env.version }}-${{ inputs.package-name }}-datastore"
