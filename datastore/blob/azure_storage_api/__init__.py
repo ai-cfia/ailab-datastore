@@ -59,18 +59,27 @@ def build_container_name(name:str,tier:str="user"):
     - tier (str): the tier of the container; Default is 'user'
     - name (str): the name of the container. Usually the user uuid
     """
-
+    if not name:
+        raise ValueError("Name is required")
     return "{}-{}".format(tier, name)
 
-def build_blob_name(folder_name, image_uuid):
+def build_blob_name(folder_name:str, blob_name:str,file_type:str=None):
     """
     This function builds the blob name based on the folder name and the image uuid
 
     Parameters:
     - folder_name (str): the name of the folder or the path to the folder
-    - image_uuid (str): the uuid of the image
+    - blob_name (str): Usually the uuid of the image
+    - file_type (str): the type of the file (ex: png, jpg, json)
     """
-    return "{}/{}".format(folder_name, image_uuid)
+    if not folder_name:
+        raise ValueError("Folder name is required")
+    if not blob_name:
+        raise ValueError("Image uuid is required")
+    if file_type:
+        return "{}/{}.{}".format(folder_name, blob_name, file_type)
+    else:
+        return "{}/{}".format(folder_name, blob_name)
 
 async def mount_container(
     connection_string,
@@ -96,7 +105,7 @@ async def mount_container(
             conn_str=connection_string, credential=credentials
         )
         if blob_service_client:
-            container_name = "{}-{}".format(tier, container_uuid)
+            container_name = build_container_name(container_uuid, tier)
             container_client = blob_service_client.get_container_client(container_name)
             if container_client.exists():
                 return container_client
@@ -150,7 +159,7 @@ async def upload_image(container_client, folder_name, folder_uuid, image:str, im
         if not await is_a_folder(container_client, folder_name):
             raise CreateDirectoryError(f"Folder:{folder_name} does not exist")
         else:
-            blob_name = "{}/{}.png".format(folder_name, image_uuid)
+            blob_name = build_blob_name(folder_name, image_uuid)
             metadata = {
                 "picture_uuid": f"{str(image_uuid)}",
                 "picture_set_uuid": f"{str(folder_uuid)}",
@@ -217,7 +226,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
             # Those folder do not have a UUID and are used to store general data
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
-            file_name = "{}/{}.json".format(folder_name, folder_name)
+            file_name = build_blob_name(folder_name, folder_name, "json")
             blob_client = container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
@@ -268,7 +277,7 @@ async def create_dev_container_folder(dev_container_client, folder_uuid=None, fo
             # Those folder do not have a UUID and are used to store general data
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
-            file_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
+            file_name = build_blob_name("{}/{}".format(user_id, folder_name), folder_name, "json") # file_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
             blob_client = dev_container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
@@ -295,7 +304,7 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
     try:
         folder_uuid = await get_folder_uuid(container_client, folder_name)
         if folder_uuid:
-            json_name = "{}/{}.json".format(folder_uuid, hash_value)
+            json_name = build_blob_name(folder_name, hash_value, "json")
             container_client.upload_blob(json_name, result, overwrite=True)
             return True
 
@@ -407,7 +416,7 @@ async def download_container(container_client, container_name, local_dir):
                 container=container_name, blob=blob
             )
             # Download the blob
-            local_file_path = f"{local_dir}/{blob.name}"
+            local_file_path = build_blob_name(local_dir, blob.name)
             os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
             with open(local_file_path, "wb") as file:
