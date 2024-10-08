@@ -32,6 +32,15 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Action"
 
+
+      - name: Prepare pyproject.toml for build
+        run: |
+          mv ${{ inputs.package-name }}_pyproject.toml pyproject.toml
+
+      - name: Create release zip file
+        run: |
+          zip -r release_package.zip pyproject.toml datastore ${{ inputs.package-name }}
+
       - name: Parse version from pyproject.toml
         id: parse_version
         run: |
@@ -42,13 +51,6 @@ jobs:
         run: |
           git tag -a v${{ env.version }}-${{ inputs.package-name }}-datastore -m "Release ${{ env.version }}"
           git push origin v${{ env.version }}-${{ inputs.package-name }}-datastore
-
-      - name: Prepare pyproject.toml for build
-        run: |
-          mv ${{ inputs.package-name }}_pyproject.toml pyproject.toml
-
-      - name: Build wheel package
-        run: python -m build
 
       - name: Generate changelog from PRs
         id: generate_changelog
@@ -100,17 +102,18 @@ jobs:
             changelog="$changelog\n\nFertiscan:\n$fertiscan_changelog"
           fi
 
-          echo "::set-output name=changelog::$changelog"
+          echo -e "$changelog" > RELEASE_CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release and Upload Assets
+      - name: Create GitHub Release and Replace If Exists
         uses: ncipollo/release-action@v1
         with:
           tag: "v${{ env.version }}-${{ inputs.package-name }}-datastore"
           name: "${{ inputs.package-name }}-datastore v${{ env.version }}"
-          body: "${{ steps.generate_changelog.outputs.changelog }}"
+          bodyFile: "RELEASE_CHANGELOG.md"
           allowUpdates: true
           generateReleaseNotes: false
+          artifacts: "release_package.zip"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
