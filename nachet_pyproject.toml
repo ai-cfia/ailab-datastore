@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nachet_datastore"
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" },
   { name="Sylvanie You", email="Sylvanie.You@inspection.gc.ca"}
