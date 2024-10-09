@@ -6,9 +6,9 @@ import unittest
 from dotenv import load_dotenv
 from psycopg import connect
 
-from datastore.db.metadata.inspection import Inspection
-from datastore.db.queries.inspection import update_inspection
-from datastore.fertiscan import get_full_inspection_json
+from fertiscan import get_full_inspection_json
+from fertiscan.db.metadata.inspection import Inspection
+from fertiscan.db.queries.inspection import update_inspection
 
 load_dotenv()
 

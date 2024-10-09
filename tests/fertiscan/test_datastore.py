@@ -9,21 +9,16 @@ import json
 import os
 import unittest
 
+from azure.storage.blob import ContainerClient
 from PIL import Image
 
-import datastore.__init__ as datastore
-import datastore.db.__init__ as db
-import datastore.db.metadata.inspection as metadata
+import datastore
+import datastore.db as db
 import datastore.db.metadata.validator as validator
-import datastore.fertiscan as fertiscan
-from datastore.db.queries import (
-    inspection,
-    label,
-    metric,
-    nutrients,
-    picture,
-    sub_label,
-)
+import fertiscan
+import fertiscan.db.metadata.inspection as metadata
+from datastore.db.queries import picture
+from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -83,21 +78,15 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.user_email = "testesss@email"
+        self.tier = "test-user"
         self.user = asyncio.run(
             datastore.new_user(
-                self.cursor, self.user_email, BLOB_CONNECTION_STRING, "test-user"
+                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
             )
         )
-
-        self.user_id = datastore.User.get_id(self.user)
-        self.container_client = asyncio.run(
-            datastore.get_user_container_client(
-                user_id=self.user_id,
-                storage_url=BLOB_CONNECTION_STRING,
-                account=BLOB_ACCOUNT,
-                key=BLOB_KEY,
-                tier="test-user",
-            )
+        self.container_client = ContainerClient.from_connection_string(
+            conn_str=BLOB_CONNECTION_STRING,
+            container_name=f"{self.tier}-{self.user.id}",
         )
 
         self.image = Image.new("RGB", (1980, 1080), "blue")

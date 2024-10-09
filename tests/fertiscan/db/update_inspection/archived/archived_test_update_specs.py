@@ -3,8 +3,9 @@ import os
 import unittest
 
 import psycopg
-import datastore.db.queries.label as label
 from dotenv import load_dotenv
+
+import fertiscan.db.queries.label as label
 
 load_dotenv()
 

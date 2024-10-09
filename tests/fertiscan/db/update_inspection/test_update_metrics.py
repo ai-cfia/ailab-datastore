@@ -4,8 +4,8 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-import datastore.db.queries.label as label
-from datastore.db.metadata.inspection import Metric, Metrics, OrganizationInformation
+import fertiscan.db.queries.label as label
+from fertiscan.db.metadata.inspection import Metric, Metrics, OrganizationInformation
 
 load_dotenv()
 

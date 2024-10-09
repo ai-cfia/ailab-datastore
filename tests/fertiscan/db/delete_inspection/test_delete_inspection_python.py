@@ -5,8 +5,8 @@ import unittest
 from dotenv import load_dotenv
 from psycopg import connect
 
-from datastore.db.metadata.inspection import DBInspection
-from datastore.db.queries.inspection import (
+from fertiscan.db.metadata.inspection import DBInspection
+from fertiscan.db.queries.inspection import (
     delete_inspection,
     new_inspection_with_label_info,
 )

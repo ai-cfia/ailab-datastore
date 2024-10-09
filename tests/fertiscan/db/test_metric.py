@@ -6,9 +6,9 @@ It tests the functions in the user, seed and picture modules.
 import os
 import unittest
 
-import datastore.db.__init__ as db
+import datastore.db as db
 from datastore.db.metadata import validator
-from datastore.db.queries import label, metric
+from fertiscan.db.queries import label, metric
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

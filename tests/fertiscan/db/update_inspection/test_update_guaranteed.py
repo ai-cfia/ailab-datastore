@@ -5,9 +5,9 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-import datastore.db.queries.label as label
-import datastore.db.queries.nutrients as guaranteed
-from datastore.db.metadata.inspection import GuaranteedAnalysis
+import fertiscan.db.queries.label as label
+import fertiscan.db.queries.nutrients as guaranteed
+from fertiscan.db.metadata.inspection import GuaranteedAnalysis
 
 load_dotenv()
 

@@ -2,9 +2,10 @@ import json
 import os
 import unittest
 
-import datastore.db.__init__ as db
-import datastore.db.metadata.inspection as metadata
-from datastore.db.queries import inspection, picture, user
+import datastore.db as db
+import fertiscan.db.metadata.inspection as metadata
+from datastore.db.queries import picture, user
+from fertiscan.db.queries import inspection
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

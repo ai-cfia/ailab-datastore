@@ -2,7 +2,7 @@ import unittest
 import datastore.bin.deployment_mass_import as mass_import
 import datastore.db as db
 import datastore.db.queries.user as user
-import datastore.db.queries.seed as seed
+import nachet.db.queries.seed as seed
 
 
 class test_mass_import(unittest.TestCase):
@@ -73,7 +73,7 @@ class test_mass_import(unittest.TestCase):
         """
         with self.assertRaises(mass_import.UnProcessedFilesException):
             mass_import.local_import(
-                "datastore/tests/UnProcessedFilesException_test",
+                "datastore/tests/UnProcessedFilesException",
                 self.email,
                 self.seed_name,
                 self.zoom,

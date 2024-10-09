@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
-from datastore.db.queries import (
+from fertiscan.db.queries import (
     ingredient,
     inspection,
     label,

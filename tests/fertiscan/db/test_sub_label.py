@@ -7,9 +7,9 @@ import os
 import unittest
 import uuid
 
-import datastore.db.__init__ as db
+import datastore.db as db
 from datastore.db.metadata import validator
-from datastore.db.queries import label, sub_label
+from fertiscan.db.queries import label, sub_label
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

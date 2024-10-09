@@ -5,12 +5,12 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from datastore.db.metadata.inspection import (
+from fertiscan.db.metadata.inspection import (
     DBInspection,
     Inspection,
     OrganizationInformation,
 )
-from datastore.db.queries.inspection import get_inspection_dict, update_inspection
+from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
 
 load_dotenv()
 

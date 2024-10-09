@@ -4,7 +4,8 @@ import unittest
 
 import psycopg
 from dotenv import load_dotenv
-from datastore.db.metadata.inspection import OrganizationInformation  # Assuming this Pydantic model exists
+
+from fertiscan.db.metadata.inspection import OrganizationInformation
 
 load_dotenv()
 

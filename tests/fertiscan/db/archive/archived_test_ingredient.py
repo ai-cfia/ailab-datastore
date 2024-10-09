@@ -1,13 +1,14 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the ingredient module.
 """
 
-import unittest
-from datastore.db.queries import ingredient, label
-from datastore.db.metadata import validator
-import datastore.db.__init__ as db
 import os
+import unittest
+
+import datastore.db as db
+from datastore.db.metadata import validator
+from datastore.db.queries import ingredient, label
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

@@ -1,9 +1,9 @@
+import os
 import unittest
 
-from datastore.db.queries import nutrients, label
+import datastore.db as db
 from datastore.db.metadata import validator
-import datastore.db.__init__ as db
-import os
+from fertiscan.db.queries import label, nutrients
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

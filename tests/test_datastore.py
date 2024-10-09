@@ -1,19 +1,20 @@
 """
-This is a test script for the highest level of the datastore packages. 
+This is a test script for the highest level of the datastore packages.
 It tests the functions in the __init__.py files of the datastore packages.
 """
 
+import asyncio
 import io
 import os
 import unittest
-from unittest.mock import MagicMock, patch
-from PIL import Image
 import uuid
-import asyncio
-import datastore.db.__init__ as db
-import datastore.__init__ as datastore
-import datastore.db.metadata.validator as validator
+from unittest.mock import MagicMock, patch
 
+from PIL import Image
+
+import datastore.__init__ as datastore
+import datastore.db.__init__ as db
+import datastore.db.metadata.validator as validator
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
