@@ -1,7 +1,7 @@
-import datastore.db.queries.seed as seed
+import nachet.db.queries.seed as seed
 import datastore.db.queries.user as user
 import datastore.db.metadata.picture_set as picture_set_metadata
-import datastore.db.metadata.picture as picture_metadata
+import nachet.db.metadata.picture as picture_metadata
 import datastore.db.queries.picture as picture_query
 from datastore.blob import azure_storage_api as blob
 import asyncio
