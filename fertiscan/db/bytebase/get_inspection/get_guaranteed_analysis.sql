@@ -48,8 +48,8 @@ BEGIN
             AND (result_json_title->>'title_fr' IS NULL OR result_json_title->>'title_fr' = '') 
             THEN NULL
             ELSE jsonb_build_object(
-                'en', result_json_title->>'title_en',
-                'fr', result_json_title->>'title_fr'
+                'en', COALESCE(result_json_title->>'title_en', ''),
+                'fr', COALESCE(result_json_title->>'title_fr', '')
             )
         END,
         'is_minimal', result_json_title->'is_minimal',
