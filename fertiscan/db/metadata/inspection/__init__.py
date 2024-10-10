@@ -401,7 +401,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         or metric.MetricNotFoundError
         or organization.OrganizationNotFoundError
         or sub_label.SubLabelNotFoundError
-        or ingredient.IngredientNotFoundError
+        or ingredient.IngredientRetrievalError
         or nutrients.MicronutrientNotFoundError
         or nutrients.GuaranteedNotFoundError
         or specification.SpecificationNotFoundError

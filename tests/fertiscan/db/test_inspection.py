@@ -5,6 +5,9 @@ It tests the functions in the inspection.
 
 import os
 import unittest
+from unittest.mock import MagicMock
+
+from psycopg import Error
 
 import datastore.db as db
 from datastore.db.metadata import picture_set, validator
@@ -110,3 +113,24 @@ class test_inspection(unittest.TestCase):
     #     self.assertEqual(len(inspection_data), 2)
     #     self.assertEqual(inspection_data[0][0], inspection_id)
     #     self.assertEqual(inspection_data[1][0], inspection_id2)
+
+    def test_new_inspection_db_error(self):
+        """Test that a database error raises InspectionCreationError"""
+        cursor = MagicMock()
+        cursor.execute.side_effect = Error("Simulated DB error")
+
+        with self.assertRaises(inspection.InspectionCreationError) as context:
+            inspection.new_inspection(cursor, self.user_id, self.picture_set_id, False)
+
+        self.assertIn("Database error", str(context.exception))
+
+    def test_new_inspection_unexpected_error(self):
+        """Test that an unexpected error raises InspectionCreationError"""
+        cursor = MagicMock()
+
+        cursor.execute.side_effect = Exception("Simulated unexpected error")
+
+        with self.assertRaises(inspection.InspectionCreationError) as context:
+            inspection.new_inspection(cursor, self.user_id, self.picture_set_id, False)
+
+        self.assertIn("Unexpected error", str(context.exception))

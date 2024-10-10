@@ -10,28 +10,63 @@ from psycopg import Cursor, DatabaseError, Error, OperationalError
 from psycopg.rows import dict_row
 from psycopg.sql import SQL
 
+# class InspectionCreationError(Exception):
+#     pass
 
-class InspectionCreationError(Exception):
+
+# class InspectionUpdateError(Exception):
+#     pass
+
+
+# class InspectionRetrievalError(Exception):
+#     pass
+
+
+# class InspectionDeleteError(Exception):
+#     pass
+
+
+# class InspectionNotFoundError(Exception):
+#     pass
+
+
+class InspectionQueryError(Exception):
+    """Base exception for all inspection-related errors."""
+
     pass
 
 
-class InspectionUpdateError(Exception):
+class InspectionNotFoundError(InspectionQueryError):
+    """Raised when an inspection is not found."""
+
     pass
 
 
-class InspectionRetrievalError(Exception):
+class InspectionCreationError(InspectionQueryError):
+    """Raised when an error occurs during the creation of an inspection."""
+
     pass
 
 
-class InspectionDeleteError(Exception):
+class InspectionUpdateError(InspectionQueryError):
+    """Raised when an error occurs during the updating of an inspection."""
+
     pass
 
 
-class InspectionNotFoundError(Exception):
+class InspectionRetrievalError(InspectionQueryError):
+    """Raised when an error occurs during the retrieval of an inspection."""
+
     pass
 
 
-def new_inspection(cursor, user_id, picture_set_id, verified=False):
+class InspectionDeleteError(InspectionQueryError):
+    """Raised when an error occurs during the deletion of an inspection."""
+
+    pass
+
+
+def new_inspection(cursor: Cursor, user_id, picture_set_id, verified=False):
     """
     This function uploads a new inspection to the database.
 
@@ -59,11 +94,13 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
             """
         cursor.execute(query, (user_id, picture_set_id, verified))
         return cursor.fetchone()[0]
-    except Exception:
-        raise InspectionCreationError("Datastore inspection unhandeled error")
+    except Error as db_error:
+        raise InspectionCreationError(f"Database error: {db_error}") from db_error
+    except Exception as e:
+        raise InspectionCreationError(f"Unexpected error: {e}") from e
 
 
-def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
+def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, label_json):
     """
     This function calls the new_inspection function within the database and adds the label information to the inspection.
 
@@ -83,11 +120,13 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
             """
         cursor.execute(query, (user_id, picture_set_id, label_json))
         return cursor.fetchone()[0]
+    except Error as db_error:
+        raise InspectionCreationError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise InspectionCreationError(e.__str__())
+        raise InspectionCreationError(f"Unexpected error: {e}") from e
 
 
-def is_a_inspection_id(cursor, inspection_id):
+def is_a_inspection_id(cursor: Cursor, inspection_id):
     """
     This function checks if the inspection exists in the database.
 
@@ -113,11 +152,13 @@ def is_a_inspection_id(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()[0]
+    except Error as db_error:
+        raise InspectionQueryError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionQueryError(f"Unexpected error: {e}") from e
 
 
-def is_inspection_verified(cursor, inspection_id):
+def is_inspection_verified(cursor: Cursor, inspection_id):
     """
     This function checks if the inspection has been verified.
 
@@ -140,11 +181,13 @@ def is_inspection_verified(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()[0]
+    except Error as db_error:
+        raise InspectionQueryError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionQueryError(f"Unexpected error: {e}") from e
 
 
-def get_inspection(cursor, inspection_id):
+def get_inspection(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -175,11 +218,13 @@ def get_inspection(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
+    except Error as db_error:
+        raise InspectionRetrievalError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionRetrievalError(f"Unexpected error: {e}") from e
 
 
-def get_inspection_dict(cursor: Cursor, inspection_id: str):
+def get_inspection_dict(cursor: Cursor, inspection_id: str | UUID):
     """
     This function fetches the inspection by its ID from the database.
 
@@ -190,14 +235,18 @@ def get_inspection_dict(cursor: Cursor, inspection_id: str):
     Returns:
     - The inspection as a dictionary, or None if no record is found.
     """
+    try:
+        with cursor.connection.cursor(row_factory=dict_row) as dict_cursor:
+            query = SQL("SELECT * FROM inspection WHERE id = %s")
+            dict_cursor.execute(query, (inspection_id,))
+            return dict_cursor.fetchone()
+    except Error as db_error:
+        raise InspectionRetrievalError(f"Database error: {db_error}") from db_error
+    except Exception as e:
+        raise InspectionRetrievalError(f"Unexpected error: {e}") from e
 
-    with cursor.connection.cursor(row_factory=dict_row) as dict_cursor:
-        query = SQL("SELECT * FROM inspection WHERE id = %s")
-        dict_cursor.execute(query, (inspection_id,))
-        return dict_cursor.fetchone()
 
-
-def get_inspection_original_dataset(cursor, inspection_id):
+def get_inspection_original_dataset(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -220,11 +269,13 @@ def get_inspection_original_dataset(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
+    except Error as db_error:
+        raise InspectionQueryError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionQueryError(f"Unexpected error: {e}") from e
 
 
-def get_inspection_fk(cursor, inspection_id):
+def get_inspection_fk(cursor: Cursor, inspection_id):
     """
     This function gets the foreign keys of the inspection from the database.
 
@@ -266,11 +317,13 @@ def get_inspection_fk(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
+    except Error as db_error:
+        raise InspectionQueryError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionQueryError(f"Unexpected error: {e}") from e
 
 
-def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
+def get_all_user_inspection_filter_verified(cursor: Cursor, user_id, verified: bool):
     """
     This function gets all the unverified inspection of a user from the database.
 
@@ -316,11 +369,13 @@ def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
             ),
         )
         return cursor.fetchall()
+    except Error as db_error:
+        raise InspectionRetrievalError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionRetrievalError(f"Unexpected error: {e}") from e
 
 
-def get_all_user_inspection(cursor, user_id):
+def get_all_user_inspection(cursor: Cursor, user_id):
     """
     This function gets all the inspection of a user from the database.
 
@@ -350,12 +405,14 @@ def get_all_user_inspection(cursor, user_id):
             """
         cursor.execute(query, (user_id,))
         return cursor.fetchall()
+    except Error as db_error:
+        raise InspectionRetrievalError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionRetrievalError(f"Unexpected error: {e}") from e
 
 
 # Deprecated
-def get_all_organization_inspection(cursor, org_id):
+def get_all_organization_inspection(cursor: Cursor, org_id):
     """
     This function gets all the inspection of an organization from the database.
 
@@ -386,8 +443,10 @@ def get_all_organization_inspection(cursor, org_id):
             """
         cursor.execute(query, (org_id, org_id))
         return cursor.fetchall()
+    except Error as db_error:
+        raise InspectionRetrievalError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+        raise InspectionRetrievalError(f"Unexpected error: {e}") from e
 
 
 def update_inspection(
@@ -424,12 +483,12 @@ def update_inspection(
 
         return result[0]
 
-    except (Error, DatabaseError, OperationalError) as e:
-        raise InspectionUpdateError(f"Database error occurred: {str(e)}") from e
-    except (ValueError, TypeError) as e:
-        raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
+    except InspectionUpdateError:
+        raise
+    except Error as db_error:
+        raise InspectionUpdateError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+        raise InspectionUpdateError(f"Unexpected error: {e}") from e
 
 
 def delete_inspection(
@@ -463,13 +522,15 @@ def delete_inspection(
 
         return result[0]
 
-    except (Error, DatabaseError, OperationalError) as e:
-        raise InspectionDeleteError(f"Database error occurred: {str(e)}") from e
+    except InspectionDeleteError:
+        raise
+    except Error as db_error:
+        raise InspectionDeleteError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
+        raise InspectionDeleteError(f"Unexpected error: {e}") from e
 
 
-def get_inspection_factual(cursor, inspection_id):
+def get_inspection_factual(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -500,5 +561,7 @@ def get_inspection_factual(cursor, inspection_id):
             """
         cursor.execute(query, (inspection_id,))
         return cursor.fetchone()
+    except Error as db_error:
+        raise InspectionQueryError(f"Database error: {db_error}") from db_error
     except Exception as e:
-        raise Exception("Datastore.db.inspection unhandeled error" + e.__str__())
+        raise InspectionQueryError(f"Unexpected error: {e}") from e

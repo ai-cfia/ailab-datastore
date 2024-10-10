@@ -1,18 +1,24 @@
+from psycopg import Cursor, Error
+
 """
 This module represent the function for the Ingredient table
 """
 
 
-class IngredientCreationError(Exception):
+class IngredientQueryError(Exception):
     pass
 
 
-class IngredientNotFoundError(Exception):
+class IngredientCreationError(IngredientQueryError):
+    pass
+
+
+class IngredientRetrievalError(IngredientQueryError):
     pass
 
 
 def new_ingredient(
-    cursor,
+    cursor: Cursor,
     name: str,
     value: float,
     read_unit: str,
@@ -37,13 +43,15 @@ def new_ingredient(
         return cursor.fetchone()[0]
     except IngredientCreationError:
         raise
-    except Exception:
-        raise IngredientCreationError("Error: could not create the ingredient")
+    except Error as db_error:
+        raise IngredientCreationError(f"Database error: {db_error}") from db_error
+    except Exception as e:
+        raise IngredientCreationError(f"Unexpected error: {e}") from e
 
 
-def get_ingredient_json(cursor, label_id) -> dict:
+def get_ingredient_json(cursor: Cursor, label_id) -> dict:
     """
-    This function gets the ingredient json from the database.
+    This function gets the ingredient JSON from the database.
     """
     try:
         query = """
@@ -52,11 +60,12 @@ def get_ingredient_json(cursor, label_id) -> dict:
         cursor.execute(query, (label_id,))
         result = cursor.fetchone()
         if result is None:
-            raise IngredientNotFoundError("Error: ingredient not found")
+            raise IngredientRetrievalError("Error: ingredient not found")
         return result[0]
-    except IngredientNotFoundError:
+
+    except IngredientRetrievalError:
         raise
-    except Exception:
-        raise IngredientNotFoundError(
-            "Datastore.db.ingredient unhandled error: could not get the ingredient"
-        )
+    except Error as db_error:
+        raise IngredientCreationError(f"Database error: {db_error}") from db_error
+    except Exception as e:
+        raise IngredientCreationError(f"Unexpected error: {e}") from e
