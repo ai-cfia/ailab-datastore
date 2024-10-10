@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fertiscan_datastore"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
   { name="Francois Werbrouck", email="francois.werbrouck@inspection.gc.ca" }
 ]

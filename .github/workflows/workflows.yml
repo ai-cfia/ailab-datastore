@@ -24,18 +24,20 @@ jobs:
           files: |
             nachet/**
             fertiscan/**
+            datastore/**
   nachet-pyproject-version-bump:
     needs: get-changed-files
-    if: contains(needs.get-changed-files.outputs.files, 'nachet/')
+    if: github.event.pull_request.merged != true && (contains(needs.get-changed-files.outputs.files, 'nachet/') || contains(needs.get-changed-files.outputs.files, 'datastore/'))
     name: nachet-datastore-pyproject-version-bump
     uses: ai-cfia/github-workflows/.github/workflows/workflow-version-bump-python.yml@main
     secrets: inherit
     with:
       pyproject-path: 'nachet_pyproject.toml'
       package-name: 'nachet-datastore'
+
   fertiscan-pyproject-version-bump:
     needs: get-changed-files
-    if: contains(needs.get-changed-files.outputs.files, 'fertiscan/')
+    if: github.event.pull_request.merged != true && (contains(needs.get-changed-files.outputs.files, 'fertiscan/') || contains(needs.get-changed-files.outputs.files, 'datastore/'))
     name: fertiscan-datastore-pyproject-version-bump
     uses: ai-cfia/github-workflows/.github/workflows/workflow-version-bump-python.yml@main
     secrets: inherit
@@ -63,3 +65,30 @@ jobs:
     name: workflow-yaml-check
     uses: ai-cfia/github-workflows/.github/workflows/workflow-yaml-check.yml@main
     secrets: inherit
+
+  trigger-release:
+    name: Trigger release workflow
+    needs: get-changed-files
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Trigger Release Workflow for Nachet
+        if: contains(needs.get-changed-files.outputs.files, 'nachet/') || contains(needs.get-changed-files.outputs.files, 'datastore/')
+        run: |
+          gh workflow run publish-package.yml \
+          --ref main \
+          -f package-name=nachet
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Release Workflow for Fertiscan
+        if: contains(needs.get-changed-files.outputs.files, 'fertiscan/') || contains(needs.get-changed-files.outputs.files, 'datastore/')
+        run: |
+          gh workflow run publish-package.yml \
+          --ref main \
+          -f package-name=fertiscan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
