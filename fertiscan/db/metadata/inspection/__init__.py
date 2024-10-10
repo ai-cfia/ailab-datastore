@@ -7,10 +7,11 @@ The metadata is generated in a json format and is used to store the metadata in 
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, ValidationError
+from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
 from fertiscan.db.queries import (
     ingredient,
+    inspection,
     label,
     metric,
     nutrients,
@@ -32,7 +33,15 @@ class MetadataFormattingError(Exception):
     pass
 
 
-class OrganizationInformation(BaseModel):
+class ValidatedModel(BaseModel):
+    @model_validator(mode="before")
+    def handle_none(cls, values):
+        if values is None:
+            return {}
+        return values
+
+
+class OrganizationInformation(ValidatedModel):
     id: Optional[str] = None
     name: Optional[str] = None
     address: Optional[str] = None
@@ -40,41 +49,53 @@ class OrganizationInformation(BaseModel):
     phone_number: Optional[str] = None
 
 
-class Value(BaseModel):
+class Value(ValidatedModel):
     value: Optional[float] = None
     unit: Optional[str] = None
     name: Optional[str] = None
     edited: Optional[bool] = False
 
 
-class ValuesObjects(BaseModel):
+class Title(ValidatedModel):
+    en: Optional[str] = None
+    fr: Optional[str] = None
+
+
+class GuaranteedAnalysis(ValidatedModel):
+    title: Title | None = None
+    is_minimal: Optional[bool] = False
     en: List[Value] = []
     fr: List[Value] = []
 
 
-class SubLabel(BaseModel):
+class ValuesObjects(ValidatedModel):
+    en: List[Value] = []
+    fr: List[Value] = []
+
+
+class SubLabel(ValidatedModel):
     en: List[str] = []
     fr: List[str] = []
 
 
-class Metric(BaseModel):
+class Metric(ValidatedModel):
     value: Optional[float] = None
     unit: Optional[str] = None
     edited: Optional[bool] = False
 
 
-class Metrics(BaseModel):
+class Metrics(ValidatedModel):
     weight: Optional[List[Metric]] = []
     volume: Optional[Metric] = Metric()
     density: Optional[Metric] = Metric()
 
 
-class ProductInformation(BaseModel):
+class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
     registration_number: str | None = None
     lot_number: str | None = None
-    metrics: Metrics
+    metrics: Metrics | None = Metrics()
     npk: str | None = None
     warranty: str | None = None
     n: float | None = None
@@ -82,20 +103,20 @@ class ProductInformation(BaseModel):
     k: float | None = None
 
 
-class Specification(BaseModel):
+class Specification(ValidatedModel):
     humidity: float | None = None
     ph: float | None = None
     solubility: float | None = None
     edited: Optional[bool] = False
 
 
-class Specifications(BaseModel):
+class Specifications(ValidatedModel):
     en: List[Specification]
     fr: List[Specification]
 
 
 # Awkwardly named so to avoid name conflict
-class DBInspection(BaseModel):
+class DBInspection(ValidatedModel):
     id: UUID4
     verified: bool = False
     upload_date: datetime | None = None
@@ -104,21 +125,19 @@ class DBInspection(BaseModel):
     label_info_id: UUID4 | None = None
     sample_id: UUID4 | None = None
     picture_set_id: UUID4 | None = None
+    inspection_comment: str | None = None
 
 
-class Inspection(BaseModel):
+class Inspection(ValidatedModel):
     inspection_id: Optional[str] = None
+    inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
     company: Optional[OrganizationInformation] = OrganizationInformation()
     manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
-    micronutrients: ValuesObjects
-    ingredients: ValuesObjects
-    specifications: Specifications
-    first_aid: SubLabel
-    guaranteed_analysis: List[Value]
+    guaranteed_analysis: GuaranteedAnalysis
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -149,20 +168,12 @@ def build_inspection_import(analysis_form: dict) -> str:
             "density",
             "volume",
             "npk",
-            "warranty",
             "cautions_en",
             "instructions_en",
-            "micronutrients_en",
-            "ingredients_en",
-            "specifications_en",
-            "first_aid_en",
             "cautions_fr",
             "instructions_fr",
-            "micronutrients_fr",
-            "ingredients_fr",
-            "specifications_fr",
-            "first_aid_fr",
-            "guaranteed_analysis",
+            "guaranteed_analysis_fr",
+            "guaranteed_analysis_en",
         ]
         missing_keys = []
         for key in requiered_keys:
@@ -227,68 +238,93 @@ def build_inspection_import(analysis_form: dict) -> str:
             fr=analysis_form.get("instructions_fr", []),
         )
 
-        micro_en: list[Value] = [
-            Value(
-                unit=nutrient.get("unit") or None,
-                value=nutrient.get("value") or None,
-                name=nutrient.get("nutrient"),
-            )
-            for nutrient in analysis_form.get("micronutrients_en", [])
-        ]
-        micro_fr: list[Value] = [
-            Value(
-                unit=nutrient.get("unit") or None,
-                value=nutrient.get("value") or None,
-                name=nutrient.get("nutrient"),
-            )
-            for nutrient in analysis_form.get("micronutrients_fr", [])
-        ]
-        micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
+        # Commented and kept as reference for future implementation, but not used at the moment
+        # micro_en: list[Value] = [
+        #     Value(
+        #         unit=nutrient.get("unit") or None,
+        #         value=nutrient.get("value") or None,
+        #         name=nutrient.get("nutrient"),
+        #     )
+        #     for nutrient in analysis_form.get("micronutrients_en", [])
+        # ]
+        # micro_fr: list[Value] = [
+        #     Value(
+        #         unit=nutrient.get("unit") or None,
+        #         value=nutrient.get("value") or None,
+        #         name=nutrient.get("nutrient"),
+        #     )
+        #     for nutrient in analysis_form.get("micronutrients_fr", [])
+        # ]
+        # micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
 
-        ingredients_en: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_en", [])
-        ]
-        ingredients_fr: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_fr", [])
-        ]
-        ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
+        # ingredients_en: list[Value] = [
+        #     Value(
+        #         unit=ingredient.get("unit") or None,
+        #         value=ingredient.get("value") or None,
+        #         name=ingredient.get("nutrient"),
+        #     )
+        #     for ingredient in analysis_form.get("ingredients_en", [])
+        # ]
+        # ingredients_fr: list[Value] = [
+        #     Value(
+        #         unit=ingredient.get("unit") or None,
+        #         value=ingredient.get("value") or None,
+        #         name=ingredient.get("nutrient"),
+        #     )
+        #     for ingredient in analysis_form.get("ingredients_fr", [])
+        # ]
+        # ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
 
-        specifications = Specifications(
-            en=[
-                Specification(**s)
-                for s in analysis_form.get("specifications_en", [])
-                if any(value is not None for _, value in s.items())
-            ],
-            fr=[
-                Specification(**s)
-                for s in analysis_form.get("specifications_fr", [])
-                if any(value is not None for _, value in s.items())
-            ],
-        )
+        # specifications = Specifications(
+        #     en=[
+        #         Specification(**s)
+        #         for s in analysis_form.get("specifications_en", [])
+        #         if any(value is not None for _, value in s.items())
+        #     ],
+        #     fr=[
+        #         Specification(**s)
+        #         for s in analysis_form.get("specifications_fr", [])
+        #         if any(value is not None for _, value in s.items())
+        #     ],
+        # )
 
-        first_aid = SubLabel(
-            en=analysis_form.get("first_aid_en", []),
-            fr=analysis_form.get("first_aid_fr", []),
-        )
+        # first_aid = SubLabel(
+        #     en=analysis_form.get("first_aid_en", []),
+        #     fr=analysis_form.get("first_aid_fr", []),
+        # )
 
-        guaranteed: list[Value] = [
+        guaranteed_fr: list[Value] = [
             Value(
                 unit=item.get("unit") or None,
                 value=item.get("value") or None,
                 name=item.get("nutrient"),
             )
-            for item in analysis_form.get("guaranteed_analysis", [])
+            for item in analysis_form.get("guaranteed_analysis_fr", []).get(
+                "nutrients", []
+            )
         ]
+
+        guaranteed_en: list[Value] = [
+            Value(
+                unit=item.get("unit") or None,
+                value=item.get("value") or None,
+                name=item.get("nutrient"),
+            )
+            for item in analysis_form.get("guaranteed_analysis_en", []).get(
+                "nutrients", []
+            )
+        ]
+
+        guaranteed = GuaranteedAnalysis(
+            title=Title(
+                en=analysis_form.get("guaranteed_analysis_en", {}).get("title"),
+                fr=analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
+            ),
+            # is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
+            is_minimal=None,  # Not processed yet by the pipeline
+            en=guaranteed_en,
+            fr=guaranteed_fr,
+        )
 
         inspection_formatted = Inspection(
             company=company,
@@ -296,10 +332,6 @@ def build_inspection_import(analysis_form: dict) -> str:
             product=product,
             cautions=cautions,
             instructions=instructions,
-            micronutrients=micronutrients,
-            ingredients=ingredients,
-            specifications=specifications,
-            first_aid=first_aid,
             guaranteed_analysis=guaranteed,
         )
         Inspection(**inspection_formatted.model_dump())
@@ -320,85 +352,49 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
-        inspection_json = {"inspection_id": str(inspection_id)}
         # get the label information
-        label_json = label.get_label_information_json(cursor, label_info_id)
+        product_info = label.get_label_information_json(cursor, label_info_id)
+        product_info = ProductInformation(**product_info)
 
-        metrics_json = metric.get_metrics_json(cursor, label_info_id)
-        if metrics_json["metrics"]["weight"] is None:
-            metrics_json["metrics"]["weight"] = []
-        if metrics_json["metrics"]["volume"] is None:
-            metrics_json["metrics"]["volume"] = Metric()
-        if metrics_json["metrics"]["density"] is None:
-            metrics_json["metrics"]["density"] = Metric()
-        label_json.update(metrics_json)
-        ProductInformation(**label_json)
-
-        product_json = {"product": label_json}
-
-        inspection_json.update(product_json)
+        # get metrics information
+        metrics = metric.get_metrics_json(cursor, label_info_id)
+        metrics = Metrics.model_validate(metrics)
+        metrics.volume = metrics.volume or Metric()
+        metrics.density = metrics.density or Metric()
+        product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
-        organization_json = organization.get_organizations_info_json(
-            cursor, label_info_id
-        )
-        if "company" in organization_json.keys():
-            OrganizationInformation(**organization_json.get("company"))
-        if "manufacturer" in organization_json.keys():
-            OrganizationInformation(**organization_json.get("manufacturer"))
-
-        inspection_json.update(organization_json)
+        org = organization.get_organizations_info_json(cursor, label_info_id)
+        manufacturer = OrganizationInformation.model_validate(org.get("manufacturer"))
+        company = OrganizationInformation.model_validate(org.get("company"))
 
         # Get all the sub labels
-        sub_label_json = sub_label.get_sub_label_json(cursor, label_info_id)
-        if sub_label_json is None:
-            sub_label_json = {
-                "cautions": {"en": [], "fr": []},
-                "instructions": {"en": [], "fr": []},
-                "first_aid": {"en": [], "fr": []},
-            }
-        else:
-            for key in sub_label_json:
-                SubLabel(**sub_label_json[key])
-
-        inspection_json.update(sub_label_json)
-        # Get the ingredients
-        ingredients_json = ingredient.get_ingredient_json(cursor, label_info_id)
-
-        ValuesObjects(**ingredients_json)
-
-        inspection_json.update(ingredients_json)
-
-        # Get the nutrients
-        nutrients_json = nutrients.get_micronutrient_json(cursor, label_info_id)
-
-        ValuesObjects(**nutrients_json)
-
-        inspection_json.update(nutrients_json)
+        sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
+        cautions = SubLabel.model_validate(sub_labels.get("cautions"))
+        instructions = SubLabel.model_validate(sub_labels.get("instructions"))
 
         # Get the guaranteed analysis
-        guaranteed_analysis_json = nutrients.get_guaranteed_analysis_json(
+        guaranteed_analysis = nutrients.get_guaranteed_analysis_json(
             cursor, label_info_id
         )
-        if guaranteed_analysis_json.get("guaranteed_analysis") is None:
-            guaranteed_analysis_json["guaranteed_analysis"] = []
-        for i in range(len(guaranteed_analysis_json.get("guaranteed_analysis"))):
-            Value(**(guaranteed_analysis_json.get("guaranteed_analysis")[i]))
+        guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
-        inspection_json.update(guaranteed_analysis_json)
+        # Get the inspection information
+        db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
+        db_inspection = DBInspection.model_validate(db_inspection)
 
-        # Get the specifications
-        specifications_json = specification.get_specification_json(
-            cursor, label_info_id
+        inspection_formatted = Inspection(
+            inspection_id=str(inspection_id),
+            inspection_comment=db_inspection.inspection_comment,
+            cautions=cautions,
+            company=company,
+            guaranteed_analysis=guaranteed_analysis,
+            instructions=instructions,
+            manufacturer=manufacturer,
+            product=product_info,
+            verified=db_inspection.verified,
         )
 
-        Specifications(**(specifications_json.get("specifications")))
-
-        inspection_json.update(specifications_json)
-
-        # Verify the inspection object
-        inspection_formatted = Inspection(**inspection_json)
-        # Return the inspection object
         return inspection_formatted.model_dump_json()
     except (
         label.LabelInformationNotFoundError
@@ -414,7 +410,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
     except Exception as e:
         raise MetadataFormattingError(
             "Error Inspection Form not created: " + str(e)
-        ) from None
+        ) from e
 
 
 def split_value_unit(value_unit: str) -> dict:

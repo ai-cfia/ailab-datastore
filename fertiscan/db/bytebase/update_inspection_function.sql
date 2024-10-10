@@ -1,7 +1,7 @@
-SET search_path TO "fertiscan_0.0.14";
+SET search_path TO "fertiscan_0.0.15";
 
 -- Function to upsert location information based on location_id and address
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".upsert_location(location_id uuid, address text)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_location(location_id uuid, address text)
 RETURNS uuid AS $$
 DECLARE
     new_location_id uuid;
@@ -23,7 +23,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert organization information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".upsert_organization_info(input_org_info jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_organization_info(input_org_info jsonb)
 RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
@@ -73,54 +73,8 @@ END;
 $$ LANGUAGE plpgsql;
 
 
--- Function to upsert label information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".upsert_label_information(
-    input_label jsonb,
-    company_info_id uuid,
-    manufacturer_info_id uuid
-)
-RETURNS uuid AS $$
-DECLARE
-    label_id uuid;
-BEGIN
-    -- Extract or generate the label ID
-    label_id := NULLIF(input_label->>'label_id', '');
-
-    -- Upsert label information
-    INSERT INTO label_information (
-        id, product_name, lot_number, npk, registration_number, n, p, k, company_info_id, manufacturer_info_id, warranty
-    )
-    VALUES (
-        label_id,
-        input_label->>'name',
-        input_label->>'lot_number',
-        input_label->>'npk',
-        input_label->>'registration_number',
-        (NULLIF(input_label->>'n', '')::float),
-        (NULLIF(input_label->>'p', '')::float),
-        (NULLIF(input_label->>'k', '')::float),
-        company_info_id,
-        manufacturer_info_id,
-        input_label->>'warranty'
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET lot_number = EXCLUDED.lot_number,
-        npk = EXCLUDED.npk,
-        registration_number = EXCLUDED.registration_number,
-        n = EXCLUDED.n,
-        p = EXCLUDED.p,
-        k = EXCLUDED.k,
-        company_info_id = EXCLUDED.company_info_id,
-        manufacturer_info_id = EXCLUDED.manufacturer_info_id
-    RETURNING id INTO label_id;
-
-    RETURN label_id;
-END;
-$$ LANGUAGE plpgsql;
-
-
 -- Function to update metrics: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_metrics(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_metrics(
     p_label_id uuid,
     metrics jsonb
 )
@@ -195,7 +149,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update specifications: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_specifications(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_specifications(
     p_label_id uuid,
     new_specifications jsonb
 )
@@ -241,7 +195,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update ingredients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_ingredients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_ingredients(
     p_label_id uuid,
     new_ingredients jsonb
 )
@@ -289,7 +243,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update micronutrients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_micronutrients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_micronutrients(
     p_label_id uuid,
     new_micronutrients jsonb
 )
@@ -333,50 +287,56 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+drop FUNCTION IF EXISTS "fertiscan_0.0.15".update_guaranteed;
 -- Function to update guaranteed analysis: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_guaranteed(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_guaranteed(
     p_label_id uuid,
     new_guaranteed jsonb
 )
 RETURNS void AS $$
 DECLARE
     guaranteed_record jsonb;
+    language_record record;
+    guaranteed_analysis_language text;
 BEGIN
     -- Delete existing guaranteed analysis for the given label_id
     DELETE FROM guaranteed WHERE label_id = p_label_id;
 
-    -- Insert new guaranteed analysis
-    FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed)
-    LOOP
-        --CHECK IF ANY OF THE VALUES ARE NOT NULL
-        IF COALESCE(
-            guaranteed_record->>'name', 
-            guaranteed_record->>'value', 
-            guaranteed_record->>'unit',
-            '') <> ''
-        THEN
-            -- Insert each guaranteed analysis record
-            INSERT INTO guaranteed (
-                read_name, value, unit, edited, label_id
-            )
-            VALUES (
-                guaranteed_record->>'name',
-                NULLIF(guaranteed_record->>'value', '')::float,
+	-- Loop through each language ('en' and 'fr')
+    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.15".LANGUAGE))
+	LOOP
+		FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed->guaranteed_analysis_language)
+		LOOP
+            --CHECK IF ANY OF THE VALUES ARE NOT NULL
+            IF COALESCE(
+                guaranteed_record->>'name', 
+                guaranteed_record->>'value', 
                 guaranteed_record->>'unit',
-                FALSE,  -- not handled
-                p_label_id
-            );
-        ELSE
-            RAISE WARNING 'ALL GUARANTEED ANALYSIS VALUES WERE NULL';
-        END IF;
+                '') <> ''
+            THEN
+                -- Insert each guaranteed analysis record
+                INSERT INTO guaranteed (
+                    read_name, value, unit, edited, label_id, language
+                )
+                VALUES (
+                    guaranteed_record->>'name',
+                    NULLIF(guaranteed_record->>'value', '')::float,
+                    guaranteed_record->>'unit',
+                    FALSE,  -- not handled
+                    p_label_id,
+                    guaranteed_analysis_language::language
+                );
+            ELSE
+                RAISE EXCEPTION 'ALL GUARANTEED ANALYSIS VALUES WERE NULL';
+            END IF;
+        END LOOP;
     END LOOP;
 END;
 $$ LANGUAGE plpgsql;
 
 
 -- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".check_null_or_empty_sub_label()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Check if both text_content_fr and text_content_en are NULL or empty
@@ -403,15 +363,15 @@ $$ LANGUAGE plpgsql;
 
 
 -- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
-DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.14".sub_label;
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.15".sub_label;
 CREATE TRIGGER before_insert_sub_label
-BEFORE INSERT ON "fertiscan_0.0.14".sub_label
+BEFORE INSERT ON "fertiscan_0.0.15".sub_label
 FOR EACH ROW
-EXECUTE FUNCTION check_null_or_empty_sub_label();
+EXECUTE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label();
 
 
 -- Function to update sub labels: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_sub_labels(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_sub_labels(
     p_label_id uuid,
     new_sub_labels jsonb
 )
@@ -470,16 +430,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+Drop FUNCTION IF EXISTS "fertiscan_0.0.15".upsert_inspection;
 -- Function to upsert inspection information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".upsert_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_inspection(
     p_inspection_id uuid,
     p_label_info_id uuid,
     p_inspector_id uuid,
     p_sample_id uuid,
     p_picture_set_id uuid,
-    p_verified boolean,
-    p_original_dataset jsonb
+    p_verified boolean
 )
 RETURNS uuid AS $$
 DECLARE
@@ -523,7 +482,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert fertilizer information based on unique fertilizer name
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".upsert_fertilizer(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_fertilizer(
     p_name text,
     p_registration_number text,
     p_owner_id uuid,
@@ -559,7 +518,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update inspection data and related entities, returning an updated JSON
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".update_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid,
     p_input_json jsonb
@@ -624,6 +583,9 @@ BEGIN
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
+    guaranteed_title_en = p_input_json->'guaranteed_analysis'->'title'->>'en',
+    guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
+    title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
     "manufacturer_info_id" = manufacturer_info_id
     WHERE id = label_info_id_value;
@@ -634,13 +596,13 @@ BEGIN
     PERFORM update_metrics(label_info_id_value, p_input_json->'product'->'metrics');
 
     -- Update specifications related to the label
-    PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
+    -- PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
+    -- PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
-    PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
+    -- PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
 
     -- Update guaranteed analysis related to the label
     PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
@@ -660,7 +622,8 @@ BEGIN
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
         picture_set_id = COALESCE(p_input_json->>'picture_set_id', NULL)::uuid,
         verified = verified_bool,
-        updated_at = CURRENT_TIMESTAMP  -- Update timestamp on conflict
+        updated_at = CURRENT_TIMESTAMP,  -- Update timestamp on conflict
+        inspection_comment = p_input_json->>'inspection_comment'
     WHERE 
         id = p_inspection_id;
 

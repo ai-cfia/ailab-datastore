@@ -313,6 +313,7 @@ def new_guaranteed_analysis(
     value,
     unit,
     label_id,
+    language: str,
     element_id: int = None,
     edited: bool = False,
 ):
@@ -332,10 +333,20 @@ def new_guaranteed_analysis(
     """
 
     try:
+        if language.lower() not in ["fr", "en"]:
+            raise GuaranteedCreationError("Language not supported")
+        if (
+            (read_name is None or read_name == "")
+            and (value is None or value == "")
+            and (unit is None or unit == "")
+        ):
+            raise GuaranteedCreationError("Read name and value cannot be empty")
         query = """
-            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s);
+            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s, %s);
             """
-        cursor.execute(query, (read_name, value, unit, label_id, edited, element_id))
+        cursor.execute(
+            query, (read_name, value, unit, label_id, language, edited, element_id)
+        )
         return cursor.fetchone()[0]
     except Exception:
         raise GuaranteedCreationError
@@ -362,6 +373,7 @@ def get_guaranteed(cursor, guaranteed_id):
                 element_id,
                 label_id,
                 edited,
+                language,
                 CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
             FROM 
                 guaranteed
@@ -392,14 +404,14 @@ def get_guaranteed_analysis_json(cursor, label_id) -> dict:
         cursor.execute(query, (label_id,))
         data = cursor.fetchone()[0]
         if data is None:
-            raise GuaranteedNotFoundError(
-                "Error: could not get the guaranteed for label: " + str(label_id)
-            )
+            data = {"title": None, "is_minimal": False, "en": [], "fr": []}
         return data
     except GuaranteedNotFoundError as e:
         raise e
     except Exception:
-        raise GuaranteedNotFoundError
+        raise GuaranteedNotFoundError(
+            "Error: could not get the guaranteed for label: " + str(label_id)
+        )
 
 
 def get_full_guaranteed(cursor, guaranteed):

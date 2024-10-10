@@ -7,7 +7,7 @@ import os
 import unittest
 import uuid
 
-import datastore.db.__init__ as db
+import datastore.db as db
 from datastore.db.metadata import validator
 from fertiscan.db.queries import label, sub_label
 
@@ -80,7 +80,9 @@ class test_sub_label(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
             None,
             None,
         )

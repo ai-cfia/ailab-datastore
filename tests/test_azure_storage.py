@@ -1,29 +1,31 @@
-import io
-import uuid
-import unittest
 import asyncio
-from unittest.mock import Mock
-from PIL import Image
-import datastore.blob.__init__ as blob
+import io
 import os
+import unittest
+import uuid
+from unittest.mock import Mock
+
+from PIL import Image
+
+import datastore.blob.__init__ as blob
 from datastore.blob.azure_storage_api import (
-    MountContainerError,
     ConnectionStringError,
-    GetBlobError,
     CreateDirectoryError,
     FolderListError,
     GenerateHashError,
+    GetBlobError,
     GetFolderUUIDError,
+    MountContainerError,
+    create_folder,
     generate_hash,
     get_blob,
-    upload_image,
-    mount_container,
-    is_a_folder,
-    create_folder,
-    get_folder_uuid,
     get_blobs_from_tag,
     get_directories,
+    get_folder_uuid,
+    is_a_folder,
+    mount_container,
     move_blob,
+    upload_image,
 )
 
 BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
@@ -49,7 +51,6 @@ class TestMountContainerFunction(unittest.TestCase):
         self.container_uuid = str(uuid.uuid4())
 
     def test_mount_existing_container(self):
-
         container_client = asyncio.run(
             mount_container(self.storage_url, self.container_uuid, True, self.tier)
         )
@@ -274,6 +275,7 @@ class TestGetFolderUUID(unittest.TestCase):
 
     def tearDown(self):
         self.container_client.delete_container()
+
     def test_get_folder_uuid(self):
         result = asyncio.run(get_folder_uuid(self.container_client, self.folder_name))
         self.assertEqual(result, self.folder_uuid)

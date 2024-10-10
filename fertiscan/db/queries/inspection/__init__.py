@@ -7,10 +7,8 @@ import json
 from uuid import UUID
 
 from psycopg import Cursor, DatabaseError, Error, OperationalError
+from psycopg.rows import dict_row
 from psycopg.sql import SQL
-from pydantic_core import ValidationError
-
-from fertiscan.db.metadata.inspection import DBInspection, Inspection
 
 
 class InspectionCreationError(Exception):
@@ -18,6 +16,10 @@ class InspectionCreationError(Exception):
 
 
 class InspectionUpdateError(Exception):
+    pass
+
+
+class InspectionRetrievalError(Exception):
     pass
 
 
@@ -165,7 +167,7 @@ def get_inspection(cursor, inspection_id):
                 sample_id,
                 picture_set_id,
                 fertilizer_id,
-                original_dataset
+                inspection_comment
             FROM 
                 inspection
             WHERE 
@@ -175,6 +177,24 @@ def get_inspection(cursor, inspection_id):
         return cursor.fetchone()
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
+
+
+def get_inspection_dict(cursor: Cursor, inspection_id: str):
+    """
+    This function fetches the inspection by its ID from the database.
+
+    Parameters:
+    - cursor (Cursor): The database cursor.
+    - inspection_id (str): The UUID of the inspection.
+
+    Returns:
+    - The inspection as a dictionary, or None if no record is found.
+    """
+
+    with cursor.connection.cursor(row_factory=dict_row) as dict_cursor:
+        query = SQL("SELECT * FROM inspection WHERE id = %s")
+        dict_cursor.execute(query, (inspection_id,))
+        return dict_cursor.fetchone()
 
 
 def get_inspection_original_dataset(cursor, inspection_id):
@@ -374,26 +394,25 @@ def update_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,
-    updated_data: Inspection,
-) -> Inspection:
+    updated_data_dict: dict,
+) -> dict:
     """
     Update inspection data in the database.
 
     Parameters:
     - cursor (Cursor): Database cursor for executing queries.
-    - inspection_id (str | UUID): UUID of the inspection to update.
-    - user_id (str | UUID): UUID of the user performing the update.
-    - updated_data (Inspection): Updated inspection data as an Inspection object.
+    - inspection_id (str | UUID): UUID or string of the inspection to update.
+    - user_id (str | UUID): UUID or string of the user performing the update.
+    - updated_data_dict (dict): Dictionary containing the updated inspection data.
 
     Returns:
-    - Inspection: An Inspection object with updated inspection information.
+    - dict: A dictionary containing the updated inspection information.
 
     Raises:
     - InspectionUpdateError: Custom error for handling specific update issues.
     """
     try:
-        updated_data_dict = updated_data.model_dump()
-
+        # Prepare and execute the SQL function call
         query = SQL("SELECT update_inspection(%s, %s, %s)")
         cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
         result = cursor.fetchone()
@@ -403,12 +422,10 @@ def update_inspection(
                 "Failed to update inspection. No data returned."
             )
 
-        return Inspection.model_validate(result[0])
+        return result[0]
 
     except (Error, DatabaseError, OperationalError) as e:
         raise InspectionUpdateError(f"Database error occurred: {str(e)}") from e
-    except ValidationError as e:
-        raise InspectionUpdateError(f"Validation failed: {str(e)}") from e
     except (ValueError, TypeError) as e:
         raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
     except Exception as e:
@@ -419,7 +436,7 @@ def delete_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,
-) -> DBInspection:
+):
     """
     Delete an inspection from the database and return the deleted inspection record.
 
@@ -444,14 +461,10 @@ def delete_inspection(
                 "Failed to delete inspection. No data returned."
             )
 
-        return DBInspection.model_validate(result[0])
+        return result[0]
 
     except (Error, DatabaseError, OperationalError) as e:
         raise InspectionDeleteError(f"Database error occurred: {str(e)}") from e
-    except ValidationError as e:
-        raise InspectionDeleteError(f"Validation failed: {str(e)}") from e
-    except (ValueError, TypeError) as e:
-        raise InspectionDeleteError(f"Invalid input: {str(e)}") from e
     except Exception as e:
         raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
 

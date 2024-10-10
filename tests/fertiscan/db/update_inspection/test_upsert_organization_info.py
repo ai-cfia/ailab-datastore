@@ -5,6 +5,8 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
+from fertiscan.db.metadata.inspection import OrganizationInformation
+
 load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
@@ -33,20 +35,19 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         self.conn.close()
 
     def test_insert_new_organization(self):
-        sample_org_info_new = json.dumps(
-            {
-                "id": None,
-                "name": "GreenGrow Fertilizers Inc.",
-                "address": "123 Greenway Blvd, Springfield IL 62701 USA",
-                "website": "http://www.greengrowfertilizers.com",
-                "phone_number": "+1 800 555 0199",
-            }
+        # Set up new organization info using the OrganizationInformation Pydantic model
+        sample_org_info_new = OrganizationInformation(
+            id=None,
+            name="GreenGrow Fertilizers Inc.",
+            address="123 Greenway Blvd, Springfield IL 62701 USA",
+            website="http://www.greengrowfertilizers.com",
+            phone_number="+1 800 555 0199",
         )
 
         # Insert new organization information
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
-            (sample_org_info_new,),
+            (json.dumps(sample_org_info_new.model_dump()),),
         )
         new_org_info_result = self.cursor.fetchone()
 
@@ -100,39 +101,31 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         )
 
     def test_update_existing_organization(self):
-        sample_org_info_new = json.dumps(
-            {
-                "id": None,
-                "name": "GreenGrow Fertilizers Inc.",
-                "address": "123 Greenway Blvd, Springfield IL 62701 USA",
-                "website": "http://www.greengrowfertilizers.com",
-                "phone_number": "+1 800 555 0199",
-            }
+        # Insert new organization to retrieve an ID
+        sample_org_info_new = OrganizationInformation(
+            id=None,
+            name="GreenGrow Fertilizers Inc.",
+            address="123 Greenway Blvd, Springfield IL 62701 USA",
+            website="http://www.greengrowfertilizers.com",
+            phone_number="+1 800 555 0199",
         )
 
-        # Insert new organization information to get a new ID
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
-            (sample_org_info_new,),
+            (json.dumps(sample_org_info_new.model_dump()),),
         )
         new_org_info_result = self.cursor.fetchone()
         new_org_info_id = new_org_info_result[0]
 
-        # Prepare data for updating the existing organization
-        sample_org_info_existing = json.dumps(
-            {
-                "id": str(new_org_info_id),
-                "name": "GreenGrow Fertilizers Inc. Updated",
-                "address": "123 Greenway Blvd, Springfield IL 62701 USA",
-                "website": "http://www.greengrowfertilizers-updated.com",
-                "phone_number": "+1 800 555 0199",
-            }
-        )
+        # Modify the existing organization info for an update
+        sample_org_info_new.name = "GreenGrow Fertilizers Inc. Updated"
+        sample_org_info_new.website = "http://www.greengrowfertilizers-updated.com"
+        sample_org_info_new.id = str(new_org_info_id)
 
         # Update existing organization information
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
-            (sample_org_info_existing,),
+            (json.dumps(sample_org_info_new.model_dump()),),
         )
         updated_org_info_result = self.cursor.fetchone()
 

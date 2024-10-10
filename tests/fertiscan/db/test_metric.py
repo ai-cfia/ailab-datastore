@@ -1,13 +1,14 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
-import unittest
-from fertiscan.db.queries import metric, label
-from datastore.db.metadata import validator
-import datastore.db.__init__ as db
 import os
+import unittest
+
+import datastore.db as db
+from datastore.db.metadata import validator
+from fertiscan.db.queries import label, metric
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -79,7 +80,9 @@ class test_metric(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
             None,
             None,
         )
@@ -188,20 +191,16 @@ class test_metric(unittest.TestCase):
         )
         metric_data = metric.get_metrics_json(self.cursor, self.label_id)
 
-        self.assertEqual(metric_data["metrics"]["volume"]["unit"], volume_unit)
-        self.assertEqual(
-            metric_data["metrics"]["weight"][0]["unit"], weight_unit_imperial
-        )
-        self.assertEqual(
-            metric_data["metrics"]["weight"][1]["unit"], weight_unit_metric
-        )
-        self.assertEqual(metric_data["metrics"]["density"]["unit"], density_unit)
+        self.assertEqual(metric_data["volume"]["unit"], volume_unit)
+        self.assertEqual(metric_data["weight"][0]["unit"], weight_unit_imperial)
+        self.assertEqual(metric_data["weight"][1]["unit"], weight_unit_metric)
+        self.assertEqual(metric_data["density"]["unit"], density_unit)
 
     def test_get_metrics_json_empty(self):
         data = metric.get_metrics_json(self.cursor, self.label_id)
-        self.assertIsNone(data["metrics"]["volume"])
-        self.assertIsNone(data["metrics"]["weight"])
-        self.assertIsNone(data["metrics"]["density"])
+        self.assertIsNone(data.get("volume"))
+        self.assertListEqual(data.get("weight"), [])
+        self.assertIsNone(data.get("density"))
 
     def test_get_full_metric(self):
         metric_id = metric.new_metric(

@@ -6,27 +6,24 @@ from dotenv import load_dotenv
 from psycopg import Cursor
 
 import datastore
-import fertiscan.db.metadata.inspection as data_inspection
 import datastore.db.metadata.picture_set as data_picture_set
-import fertiscan.db.queries.inspection as inspection
 import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
+import fertiscan.db.metadata.inspection as data_inspection
+import fertiscan.db.queries.inspection as inspection
 
 load_dotenv()
 
 FERTISCAN_DB_URL = os.environ.get("FERTISCAN_DB_URL")
 if FERTISCAN_DB_URL is None or FERTISCAN_DB_URL == "":
-    # raise ValueError("FERTISCAN_DB_URL is not set")
     print("Warning: FERTISCAN_DB_URL not set")
 
 FERTISCAN_SCHEMA = os.environ.get("FERTISCAN_SCHEMA")
 if FERTISCAN_SCHEMA is None or FERTISCAN_SCHEMA == "":
-    # raise ValueError("FERTISCAN_SCHEMA is not set")
     print("Warning: FERTISCAN_SCHEMA not set")
 
 FERTISCAN_STORAGE_URL = os.environ.get("FERTISCAN_STORAGE_URL")
 if FERTISCAN_STORAGE_URL is None or FERTISCAN_STORAGE_URL == "":
-    # raise ValueError("FERTISCAN_STORAGE_URL is not set")
     print("Warning: FERTISCAN_STORAGE_URL not set")
 
 
@@ -85,13 +82,8 @@ async def register_analysis(
             cursor, user_id, picture_set_id, formatted_analysis
         )
         return analysis_db
-    except inspection.InspectionCreationError:
-        raise Exception("Datastore Inspection Creation Error")
     except data_inspection.MissingKeyError:
         raise
-    except Exception as e:
-        print(e.__str__())
-        raise Exception("Datastore unhandeled error")
 
 
 async def update_inspection(
@@ -132,9 +124,9 @@ async def update_inspection(
         )
 
     updated_result = inspection.update_inspection(
-        cursor, inspection_id, user_id, updated_data
+        cursor, inspection_id, user_id, updated_data.model_dump()
     )
-    return updated_result
+    return data_inspection.Inspection.model_validate(updated_result)
 
 
 async def get_full_inspection_json(
@@ -232,9 +224,6 @@ async def get_full_inspection_json(
         return inspection_metadata
     except inspection.InspectionNotFoundError:
         raise
-    except Exception as e:
-        print(e.__str__())
-        raise Exception("Datastore unhandeled error")
 
 
 async def get_user_analysis_by_verified(cursor, user_id, verified: bool):
@@ -272,9 +261,6 @@ async def get_user_analysis_by_verified(cursor, user_id, verified: bool):
         )
     except user.UserNotFoundError:
         raise
-    except Exception as e:
-        print(e.__str__())
-        raise Exception("Datastore unhandeled error")
 
 
 async def delete_inspection(
@@ -302,6 +288,7 @@ async def delete_inspection(
 
     # Delete the inspection and get the returned data
     deleted_inspection = inspection.delete_inspection(cursor, inspection_id, user_id)
+    deleted_inspection = data_inspection.DBInspection.model_validate(deleted_inspection)
 
     await datastore.delete_picture_set_permanently(
         cursor, str(user_id), str(deleted_inspection.picture_set_id), container_client

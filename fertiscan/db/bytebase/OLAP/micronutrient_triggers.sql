@@ -1,11 +1,11 @@
 
-CREATE OR REPLACE FUNCTION olap_micronutrient_creation()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_micronutrient_creation()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
         IF (NEW.id IS NOT NULL) AND (NEW.label_id IS NOT NULL) THEN
         -- Update the label_dimension table with the new micronutrient_analysis_id
-            UPDATE "fertiscan_0.0.14"."label_dimension" 
+            UPDATE "fertiscan_0.0.15"."label_dimension" 
             SET micronutrient_ids = array_append(micronutrient_ids, NEW.id)
             WHERE label_dimension.label_id = NEW.label_id;
         ELSE
@@ -17,19 +17,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS micronutrient_creation ON "fertiscan_0.0.14".micronutrient;
+DROP TRIGGER IF EXISTS micronutrient_creation ON "fertiscan_0.0.15".micronutrient;
 CREATE TRIGGER micronutrient_creation
-AFTER INSERT ON "fertiscan_0.0.14".micronutrient
+AFTER INSERT ON "fertiscan_0.0.15".micronutrient
 FOR EACH ROW
 EXECUTE FUNCTION olap_micronutrient_creation();
 
-CREATE OR REPLACE FUNCTION olap_micronutrient_deletion()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".olap_micronutrient_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'DELETE') THEN
         IF (OLD.id IS NOT NULL) AND (OLD.label_id IS NOT NULL) THEN
             -- Update the label_dimension table with the new micronutrient_analysis_id
-            UPDATE "fertiscan_0.0.14"."label_dimension" 
+            UPDATE "fertiscan_0.0.15"."label_dimension" 
             SET micronutrient_ids = array_remove(micronutrient_ids, OLD.id)
             WHERE label_dimension.label_id = OLD.label_id;
         ELSE
@@ -41,8 +41,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS micronutrient_deletion ON "fertiscan_0.0.14".micronutrient;
+DROP TRIGGER IF EXISTS micronutrient_deletion ON "fertiscan_0.0.15".micronutrient;
 CREATE TRIGGER micronutrient_deletion
-AFTER DELETE ON "fertiscan_0.0.14".micronutrient
+AFTER DELETE ON "fertiscan_0.0.15".micronutrient
 FOR EACH ROW
 EXECUTE FUNCTION olap_micronutrient_deletion();
