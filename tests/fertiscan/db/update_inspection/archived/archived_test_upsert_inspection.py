@@ -2,8 +2,10 @@ import os
 import unittest
 import uuid
 
-import psycopg
 from dotenv import load_dotenv
+
+import datastore.db as db
+import fertiscan.db.queries.inspection as inspection
 
 load_dotenv()
 
@@ -20,22 +22,21 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 class TestUpsertInspectionFunction(unittest.TestCase):
     def setUp(self):
         # Connect to the PostgreSQL database with the specified schema
-        self.conn = psycopg.connect(
-            DB_CONNECTION_STRING, options=f"-c search_path={DB_SCHEMA},public"
-        )
+        self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.conn.autocommit = False  # Ensure transaction is managed manually
-        self.cursor = self.conn.cursor()
+        self.cursor = db.cursor(connection=self.conn)
+        db.create_search_path(connection=self.conn, cur=self.cursor, schema=DB_SCHEMA)
 
         # Insert a user to act as the inspector
         self.cursor.execute(
-            'INSERT INTO users (email) VALUES (%s) RETURNING id;',
+            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
             ("test_inspector@example.com",),
         )
         self.inspector_id = self.cursor.fetchone()[0]
 
         # Insert a label information record to link with inspection
         self.cursor.execute(
-            'INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) '
+            "INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) "
             "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
             ("L123456789", "10-20-30", "R123456", 10.0, 20.0, 30.0),
         )
@@ -51,13 +52,22 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Insert a new inspection with minimal required fields
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
+            (
+                uuid.uuid4(),
+                self.label_info_id,
+                self.inspector_id,
+                None,
+                None,
+                False,
+                None,
+            ),
         )
+        inspection_id = inspection.new_inspection(self.cursor, self.inspector_id)
         inspection_id = self.cursor.fetchone()[0]
 
         # Verify that the inspection data is correctly saved
         self.cursor.execute(
-            'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;',
+            "SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;",
             (inspection_id,),
         )
         saved_inspection = self.cursor.fetchone()
@@ -76,19 +86,35 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Insert a new inspection first
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
+            (
+                uuid.uuid4(),
+                self.label_info_id,
+                self.inspector_id,
+                None,
+                None,
+                False,
+                None,
+            ),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Update the inspection record
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (inspection_id, self.label_info_id, self.inspector_id, None, None, True, None),
+            (
+                inspection_id,
+                self.label_info_id,
+                self.inspector_id,
+                None,
+                None,
+                True,
+                None,
+            ),
         )
 
         # Verify the data is updated
         self.cursor.execute(
-            'SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;',
+            "SELECT id, label_info_id, inspector_id, sample_id, picture_set_id, verified FROM inspection WHERE id = %s;",
             (inspection_id,),
         )
         updated_inspection = self.cursor.fetchone()
@@ -103,13 +129,21 @@ class TestUpsertInspectionFunction(unittest.TestCase):
         # Test handling of null values in optional fields
         self.cursor.execute(
             "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, True, None),
+            (
+                uuid.uuid4(),
+                self.label_info_id,
+                self.inspector_id,
+                None,
+                None,
+                True,
+                None,
+            ),
         )
         inspection_id = self.cursor.fetchone()[0]
 
         # Verify the data is correctly saved with nulls
         self.cursor.execute(
-            'SELECT id, sample_id, picture_set_id FROM inspection WHERE id = %s;',
+            "SELECT id, sample_id, picture_set_id FROM inspection WHERE id = %s;",
             (inspection_id,),
         )
         saved_inspection = self.cursor.fetchone()

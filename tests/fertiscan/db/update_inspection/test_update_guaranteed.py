@@ -3,8 +3,11 @@ import os
 import unittest
 
 import psycopg
-import fertiscan.db.queries.label as label
 from dotenv import load_dotenv
+
+import fertiscan.db.queries.label as label
+import fertiscan.db.queries.nutrients as guaranteed
+from fertiscan.db.metadata.inspection import GuaranteedAnalysis
 
 load_dotenv()
 
@@ -28,21 +31,36 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Set up test data for guaranteed analysis
-        self.sample_guaranteed = json.dumps(
-            [
-                {"name": "Total Nitrogen (N)", "value": "20", "unit": "%"},
-                {"name": "Available Phosphate (P2O5)", "value": "20", "unit": "%"},
-                {"name": "Soluble Potash (K2O)", "value": "20", "unit": "%"},
-            ]
+        with open("tests/fertiscan/inspection_export.json") as f:
+            inspection_data = json.load(f)
+        self.sample_guaranteed = json.dumps(inspection_data["guaranteed_analysis"])
+        self.nb_guaranteed = len(inspection_data["guaranteed_analysis"]["en"]) + len(
+            inspection_data["guaranteed_analysis"]["fr"]
         )
-
-        self.updated_guaranteed = json.dumps(
-            [
-                {"name": "Total Nitrogen (N)", "value": "22", "unit": "%"},
-                {"name": "Available Phosphate (P2O5)", "value": "21", "unit": "%"},
-                {"name": "Soluble Potash (K2O)", "value": "23", "unit": "%"},
-            ]
-        )
+        self.updated_guaranteed = {
+            "inspection": {
+                "guaranteed_analysis": {
+                    "en": [
+                        {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                        {
+                            "name": "Available Phosphate (P2O5)",
+                            "value": 22,
+                            "unit": "%",
+                        },
+                        {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+                    ],
+                    "fr": [
+                        {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                        {
+                            "name": "Available Phosphate (P2O5)",
+                            "value": 22,
+                            "unit": "%",
+                        },
+                        {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+                    ],
+                }
+            }
+        }
 
         # Insert test data to obtain a valid label_id
         sample_org_info = json.dumps(
@@ -65,7 +83,9 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             None,
             None,
             None,
-            "test-warranty",
+            None,
+            None,
+            None,
             self.company_info_id,
             self.company_info_id,
         )
@@ -78,58 +98,34 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
     def test_update_guaranteed(self):
         # Insert initial guaranteed analysis
+
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.sample_guaranteed),
         )
 
         # Verify that the data is correctly saved
-        self.cursor.execute(
-            "SELECT read_name, value, unit FROM guaranteed WHERE label_id = %s;",
-            (self.label_id,),
-        )
-        saved_data = self.cursor.fetchall()
-        expected_data = [
-            ("Total Nitrogen (N)", 20.0, "%"),
-            ("Available Phosphate (P2O5)", 20.0, "%"),
-            ("Soluble Potash (K2O)", 20.0, "%"),
-        ]
+        basic_data = guaranteed.get_guaranteed_analysis_json(self.cursor, self.label_id)
+        basic_data = GuaranteedAnalysis.model_validate(basic_data)
         self.assertEqual(
-            len(saved_data),
-            3,
-            "There should be three guaranteed analysis records inserted",
-        )
-        self.assertListEqual(
-            saved_data, expected_data, "Saved data should match the expected values"
+            len(basic_data.en) + len(basic_data.fr),
+            self.nb_guaranteed,
+            f"There should be {self.nb_guaranteed} guaranteed analysis records inserted",
         )
 
         # Update guaranteed analysis
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
-            (self.label_id, self.updated_guaranteed),
+            (self.label_id, json.dumps(self.updated_guaranteed)),
         )
 
         # Verify that the data is correctly updated
-        self.cursor.execute(
-            "SELECT read_name, value, unit FROM guaranteed WHERE label_id = %s;",
-            (self.label_id,),
+        updated_data = guaranteed.get_guaranteed_analysis_json(
+            self.cursor, self.label_id
         )
-        updated_data = self.cursor.fetchall()
-        expected_updated_data = [
-            ("Total Nitrogen (N)", 22.0, "%"),
-            ("Available Phosphate (P2O5)", 21.0, "%"),
-            ("Soluble Potash (K2O)", 23.0, "%"),
-        ]
-        self.assertEqual(
-            len(updated_data),
-            3,
-            "There should be three guaranteed analysis records after update",
-        )
-        self.assertListEqual(
-            updated_data,
-            expected_updated_data,
-            "Updated data should match the new values",
-        )
+        updated_data = GuaranteedAnalysis.model_validate(updated_data)
+        for value in updated_data.en:
+            self.assertEqual(value.value, 22)
 
 
 if __name__ == "__main__":

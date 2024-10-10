@@ -1,10 +1,11 @@
-import json
 import os
 import unittest
 
 import psycopg
-import fertiscan.db.queries.label as label
 from dotenv import load_dotenv
+
+import fertiscan.db.queries.label as label
+from fertiscan.db.metadata.inspection import Metric, Metrics, OrganizationInformation
 
 load_dotenv()
 
@@ -27,34 +28,28 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         self.conn.autocommit = False  # Ensure transaction is managed manually
         self.cursor = self.conn.cursor()
 
-        # Set up test data for metrics
-        self.sample_metrics = json.dumps(
-            {
-                "weight": [{"value": "5", "unit": "kg"}, {"value": "11", "unit": "lb"}],
-                "density": {"value": "1.2", "unit": "g/cm³"},
-                "volume": {"value": "20.8", "unit": "L"},
-            }
+        # Set up test data for metrics using Pydantic models
+        self.sample_metrics = Metrics(
+            weight=[Metric(value=5, unit="kg"), Metric(value=11, unit="lb")],
+            density=Metric(value=1.2, unit="g/cm³"),
+            volume=Metric(value=20.8, unit="L"),
         )
 
-        self.updated_metrics = json.dumps(
-            {
-                "weight": [{"value": "6", "unit": "kg"}, {"value": "13", "unit": "lb"}],
-                "density": {"value": "1.3", "unit": "g/cm³"},
-                "volume": {"value": "25.0", "unit": "L"},
-            }
+        self.updated_metrics = Metrics(
+            weight=[Metric(value=6, unit="kg"), Metric(value=13, unit="lb")],
+            density=Metric(value=1.3, unit="g/cm³"),
+            volume=Metric(value=25.0, unit="L"),
         )
 
         # Insert test data to obtain a valid label_id
-        sample_org_info = json.dumps(
-            {
-                "name": "Test Company",
-                "address": "123 Test Address",
-                "website": "http://www.testcompany.com",
-                "phone_number": "+1 800 555 0123",
-            }
+        sample_org_info = OrganizationInformation(
+            name="Test Company",
+            address="123 Test Address",
+            website="http://www.testcompany.com",
+            phone_number="+1 800 555 0123",
         )
         self.cursor.execute(
-            'SELECT upsert_organization_info(%s);', (sample_org_info,)
+            "SELECT upsert_organization_info(%s);", (sample_org_info.model_dump_json(),)
         )
         self.company_info_id = self.cursor.fetchone()[0]
 
@@ -67,7 +62,9 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             None,
             None,
             None,
-            "test-warranty",
+            None,
+            None,
+            None,
             self.company_info_id,
             self.company_info_id,
         )
@@ -79,15 +76,15 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         self.conn.close()
 
     def test_update_metrics(self):
-        # Insert initial metrics
+        # Insert initial metrics using Pydantic model
         self.cursor.execute(
-            'SELECT update_metrics(%s, %s);',
-            (self.label_id, self.sample_metrics),
+            "SELECT update_metrics(%s, %s);",
+            (self.label_id, self.sample_metrics.model_dump_json()),
         )
 
         # Verify that the data is correctly saved
         self.cursor.execute(
-            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
+            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
             (self.label_id,),
         )
         saved_data = self.cursor.fetchall()
@@ -104,15 +101,15 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             "Saved data should match the expected values",
         )
 
-        # Update metrics
+        # Update metrics using Pydantic model
         self.cursor.execute(
-            'SELECT update_metrics(%s, %s);',
-            (self.label_id, self.updated_metrics),
+            "SELECT update_metrics(%s, %s);",
+            (self.label_id, self.updated_metrics.model_dump_json()),
         )
 
         # Verify that the data is correctly updated
         self.cursor.execute(
-            'SELECT value, unit_id FROM metric WHERE label_id = %s;',
+            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
             (self.label_id,),
         )
         updated_data = self.cursor.fetchall()
@@ -133,9 +130,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
 
     def _get_unit_name(self, unit_id):
         # Helper function to fetch the unit name by unit_id
-        self.cursor.execute(
-            'SELECT unit FROM unit WHERE id = %s;', (unit_id,)
-        )
+        self.cursor.execute("SELECT unit FROM unit WHERE id = %s;", (unit_id,))
         return self.cursor.fetchone()[0]
 
 

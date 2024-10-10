@@ -1,12 +1,14 @@
+import base64
+import io
+import json
 import unittest
 import uuid
+from datetime import date
+
+from PIL import Image
+
 import datastore.db.metadata.picture_set as picture_set_data
 import nachet.db.metadata.picture as picture_data
-import io
-from PIL import Image
-from datetime import date
-import base64
-import json
 
 PIC_LINK = "test.com"
 

@@ -84,7 +84,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         container_client = blob_service_client.create_container(f"{tier}-{user_uuid}")
 
         if not container_client.exists():
-            raise ContainerCreationError("Error creating the user container")
+            raise ContainerCreationError("Error creating the user container: container does not exists")
 
         # Link the container to the user in the database
         pic_set_metadata = data_picture_set.build_picture_set(
@@ -101,8 +101,8 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         if not response:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
-    except azure_storage.CreateDirectoryError:
-        raise FolderCreationError("Error creating the user folder")
+    except azure_storage.CreateDirectoryError as e:
+        raise FolderCreationError("Error creating the user folder:"+ str(e))
     except UserAlreadyExistsError:
         raise
     except ContainerCreationError:
@@ -179,8 +179,8 @@ async def create_picture_set(
         azure_storage.CreateDirectoryError,
     ) as e:
         raise e
-    except Exception:
-        raise BlobUploadError("An error occured during the upload of the picture set")
+    except Exception as e:
+        raise BlobUploadError("An error occured during the upload of the picture set: "+str(e))
 
 
 async def get_picture_sets_info(cursor, user_id: str):
@@ -383,5 +383,5 @@ async def upload_pictures(
     except user.UserNotFoundError:
         raise
     except Exception as e:
-        print(e)
+        # print(e)
         raise Exception("Datastore Unhandled Error " + str(e))

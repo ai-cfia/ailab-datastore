@@ -1,14 +1,15 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the inspection.
 """
 
-import unittest
-from datastore.db.queries import user, picture
-from fertiscan.db.queries import inspection
-from datastore.db.metadata import validator, picture_set
-import datastore.db.__init__ as db
 import os
+import unittest
+
+import datastore.db as db
+from datastore.db.metadata import picture_set, validator
+from datastore.db.queries import picture, user
+from fertiscan.db.queries import inspection
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":

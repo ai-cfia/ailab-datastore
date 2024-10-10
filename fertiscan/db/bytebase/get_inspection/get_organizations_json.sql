@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".get_organizations_information_json(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".get_organizations_information_json(
 label_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
@@ -33,7 +33,7 @@ BEGIN
         LIMIT 1
     ) AS label_info
     ON org.id = label_info.company_info_id OR org.id = label_info.manufacturer_info_id
-    JOIN (
+    Left JOIN (
         SELECT
             id,
             address

@@ -1,8 +1,9 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.14".new_guaranteed_analysis(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_guaranteed_analysis(
 name TEXT,
 value FLOAT,
 unit TEXT,
 label_id UUID,
+language "fertiscan_0.0.15".language,
 edited BOOLEAN = FALSE,
 element_id int = NULL
 )
@@ -17,15 +18,16 @@ BEGIN
 	IF COALESCE(name, value::text, unit,'') = '' THEN
 		RAISE EXCEPTION 'ALL of the input parameters are null';
 	END IF;
-	INSERT INTO guaranteed (read_name, value, unit, edited, label_id,element_id)
+	INSERT INTO guaranteed (read_name, value, unit, edited, label_id, element_id, language)
 	VALUES (
 		name,
 	    value,
 	    unit,
 		edited,
 		label_id,
-		element_id
-    ) RETURNING id INTO guaranteed_id;
+		element_id,
+		language)
+	RETURNING id INTO guaranteed_id;
     RETURN guaranteed_id;
 END;
 $function$;

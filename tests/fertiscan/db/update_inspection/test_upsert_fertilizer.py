@@ -3,7 +3,8 @@ import unittest
 
 import psycopg
 from dotenv import load_dotenv
-import uuid
+
+from fertiscan.db.queries import inspection
 
 load_dotenv()
 
@@ -69,11 +70,9 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         self.label_info_id = self.cursor.fetchone()[0]
 
         # Insert an inspection record
-        self.cursor.execute(
-            "SELECT upsert_inspection(%s, %s, %s, %s, %s, %s, %s);",
-            (uuid.uuid4(), self.label_info_id, self.inspector_id, None, None, False, None),
+        self.inspection_id = inspection.new_inspection(
+            self.cursor, self.inspector_id, None, False
         )
-        self.inspection_id = self.cursor.fetchone()[0]
 
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test
