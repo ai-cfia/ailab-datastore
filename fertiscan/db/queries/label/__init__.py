@@ -2,11 +2,18 @@
 This module represent the function for the table label_information
 """
 
+from psycopg import Cursor
 
-class LabelInformationNotFoundError(Exception):
-    pass
+from fertiscan.db.queries.errors import (
+    LabelInformationCreationError,
+    LabelInformationNotFoundError,
+    LabelInformationQueryError,
+    LabelInformationRetrievalError,
+    handle_query_errors,
+)
 
 
+@handle_query_errors(LabelInformationCreationError)
 def new_label_information(
     cursor,
     name: str,
@@ -42,30 +49,31 @@ def new_label_information(
     Returns:
     - str: The UUID of the label_information
     """
-    try:
-        query = """
-        SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            query,
-            (
-                name,
-                lot_number,
-                npk,
-                registration_number,
-                n,
-                p,
-                k,
-                title_en,
-                title_fr,
-                is_minimal,
-                company_info_id,
-                manufacturer_info_id,
-            ),
-        )
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise e
+    query = """
+    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+    cursor.execute(
+        query,
+        (
+            name,
+            lot_number,
+            npk,
+            registration_number,
+            n,
+            p,
+            k,
+            title_en,
+            title_fr,
+            is_minimal,
+            company_info_id,
+            manufacturer_info_id,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise LabelInformationCreationError(
+        "Failed to create label information. No data returned."
+    )
 
 
 def new_label_information_complete(
@@ -75,7 +83,8 @@ def new_label_information_complete(
     return None
 
 
-def get_label_information(cursor, label_information_id):
+@handle_query_errors(LabelInformationRetrievalError)
+def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
     """
     This function get a label_information from the database.
 
@@ -84,35 +93,36 @@ def get_label_information(cursor, label_information_id):
     - label_information_id (str): The UUID of the label_information.
 
     Returns:
-    - dict: The label_information
+    - dict: A dictionary containing the label information.
+
+    Raises:
+    - InspectionRetrievalError: Custom error for handling retrieval issues.
     """
-    try:
-        query = """
-            SELECT 
-                id,
-                product_name,
-                lot_number, 
-                npk, 
-                registration_number, 
-                n, 
-                p, 
-                k, 
-                guaranteed_title_en,
-                guaranteed_title_fr,
-                title_is_minimal,
-                company_info_id,
-                manufacturer_info_id
-            FROM 
-                label_information
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (label_information_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise e
+    query = """
+        SELECT 
+            id,
+            product_name,
+            lot_number, 
+            npk, 
+            registration_number, 
+            n, 
+            p, 
+            k, 
+            guaranteed_title_en,
+            guaranteed_title_fr,
+            title_is_minimal,
+            company_info_id,
+            manufacturer_info_id
+        FROM 
+            label_information
+        WHERE 
+            id = %s
+        """
+    cursor.execute(query, (label_information_id,))
+    return cursor.fetchone()
 
 
+@handle_query_errors(LabelInformationRetrievalError)
 def get_label_information_json(cursor, label_info_id) -> dict:
     """
     This function retrieves the label information from the database in json format.
@@ -124,23 +134,19 @@ def get_label_information_json(cursor, label_info_id) -> dict:
     Returns:
     - dict: The label information in json format.
     """
-    try:
-        query = """
-            SELECT get_label_info_json(%s);
-            """
-        cursor.execute(query, (str(label_info_id),))
-        label_info = cursor.fetchone()
-        if label_info is None or label_info[0] is None:
-            raise LabelInformationNotFoundError(
-                "Error: could not get the label information: " + str(label_info_id)
-            )
-        return label_info[0]
-    except LabelInformationNotFoundError as e:
-        raise e
-    except Exception as e:
-        raise e
+    query = """
+        SELECT get_label_info_json(%s);
+        """
+    cursor.execute(query, (str(label_info_id),))
+    label_info = cursor.fetchone()
+    if label_info is None or label_info[0] is None:
+        raise LabelInformationNotFoundError(
+            "Error: could not get the label information: " + str(label_info_id)
+        )
+    return label_info[0]
 
 
+@handle_query_errors(LabelInformationQueryError)
 def get_label_dimension(cursor, label_id):
     """
     This function get the label_dimension from the database.
@@ -152,36 +158,33 @@ def get_label_dimension(cursor, label_id):
     Returns:
     - dict: The label_dimension
     """
-    try:
-        query = """
-            SELECT 
-                "label_id",
-                "company_info_id",
-                "company_location_id",
-                "manufacturer_info_id",
-                "manufacturer_location_id",
-                "instructions_ids",
-                "cautions_ids",
-                "first_aid_ids",
-                "warranties_ids",
-                "specification_ids",
-                "ingredient_ids",
-                "micronutrient_ids",
-                "guaranteed_ids",
-                "weight_ids",
-                "volume_ids",
-                "density_ids"
-            FROM 
-                label_dimension
-            WHERE 
-                label_id = %s;
-            """
-        cursor.execute(query, (label_id,))
-        data = cursor.fetchone()
-        if data is None or data[0] is None:
-            raise LabelInformationNotFoundError(
-                "Error: could not get the label dimension for label: " + str(label_id)
-            )
-        return data
-    except Exception as e:
-        raise e
+    query = """
+        SELECT 
+            "label_id",
+            "company_info_id",
+            "company_location_id",
+            "manufacturer_info_id",
+            "manufacturer_location_id",
+            "instructions_ids",
+            "cautions_ids",
+            "first_aid_ids",
+            "warranties_ids",
+            "specification_ids",
+            "ingredient_ids",
+            "micronutrient_ids",
+            "guaranteed_ids",
+            "weight_ids",
+            "volume_ids",
+            "density_ids"
+        FROM 
+            label_dimension
+        WHERE 
+            label_id = %s;
+        """
+    cursor.execute(query, (label_id,))
+    data = cursor.fetchone()
+    if data is None or data[0] is None:
+        raise LabelInformationNotFoundError(
+            "Error: could not get the label dimension for label: " + str(label_id)
+        )
+    return data
