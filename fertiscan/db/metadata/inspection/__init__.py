@@ -433,22 +433,27 @@ def extract_npk(npk: str):
     Returns:
     - A list containing the npk values.
     """
-    if npk is None or npk == "" or len(npk) < 5:
-        return [None, None, None]
-    npk_formated = npk.replace("N", "-")
-    npk_formated = npk_formated.replace("P", "-")
-    npk_formated = npk_formated.replace("K", "-")
-    npk_reformated = npk.split("-")
-    for i in range(len(npk_reformated)):
-        if not npk_reformated[i].isnumeric():
-            NPKError(
-                "NPK values must be numeric. Issue with: "
-                + npk_reformated[i]
-                + "in the NPK string: "
-                + npk
-            )
-    return [
-        float(npk_reformated[0]),
-        float(npk_reformated[1]),
-        float(npk_reformated[2]),
-    ]
+    try:
+        if npk is None or npk == "" or len(npk) < 5:
+            return [None, None, None]
+        npk_formated = npk.replace("N", "-")
+        npk_formated = npk_formated.replace("P", "-")
+        npk_formated = npk_formated.replace("K", "-")
+        npk_reformated = npk.split("-")
+        for i in range(len(npk_reformated)):
+            if not npk_reformated[i].isnumeric():
+                NPKError(
+                    "NPK values must be numeric. Issue with: "
+                    + npk_reformated[i]
+                    + "in the NPK string: "
+                    + npk
+                )
+        return [
+            float(npk_reformated[0]),
+            float(npk_reformated[1]),
+            float(npk_reformated[2]),
+        ]
+    except NPKError:
+        raise
+    except Exception as e:
+        raise NPKError(f"Unexpected error: {e}") from e
