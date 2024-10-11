@@ -1,3 +1,27 @@
+"""
+Query exceptions hierarchy:
+
+    Exception
+    |__QueryError
+       |__InspectionQueryError
+       |__LabelInformationQueryError
+       |__MetricQueryError
+       |__UnitQueryError
+       |__ElementCompoundQueryError
+       |__MicronutrientQueryError
+       |__GuaranteedAnalysisQueryError
+       |__OrganizationQueryError
+       |__OrganizationInformationQueryError
+       |__LocationQueryError
+       |__RegionQueryError
+       |__ProvinceQueryError
+       |__SpecificationQueryError
+       |__SubLabelQueryError
+       |__SubTypeQueryError
+
+Each QueryError sub type exception has specific errors related to creation, retrieval, updating, and deletion, as well as a 'not found' error.
+"""
+
 from functools import wraps
 
 from psycopg import Error

@@ -1,3 +1,14 @@
+"""
+Metadata exceptions hierarchy:
+
+    Exception
+    |__MetadataError
+       |__BuildInspectionImportError
+       |__BuildInspectionExportError
+       |__NPKError
+"""
+
+
 class MetadataError(Exception):
     """Base exception for metadata errors"""
 
