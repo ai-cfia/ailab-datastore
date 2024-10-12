@@ -204,21 +204,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # self.assertDictEqual(analysis, original_dataset)
 
         # Verify OLAP Layer
-
-        query = "SELECT EXISTS (SELECT 1 FROM inspection_factual WHERE inspection_factual.inspection_id = %s)"
-
-        self.cursor.execute(query, (inspection_id,))
-        self.assertTrue(self.cursor.fetchone()[0])
-
-        query = "SELECT EXISTS (SELECT 1 FROM label_dimension WHERE label_dimension.label_id = %s)"
-
-        self.cursor.execute(query, (label_id,))
-        self.assertTrue(self.cursor.fetchone()[0])
+        inspection_facts = inspection.get_inspection_factual(self.cursor, inspection_id)
+        self.assertIsNotNone(inspection_facts)
+        label_dimension = label.get_label_dimension(self.cursor, label_id)
+        self.assertIsNotNone(label_dimension)
 
         # Verify if the saved ids are the same length as the ones in the analysis_json
-
-        label_dimension = label.get_label_dimension(self.cursor, label_id)
-
         company_info_id = str(label_dimension[1])
         manufacturer_info_id = str(label_dimension[3])
 
@@ -286,9 +277,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             self.cursor, inspection_id, label_id
         )
         inspection_data = json.loads(inspection_data)
-        # TODO: investigate if this should pass and why it doesn't
         # Make sure the inspection data is either a empty array or None
-        # self.assertTrue(loop_into_empty_dict(inspection_data))
+        self.assertTrue(loop_into_empty_dict(inspection_data))
 
     def test_register_analysis_invalid_user(self):
         with self.assertRaises(Exception):
@@ -349,13 +339,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         inspection_id = inspection_dict["inspection_id"]
 
         # Verify the inspection was created by directly querying the database
-        self.cursor.execute(
-            "SELECT id FROM inspection WHERE id = %s;",
-            (inspection_id,),
-        )
-        fetched_inspection_id = self.cursor.fetchone()
+        fetched_inspection = inspection.get_inspection(self.cursor, inspection_id)
         self.assertIsNotNone(
-            fetched_inspection_id, "The inspection should exist before deletion."
+            fetched_inspection, "The inspection should exist before deletion."
         )
 
         # Perform the delete operation
@@ -370,25 +356,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(str(deleted_inspection.id), inspection_id)
 
         # Ensure that the inspection no longer exists in the database
-        self.cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM inspection WHERE id = %s);",
-            (inspection_id,),
-        )
-        inspection_exists = self.cursor.fetchone()[0]
-        self.assertFalse(
-            inspection_exists, "The inspection should be deleted from the database."
+        fetched_inspection = inspection.get_inspection(self.cursor, inspection_id)
+        self.assertIsNone(
+            fetched_inspection, "The inspection should be deleted from the database."
         )
 
         # Verify that the picture set associated with the inspection was also deleted
-        self.cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM picture_set WHERE id = %s);",
-            (picture_set_id,),
-        )
-        picture_set_exists = self.cursor.fetchone()[0]
-        self.assertFalse(
-            picture_set_exists,
-            "The picture set should be deleted from the database.",
-        )
+        with self.assertRaises(picture.PictureSetNotFoundError):
+            picture.get_picture_set(self.cursor, picture_set_id)
 
         # Verify that no blobs associated with the picture set ID remain in the container
         blobs_after = [blob.name for blob in self.container_client.list_blobs()]

@@ -218,10 +218,10 @@ class test_organization_information(unittest.TestCase):
             self.cursor, None, self.name, self.website, self.phone
         )
         # Making sure that a location is not created
-        query = "SELECT location_id FROM organization_information WHERE id = %s"
-        self.cursor.execute(query, (org_id,))
-        location_id = self.cursor.fetchone()[0]
-        self.assertIsNone(location_id)
+        self.assertIsNone(
+            organization.get_full_location(self.cursor, org_id),
+            "Location should not be created",
+        )
 
     def test_get_organization_info(self):
         id = organization.new_organization_info(

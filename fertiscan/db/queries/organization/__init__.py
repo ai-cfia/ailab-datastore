@@ -1,7 +1,7 @@
 """
 This module represent the function for the table organization and its children tables: [location, region, province]
 
-    
+
 """
 
 
@@ -194,7 +194,7 @@ def get_organization_info(cursor, information_id):
         return res
     except OrganizationNotFoundError:
         raise OrganizationNotFoundError(
-            "organization information not found with information_id: " + information_id
+            f"organization information not found with information_id: {information_id}"
         )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())
@@ -212,7 +212,6 @@ def get_organizations_info_json(cursor, label_id) -> dict:
     - dict: The organization information
     """
     try:
-
         query = """
             SELECT get_organizations_information_json(%s);
             """
@@ -477,7 +476,7 @@ def get_location(cursor, location_id):
         return res
     except LocationNotFoundError:
         raise LocationNotFoundError(
-            "location not found with location_id: " + location_id
+            f"location not found with location_id: {location_id}"
         )
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())

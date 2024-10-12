@@ -5,7 +5,9 @@ import unittest
 from dotenv import load_dotenv
 from psycopg import connect
 
+from datastore.db.queries import user
 from fertiscan.db.metadata.inspection import DBInspection
+from fertiscan.db.queries import inspection
 from fertiscan.db.queries.inspection import (
     delete_inspection,
     new_inspection_with_label_info,
@@ -35,11 +37,7 @@ class TestInspectionDeleteFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Create a user to act as inspector
-        self.cursor.execute(
-            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
-            ("inspector@example.com",),
-        )
-        self.inspector_id = str(self.cursor.fetchone()[0])
+        self.inspector_id = user.register_user(self.cursor, "inspector@example.com")
 
         # Load the JSON data for creating a new inspection
         with open(TEST_INSPECTION_JSON_PATH, "r") as file:
@@ -69,13 +67,9 @@ class TestInspectionDeleteFunction(unittest.TestCase):
         self.assertEqual(str(deleted_inspection.id), self.inspection_id)
 
         # Ensure that the inspection no longer exists in the database
-        self.cursor.execute(
-            "SELECT EXISTS(SELECT 1 FROM inspection WHERE id = %s);",
-            (self.inspection_id,),
-        )
-        inspection_exists = self.cursor.fetchone()[0]
-        self.assertFalse(
-            inspection_exists, "The inspection should be deleted from the database."
+        fetched_inspection = inspection.get_inspection(self.cursor, self.inspection_id)
+        self.assertIsNone(
+            fetched_inspection, "The inspection should be deleted from the database."
         )
 
 

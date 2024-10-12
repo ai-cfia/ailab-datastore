@@ -4,6 +4,8 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
+from fertiscan.db.queries import organization
+
 load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
@@ -35,27 +37,17 @@ class TestUpsertLocationFunction(unittest.TestCase):
         sample_new_address = "123 New Blvd, Springfield IL 62701 USA"
 
         # Insert a new location
-        self.cursor.execute(
-            "SELECT upsert_location(%s, %s);", (None, sample_new_address)
+        location_id = organization.new_location(
+            self.cursor, None, sample_new_address, None
         )
-        new_location_result = self.cursor.fetchone()
-
-        # Assertions
-        self.assertIsNotNone(
-            new_location_result, "New location result should not be None"
-        )
-        new_location_id = new_location_result[0]
-        self.assertTrue(new_location_id, "New location ID should be present")
 
         # Verify that the data is correctly saved
-        self.cursor.execute(
-            "SELECT address FROM location WHERE id = %s;",
-            (new_location_id,),
-        )
-        saved_data = self.cursor.fetchone()
-        self.assertIsNotNone(saved_data, "Saved data should not be None")
+        location = organization.get_location(self.cursor, location_id)
+        self.assertIsNotNone(location, "Location should not be None")
         self.assertEqual(
-            saved_data[0], sample_new_address, "Address should match the inserted value"
+            location[1],
+            sample_new_address,
+            "Address should match the inserted value",
         )
 
     def test_update_existing_location(self):
@@ -63,16 +55,15 @@ class TestUpsertLocationFunction(unittest.TestCase):
         sample_updated_address = "456 Updated Blvd, Springfield IL 62701 USA"
 
         # Insert a new location to update
-        self.cursor.execute(
-            "SELECT upsert_location(%s, %s);", (None, sample_new_address)
+        location_id = organization.new_location(
+            self.cursor, None, sample_new_address, None
         )
-        new_location_result = self.cursor.fetchone()
-        new_location_id = new_location_result[0]
 
         # Update the location
+        # TODO: write missing functions for location
         self.cursor.execute(
             "SELECT upsert_location(%s, %s);",
-            (new_location_id, sample_updated_address),
+            (location_id, sample_updated_address),
         )
         updated_location_result = self.cursor.fetchone()
 
@@ -82,21 +73,17 @@ class TestUpsertLocationFunction(unittest.TestCase):
         )
         self.assertEqual(
             updated_location_result[0],
-            new_location_id,
+            location_id,
             "Location ID should remain the same after update",
         )
 
         # Verify that the data is correctly updated
-        self.cursor.execute(
-            "SELECT address FROM location WHERE id = %s;",
-            (new_location_id,),
-        )
-        updated_data = self.cursor.fetchone()
-        self.assertIsNotNone(updated_data, "Updated data should not be None")
+        location = organization.get_location(self.cursor, location_id)
+        self.assertIsNotNone(location, "Location should not be None")
         self.assertEqual(
-            updated_data[0],
+            location[1],
             sample_updated_address,
-            "Address should match the updated value",
+            "Address should match the inserted value",
         )
 
 

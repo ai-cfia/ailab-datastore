@@ -1,10 +1,12 @@
 import os
 import unittest
+import uuid
 
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.queries import inspection
+from datastore.db.queries import user
+from fertiscan.db.queries import inspection, label, organization
 
 load_dotenv()
 
@@ -27,47 +29,47 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         self.conn.autocommit = False  # Ensure transaction is managed manually
         self.cursor = self.conn.cursor()
 
-        # Prepopulate organization_information table
-        self.cursor.execute(
-            "INSERT INTO organization_information (name, website, phone_number) "
-            "VALUES (%s, %s, %s) RETURNING id;",
-            (
-                "Test Organization Information",
-                "http://www.testorginfo.com",
-                "+1 800 555 0101",
-            ),
+        self.inspector_id = user.register_user(
+            self.cursor, f"{uuid.uuid4().hex}@example.com"
         )
-        self.organization_info_id = self.cursor.fetchone()[0]
 
-        # Prepopulate location table
-        self.cursor.execute(
-            "INSERT INTO location (name, address) " "VALUES (%s, %s) RETURNING id;",
-            ("Test Location", "123 Test Address, Test City"),
-        )
-        self.location_id = self.cursor.fetchone()[0]
+        self.province_name = "a-test-province"
+        self.region_name = "test-region"
+        self.name = "test-organization"
+        self.website = "www.test.com"
+        self.phone = "123456789"
+        self.location_name = "test-location"
+        self.location_address = "test-address"
 
-        # Prepopulate organization table with references to organization_information and location
-        self.cursor.execute(
-            "INSERT INTO organization (information_id, main_location_id) "
-            "VALUES (%s, %s) RETURNING id;",
-            (self.organization_info_id, self.location_id),
+        self.province_id = organization.new_province(self.cursor, self.province_name)
+        self.region_id = organization.new_region(
+            self.cursor, self.region_name, self.province_id
         )
-        self.organization_id = self.cursor.fetchone()[0]
+        self.location_id = organization.new_location(
+            self.cursor, self.location_name, self.location_address, self.region_id
+        )
+        self.organization_info_id = organization.new_organization_info(
+            self.cursor, self.name, self.website, self.phone, self.location_id
+        )
+        self.organization_id = organization.new_organization(
+            self.cursor, self.organization_info_id, self.location_id
+        )
 
-        # Insert a user to act as the inspector
-        self.cursor.execute(
-            "INSERT INTO users (email) VALUES (%s) RETURNING id;",
-            ("test_inspector@example.com",),
+        self.label_id = label.new_label_information(
+            self.cursor,
+            "Test Label",
+            "L123456789",
+            "10-20-30",
+            "R123456",
+            10.0,
+            20.0,
+            30.0,
+            None,
+            None,
+            None,
+            self.organization_info_id,
+            self.organization_info_id,
         )
-        self.inspector_id = self.cursor.fetchone()[0]
-
-        # Insert a label information record to link with inspection
-        self.cursor.execute(
-            "INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) "
-            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-            ("L123456789", "10-20-30", "R123456", 10.0, 20.0, 30.0),
-        )
-        self.label_info_id = self.cursor.fetchone()[0]
 
         # Insert an inspection record
         self.inspection_id = inspection.new_inspection(
@@ -87,6 +89,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         latest_inspection_id = self.inspection_id  # Use the pre-inserted inspection ID
 
         # Insert new fertilizer
+        # TODO: write missing fertilizer functions
         self.cursor.execute(
             "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (fertilizer_name, registration_number, owner_id, latest_inspection_id),
@@ -97,6 +100,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         self.assertIsNotNone(fertilizer_id, "New fertilizer ID should not be None")
 
         # Verify that the data is correctly saved
+        # TODO: write missing fertilizer functions
         self.cursor.execute(
             "SELECT name, registration_number, owner_id, latest_inspection_id FROM fertilizer WHERE id = %s;",
             (fertilizer_id,),
@@ -133,6 +137,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         latest_inspection_id = self.inspection_id
 
         # Insert new fertilizer to get a valid fertilizer_id
+        # TODO: write missing fertilizer functions
         self.cursor.execute(
             "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (fertilizer_name, registration_number, owner_id, latest_inspection_id),
@@ -142,6 +147,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         # Update the fertilizer information
         updated_registration_number = "T67890"
 
+        # TODO: write missing fertilizer functions
         self.cursor.execute(
             "SELECT upsert_fertilizer(%s, %s, %s, %s);",
             (
@@ -161,6 +167,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         )
 
         # Verify that the data is correctly updated
+        # TODO: write missing fertilizer functions
         self.cursor.execute(
             "SELECT name, registration_number, owner_id, latest_inspection_id FROM fertilizer WHERE id = %s;",
             (updated_fertilizer_id,),

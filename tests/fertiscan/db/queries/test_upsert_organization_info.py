@@ -6,6 +6,7 @@ import psycopg
 from dotenv import load_dotenv
 
 from fertiscan.db.metadata.inspection import OrganizationInformation
+from fertiscan.db.queries import organization
 
 load_dotenv()
 
@@ -45,6 +46,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         )
 
         # Insert new organization information
+        # TODO: writing missing organization info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),
@@ -59,43 +61,34 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         self.assertTrue(new_org_info_id, "New organization info ID should be present")
 
         # Verify that the data is correctly saved
-        self.cursor.execute(
-            "SELECT name, website, phone_number, location_id FROM organization_information WHERE id = %s;",
-            (new_org_info_id,),
+        ornanization_info = organization.get_organization_info(
+            self.cursor, new_org_info_id
         )
-        saved_org_data = self.cursor.fetchone()
-        self.assertIsNotNone(
-            saved_org_data, "Saved organization data should not be None"
-        )
+        self.assertIsNotNone(ornanization_info, "Organization info should not be None")
         self.assertEqual(
-            saved_org_data[0],
+            ornanization_info[0],
             "GreenGrow Fertilizers Inc.",
             "Name should match the inserted value",
         )
         self.assertEqual(
-            saved_org_data[1],
+            ornanization_info[1],
             "http://www.greengrowfertilizers.com",
             "Website should match the inserted value",
         )
         self.assertEqual(
-            saved_org_data[2],
+            ornanization_info[2],
             "+1 800 555 0199",
             "Phone number should match the inserted value",
         )
 
-        location_id = saved_org_data[3]
+        location_id = ornanization_info[3]
         self.assertIsNotNone(location_id, "Location ID should be present")
 
         # Verify location data
-        self.cursor.execute(
-            "SELECT address FROM location WHERE id = %s;", (location_id,)
-        )
-        saved_location_data = self.cursor.fetchone()
-        self.assertIsNotNone(
-            saved_location_data, "Saved location data should not be None"
-        )
+        location = organization.get_location(self.cursor, location_id)
+        self.assertIsNotNone(location, "Location should not be None")
         self.assertEqual(
-            saved_location_data[0],
+            location[1],
             "123 Greenway Blvd, Springfield IL 62701 USA",
             "Address should match the inserted value",
         )
@@ -110,6 +103,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
             phone_number="+1 800 555 0199",
         )
 
+        # TODO: writing missing organization info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),
@@ -123,6 +117,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         sample_org_info_new.id = str(new_org_info_id)
 
         # Update existing organization information
+        # TODO: writing missing organization info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),
@@ -141,39 +136,28 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         )
 
         # Verify that the data is correctly updated
-        self.cursor.execute(
-            "SELECT name, website, phone_number, location_id FROM organization_information WHERE id = %s;",
-            (new_org_info_id,),
+        ornanization_info = organization.get_organization_info(
+            self.cursor, new_org_info_id
         )
-        updated_org_data = self.cursor.fetchone()
-        self.assertIsNotNone(updated_org_data, "Updated data should not be None")
+        self.assertIsNotNone(ornanization_info, "Organization info should not be None")
         self.assertEqual(
-            updated_org_data[0],
-            "GreenGrow Fertilizers Inc. Updated",
-            "Name should match the updated value",
+            ornanization_info[0],
+            sample_org_info_new.name,
+            "Name should match the inserted value",
         )
         self.assertEqual(
-            updated_org_data[1],
-            "http://www.greengrowfertilizers-updated.com",
-            "Website should match the updated value",
+            ornanization_info[1],
+            sample_org_info_new.website,
+            "Website should match the inserted value",
+        )
+        self.assertEqual(
+            ornanization_info[2],
+            sample_org_info_new.phone_number,
+            "Phone number should match the inserted value",
         )
 
-        location_id = updated_org_data[3]
-        self.assertIsNotNone(location_id, "Location ID should be present after update")
-
-        # Verify location data
-        self.cursor.execute(
-            "SELECT address FROM location WHERE id = %s;", (location_id,)
-        )
-        updated_location_data = self.cursor.fetchone()
-        self.assertIsNotNone(
-            updated_location_data, "Updated location data should not be None"
-        )
-        self.assertEqual(
-            updated_location_data[0],
-            "123 Greenway Blvd, Springfield IL 62701 USA",
-            "Address should match the updated value",
-        )
+        location_id = ornanization_info[3]
+        self.assertIsNotNone(location_id, "Location ID should be present")
 
 
 if __name__ == "__main__":

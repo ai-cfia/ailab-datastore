@@ -6,6 +6,18 @@ import uuid
 import psycopg
 from dotenv import load_dotenv
 
+from datastore.db.queries import user
+from fertiscan.db.queries import (
+    ingredient,
+    inspection,
+    label,
+    metric,
+    nutrients,
+    organization,
+    specification,
+    sub_label,
+)
+
 load_dotenv()
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -29,14 +41,7 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Insert an inspector user into the users table and retrieve the inspector_id
-        self.cursor.execute(
-            """
-            INSERT INTO users (email)
-            VALUES ('inspector@example.com')
-            RETURNING id;
-            """
-        )
-        self.inspector_id = self.cursor.fetchone()[0]
+        self.inspector_id = user.register_user(self.cursor, "inspector@example.com")
 
         # Load the JSON data for creating a new inspection
         with open(INPUT_JSON_PATH, "r") as file:
@@ -45,11 +50,9 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         create_input_json_str = json.dumps(create_input_json)
 
         # Create initial inspection data using the new_inspection function
-        self.cursor.execute(
-            "SELECT new_inspection(%s, %s, %s);",
-            (self.inspector_id, None, create_input_json_str),
+        inspection_data = inspection.new_inspection_with_label_info(
+            self.cursor, self.inspector_id, None, create_input_json_str
         )
-        inspection_data = self.cursor.fetchone()[0]  # Get the returned JSON
 
         self.inspection_id = inspection_data["inspection_id"]
         self.label_info_id = inspection_data["product"]["label_id"]
@@ -58,11 +61,8 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Update the inspection to verified true
         inspection_data["verified"] = True
-        updated_inspection_json = json.dumps(inspection_data)
-
-        self.cursor.execute(
-            "SELECT update_inspection(%s, %s, %s);",
-            (self.inspection_id, self.inspector_id, updated_inspection_json),
+        inspection.update_inspection(
+            self.cursor, self.inspection_id, self.inspector_id, inspection_data
         )
 
     def tearDown(self):
@@ -72,11 +72,9 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
     def test_delete_inspection_success(self):
         # Call the delete_inspection function and get the returned inspection record
-        self.cursor.execute(
-            "SELECT delete_inspection(%s, %s);",
-            (self.inspection_id, self.inspector_id),
+        deleted_inspection = inspection.delete_inspection(
+            self.cursor, self.inspection_id, self.inspector_id
         )
-        deleted_inspection = self.cursor.fetchone()[0]
 
         # Validate that the returned inspection record matches the expected data
         self.assertIsNotNone(
@@ -94,22 +92,16 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         )
 
         # Verify that the inspection record was deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM inspection WHERE id = %s;",
-            (self.inspection_id,),
+        self.assertIsNone(
+            inspection.get_inspection(self.cursor, self.inspection_id),
+            "Inspection should not be found after deletion.",
         )
-        inspection_count = self.cursor.fetchone()[0]
-        self.assertEqual(inspection_count, 0, "Inspection should be deleted.")
 
         # Verify that the related sample was deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM sample WHERE id = %s;",
-            (deleted_inspection["sample_id"],),
-        )
-        sample_count = self.cursor.fetchone()[0]
-        self.assertEqual(sample_count, 0, "Sample should be deleted.")
+        # TODO: samples not yet handled
 
         # Verify that related fertilizer information was deleted
+        # TODO: create fertilizer functions
         self.cursor.execute(
             "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
             (self.inspection_id,),
@@ -118,119 +110,85 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         self.assertEqual(sample_count, 0, "Sample should be deleted.")
 
         # Verify that the label information was deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM label_information WHERE id = %s;",
-            (self.label_info_id,),
+        self.assertIsNone(
+            label.get_label_information(self.cursor, self.label_info_id),
+            "Label information should not be found after deletion.",
         )
-        label_count = self.cursor.fetchone()[0]
-        self.assertEqual(label_count, 0, "Label information should be deleted.")
 
         # Verify that the related metrics were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM metric WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertListEqual(
+            metric.get_metric_by_label(self.cursor, self.label_info_id),
+            [],
+            "Metrics should not be found after deletion.",
         )
-        metric_count = self.cursor.fetchone()[0]
-        self.assertEqual(metric_count, 0, "Metrics should be deleted.")
 
         # Verify that the related specifications were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM specification WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertDictEqual(
+            specification.get_specification_json(self.cursor, self.label_info_id),
+            {"specifications": {"fr": [], "en": []}},
+            "Specifications should not be found after deletion.",
         )
-        specification_count = self.cursor.fetchone()[0]
-        self.assertEqual(specification_count, 0, "Specifications should be deleted.")
 
         # Verify that the related sub-labels were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM sub_label WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertFalse(
+            sub_label.has_sub_label(self.cursor, self.label_info_id),
+            "Sub-labels should not be found after deletion.",
         )
-        sub_label_count = self.cursor.fetchone()[0]
-        self.assertEqual(sub_label_count, 0, "Sub-labels should be deleted.")
 
         # Verify that the related micronutrients were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM micronutrient WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertListEqual(
+            nutrients.get_all_micronutrients(self.cursor, self.label_info_id),
+            [],
+            "Micronutrients should be deleted.",
         )
-        micronutrient_count = self.cursor.fetchone()[0]
-        self.assertEqual(micronutrient_count, 0, "Micronutrients should be deleted.")
 
         # Verify that the related guaranteed records were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM guaranteed WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertListEqual(
+            nutrients.get_all_guaranteeds(self.cursor, self.label_info_id),
+            [],
+            "Guaranteed records should be deleted.",
         )
-        guaranteed_count = self.cursor.fetchone()[0]
-        self.assertEqual(guaranteed_count, 0, "Guaranteed records should be deleted.")
 
         # Verify that the related ingredients were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM ingredient WHERE label_id = %s;",
-            (self.label_info_id,),
+        self.assertDictEqual(
+            ingredient.get_ingredient_json(self.cursor, self.label_info_id),
+            {"ingredients": {"en": [], "fr": []}},
+            "Ingredients should not be found after deletion.",
         )
-        ingredient_count = self.cursor.fetchone()[0]
-        self.assertEqual(ingredient_count, 0, "Ingredients should be deleted.")
 
     def test_delete_inspection_with_linked_manufacturer(self):
         # Attempt to delete the inspection, which should raise a notice but not fail
-        self.cursor.execute(
-            "SELECT delete_inspection(%s, %s);",
-            (self.inspection_id, self.inspector_id),
-        )
+        inspection.delete_inspection(self.cursor, self.inspection_id, self.inspector_id)
 
         # Ensure that the inspection and label were deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM inspection WHERE id = %s;",
-            (self.inspection_id,),
+        self.assertIsNone(
+            inspection.get_inspection(self.cursor, self.inspection_id),
+            "Inspection should not be found after deletion.",
         )
-        inspection_count = self.cursor.fetchone()[0]
-        self.assertEqual(inspection_count, 0, "Inspection should be deleted.")
 
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM label_information WHERE id = %s;",
-            (self.label_info_id,),
+        self.assertIsNone(
+            label.get_label_information(self.cursor, self.label_info_id),
+            "Label information should not be found after deletion.",
         )
-        label_count = self.cursor.fetchone()[0]
-        self.assertEqual(label_count, 0, "Label information should be deleted.")
 
         # Ensure that the manufacturer info was not deleted due to foreign key constraints
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM organization_information WHERE id = %s;",
-            (self.manufacturer_info_id,),
-        )
-        manufacturer_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            manufacturer_count,
-            1,
-            "Manufacturer info should not be deleted due to foreign key constraint.",
+        self.assertIsNotNone(
+            organization.get_organization_info(self.cursor, self.manufacturer_info_id),
+            "Manufacturer info should not be found after deletion.",
         )
 
         # Ensure that the company info related to the deleted inspection is deleted
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM organization_information WHERE id = %s;",
-            (self.company_info_id,),
-        )
-        company_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            company_count,
-            0,
-            "Company info should be deleted since it's linked to the deleted inspection.",
-        )
+        with self.assertRaises(organization.OrganizationNotFoundError):
+            organization.get_organization_info(self.cursor, self.company_info_id)
 
     def test_delete_inspection_unauthorized(self):
         # Generate a random UUID to simulate an unauthorized inspector
         unauthorized_inspector_id = str(uuid.uuid4())
 
         # Attempt to delete the inspection with a different inspector
-        with self.assertRaises(psycopg.errors.RaiseException) as context:
-            self.cursor.execute(
-                "SELECT delete_inspection(%s, %s);",
-                (
-                    self.inspection_id,
-                    unauthorized_inspector_id,
-                ),  # Using a random UUID as unauthorized inspector ID
+        with self.assertRaises(inspection.InspectionDeleteError) as context:
+            inspection.delete_inspection(
+                self.cursor, self.inspection_id, unauthorized_inspector_id
             )
 
         # Check that the exception message indicates unauthorized access

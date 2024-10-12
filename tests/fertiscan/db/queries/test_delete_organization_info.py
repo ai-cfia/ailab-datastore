@@ -4,6 +4,8 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
+from fertiscan.db.queries import organization
+
 load_dotenv()
 
 # Database connection and schema settings
@@ -26,25 +28,14 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Insert a location record for testing
-        self.cursor.execute(
-            """
-            INSERT INTO location (name, address, region_id)
-            VALUES ('Test Location', '123 Test St', NULL)
-            RETURNING id;
-            """
+        self.location_id = organization.new_location(
+            self.cursor, "Test Location", "123 Test St", None
         )
-        self.location_id = self.cursor.fetchone()[0]
 
         # Insert an organization information record for testing
-        self.cursor.execute(
-            """
-            INSERT INTO organization_information (name, location_id)
-            VALUES ('Test Organization', %s)
-            RETURNING id;
-            """,
-            (self.location_id,),
+        self.organization_information_id = organization.new_organization_info(
+            self.cursor, "Test Organization", None, None, self.location_id
         )
-        self.organization_information_id = self.cursor.fetchone()[0]
 
     def tearDown(self):
         # Roll back any changes to maintain database state
@@ -54,6 +45,7 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
 
     def test_delete_organization_information_success(self):
         # Delete the organization information
+        # TODO: write delete orga function
         self.cursor.execute(
             """
             DELETE FROM organization_information
@@ -63,45 +55,24 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         )
 
         # Verify that the organization information was deleted
-        self.cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM organization_information
-            WHERE id = %s;
-            """,
-            (self.organization_information_id,),
-        )
-        organization_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            organization_count, 0, "Organization information should be deleted."
-        )
+        with self.assertRaises(organization.OrganizationNotFoundError):
+            organization.get_organization_info(
+                self.cursor, self.organization_information_id
+            )
 
         # Verify that the associated location was also deleted
-        self.cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM location
-            WHERE id = %s;
-            """,
-            (self.location_id,),
-        )
-        location_count = self.cursor.fetchone()[0]
-        self.assertEqual(location_count, 0, "Associated location should be deleted.")
+        with self.assertRaises(organization.LocationNotFoundError):
+            organization.get_location(self.cursor, self.location_id)
 
     def test_delete_organization_information_with_linked_records(self):
         # Insert an organization that links to the organization_information
-        self.cursor.execute(
-            """
-            INSERT INTO organization (information_id, main_location_id)
-            VALUES (%s, %s)
-            RETURNING id;
-            """,
-            (self.organization_information_id, self.location_id),
+        organization.new_organization(
+            self.cursor, self.organization_information_id, self.location_id
         )
-        _ = self.cursor.fetchone()[0]
 
         # Attempt to delete the organization information and expect a foreign key violation
-        with self.assertRaises(psycopg.errors.ForeignKeyViolation) as _:
+        with self.assertRaises(psycopg.errors.ForeignKeyViolation) as context:
+            # TODO: write delete orga function
             self.cursor.execute(
                 """
                 DELETE FROM organization_information
@@ -110,19 +81,20 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
                 (self.organization_information_id,),
             )
 
+        self.assertIn(
+            "violates foreign key constraint",
+            str(context.exception),
+            "Expected a foreign key violation error.",
+        )
+
     def test_delete_organization_information_with_shared_location(self):
         # Insert another organization information that shares the same location
-        self.cursor.execute(
-            """
-            INSERT INTO organization_information (name, location_id)
-            VALUES ('Another Test Organization', %s)
-            RETURNING id;
-            """,
-            (self.location_id,),
+        another_organization_information_id = organization.new_organization_info(
+            self.cursor, "Another Test Organization", None, None, self.location_id
         )
-        another_organization_information_id = self.cursor.fetchone()[0]
 
         # Delete the first organization information
+        # TODO: write delete orga function
         self.cursor.execute(
             """
             DELETE FROM organization_information
@@ -132,50 +104,24 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         )
 
         # Verify that the first organization information was deleted
-        self.cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM organization_information
-            WHERE id = %s;
-            """,
-            (self.organization_information_id,),
-        )
-        organization_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            organization_count,
-            0,
-            "The first organization information should be deleted.",
-        )
+        with self.assertRaises(organization.OrganizationNotFoundError):
+            organization.get_organization_info(
+                self.cursor, self.organization_information_id
+            )
 
         # Verify that the location was not deleted since it is still referenced by the second organization information
-        self.cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM location
-            WHERE id = %s;
-            """,
-            (self.location_id,),
-        )
-        location_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            location_count,
-            1,
+        location = organization.get_location(self.cursor, self.location_id)
+        self.assertIsNotNone(
+            location,
             "The location should not be deleted because it is still referenced.",
         )
 
         # Verify that the second organization information still exists
-        self.cursor.execute(
-            """
-            SELECT COUNT(*)
-            FROM organization_information
-            WHERE id = %s;
-            """,
-            (another_organization_information_id,),
+        org_info = organization.get_organization_info(
+            self.cursor, another_organization_information_id
         )
-        another_organization_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            another_organization_count,
-            1,
+        self.assertIsNotNone(
+            org_info,
             "The second organization information should still exist.",
         )
 
