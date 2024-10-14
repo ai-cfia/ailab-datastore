@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from datastore.db.queries import user
 from fertiscan import get_full_inspection_json
-from fertiscan.db.metadata.inspection import (
+from fertiscan.db.models import (
     DBInspection,
     Fertilizer,
     GuaranteedAnalysis,

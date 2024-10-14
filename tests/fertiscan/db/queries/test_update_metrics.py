@@ -5,7 +5,7 @@ import psycopg
 from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
-from fertiscan.db.metadata.inspection import Metric, Metrics
+from fertiscan.db.models import Metric, Metrics
 from fertiscan.db.queries import metric, organization
 
 load_dotenv()

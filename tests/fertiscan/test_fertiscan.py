@@ -18,6 +18,7 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
+from fertiscan.db.models import DBInspection
 from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -352,7 +353,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
 
         # Verify that the inspection ID matches the one we deleted
-        self.assertIsInstance(deleted_inspection, metadata.DBInspection)
+        self.assertIsInstance(deleted_inspection, DBInspection)
         self.assertEqual(str(deleted_inspection.id), inspection_id)
 
         # Ensure that the inspection no longer exists in the database

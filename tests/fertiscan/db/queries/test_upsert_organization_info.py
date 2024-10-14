@@ -5,7 +5,7 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.metadata.inspection import OrganizationInformation
+from fertiscan.db.models import OrganizationInformation
 from fertiscan.db.queries import organization
 
 load_dotenv()

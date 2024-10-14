@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
 import fertiscan.db.queries.sub_label as sub_label
-from fertiscan.db.metadata.inspection import Inspection, SubLabel
+from fertiscan.db.models import Inspection, SubLabel
 from fertiscan.db.queries import organization
 
 load_dotenv()

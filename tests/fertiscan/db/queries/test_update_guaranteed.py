@@ -5,7 +5,7 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.metadata.inspection import GuaranteedAnalysis
+from fertiscan.db.models import GuaranteedAnalysis
 from fertiscan.db.queries import label, nutrients, organization
 
 load_dotenv()

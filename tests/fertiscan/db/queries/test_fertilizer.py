@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.metadata.inspection import Fertilizer
+from fertiscan.db.models import Fertilizer
 from fertiscan.db.queries.fertilizer import (
     create_fertilizer,
     delete_fertilizer,

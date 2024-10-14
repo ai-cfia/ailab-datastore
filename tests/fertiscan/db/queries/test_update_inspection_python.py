@@ -9,7 +9,7 @@ from psycopg import connect
 
 from datastore.db.queries import user
 from fertiscan import get_full_inspection_json
-from fertiscan.db.metadata.inspection import Fertilizer, Inspection
+from fertiscan.db.models import Fertilizer, Inspection
 from fertiscan.db.queries import inspection
 from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import update_inspection

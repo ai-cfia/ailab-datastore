@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from psycopg import connect
 
 from datastore.db.queries import user
-from fertiscan.db.metadata.inspection import DBInspection
+from fertiscan.db.models import DBInspection
 from fertiscan.db.queries import inspection
 from fertiscan.db.queries.inspection import (
     delete_inspection,
