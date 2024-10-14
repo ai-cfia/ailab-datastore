@@ -9,9 +9,10 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
-from fertiscan.db.models import Location
+from fertiscan.db.models import Location, Region
 from fertiscan.db.queries import label, organization
 from fertiscan.db.queries.location import create_location, query_locations
+from fertiscan.db.queries.region import create_region
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -56,49 +57,6 @@ class test_province(unittest.TestCase):
         self.assertEqual(province_data[1][0], province_2_id)
 
 
-class test_region(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
-        self.province_name = "test-province"
-        self.name = "test-region"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_region(self):
-        region_id = organization.new_region(self.cursor, self.name, self.province_id)
-        self.assertTrue(validator.is_valid_uuid(region_id))
-
-    def test_get_region(self):
-        region_id = organization.new_region(self.cursor, self.name, self.province_id)
-        region_data = organization.get_region(self.cursor, region_id)
-        self.assertEqual(region_data[0], self.name)
-        self.assertEqual(region_data[1], self.province_id)
-
-    def test_get_region_not_found(self):
-        with self.assertRaises(organization.RegionNotFoundError):
-            organization.get_region(self.cursor, str(uuid.uuid4()))
-
-    def test_get_full_region(self):
-        region_id = organization.new_region(self.cursor, self.name, self.province_id)
-        region_data = organization.get_full_region(self.cursor, region_id)
-        self.assertEqual(region_data[0], region_id)
-        self.assertEqual(region_data[1], self.name)
-        self.assertEqual(region_data[2], self.province_name)
-
-    def get_region_by_province(self):
-        region_id = organization.new_region(self.cursor, self.name, self.province_id)
-        region_data = organization.get_region_by_province(self.cursor, self.province_id)
-        self.assertEqual(len(region_data), 1)
-        self.assertEqual(region_data[0][0], region_id)
-        self.assertEqual(region_data[0][1], self.name)
-
-
 class test_organization_information(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
@@ -113,12 +71,11 @@ class test_organization_information(unittest.TestCase):
         self.location_address = "test-address"
         self.province_id = organization.new_province(self.cursor, self.province_name)
 
-        self.region_id = organization.new_region(
-            self.cursor, self.region_name, self.province_id
-        )
+        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.region = Region.model_validate(self.region)
 
         self.location = create_location(
-            self.cursor, self.location_name, self.location_address, self.region_id
+            self.cursor, self.location_name, self.location_address, self.region.id
         )
         self.location = Location.model_validate(self.location)
 
@@ -279,11 +236,10 @@ class test_organization(unittest.TestCase):
         self.location_name = "test-location"
         self.location_address = "test-address"
         self.province_id = organization.new_province(self.cursor, self.province_name)
-        self.region_id = organization.new_region(
-            self.cursor, self.region_name, self.province_id
-        )
+        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.region = Region.model_validate(self.region)
         self.location = create_location(
-            self.cursor, self.location_name, self.location_address, self.region_id
+            self.cursor, self.location_name, self.location_address, self.region.id
         )
         self.location = Location.model_validate(self.location)
         self.org_info_id = organization.new_organization_info(
@@ -309,7 +265,7 @@ class test_organization(unittest.TestCase):
             self.cursor, self.org_info_id, self.location.id
         )
         new_location = create_location(
-            self.cursor, "new-location", "new-address", self.region_id
+            self.cursor, "new-location", "new-address", self.region.id
         )
         new_location = Location.model_validate(new_location)
         organization.update_organization(

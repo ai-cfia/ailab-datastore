@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import FullLocation, Location
+from fertiscan.db.models import FullLocation, Location, Region
 from fertiscan.db.queries.location import (
     create_location,
     delete_location,
@@ -20,8 +20,8 @@ from fertiscan.db.queries.organization import (
     new_organization,
     new_organization_info,
     new_province,
-    new_region,
 )
+from fertiscan.db.queries.region import create_region
 
 load_dotenv()
 
@@ -45,8 +45,9 @@ class TestLocationFunctions(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Create necessary records for testing
-        self.province_id = new_province(self.cursor, "Test Province")
-        self.region_id = new_region(self.cursor, "Test Region", self.province_id)
+        self.province_id = new_province(self.cursor, uuid.uuid4().hex)
+        self.region = create_region(self.cursor, "Test Region", self.province_id)
+        self.region = Region.model_validate(self.region)
 
         self.inspector_id = register_user(self.cursor, "inspector@example.com")
 
@@ -74,13 +75,13 @@ class TestLocationFunctions(unittest.TestCase):
 
         # Create location with valid region and owner
         created_location = create_location(
-            self.cursor, name, address, self.region_id, self.organization_id
+            self.cursor, name, address, self.region.id, self.organization_id
         )
         created_location = Location.model_validate(created_location)
 
         self.assertEqual(created_location.name, name)
         self.assertEqual(created_location.address, address)
-        self.assertEqual(created_location.region_id, self.region_id)
+        self.assertEqual(created_location.region_id, self.region.id)
         self.assertEqual(created_location.owner_id, self.organization_id)
 
     def test_read_location(self):
@@ -89,7 +90,7 @@ class TestLocationFunctions(unittest.TestCase):
 
         # Create location
         created_location = create_location(
-            self.cursor, name, address, self.region_id, self.organization_id
+            self.cursor, name, address, self.region.id, self.organization_id
         )
         created_location = Location.model_validate(created_location)
 
@@ -107,14 +108,14 @@ class TestLocationFunctions(unittest.TestCase):
             self.cursor,
             "Test Location C",
             "789 Test Address A",
-            self.region_id,
+            self.region.id,
             self.organization_id,
         )
         location_b = create_location(
             self.cursor,
             "Test Location D",
             "101 Test Address B",
-            self.region_id,
+            self.region.id,
             self.organization_id,
         )
 
@@ -131,7 +132,7 @@ class TestLocationFunctions(unittest.TestCase):
             self.cursor,
             "Test Location E",
             "102 Test Address",
-            self.region_id,
+            self.region.id,
             self.organization_id,
         )
         location = Location.model_validate(location)
@@ -159,7 +160,7 @@ class TestLocationFunctions(unittest.TestCase):
             self.cursor,
             "Test Location F",
             "103 Test Address",
-            self.region_id,
+            self.region.id,
             self.organization_id,
         )
         location = Location.model_validate(location)
@@ -236,7 +237,7 @@ class TestLocationFunctions(unittest.TestCase):
             self.cursor,
             address,
             name=name,
-            region_id=self.region_id,
+            region_id=self.region.id,
             owner_id=self.organization_id,
         )
 
@@ -270,13 +271,14 @@ class TestLocationFunctions(unittest.TestCase):
         province_name = uuid.uuid4().hex
         region_name = "Test Region"
         province_id = new_province(self.cursor, province_name)
-        region_id = new_region(self.cursor, region_name, province_id)
+        region = create_region(self.cursor, region_name, province_id)
+        region = Region.model_validate(region)
 
         # Create a location with the new region
         address = "Test Address"
         name = "Test Location"
         location_id = upsert_location(
-            self.cursor, address, name=name, region_id=region_id
+            self.cursor, address, name=name, region_id=region.id
         )
 
         # Fetch full location details

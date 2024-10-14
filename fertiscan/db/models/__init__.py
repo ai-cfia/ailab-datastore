@@ -146,3 +146,9 @@ class FullLocation(ValidatedModel):
     address: str | None = None
     region_name: str | None = None
     province_name: str | None = None
+
+
+class FullRegion(ValidatedModel):
+    id: UUID4
+    name: str
+    province_name: str | None = None

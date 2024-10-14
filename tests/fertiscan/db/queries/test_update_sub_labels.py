@@ -7,9 +7,10 @@ from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
 import fertiscan.db.queries.sub_label as sub_label
-from fertiscan.db.models import Inspection, Location, SubLabel
+from fertiscan.db.models import Inspection, Location, Region, SubLabel
 from fertiscan.db.queries import organization
 from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.region import create_region
 
 load_dotenv()
 
@@ -97,11 +98,10 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         self.location_name = "test-location"
         self.location_address = "test-address"
         self.province_id = organization.new_province(self.cursor, self.province_name)
-        self.region_id = organization.new_region(
-            self.cursor, self.region_name, self.province_id
-        )
+        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.region = Region.model_validate(self.region)
         self.location = create_location(
-            self.cursor, self.location_name, self.location_address, self.region_id
+            self.cursor, self.location_name, self.location_address, self.region.id
         )
         self.location = Location.model_validate(self.location)
         self.company_info_id = organization.new_organization_info(

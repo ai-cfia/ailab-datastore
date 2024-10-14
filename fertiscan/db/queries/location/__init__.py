@@ -209,7 +209,7 @@ def get_full_location(cursor: Cursor, location_id: str | UUID):
     - location_id (str): The UUID of the location.
 
     Returns:
-    - dict: The location
+    - dict: The full location
     """
     query = """
         SELECT
