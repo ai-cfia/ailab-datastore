@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import Fertilizer, Location, Region
+from fertiscan.db.models import Fertilizer, Location, Province, Region
 from fertiscan.db.queries.fertilizer import (
     create_fertilizer,
     delete_fertilizer,
@@ -19,11 +19,8 @@ from fertiscan.db.queries.fertilizer import (
 )
 from fertiscan.db.queries.inspection import new_inspection
 from fertiscan.db.queries.location import create_location
-from fertiscan.db.queries.organization import (
-    new_organization,
-    new_organization_info,
-    new_province,
-)
+from fertiscan.db.queries.organization import new_organization, new_organization_info
+from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
 load_dotenv()
@@ -51,8 +48,9 @@ class TestFertilizerFunctions(unittest.TestCase):
         self.inspector_id = register_user(
             self.cursor, f"{uuid.uuid4().hex}@example.com"
         )
-        self.province_id = new_province(self.cursor, "a-test-province")
-        self.region = create_region(self.cursor, "test-region", self.province_id)
+        self.province = create_province(self.cursor, "a-test-province")
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, "test-region", self.province.id)
         self.region = Region.model_validate(self.region)
         self.location = create_location(
             self.cursor, "test-location", "test-address", self.region.id

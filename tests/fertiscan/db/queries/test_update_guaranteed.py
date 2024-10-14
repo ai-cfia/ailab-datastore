@@ -5,9 +5,10 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.models import GuaranteedAnalysis, Location, Region
+from fertiscan.db.models import GuaranteedAnalysis, Location, Province, Region
 from fertiscan.db.queries import label, nutrients, organization
 from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
 load_dotenv()
@@ -71,8 +72,9 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         self.phone = "123456789"
         self.location_name = "test-location"
         self.location_address = "test-address"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
-        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
         self.region = Region.model_validate(self.region)
         self.location = create_location(
             self.cursor, self.location_name, self.location_address, self.region.id

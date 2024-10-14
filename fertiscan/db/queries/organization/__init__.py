@@ -17,14 +17,6 @@ class OrganizationUpdateError(Exception):
     pass
 
 
-class ProvinceCreationError(Exception):
-    pass
-
-
-class ProvinceNotFoundError(Exception):
-    pass
-
-
 def new_organization(cursor, information_id, location_id=None):
     """
     This function create a new organization in the database.
@@ -384,90 +376,5 @@ def get_full_organization(cursor, org_id):
             """
         cursor.execute(query, (org_id,))
         return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore organization unhandeled error" + e.__str__())
-
-
-def new_province(cursor, name):
-    """
-    This function create a new province in the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - name (str): The name of the province.
-
-    Returns:
-    - str: The UUID of the province
-    """
-    try:
-        query = """
-            INSERT INTO 
-                province (
-                    name 
-                    )
-            VALUES 
-                (%s)
-            RETURNING 
-                id
-            """
-        cursor.execute(query, (name,))
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise ProvinceCreationError("Datastore province unhandeled error" + e.__str__())
-
-
-def get_province(cursor, province_id):
-    """
-    This function get a province from the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - province_id (int): The UUID of the province.
-
-    Returns:
-    - dict: The province
-    """
-    try:
-        query = """
-            SELECT 
-                name 
-            FROM 
-                province
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (province_id,))
-        res = cursor.fetchone()
-        if res is None:
-            raise ProvinceNotFoundError
-        return res
-    except ProvinceNotFoundError:
-        raise ProvinceNotFoundError(
-            "province not found with province_id: " + str(province_id)
-        )
-    except Exception as e:
-        raise Exception("Datastore organization unhandeled error" + e.__str__())
-
-
-def get_all_province(cursor):
-    """
-    This function get all province from the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-
-    Returns:
-    - dict: The province
-    """
-    try:
-        query = """
-            SELECT 
-                id, 
-                name 
-            FROM 
-                province
-            """
-        cursor.execute(query)
-        return cursor.fetchall()
     except Exception as e:
         raise Exception("Datastore organization unhandeled error" + e.__str__())

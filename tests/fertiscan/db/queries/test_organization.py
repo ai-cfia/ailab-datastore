@@ -9,9 +9,10 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
-from fertiscan.db.models import Location, Region
+from fertiscan.db.models import Location, Province, Region
 from fertiscan.db.queries import label, organization
 from fertiscan.db.queries.location import create_location, query_locations
+from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -21,40 +22,6 @@ if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
 DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
-
-
-class test_province(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
-        self.name = "test-province"
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_province(self):
-        province_id = organization.new_province(self.cursor, self.name)
-        self.assertIsInstance(province_id, int)
-
-    def test_get_province(self):
-        province_id = organization.new_province(self.cursor, self.name)
-        province_data = organization.get_province(self.cursor, province_id)
-        self.assertEqual(province_data[0], self.name)
-
-    def test_get_province_not_found(self):
-        with self.assertRaises(organization.ProvinceNotFoundError):
-            organization.get_province(self.cursor, 0)
-
-    def test_get_all_province(self):
-        province_id = organization.new_province(self.cursor, self.name)
-        province_2_id = organization.new_province(self.cursor, "test-province-2")
-        province_data = organization.get_all_province(self.cursor)
-        self.assertEqual(len(province_data), 2)
-        self.assertEqual(province_data[0][0], province_id)
-        self.assertEqual(province_data[1][0], province_2_id)
 
 
 class test_organization_information(unittest.TestCase):
@@ -69,9 +36,9 @@ class test_organization_information(unittest.TestCase):
         self.phone = "123456789"
         self.location_name = "test-location"
         self.location_address = "test-address"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
-
-        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
         self.region = Region.model_validate(self.region)
 
         self.location = create_location(
@@ -235,8 +202,9 @@ class test_organization(unittest.TestCase):
         self.phone = "123456789"
         self.location_name = "test-location"
         self.location_address = "test-address"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
-        self.region = create_region(self.cursor, self.region_name, self.province_id)
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
         self.region = Region.model_validate(self.region)
         self.location = create_location(
             self.cursor, self.location_name, self.location_address, self.region.id

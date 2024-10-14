@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import FullLocation, Location, Region
+from fertiscan.db.models import FullLocation, Location, Province, Region
 from fertiscan.db.queries.location import (
     create_location,
     delete_location,
@@ -16,11 +16,8 @@ from fertiscan.db.queries.location import (
     update_location,
     upsert_location,
 )
-from fertiscan.db.queries.organization import (
-    new_organization,
-    new_organization_info,
-    new_province,
-)
+from fertiscan.db.queries.organization import new_organization, new_organization_info
+from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
 load_dotenv()
@@ -45,8 +42,9 @@ class TestLocationFunctions(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Create necessary records for testing
-        self.province_id = new_province(self.cursor, uuid.uuid4().hex)
-        self.region = create_region(self.cursor, "Test Region", self.province_id)
+        self.province = create_province(self.cursor, uuid.uuid4().hex)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, "Test Region", self.province.id)
         self.region = Region.model_validate(self.region)
 
         self.inspector_id = register_user(self.cursor, "inspector@example.com")
@@ -270,8 +268,9 @@ class TestLocationFunctions(unittest.TestCase):
         # Create province and region
         province_name = uuid.uuid4().hex
         region_name = "Test Region"
-        province_id = new_province(self.cursor, province_name)
-        region = create_region(self.cursor, region_name, province_id)
+        province = create_province(self.cursor, province_name)
+        province = Province.model_validate(province)
+        region = create_region(self.cursor, region_name, province.id)
         region = Region.model_validate(region)
 
         # Create a location with the new region

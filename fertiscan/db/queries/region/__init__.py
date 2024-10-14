@@ -5,7 +5,7 @@ from psycopg.rows import dict_row
 from psycopg.sql import SQL
 
 
-def create_region(cursor: Cursor, name: str, province_id: int) -> dict | None:
+def create_region(cursor: Cursor, name: str, province_id: int):
     """
     Inserts a new region record into the database.
 
@@ -27,7 +27,7 @@ def create_region(cursor: Cursor, name: str, province_id: int) -> dict | None:
         return new_cur.fetchone()
 
 
-def read_region(cursor: Cursor, region_id: UUID) -> dict | None:
+def read_region(cursor: Cursor, region_id: UUID):
     """
     Retrieves a region record by ID.
 
@@ -44,7 +44,7 @@ def read_region(cursor: Cursor, region_id: UUID) -> dict | None:
         return new_cur.fetchone()
 
 
-def read_all_regions(cursor: Cursor) -> list[dict]:
+def read_all_regions(cursor: Cursor):
     """
     Retrieves all region records from the database.
 
@@ -65,7 +65,7 @@ def update_region(
     region_id: UUID,
     name: str | None = None,
     province_id: int | None = None,
-) -> dict | None:
+):
     """
     Updates an existing region record by ID.
 
@@ -90,7 +90,7 @@ def update_region(
         return new_cur.fetchone()
 
 
-def delete_region(cursor: Cursor, region_id: UUID) -> dict | None:
+def delete_region(cursor: Cursor, region_id: UUID):
     """
     Deletes a region record by ID.
 
@@ -113,7 +113,7 @@ def delete_region(cursor: Cursor, region_id: UUID) -> dict | None:
 
 def query_regions(
     cursor: Cursor, name: str | None = None, province_id: int | None = None
-) -> list[dict]:
+):
     """
     Queries regions based on optional filter criteria.
 
@@ -143,7 +143,7 @@ def query_regions(
         return new_cur.fetchall()
 
 
-def get_full_region(cursor: Cursor, region_id: UUID) -> dict | None:
+def get_full_region(cursor: Cursor, region_id: UUID):
     """
     Retrieves the full region details, including associated province info.
 
