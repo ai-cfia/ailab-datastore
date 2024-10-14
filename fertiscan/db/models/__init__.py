@@ -111,7 +111,7 @@ class Inspection(ValidatedModel):
     guaranteed_analysis: GuaranteedAnalysis
 
 
-class Fertilizer(BaseModel):
+class Fertilizer(ValidatedModel):
     id: UUID4
     name: str | None = None
     registration_number: str | None = Field(None, pattern=r"^\d{7}[A-Z]$")
@@ -119,3 +119,30 @@ class Fertilizer(BaseModel):
     update_at: datetime
     latest_inspection_id: UUID4 | None
     owner_id: UUID4 | None
+
+
+class Location(ValidatedModel):
+    id: UUID4
+    name: str | None = None
+    address: str
+    region_id: UUID4 | None
+    owner_id: UUID4 | None
+
+
+class Region(ValidatedModel):
+    id: UUID4
+    name: str
+    province_id: int | None = None
+
+
+class Province(ValidatedModel):
+    id: int | None = None
+    name: str
+
+
+class FullLocation(ValidatedModel):
+    id: UUID4
+    name: str
+    address: str | None = None
+    region_name: str | None = None
+    province_name: str | None = None

@@ -1,23 +1,38 @@
 SET search_path TO "fertiscan_0.0.15";
 
 -- Function to upsert location information based on location_id and address
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_location(location_id uuid, address text)
-RETURNS uuid AS $$
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_location(
+    p_location_id uuid,
+    p_name text,
+    p_address text,
+    p_region_id uuid DEFAULT NULL,
+    p_owner_id uuid DEFAULT NULL
+) RETURNS uuid AS $$
 DECLARE
-    new_location_id uuid;
+    v_location_id uuid;
 BEGIN
-    IF address IS NULL THEN
+    IF p_address IS NULL THEN
         RAISE EXCEPTION 'Address cannot be null';
-        RETURN NULL;
     END IF;
-    -- Upsert the location
-    INSERT INTO location (id, address)
-    VALUES (COALESCE(location_id, public.uuid_generate_v4()), address)
-    ON CONFLICT (id) -- Specify the unique constraint column for conflict handling
-    DO UPDATE SET address = EXCLUDED.address
-    RETURNING id INTO new_location_id;
 
-    RETURN new_location_id;
+    -- Upsert the location
+    INSERT INTO location (id, name, address, region_id, owner_id)
+    VALUES (
+        COALESCE(p_location_id, public.uuid_generate_v4()), 
+        p_name, 
+        p_address, 
+        p_region_id, 
+        p_owner_id
+    )
+    ON CONFLICT (id) 
+    DO UPDATE SET 
+        name = EXCLUDED.name,
+        address = EXCLUDED.address,
+        region_id = EXCLUDED.region_id,
+        owner_id = EXCLUDED.owner_id
+    RETURNING id INTO v_location_id;
+
+    RETURN v_location_id;
 END;
 $$ LANGUAGE plpgsql;
 

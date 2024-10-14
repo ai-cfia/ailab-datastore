@@ -9,7 +9,9 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
+from fertiscan.db.models import Location
 from fertiscan.db.queries import label, organization
+from fertiscan.db.queries.location import create_location, query_locations
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -97,66 +99,6 @@ class test_region(unittest.TestCase):
         self.assertEqual(region_data[0][1], self.name)
 
 
-class test_location(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
-        self.province_name = "test-province"
-        self.region_name = "test-region"
-        self.name = "test-location"
-        self.address = "test-address"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
-        self.region_id = organization.new_region(
-            self.cursor, self.region_name, self.province_id
-        )
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_location(self):
-        location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id
-        )
-        self.assertTrue(validator.is_valid_uuid(location_id))
-
-    def test_get_location(self):
-        location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id
-        )
-        location_data = organization.get_location(self.cursor, location_id)
-
-        self.assertEqual(location_data[0], self.name)
-        self.assertEqual(location_data[2], self.region_id)
-        self.assertIsNone(location_data[3])
-
-    def test_get_location_not_found(self):
-        with self.assertRaises(organization.LocationNotFoundError):
-            organization.get_location(self.cursor, str(uuid.uuid4()))
-
-    def test_get_full_location(self):
-        location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id
-        )
-        location_data = organization.get_full_location(self.cursor, location_id)
-        self.assertEqual(location_data[0], location_id)
-        self.assertEqual(location_data[1], self.name)
-        self.assertEqual(location_data[2], self.address)
-        self.assertEqual(location_data[3], self.region_name)
-        self.assertEqual(location_data[4], self.province_name)
-
-    def get_location_by_region(self):
-        location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id
-        )
-        location_data = organization.get_location_by_region(self.cursor, self.region_id)
-        self.assertEqual(len(location_data), 1)
-        self.assertEqual(location_data[0][0], location_id)
-        self.assertEqual(location_data[0][1], self.name)
-
-
 class test_organization_information(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
@@ -175,9 +117,10 @@ class test_organization_information(unittest.TestCase):
             self.cursor, self.region_name, self.province_id
         )
 
-        self.location_id = organization.new_location(
+        self.location = create_location(
             self.cursor, self.location_name, self.location_address, self.region_id
         )
+        self.location = Location.model_validate(self.location)
 
     def tearDown(self):
         self.con.rollback()
@@ -185,7 +128,7 @@ class test_organization_information(unittest.TestCase):
 
     def test_new_organization_info(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location.id
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
@@ -218,20 +161,21 @@ class test_organization_information(unittest.TestCase):
             self.cursor, None, self.name, self.website, self.phone
         )
         # Making sure that a location is not created
-        self.assertIsNone(
-            organization.get_full_location(self.cursor, org_id),
+        self.assertListEqual(
+            query_locations(self.cursor, owner_id=org_id),
+            [],
             "Location should not be created",
         )
 
     def test_get_organization_info(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location.id
         )
         data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(data[0], self.name)
         self.assertEqual(data[1], self.website)
         self.assertEqual(data[2], self.phone)
-        self.assertEqual(data[3], self.location_id)
+        self.assertEqual(data[3], self.location.id)
 
     def test_get_organization_info_not_found(self):
         with self.assertRaises(organization.OrganizationNotFoundError):
@@ -242,13 +186,13 @@ class test_organization_information(unittest.TestCase):
         new_website = "www.new.com"
         new_phone = "987654321"
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location.id
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
         self.assertEqual(old_data[1], self.website)
         self.assertEqual(old_data[2], self.phone)
-        self.assertEqual(old_data[3], self.location_id)
+        self.assertEqual(old_data[3], self.location.id)
         organization.update_organization_info(
             self.cursor, id, new_name, new_website, new_phone
         )
@@ -338,11 +282,12 @@ class test_organization(unittest.TestCase):
         self.region_id = organization.new_region(
             self.cursor, self.region_name, self.province_id
         )
-        self.location_id = organization.new_location(
+        self.location = create_location(
             self.cursor, self.location_name, self.location_address, self.region_id
         )
+        self.location = Location.model_validate(self.location)
         self.org_info_id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location.id
         )
 
     def tearDown(self):
@@ -351,7 +296,7 @@ class test_organization(unittest.TestCase):
 
     def test_new_organization(self):
         organization_id = organization.new_organization(
-            self.cursor, self.org_info_id, self.location_id
+            self.cursor, self.org_info_id, self.location.id
         )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
@@ -361,25 +306,26 @@ class test_organization(unittest.TestCase):
 
     def test_update_organization(self):
         organization_id = organization.new_organization(
-            self.cursor, self.org_info_id, self.location_id
+            self.cursor, self.org_info_id, self.location.id
         )
-        new_location_id = organization.new_location(
+        new_location = create_location(
             self.cursor, "new-location", "new-address", self.region_id
         )
+        new_location = Location.model_validate(new_location)
         organization.update_organization(
-            self.cursor, organization_id, self.org_info_id, new_location_id
+            self.cursor, organization_id, self.org_info_id, new_location.id
         )
         organization_data = organization.get_organization(self.cursor, organization_id)
         self.assertEqual(organization_data[0], self.org_info_id)
-        self.assertEqual(organization_data[1], new_location_id)
+        self.assertEqual(organization_data[1], new_location.id)
 
     def test_get_organization(self):
         organization_id = organization.new_organization(
-            self.cursor, self.org_info_id, self.location_id
+            self.cursor, self.org_info_id, self.location.id
         )
         organization_data = organization.get_organization(self.cursor, organization_id)
         self.assertEqual(organization_data[0], self.org_info_id)
-        self.assertEqual(organization_data[1], self.location_id)
+        self.assertEqual(organization_data[1], self.location.id)
 
     def test_get_organization_not_found(self):
         with self.assertRaises(organization.OrganizationNotFoundError):
@@ -387,7 +333,7 @@ class test_organization(unittest.TestCase):
 
     def test_get_full_organization(self):
         organization_id = organization.new_organization(
-            self.cursor, self.org_info_id, self.location_id
+            self.cursor, self.org_info_id, self.location.id
         )
         organization_data = organization.get_full_organization(
             self.cursor, organization_id

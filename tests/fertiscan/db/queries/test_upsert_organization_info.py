@@ -5,8 +5,9 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.models import OrganizationInformation
+from fertiscan.db.models import Location, OrganizationInformation
 from fertiscan.db.queries import organization
+from fertiscan.db.queries.location import read_location
 
 load_dotenv()
 
@@ -85,10 +86,11 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         self.assertIsNotNone(location_id, "Location ID should be present")
 
         # Verify location data
-        location = organization.get_location(self.cursor, location_id)
+        location = read_location(self.cursor, location_id)
+        location = Location.model_validate(location)
         self.assertIsNotNone(location, "Location should not be None")
         self.assertEqual(
-            location[1],
+            location.address,
             "123 Greenway Blvd, Springfield IL 62701 USA",
             "Address should match the inserted value",
         )

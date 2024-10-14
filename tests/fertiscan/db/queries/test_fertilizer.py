@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import Fertilizer
+from fertiscan.db.models import Fertilizer, Location
 from fertiscan.db.queries.fertilizer import (
     create_fertilizer,
     delete_fertilizer,
@@ -18,8 +18,8 @@ from fertiscan.db.queries.fertilizer import (
     upsert_fertilizer,
 )
 from fertiscan.db.queries.inspection import new_inspection
+from fertiscan.db.queries.location import create_location
 from fertiscan.db.queries.organization import (
-    new_location,
     new_organization,
     new_organization_info,
     new_province,
@@ -53,18 +53,19 @@ class TestFertilizerFunctions(unittest.TestCase):
         )
         self.province_id = new_province(self.cursor, "a-test-province")
         self.region_id = new_region(self.cursor, "test-region", self.province_id)
-        self.location_id = new_location(
+        self.location = create_location(
             self.cursor, "test-location", "test-address", self.region_id
         )
+        self.location = Location.model_validate(self.location)
         self.organization_info_id = new_organization_info(
             self.cursor,
             "test-organization",
             "www.test.com",
             "123456789",
-            self.location_id,
+            self.location.id,
         )
         self.organization_id = new_organization(
-            self.cursor, self.organization_info_id, self.location_id
+            self.cursor, self.organization_info_id, self.location.id
         )
         self.inspection_id = new_inspection(self.cursor, self.inspector_id, None, False)
 
@@ -384,6 +385,13 @@ class TestFertilizerFunctions(unittest.TestCase):
         self.assertEqual(fertilizer.id, replaced_fertilizer.id)
         self.assertEqual(replaced_fertilizer.name, fertilizer.name)
         self.assertEqual(replaced_fertilizer.registration_number, new_reg_number)
+
+    def test_upsert_fertilizer_no_name(self):
+        # Attempt to upsert a fertilizer with no name (should raise an error)
+        with self.assertRaises(ValueError):
+            upsert_fertilizer(self.cursor, "")
+        with self.assertRaises(ValueError):
+            upsert_fertilizer(self.cursor, None)
 
 
 if __name__ == "__main__":

@@ -131,8 +131,11 @@ def upsert_fertilizer(
         owner_id: Optional UUID of the owner.
 
     Returns:
-        The inserted or updated fertilizer record as a tuple, or `None` if the operation fails.
+        The UUID of the upserted fertilizer.
     """
+    if not name:
+        raise ValueError("Name cannot be null or empty")
+
     query = SQL("SELECT upsert_fertilizer(%s, %s, %s, %s);")
     cursor.row_factory = tuple_row
     cursor.execute(query, (name, registration_number, owner_id, latest_inspection_id))

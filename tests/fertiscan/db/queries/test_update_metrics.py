@@ -5,8 +5,9 @@ import psycopg
 from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
-from fertiscan.db.models import Metric, Metrics
+from fertiscan.db.models import Location, Metric, Metrics
 from fertiscan.db.queries import metric, organization
+from fertiscan.db.queries.location import create_location
 
 load_dotenv()
 
@@ -54,15 +55,16 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         self.region_id = organization.new_region(
             self.cursor, self.region_name, self.province_id
         )
-        self.location_id = organization.new_location(
+        self.location = create_location(
             self.cursor, self.location_name, self.location_address, self.region_id
         )
+        self.location = Location.model_validate(self.location)
         self.company_info_id = organization.new_organization_info(
             self.cursor,
             self.name,
             self.website,
             self.phone,
-            self.location_id,
+            self.location.id,
         )
 
         self.label_id = label.new_label_information(
