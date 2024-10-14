@@ -9,8 +9,9 @@ from psycopg import connect
 
 from datastore.db.queries import user
 from fertiscan import get_full_inspection_json
-from fertiscan.db.metadata.inspection import Inspection
+from fertiscan.db.metadata.inspection import Fertilizer, Inspection
 from fertiscan.db.queries import inspection
+from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import update_inspection
 
 load_dotenv()
@@ -113,17 +114,10 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         )
 
         # Verify that no fertilizer record was created
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection_id,),
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection_id
         )
-        fertilizer_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            fertilizer_count,
-            0,
-            "No fertilizer should be created when verified is false.",
-        )
+        self.assertListEqual(fertilizers, [])
 
     def test_python_function_update_inspection_with_verified_true(self):
         # Create a model copy and update the verified status via the model
@@ -150,14 +144,17 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
             "The verified status should be True as updated.",
         )
 
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT id FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection_id,),
+        # Verify that a fertilizer record was created
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection_id
         )
-        fertilizer_id = self.cursor.fetchone()
-        self.assertIsNotNone(
-            fertilizer_id, "A fertilizer record should have been created."
+        self.assertEqual(len(fertilizers), 1)
+        created_fertilizer = Fertilizer.model_validate(fertilizers[0])
+        self.assertIsNotNone(created_fertilizer)
+        self.assertEqual(created_fertilizer.name, updated_inspection.product.name)
+        self.assertEqual(
+            created_fertilizer.registration_number,
+            updated_inspection.product.registration_number,
         )
 
 

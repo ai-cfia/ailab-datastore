@@ -89,7 +89,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
 
     def test_update_metrics(self):
         # Insert initial metrics
-        # TODO: write update metrics function
+        # TODO: write missing metrics functions
         self.cursor.execute(
             "SELECT update_metrics(%s, %s);",
             (self.label_id, self.sample_metrics.model_dump_json()),
@@ -105,7 +105,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         )
 
         # Update metrics using Pydantic model
-        # TODO: write update metrics function
+        # TODO: write missing metrics functions
         self.cursor.execute(
             "SELECT update_metrics(%s, %s);",
             (self.label_id, self.updated_metrics.model_dump_json()),

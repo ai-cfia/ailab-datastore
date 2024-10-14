@@ -46,7 +46,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         )
 
         # Insert new organization information
-        # TODO: writing missing organization info functions
+        # TODO: writing missing organization_info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),
@@ -103,7 +103,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
             phone_number="+1 800 555 0199",
         )
 
-        # TODO: writing missing organization info functions
+        # TODO: writing missing organization_info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),
@@ -117,7 +117,7 @@ class TestUpsertOrganizationInfoFunction(unittest.TestCase):
         sample_org_info_new.id = str(new_org_info_id)
 
         # Update existing organization information
-        # TODO: writing missing organization info functions
+        # TODO: writing missing organization_info functions
         self.cursor.execute(
             "SELECT upsert_organization_info(%s);",
             (json.dumps(sample_org_info_new.model_dump()),),

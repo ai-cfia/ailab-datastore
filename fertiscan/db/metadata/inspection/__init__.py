@@ -7,7 +7,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, ValidationError, model_validator
+from pydantic import UUID4, BaseModel, Field, ValidationError, model_validator
 
 from fertiscan.db.queries import (
     ingredient,
@@ -138,6 +138,16 @@ class Inspection(ValidatedModel):
     cautions: SubLabel
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
+
+
+class Fertilizer(BaseModel):
+    id: UUID4
+    name: str | None = None
+    registration_number: str | None = Field(None, pattern=r"^\d{7}[A-Z]$")
+    upload_date: datetime
+    update_at: datetime
+    latest_inspection_id: UUID4 | None
+    owner_id: UUID4 | None
 
 
 def build_inspection_import(analysis_form: dict) -> str:

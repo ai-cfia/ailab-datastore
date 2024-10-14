@@ -45,7 +45,7 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
 
     def test_delete_organization_information_success(self):
         # Delete the organization information
-        # TODO: write delete orga function
+        # TODO: write missing organization_information functions
         self.cursor.execute(
             """
             DELETE FROM organization_information
@@ -72,7 +72,7 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
 
         # Attempt to delete the organization information and expect a foreign key violation
         with self.assertRaises(psycopg.errors.ForeignKeyViolation) as context:
-            # TODO: write delete orga function
+            # TODO: write missing organization_information functions
             self.cursor.execute(
                 """
                 DELETE FROM organization_information
@@ -94,7 +94,7 @@ class TestDeleteOrganizationInformationFunction(unittest.TestCase):
         )
 
         # Delete the first organization information
-        # TODO: write delete orga function
+        # TODO: write missing organization_information functions
         self.cursor.execute(
             """
             DELETE FROM organization_information

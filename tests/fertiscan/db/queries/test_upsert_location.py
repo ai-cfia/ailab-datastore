@@ -60,7 +60,7 @@ class TestUpsertLocationFunction(unittest.TestCase):
         )
 
         # Update the location
-        # TODO: write missing functions for location
+        # TODO: write missing location functions
         self.cursor.execute(
             "SELECT upsert_location(%s, %s);",
             (location_id, sample_updated_address),

@@ -17,6 +17,7 @@ from fertiscan.db.queries import (
     specification,
     sub_label,
 )
+from fertiscan.db.queries.fertilizer import query_fertilizers
 
 load_dotenv()
 
@@ -101,13 +102,10 @@ class TestDeleteInspectionFunction(unittest.TestCase):
         # TODO: samples not yet handled
 
         # Verify that related fertilizer information was deleted
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection_id,),
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection_id
         )
-        sample_count = self.cursor.fetchone()[0]
-        self.assertEqual(sample_count, 0, "Sample should be deleted.")
+        self.assertListEqual(fertilizers, [])
 
         # Verify that the label information was deleted
         self.assertIsNone(

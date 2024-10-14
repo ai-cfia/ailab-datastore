@@ -108,7 +108,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
     def test_update_guaranteed(self):
         # Insert initial guaranteed analysis
-        # TODO: write update guaranteed function
+        # TODO: write missing guaranteed functions
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.sample_guaranteed),
@@ -124,7 +124,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         )
 
         # Update guaranteed analysis
-        # TODO: write update guaranteed function
+        # TODO: write missing guaranteed functions
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, json.dumps(self.updated_guaranteed)),

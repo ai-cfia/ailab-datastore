@@ -134,7 +134,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
     def test_update_sub_labels(self):
         # Insert initial sub labels
-        # TODO: write missing sub label functions
+        # TODO: write missing sub_label functions
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
             (self.label_id, json.dumps(self.sample_sub_labels)),
@@ -147,7 +147,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
                 self.assertCountEqual(arr, self.sample_sub_labels[k][lang])
 
         # Update sub labels
-        # TODO: write missing sub label functions
+        # TODO: write missing sub_label functions
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
             (self.label_id, json.dumps(self.updated_sub_labels)),
@@ -171,7 +171,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         try:
             # Attempt to update the sub-labels in the database
-            # TODO: write missing sub label functions
+            # TODO: write missing sub_label functions
             self.cursor.execute(
                 "SELECT update_sub_labels(%s, %s);",
                 (self.label_id, mismatched_sub_labels),
@@ -213,7 +213,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         try:
             # Execute the function with empty sub labels
-            # TODO: write missing sub label functions
+            # TODO: write missing sub_label functions
             self.cursor.execute(
                 "SELECT update_sub_labels(%s, %s);", (self.label_id, empty_sub_labels)
             )

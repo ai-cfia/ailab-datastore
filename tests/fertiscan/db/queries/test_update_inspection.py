@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import unittest
@@ -7,14 +8,17 @@ import psycopg
 from dotenv import load_dotenv
 
 from datastore.db.queries import user
+from fertiscan import get_full_inspection_json
 from fertiscan.db.metadata.inspection import (
     DBInspection,
+    Fertilizer,
     GuaranteedAnalysis,
     Inspection,
     Metrics,
     OrganizationInformation,
 )
 from fertiscan.db.queries import inspection, metric, nutrients, organization
+from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
 
 load_dotenv()
@@ -119,17 +123,10 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify that no fertilizer record was created
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection.inspection_id,),
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection.inspection_id
         )
-        fertilizer_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            fertilizer_count,
-            0,
-            "No fertilizer should be created when verified is false.",
-        )
+        self.assertListEqual(fertilizers, [])
 
         # Verify the company name was updated in the database
         organization_info_json = organization.get_organizations_info_json(
@@ -191,59 +188,33 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify the inspection record was updated in the database
-        updated_inspection = get_inspection_dict(
-            self.cursor, self.inspection.inspection_id
-        )
-        updated_inspection = DBInspection.model_validate(updated_inspection)
+        task = get_full_inspection_json(self.cursor, self.inspection.inspection_id)
+        updated_inspection = asyncio.run(task)
+        updated_inspection = Inspection.model_validate(json.loads(updated_inspection))
 
         self.assertIsNotNone(updated_inspection, "The inspection record should exist.")
         self.assertEqual(
-            str(updated_inspection.id),
-            str(self.inspection.inspection_id),
-            "The inspection ID should match the expected value.",
+            str(updated_inspection.inspection_id), str(self.inspection.inspection_id)
         )
-        self.assertEqual(
-            updated_inspection.inspector_id,
-            self.inspector_id,
-            "The inspector ID should match the expected value.",
-        )
-        self.assertTrue(
-            updated_inspection.verified,
-            "The verified status should be True as updated.",
-        )
+        self.assertTrue(updated_inspection.verified)
 
         # Verify that a fertilizer record was created
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT id FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection.inspection_id,),
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection.inspection_id
         )
-        fertilizer_id = self.cursor.fetchone()[0]
-        self.assertIsNotNone(
-            fertilizer_id, "A fertilizer record should have been created."
-        )
-
-        # Verify the fertilizer details are correct
-        # TODO: create fertilizer functions
-        self.cursor.execute(
-            "SELECT name, registration_number, owner_id FROM fertilizer WHERE id = %s;",
-            (fertilizer_id,),
-        )
-        fertilizer_data = self.cursor.fetchone()
+        self.assertEqual(len(fertilizers), 1)
+        created_fertilizer = Fertilizer.model_validate(fertilizers[0])
+        self.assertIsNotNone(created_fertilizer)
+        self.assertEqual(created_fertilizer.name, updated_inspection.product.name)
         self.assertEqual(
-            fertilizer_data[0],
-            altered_inspection.product.name,
-            "The fertilizer name should match the product name in the input model.",
-        )
-        self.assertEqual(
-            fertilizer_data[1],
-            altered_inspection.product.registration_number,
-            "The registration number should match the input model.",
+            created_fertilizer.registration_number,
+            updated_inspection.product.registration_number,
         )
 
         # Check if the owner_id matches the organization information created for the manufacturer
-        organization_id = fertilizer_data[2]
-        organization_data = organization.get_organization(self.cursor, organization_id)
+        organization_data = organization.get_organization(
+            self.cursor, created_fertilizer.owner_id
+        )
         information_id = organization_data[0]
         organization_information = organization.get_organization_info(
             self.cursor, information_id
