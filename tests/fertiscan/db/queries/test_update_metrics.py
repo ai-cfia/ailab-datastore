@@ -5,7 +5,21 @@ import psycopg
 from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
-from fertiscan.db.metadata.inspection import Metric, Metrics, OrganizationInformation
+from fertiscan.db.models import (
+    Location,
+    Metric,
+    Metrics,
+    OrganizationInformation,
+    Province,
+    Region,
+)
+from fertiscan.db.queries import metric
+from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
+from fertiscan.db.queries.province import create_province
+from fertiscan.db.queries.region import create_region
 
 load_dotenv()
 
@@ -42,16 +56,29 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         )
 
         # Insert test data to obtain a valid label_id
-        sample_org_info = OrganizationInformation(
-            name="Test Company",
-            address="123 Test Address",
-            website="http://www.testcompany.com",
-            phone_number="+1 800 555 0123",
+        self.province_name = "a-test-province"
+        self.region_name = "test-region"
+        self.name = "test-organization"
+        self.website = "www.test.com"
+        self.phone = "123456789"
+        self.location_name = "test-location"
+        self.location_address = "test-address"
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
+        self.region = Region.model_validate(self.region)
+        self.location = create_location(
+            self.cursor, self.location_name, self.location_address, self.region.id
         )
-        self.cursor.execute(
-            "SELECT upsert_organization_info(%s);", (sample_org_info.model_dump_json(),)
+        self.location = Location.model_validate(self.location)
+        self.company_info = create_organization_information(
+            self.cursor,
+            self.name,
+            self.website,
+            self.phone,
+            self.location.id,
         )
-        self.company_info_id = self.cursor.fetchone()[0]
+        self.company_info = OrganizationInformation.model_validate(self.company_info)
 
         self.label_id = label.new_label_information(
             self.cursor,
@@ -65,8 +92,8 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             None,
             None,
             None,
-            self.company_info_id,
-            self.company_info_id,
+            self.company_info.id,
+            self.company_info.id,
         )
 
     def tearDown(self):
@@ -76,62 +103,37 @@ class TestUpdateMetricsFunction(unittest.TestCase):
         self.conn.close()
 
     def test_update_metrics(self):
-        # Insert initial metrics using Pydantic model
+        # Insert initial metrics
+        # TODO: write missing metrics functions
         self.cursor.execute(
             "SELECT update_metrics(%s, %s);",
             (self.label_id, self.sample_metrics.model_dump_json()),
         )
 
         # Verify that the data is correctly saved
-        self.cursor.execute(
-            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
-            (self.label_id,),
-        )
-        saved_data = self.cursor.fetchall()
-        expected_data = [
-            (5.0, "kg"),  # weight kg
-            (11.0, "lb"),  # weight lb
-            (1.2, "g/cm³"),  # density
-            (20.8, "L"),  # volume
-        ]
-        self.assertEqual(len(saved_data), 4, "There should be four metrics inserted")
-        self.assertListEqual(
-            [(d[0], self._get_unit_name(d[1])) for d in saved_data],
-            expected_data,
-            "Saved data should match the expected values",
+        metrics = metric.get_metrics_json(self.cursor, self.label_id)
+        metrics = Metrics.model_validate(metrics)
+        self.assertDictEqual(
+            metrics.model_dump(),
+            self.sample_metrics.model_dump(),
+            "Saved metrics should match the input",
         )
 
         # Update metrics using Pydantic model
+        # TODO: write missing metrics functions
         self.cursor.execute(
             "SELECT update_metrics(%s, %s);",
             (self.label_id, self.updated_metrics.model_dump_json()),
         )
 
         # Verify that the data is correctly updated
-        self.cursor.execute(
-            "SELECT value, unit_id FROM metric WHERE label_id = %s;",
-            (self.label_id,),
+        metrics = metric.get_metrics_json(self.cursor, self.label_id)
+        metrics = Metrics.model_validate(metrics)
+        self.assertDictEqual(
+            metrics.model_dump(),
+            self.updated_metrics.model_dump(),
+            "Updated metrics should match the input",
         )
-        updated_data = self.cursor.fetchall()
-        expected_updated_data = [
-            (6.0, "kg"),  # weight kg
-            (13.0, "lb"),  # weight lb
-            (1.3, "g/cm³"),  # density
-            (25.0, "L"),  # volume
-        ]
-        self.assertEqual(
-            len(updated_data), 4, "There should be four metrics after update"
-        )
-        self.assertListEqual(
-            [(d[0], self._get_unit_name(d[1])) for d in updated_data],
-            expected_updated_data,
-            "Updated data should match the new values",
-        )
-
-    def _get_unit_name(self, unit_id):
-        # Helper function to fetch the unit name by unit_id
-        self.cursor.execute("SELECT unit FROM unit WHERE id = %s;", (unit_id,))
-        return self.cursor.fetchone()[0]
 
 
 if __name__ == "__main__":

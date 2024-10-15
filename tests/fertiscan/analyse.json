@@ -1,48 +1,48 @@
 {
-  "company_name":"GreenGrow Fertilizers Inc.",
-  "company_address":"123 Greenway Blvd, Springfield IL 62701 USA",
-  "company_website":"www.greengrowfertilizers.com",
-  "company_phone_number":"+1 800 555 0199",
-  "manufacturer_name":"AgroTech Industries Ltd.",
-  "manufacturer_address":"456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
-  "manufacturer_website":"www.agrotechindustries.com",
-  "manufacturer_phone_number":"+1 416 555 0123",
-  "fertiliser_name":"SuperGrow 20-20-20",
-  "registration_number":"F12345678",
-  "lot_number":"L987654321",
-  "weight":[
+  "company_name": "GreenGrow Fertilizers Inc.",
+  "company_address": "123 Greenway Blvd, Springfield IL 62701 USA",
+  "company_website": "www.greengrowfertilizers.com",
+  "company_phone_number": "+1 800 555 0199",
+  "manufacturer_name": "AgroTech Industries Ltd.",
+  "manufacturer_address": "456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
+  "manufacturer_website": "www.agrotechindustries.com",
+  "manufacturer_phone_number": "+1 416 555 0123",
+  "fertiliser_name": "SuperGrow 20-20-20",
+  "registration_number": "1234567F",
+  "lot_number": "L987654321",
+  "weight": [
     {
-      "value":"25",
-      "unit":"kg"
+      "value": "25",
+      "unit": "kg"
     },
     {
-      "value":"55",
-      "unit":"lb"
+      "value": "55",
+      "unit": "lb"
     }
   ],
-  "density":{
-    "value":"1.2",
-    "unit":"g/cm"
+  "density": {
+    "value": "1.2",
+    "unit": "g/cm"
   },
-  "volume":{
-    "value":"20.8",
-    "unit":"L"
+  "volume": {
+    "value": "20.8",
+    "unit": "L"
   },
-  "npk":"20-20-20",
-  "cautions_en":[
+  "npk": "20-20-20",
+  "cautions_en": [
     "Keep out of reach of children.",
     "Avoid contact with skin and eyes."
   ],
-  "instructions_en":[
+  "instructions_en": [
     "1. Dissolve 50g in 10L of water.",
     "2. Apply every 2 weeks.",
     "3. Store in a cool, dry place."
   ],
-  "cautions_fr":[
+  "cautions_fr": [
     "Tenir hors de portée des enfants.",
     "Éviter le contact avec la peau et les yeux."
   ],
-  "instructions_fr":[
+  "instructions_fr": [
     "1. Dissoudre 50g dans 10L d'eau.",
     "2. Appliquer toutes les 2 semaines.",
     "3. Conserver dans un endroit frais et sec."

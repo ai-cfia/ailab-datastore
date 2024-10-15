@@ -4,11 +4,21 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 """
 
-from datetime import datetime
-from typing import List, Optional
+from pydantic import ValidationError
 
-from pydantic import UUID4, BaseModel, ValidationError, model_validator
-
+from fertiscan.db.models import (
+    CompanyManufacturer,
+    DBInspection,
+    GuaranteedAnalysis,
+    Inspection,
+    LocatedOrganizationInformation,
+    Metric,
+    Metrics,
+    ProductInformation,
+    SubLabel,
+    Title,
+    Value,
+)
 from fertiscan.db.queries import (
     ingredient,
     inspection,
@@ -31,113 +41,6 @@ class NPKError(Exception):
 
 class MetadataFormattingError(Exception):
     pass
-
-
-class ValidatedModel(BaseModel):
-    @model_validator(mode="before")
-    def handle_none(cls, values):
-        if values is None:
-            return {}
-        return values
-
-
-class OrganizationInformation(ValidatedModel):
-    id: Optional[str] = None
-    name: Optional[str] = None
-    address: Optional[str] = None
-    website: Optional[str] = None
-    phone_number: Optional[str] = None
-
-
-class Value(ValidatedModel):
-    value: Optional[float] = None
-    unit: Optional[str] = None
-    name: Optional[str] = None
-    edited: Optional[bool] = False
-
-
-class Title(ValidatedModel):
-    en: Optional[str] = None
-    fr: Optional[str] = None
-
-
-class GuaranteedAnalysis(ValidatedModel):
-    title: Title | None = None
-    is_minimal: Optional[bool] = False
-    en: List[Value] = []
-    fr: List[Value] = []
-
-
-class ValuesObjects(ValidatedModel):
-    en: List[Value] = []
-    fr: List[Value] = []
-
-
-class SubLabel(ValidatedModel):
-    en: List[str] = []
-    fr: List[str] = []
-
-
-class Metric(ValidatedModel):
-    value: Optional[float] = None
-    unit: Optional[str] = None
-    edited: Optional[bool] = False
-
-
-class Metrics(ValidatedModel):
-    weight: Optional[List[Metric]] = []
-    volume: Optional[Metric] = Metric()
-    density: Optional[Metric] = Metric()
-
-
-class ProductInformation(ValidatedModel):
-    name: str | None = None
-    label_id: str | None = None
-    registration_number: str | None = None
-    lot_number: str | None = None
-    metrics: Metrics | None = Metrics()
-    npk: str | None = None
-    warranty: str | None = None
-    n: float | None = None
-    p: float | None = None
-    k: float | None = None
-
-
-class Specification(ValidatedModel):
-    humidity: float | None = None
-    ph: float | None = None
-    solubility: float | None = None
-    edited: Optional[bool] = False
-
-
-class Specifications(ValidatedModel):
-    en: List[Specification]
-    fr: List[Specification]
-
-
-# Awkwardly named so to avoid name conflict
-class DBInspection(ValidatedModel):
-    id: UUID4
-    verified: bool = False
-    upload_date: datetime | None = None
-    updated_at: datetime | None = None
-    inspector_id: UUID4 | None = None
-    label_info_id: UUID4 | None = None
-    sample_id: UUID4 | None = None
-    picture_set_id: UUID4 | None = None
-    inspection_comment: str | None = None
-
-
-class Inspection(ValidatedModel):
-    inspection_id: Optional[str] = None
-    inspection_comment: Optional[str] = None
-    verified: Optional[bool] = False
-    company: Optional[OrganizationInformation] = OrganizationInformation()
-    manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
-    product: ProductInformation
-    cautions: SubLabel
-    instructions: SubLabel
-    guaranteed_analysis: GuaranteedAnalysis
 
 
 def build_inspection_import(analysis_form: dict) -> str:
@@ -184,13 +87,13 @@ def build_inspection_import(analysis_form: dict) -> str:
 
         npk = extract_npk(analysis_form.get("npk"))
 
-        company = OrganizationInformation(
+        company = LocatedOrganizationInformation(
             name=analysis_form.get("company_name"),
             address=analysis_form.get("company_address"),
             website=analysis_form.get("company_website"),
             phone_number=analysis_form.get("company_phone_number"),
         )
-        manufacturer = OrganizationInformation(
+        manufacturer = LocatedOrganizationInformation(
             name=analysis_form.get("manufacturer_name"),
             address=analysis_form.get("manufacturer_address"),
             website=analysis_form.get("manufacturer_website"),
@@ -364,9 +267,8 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
-        org = organization.get_organizations_info_json(cursor, label_info_id)
-        manufacturer = OrganizationInformation.model_validate(org.get("manufacturer"))
-        company = OrganizationInformation.model_validate(org.get("company"))
+        org = label.get_company_manufacturer_json(cursor, label_info_id)
+        org = CompanyManufacturer.model_validate(org)
 
         # Get all the sub labels
         sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
@@ -387,10 +289,10 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
             inspection_id=str(inspection_id),
             inspection_comment=db_inspection.inspection_comment,
             cautions=cautions,
-            company=company,
+            company=org.company,
             guaranteed_analysis=guaranteed_analysis,
             instructions=instructions,
-            manufacturer=manufacturer,
+            manufacturer=org.manufacturer,
             product=product_info,
             verified=db_inspection.verified,
         )

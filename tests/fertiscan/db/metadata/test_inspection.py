@@ -464,6 +464,7 @@ class test_inspection_export(unittest.TestCase):
             self.cursor, inspection_id, label_id
         )
         inspection_data = json.loads(inspection_data)
+        print("inspection_data", inspection_data["cautions"])
 
         # Assert that both cautions_en and cautions_fr are padded to the same length
         self.assertIsNotNone(inspection_data["cautions"])

@@ -47,4 +47,12 @@ BEGIN
         ('premier_soin','first_aid'),
         ('garanties','warranties');
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM "fertiscan_0.0.16".sub_type WHERE type_fr = 'instructions' AND type_en = 'instructions') THEN
+        INSERT INTO "fertiscan_0.0.16".sub_type(type_fr,type_en) VALUES
+        ('instructions','instructions'),
+        ('mises_en_garde','cautions'),
+        ('premier_soin','first_aid'),
+        ('garanties','warranties');
+    END IF;
 END $$;

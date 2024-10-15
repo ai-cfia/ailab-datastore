@@ -5,9 +5,20 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-import fertiscan.db.queries.label as label
-import fertiscan.db.queries.nutrients as guaranteed
-from fertiscan.db.metadata.inspection import GuaranteedAnalysis
+from fertiscan.db.models import (
+    GuaranteedAnalysis,
+    Location,
+    OrganizationInformation,
+    Province,
+    Region,
+)
+from fertiscan.db.queries import label, nutrients
+from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
+from fertiscan.db.queries.province import create_province
+from fertiscan.db.queries.region import create_region
 
 load_dotenv()
 
@@ -63,16 +74,29 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         }
 
         # Insert test data to obtain a valid label_id
-        sample_org_info = json.dumps(
-            {
-                "name": "Test Company",
-                "address": "123 Test Address",
-                "website": "http://www.testcompany.com",
-                "phone_number": "+1 800 555 0123",
-            }
+        self.province_name = "a-test-province"
+        self.region_name = "test-region"
+        self.name = "test-organization"
+        self.website = "www.test.com"
+        self.phone = "123456789"
+        self.location_name = "test-location"
+        self.location_address = "test-address"
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
+        self.region = Region.model_validate(self.region)
+        self.location = create_location(
+            self.cursor, self.location_name, self.location_address, self.region.id
         )
-        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
-        self.company_info_id = self.cursor.fetchone()[0]
+        self.location = Location.model_validate(self.location)
+        self.company_info = create_organization_information(
+            self.cursor,
+            self.name,
+            self.website,
+            self.phone,
+            self.location.id,
+        )
+        self.company_info = OrganizationInformation.model_validate(self.company_info)
 
         self.label_id = label.new_label_information(
             self.cursor,
@@ -86,8 +110,8 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             None,
             None,
             None,
-            self.company_info_id,
-            self.company_info_id,
+            self.company_info.id,
+            self.company_info.id,
         )
 
     def tearDown(self):
@@ -98,14 +122,14 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
 
     def test_update_guaranteed(self):
         # Insert initial guaranteed analysis
-
+        # TODO: write missing guaranteed functions
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, self.sample_guaranteed),
         )
 
         # Verify that the data is correctly saved
-        basic_data = guaranteed.get_guaranteed_analysis_json(self.cursor, self.label_id)
+        basic_data = nutrients.get_guaranteed_analysis_json(self.cursor, self.label_id)
         basic_data = GuaranteedAnalysis.model_validate(basic_data)
         self.assertEqual(
             len(basic_data.en) + len(basic_data.fr),
@@ -114,13 +138,14 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         )
 
         # Update guaranteed analysis
+        # TODO: write missing guaranteed functions
         self.cursor.execute(
             "SELECT update_guaranteed(%s, %s);",
             (self.label_id, json.dumps(self.updated_guaranteed)),
         )
 
         # Verify that the data is correctly updated
-        updated_data = guaranteed.get_guaranteed_analysis_json(
+        updated_data = nutrients.get_guaranteed_analysis_json(
             self.cursor, self.label_id
         )
         updated_data = GuaranteedAnalysis.model_validate(updated_data)
