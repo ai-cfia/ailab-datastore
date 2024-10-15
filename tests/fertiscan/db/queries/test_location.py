@@ -6,17 +6,27 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import FullLocation, Location, Province, Region
+from fertiscan.db.models import (
+    FullLocation,
+    Location,
+    OrganizationInformation,
+    Province,
+    Region,
+)
 from fertiscan.db.queries.location import (
     create_location,
     delete_location,
     get_full_location,
+    query_locations,
     read_all_locations,
     read_location,
     update_location,
     upsert_location,
 )
-from fertiscan.db.queries.organization import new_organization, new_organization_info
+from fertiscan.db.queries.organization import new_organization
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
 from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
@@ -50,16 +60,17 @@ class TestLocationFunctions(unittest.TestCase):
         self.inspector_id = register_user(self.cursor, "inspector@example.com")
 
         # Create a placeholder organization with necessary info
-        org_info_id = new_organization_info(
+        org_info = create_organization_information(
             self.cursor,
             "Test Organization",
             "https://example.org",
             "123456789",
             None,  # No location yet
         )
+        org_info = OrganizationInformation.model_validate(org_info)
         self.organization_id = new_organization(
             self.cursor,
-            org_info_id,
+            org_info.id,
             None,  # No location yet
         )
 
@@ -97,6 +108,8 @@ class TestLocationFunctions(unittest.TestCase):
         fetched_location = Location.model_validate(fetched_location)
 
         self.assertEqual(fetched_location, created_location)
+        self.assertEqual(fetched_location.name, name)
+        self.assertEqual(fetched_location.address, address)
 
     def test_read_all_locations(self):
         initial_locations = read_all_locations(self.cursor)
@@ -316,6 +329,86 @@ class TestLocationFunctions(unittest.TestCase):
         full_location = get_full_location(self.cursor, invalid_location_id)
 
         self.assertIsNone(full_location)
+
+    def test_query_locations_without_filter(self):
+        # Create two locations
+        location1 = create_location(self.cursor, "Location A", "123 Main St")
+        location2 = create_location(self.cursor, "Location B", "456 Elm St")
+
+        # Query all locations
+        locations = query_locations(self.cursor)
+
+        # Check that the created locations are in the result
+        self.assertGreaterEqual(len(locations), 2)
+        self.assertIn(location1, locations)
+        self.assertIn(location2, locations)
+
+    def test_query_locations_with_name_filter(self):
+        # Create a location with a specific name
+        name = "Specific Location"
+        create_location(self.cursor, name, "789 Maple St")
+
+        # Query locations by name
+        locations = query_locations(self.cursor, name=name)
+
+        # Validate the result
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0]["name"], name)
+
+    def test_query_locations_with_address_filter(self):
+        # Create a location with a specific address
+        address = "Special Address"
+        create_location(self.cursor, "Some Location", address)
+
+        # Query locations by address
+        locations = query_locations(self.cursor, address=address)
+
+        # Validate the result
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0]["address"], address)
+
+    def test_query_locations_with_region_filter(self):
+        # Create a location with a specific region
+        region = create_region(self.cursor, "Region Filter Test", self.province.id)
+        region = Region.model_validate(region)
+        create_location(
+            self.cursor,
+            "Region Location",
+            "111 Oak St",
+            region_id=region.id,
+        )
+
+        # Query locations by region
+        locations = query_locations(self.cursor, region_id=region.id)
+        locations = [Location.model_validate(location) for location in locations]
+
+        # Validate the result
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0].region_id, region.id)
+
+    def test_query_locations_with_owner_filter(self):
+        # Create a location with a specific owner
+        create_location(
+            self.cursor,
+            "Owner Location",
+            "222 Pine St",
+            owner_id=self.organization_id,
+        )
+
+        # Query locations by owner
+        locations = query_locations(self.cursor, owner_id=self.organization_id)
+        locations = [Location.model_validate(location) for location in locations]
+
+        # Validate the result
+        self.assertGreaterEqual(len(locations), 1)
+        self.assertEqual(locations[0].owner_id, self.organization_id)
+
+    def test_query_locations_with_nonexistent_filter(self):
+        # Query with filters that don't match any location
+        locations = query_locations(self.cursor, name="Nonexistent", address="No Way")
+
+        # Validate that the result is empty
+        self.assertEqual(len(locations), 0)
 
 
 if __name__ == "__main__":

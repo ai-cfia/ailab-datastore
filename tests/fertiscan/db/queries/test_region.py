@@ -108,7 +108,7 @@ class TestRegionFunctions(unittest.TestCase):
         self.assertIsNone(fetched_region)
 
     def test_query_region_by_name(self):
-        name = "Test Region G"
+        name = uuid.uuid4().hex
         create_region(self.cursor, name, self.province_id)
 
         result = query_regions(self.cursor, name=name)
@@ -118,14 +118,15 @@ class TestRegionFunctions(unittest.TestCase):
         self.assertEqual(regions[0].name, name)
 
     def test_query_region_by_province_id(self):
-        region = create_region(self.cursor, "Test Region H", self.province_id)
-        validated_region = Region.model_validate(region)
+        name = uuid.uuid4().hex
+        region = create_region(self.cursor, name, self.province_id)
+        region = Region.model_validate(region)
 
         result = query_regions(self.cursor, province_id=self.province_id)
         regions = [Region.model_validate(r) for r in result]
 
         self.assertTrue(len(regions) > 0)
-        self.assertIn(validated_region, regions)
+        self.assertIn(region, regions)
 
     def test_get_full_region(self):
         # Reuse the province created in the setUp method

@@ -7,7 +7,13 @@ from dotenv import load_dotenv
 from psycopg import Connection, connect
 
 from datastore.db.queries.user import register_user
-from fertiscan.db.models import Fertilizer, Location, Province, Region
+from fertiscan.db.models import (
+    Fertilizer,
+    Location,
+    OrganizationInformation,
+    Province,
+    Region,
+)
 from fertiscan.db.queries.fertilizer import (
     create_fertilizer,
     delete_fertilizer,
@@ -19,7 +25,10 @@ from fertiscan.db.queries.fertilizer import (
 )
 from fertiscan.db.queries.inspection import new_inspection
 from fertiscan.db.queries.location import create_location
-from fertiscan.db.queries.organization import new_organization, new_organization_info
+from fertiscan.db.queries.organization import new_organization
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
 from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
@@ -56,15 +65,18 @@ class TestFertilizerFunctions(unittest.TestCase):
             self.cursor, "test-location", "test-address", self.region.id
         )
         self.location = Location.model_validate(self.location)
-        self.organization_info_id = new_organization_info(
+        self.organization_info = create_organization_information(
             self.cursor,
             "test-organization",
             "www.test.com",
             "123456789",
             self.location.id,
         )
+        self.organization_info = OrganizationInformation.model_validate(
+            self.organization_info
+        )
         self.organization_id = new_organization(
-            self.cursor, self.organization_info_id, self.location.id
+            self.cursor, self.organization_info.id, self.location.id
         )
         self.inspection_id = new_inspection(self.cursor, self.inspector_id, None, False)
 

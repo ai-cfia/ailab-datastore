@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from datastore.db.queries import user
 from fertiscan import get_full_inspection_json
 from fertiscan.db.models import (
+    CompanyManufacturer,
     DBInspection,
     Fertilizer,
     GuaranteedAnalysis,
@@ -20,6 +21,8 @@ from fertiscan.db.models import (
 from fertiscan.db.queries import inspection, metric, nutrients, organization
 from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
+from fertiscan.db.queries.label import get_company_manufacturer_json
+from fertiscan.db.queries.organization_information import read_organization_information
 
 load_dotenv()
 
@@ -129,7 +132,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         self.assertListEqual(fertilizers, [])
 
         # Verify the company name was updated in the database
-        organization_info_json = organization.get_organizations_info_json(
+        organization_info_json = get_company_manufacturer_json(
             self.cursor, self.inspection.product.label_id
         )
         company = OrganizationInformation.model_validate(
@@ -216,13 +219,11 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             self.cursor, created_fertilizer.owner_id
         )
         information_id = organization_data[0]
-        organization_information = organization.get_organization_info(
-            self.cursor, information_id
-        )
-        organization_name = organization_information[0]
+        org_info = read_organization_information(self.cursor, information_id)
+        org_info = OrganizationInformation.model_validate(org_info)
 
         self.assertEqual(
-            organization_name,
+            org_info.name,
             altered_inspection.manufacturer.name,
             "The organization's name should match the manufacturer's name in the input model.",
         )
@@ -279,10 +280,12 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify that no organization record was created for the null company or manufacturer
-        org = organization.get_organizations_info_json(
+        org = get_company_manufacturer_json(
             self.cursor, updated_inspection.label_info_id
         )
-        self.assertDictEqual(org, {}, "No organization should exist.")
+        org = CompanyManufacturer.model_validate(org)
+        self.assertIsNone(org.company.id)
+        self.assertIsNone(org.manufacturer.id)
 
     def test_update_inspection_with_missing_company_and_manufacturer(self):
         # Update the inspection model and remove company and manufacturer fields for testing
@@ -317,17 +320,19 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify that no organization record was created for the missing company or manufacturer
-        org = organization.get_organizations_info_json(
-            self.cursor, inspection.label_info_id
-        )
-        self.assertDictEqual(org, {}, "No organization should exist.")
+        org = get_company_manufacturer_json(self.cursor, inspection.label_info_id)
+        org = CompanyManufacturer.model_validate(org)
+        self.assertIsNone(org.company.id)
+        self.assertIsNone(org.manufacturer.id)
 
     # TODO: why is this test failing?
     # def test_update_inspection_with_empty_company_and_manufacturer(self):
     #     # Update the inspection model for testing with empty company and manufacturer
     #     altered_inspection = self.inspection.model_copy()
-    #     altered_inspection.company = OrganizationInformation()  # Empty company
-    #     altered_inspection.manufacturer = OrganizationInformation()  # Empty manuf
+    #     altered_inspection.company = LocatedOrganizationInformation()  # Empty company
+    #     altered_inspection.manufacturer = (
+    #         LocatedOrganizationInformation()
+    #     )  # Empty manuf
     #     altered_inspection.verified = False  # Ensure verified is false
 
     #     # Invoke the update_inspection function
@@ -354,10 +359,10 @@ class TestUpdateInspectionFunction(unittest.TestCase):
     #     )
 
     #     # Verify that no organization record was created for the empty company or manufacturer
-    #     org = organization.get_organizations_info_json(
-    #         self.cursor, inspection.label_info_id
-    #     )
-    #     self.assertDictEqual(org, {}, "No organization should exist.")
+    #     org = get_company_manufacturer_json(self.cursor, inspection.label_info_id)
+    #     org = CompanyManufacturer.model_validate(org)
+    #     self.assertIsNone(org.company.id)
+    #     self.assertIsNone(org.manufacturer.id)
 
 
 if __name__ == "__main__":

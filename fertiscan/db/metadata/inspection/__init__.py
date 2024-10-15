@@ -7,12 +7,13 @@ The metadata is generated in a json format and is used to store the metadata in 
 from pydantic import ValidationError
 
 from fertiscan.db.models import (
+    CompanyManufacturer,
     DBInspection,
     GuaranteedAnalysis,
     Inspection,
+    LocatedOrganizationInformation,
     Metric,
     Metrics,
-    OrganizationInformation,
     ProductInformation,
     SubLabel,
     Title,
@@ -86,13 +87,13 @@ def build_inspection_import(analysis_form: dict) -> str:
 
         npk = extract_npk(analysis_form.get("npk"))
 
-        company = OrganizationInformation(
+        company = LocatedOrganizationInformation(
             name=analysis_form.get("company_name"),
             address=analysis_form.get("company_address"),
             website=analysis_form.get("company_website"),
             phone_number=analysis_form.get("company_phone_number"),
         )
-        manufacturer = OrganizationInformation(
+        manufacturer = LocatedOrganizationInformation(
             name=analysis_form.get("manufacturer_name"),
             address=analysis_form.get("manufacturer_address"),
             website=analysis_form.get("manufacturer_website"),
@@ -266,9 +267,8 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
-        org = organization.get_organizations_info_json(cursor, label_info_id)
-        manufacturer = OrganizationInformation.model_validate(org.get("manufacturer"))
-        company = OrganizationInformation.model_validate(org.get("company"))
+        org = label.get_company_manufacturer_json(cursor, label_info_id)
+        org = CompanyManufacturer.model_validate(org)
 
         # Get all the sub labels
         sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
@@ -289,10 +289,10 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
             inspection_id=str(inspection_id),
             inspection_comment=db_inspection.inspection_comment,
             cautions=cautions,
-            company=company,
+            company=org.company,
             guaranteed_analysis=guaranteed_analysis,
             instructions=instructions,
-            manufacturer=manufacturer,
+            manufacturer=org.manufacturer,
             product=product_info,
             verified=db_inspection.verified,
         )

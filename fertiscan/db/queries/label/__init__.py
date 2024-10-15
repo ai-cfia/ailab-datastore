@@ -2,6 +2,12 @@
 This module represent the function for the table label_information
 """
 
+from uuid import UUID
+
+from psycopg import Cursor
+from psycopg.rows import dict_row
+from psycopg.sql import SQL
+
 
 class LabelInformationNotFoundError(Exception):
     pass
@@ -185,3 +191,13 @@ def get_label_dimension(cursor, label_id):
         return data
     except Exception as e:
         raise e
+
+
+def get_company_manufacturer_json(cursor: Cursor, label_id: str | UUID):
+    """ """
+    query = SQL(
+        "SELECT * FROM label_company_manufacturer_json_view WHERE label_id = %s;"
+    )
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (label_id,))
+        return new_cur.fetchone()

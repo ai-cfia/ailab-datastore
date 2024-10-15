@@ -1,5 +1,6 @@
 import os
 import unittest
+import uuid
 
 from dotenv import load_dotenv
 from psycopg import Connection, connect
@@ -55,6 +56,7 @@ class TestProvinceFunctions(unittest.TestCase):
         fetched_province = Province.model_validate(fetched_province)
 
         self.assertEqual(fetched_province, validated_province)
+        self.assertEqual(fetched_province.name, name)
 
     def test_read_all_provinces(self):
         initial_provinces = read_all_provinces(self.cursor)
@@ -97,7 +99,7 @@ class TestProvinceFunctions(unittest.TestCase):
         self.assertIsNone(fetched_province)
 
     def test_query_province_by_name(self):
-        name = "Test Province G"
+        name = uuid.uuid4().hex
         create_province(self.cursor, name)
 
         result = query_provinces(self.cursor, name=name)
@@ -109,8 +111,8 @@ class TestProvinceFunctions(unittest.TestCase):
     def test_query_province_without_name(self):
         """Test querying provinces without any filter."""
         # Create two provinces for testing
-        province_a = create_province(self.cursor, "Test Province H")
-        province_b = create_province(self.cursor, "Test Province I")
+        province_a = create_province(self.cursor, uuid.uuid4().hex)
+        province_b = create_province(self.cursor, uuid.uuid4().hex)
 
         # Query without any filter
         result = query_provinces(self.cursor)

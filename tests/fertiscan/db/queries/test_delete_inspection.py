@@ -13,11 +13,11 @@ from fertiscan.db.queries import (
     label,
     metric,
     nutrients,
-    organization,
     specification,
     sub_label,
 )
 from fertiscan.db.queries.fertilizer import query_fertilizers
+from fertiscan.db.queries.organization_information import read_organization_information
 
 load_dotenv()
 
@@ -171,13 +171,15 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Ensure that the manufacturer info was not deleted due to foreign key constraints
         self.assertIsNotNone(
-            organization.get_organization_info(self.cursor, self.manufacturer_info_id),
+            read_organization_information(self.cursor, self.manufacturer_info_id),
             "Manufacturer info should not be found after deletion.",
         )
 
         # Ensure that the company info related to the deleted inspection is deleted
-        with self.assertRaises(organization.OrganizationNotFoundError):
-            organization.get_organization_info(self.cursor, self.company_info_id)
+        self.assertIsNone(
+            read_organization_information(self.cursor, self.company_info_id),
+            "Company info should not be found after deletion.",
+        )
 
     def test_delete_inspection_unauthorized(self):
         # Generate a random UUID to simulate an unauthorized inspector

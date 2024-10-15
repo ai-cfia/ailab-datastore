@@ -12,12 +12,21 @@ class ValidatedModel(BaseModel):
         return values
 
 
-class OrganizationInformation(ValidatedModel):
-    id: Optional[str] = None
+class LocatedOrganizationInformation(ValidatedModel):
+    id: str | UUID4 | None = None
     name: Optional[str] = None
     address: Optional[str] = None
     website: Optional[str] = None
     phone_number: Optional[str] = None
+
+
+class OrganizationInformation(ValidatedModel):
+    id: UUID4
+    name: str | None = None
+    website: str | None = None
+    phone_number: str | None = None
+    location_id: UUID4 | None = None
+    edited: bool | None = False
 
 
 class Value(ValidatedModel):
@@ -103,8 +112,10 @@ class Inspection(ValidatedModel):
     inspection_id: Optional[str] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
-    company: Optional[OrganizationInformation] = OrganizationInformation()
-    manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
+    company: Optional[LocatedOrganizationInformation] = LocatedOrganizationInformation()
+    manufacturer: Optional[LocatedOrganizationInformation] = (
+        LocatedOrganizationInformation()
+    )
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
@@ -152,3 +163,10 @@ class FullRegion(ValidatedModel):
     id: UUID4
     name: str
     province_name: str | None = None
+
+
+class CompanyManufacturer(ValidatedModel):
+    company: LocatedOrganizationInformation | None = LocatedOrganizationInformation()
+    manufacturer: LocatedOrganizationInformation | None = (
+        LocatedOrganizationInformation()
+    )

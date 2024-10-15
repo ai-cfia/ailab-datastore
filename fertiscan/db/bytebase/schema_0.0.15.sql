@@ -316,8 +316,52 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     INSERT INTO "fertiscan_0.0.15".sub_type(type_fr,type_en) VALUES
     ('instructions','instructions'),
     ('mises_en_garde','cautions');
- --   ('premier_soin','first_aid'), -- We are not using this anymore
- --   ('garanties','warranties'); -- we are not using this anymore
+    --   ('premier_soin','first_aid'), -- We are not using this anymore
+    --   ('garanties','warranties'); -- we are not using this anymore
+
+
+    -- View to get the located organization information
+    CREATE OR REPLACE VIEW "fertiscan_0.0.15".located_organization_information_view AS
+    SELECT 
+        org_info.id AS id,
+        org_info.name AS name,
+        loc.address AS address,
+        org_info.website AS website,
+        org_info.phone_number AS phone_number
+    FROM 
+        "fertiscan_0.0.15".organization_information org_info
+    LEFT JOIN 
+        "fertiscan_0.0.15".location loc 
+    ON 
+        org_info.location_id = loc.id;
+
+        
+    CREATE OR REPLACE VIEW "fertiscan_0.0.15".label_company_manufacturer_json_view AS
+    SELECT 
+        label_info.id AS label_id,
+        jsonb_build_object(
+            'id', company_info.id,
+            'name', company_info.name,
+            'address', company_info.address,
+            'website', company_info.website,
+            'phone_number', company_info.phone_number
+        ) AS company,
+        jsonb_build_object(
+            'id', manufacturer_info.id,
+            'name', manufacturer_info.name,
+            'address', manufacturer_info.address,
+            'website', manufacturer_info.website,
+            'phone_number', manufacturer_info.phone_number
+        ) AS manufacturer
+    FROM 
+        "fertiscan_0.0.15".label_information label_info
+    LEFT JOIN 
+        "fertiscan_0.0.15".located_organization_information_view company_info 
+        ON label_info.company_info_id = company_info.id
+    LEFT JOIN 
+        "fertiscan_0.0.15".located_organization_information_view manufacturer_info 
+        ON label_info.manufacturer_info_id = manufacturer_info.id;
+     
 end if;
 END
 $do$;

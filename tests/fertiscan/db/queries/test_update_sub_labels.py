@@ -7,9 +7,18 @@ from dotenv import load_dotenv
 
 import fertiscan.db.queries.label as label
 import fertiscan.db.queries.sub_label as sub_label
-from fertiscan.db.models import Inspection, Location, Province, Region, SubLabel
-from fertiscan.db.queries import organization
+from fertiscan.db.models import (
+    Inspection,
+    Location,
+    OrganizationInformation,
+    Province,
+    Region,
+    SubLabel,
+)
 from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
 from fertiscan.db.queries.province import create_province
 from fertiscan.db.queries.region import create_region
 
@@ -106,13 +115,14 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             self.cursor, self.location_name, self.location_address, self.region.id
         )
         self.location = Location.model_validate(self.location)
-        self.company_info_id = organization.new_organization_info(
+        self.company_info = create_organization_information(
             self.cursor,
             self.name,
             self.website,
             self.phone,
             self.location.id,
         )
+        self.company_info = OrganizationInformation.model_validate(self.company_info)
 
         self.label_id = label.new_label_information(
             self.cursor,
@@ -126,8 +136,8 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             None,
             None,
             None,
-            self.company_info_id,
-            self.company_info_id,
+            self.company_info.id,
+            self.company_info.id,
         )
 
     def tearDown(self):

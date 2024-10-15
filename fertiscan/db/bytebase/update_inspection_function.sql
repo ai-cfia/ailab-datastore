@@ -46,14 +46,20 @@ DECLARE
     address_str text;
 BEGIN
     -- Skip processing if the input JSON object is empty or null
-    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
+    IF jsonb_typeof(input_org_info) = 'null' 
+    OR input_org_info = '{}'::jsonb 
+    OR NOT EXISTS (
+        SELECT 1 
+        FROM jsonb_each(input_org_info) 
+        WHERE value IS NOT NULL
+    ) THEN
         RETURN NULL;
     END IF;
     address_str := input_org_info->>'address';
 
     -- CHECK IF ADRESS IS NULL
     IF address_str IS NULL THEN
-        RAISE WARNING 'Address cannot be null';
+        RAISE WARNING 'Address is null. Skipping location upsertion.';
     ELSE 
         -- Check if organization location exists by address
         SELECT id INTO location_id
@@ -61,20 +67,21 @@ BEGIN
         WHERE location.address ILIKE address_str
         LIMIT 1;
             -- Use upsert_location to insert or update the location
-        location_id := upsert_location(location_id, address_str);
+        location_id := upsert_location(location_id, NULL, address_str);
     END IF;
 
     -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
     organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
     -- Upsert organization information
-    INSERT INTO organization_information (id, name, website, phone_number, location_id)
+    INSERT INTO organization_information (id, name, website, phone_number, location_id, edited)
     VALUES (
         organization_info_id,
         input_org_info->>'name',
         input_org_info->>'website',
         input_org_info->>'phone_number',
-        location_id
+        location_id,
+        (input_org_info->>'edited')::boolean
     )
     ON CONFLICT (id) DO UPDATE
     SET name = EXCLUDED.name,
