@@ -196,7 +196,7 @@ class TestOrganizationInformationFunctions(unittest.TestCase):
         created = OrganizationInformation.model_validate(created)
 
         # Create an organization that references the organization information
-        organization.new_organization(self.cursor, created.id, self.location.id)
+        organization.create_organization(self.cursor, created.id, self.location.id)
 
         # Assert that a foreign key violation is raised upon deletion
         with self.assertRaises(ForeignKeyViolation):

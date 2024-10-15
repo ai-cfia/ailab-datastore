@@ -199,38 +199,18 @@ def query_locations(
         return new_cur.fetchall()
 
 
-def get_full_location(cursor: Cursor, location_id: str | UUID):
+def read_full_location(cursor: Cursor, location_id: str | UUID):
     """
-    This function get the full location details from the database.
-    This includes the region and province info of the location.
+    Retrieve full location details from the database using the location view.
 
     Parameters:
-    - cursor (cursor): The cursor of the database.
-    - location_id (str): The UUID of the location.
+    - cursor (Cursor): The database cursor.
+    - location_id (str | UUID): The ID of the location to retrieve.
 
     Returns:
-    - dict: The full location
+    - dict | None: A dictionary with location details or None if not found.
     """
-    query = """
-        SELECT
-            location.id,
-            location.name,
-            location.address,
-            region.name as region_name,
-            province.name as province_name
-        FROM
-            location
-        LEFT JOIN
-            region
-        ON
-            location.region_id = region.id
-        LEFT JOIN
-            province
-        ON
-            region.province_id = province.id
-        WHERE
-            location.id = %s
-        """
+    query = SQL("SELECT * FROM full_location_view WHERE id = %s")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(query, (location_id,))
         return new_cur.fetchone()

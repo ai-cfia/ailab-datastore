@@ -320,7 +320,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     --   ('garanties','warranties'); -- we are not using this anymore
 
 
-    -- View to get the located organization information
+    -- Utility views
     CREATE OR REPLACE VIEW "fertiscan_0.0.16".located_organization_information_view AS
     SELECT 
         org_info.id AS id,
@@ -361,7 +361,49 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     LEFT JOIN 
         "fertiscan_0.0.16".located_organization_information_view manufacturer_info 
         ON label_info.manufacturer_info_id = manufacturer_info.id;
-     
+
+
+    CREATE OR REPLACE VIEW "fertiscan_0.0.16".full_location_view AS
+    SELECT
+        location.id AS id,
+        location.name AS name,
+        location.address AS address,
+        location.owner_id AS owner_id,
+        region.id AS region_id,
+        region.name AS region_name,
+        province.id AS province_id,
+        province.name AS province_name
+    FROM
+        "fertiscan_0.0.16".location
+    LEFT JOIN
+        "fertiscan_0.0.16".region ON location.region_id = region.id
+    LEFT JOIN
+        "fertiscan_0.0.16".province ON region.province_id = province.id;
+
+
+    CREATE OR REPLACE VIEW "fertiscan_0.0.16".full_organization_view AS
+    SELECT 
+        organization.id, 
+        information.name, 
+        information.website, 
+        information.phone_number,
+        location.id AS location_id, 
+        location.name AS location_name,
+        location.address AS location_address,
+        location.region_id AS region_id,
+        location.region_name AS region_name,
+        location.province_id AS province_id,
+        location.province_name AS province_name
+    FROM
+        "fertiscan_0.0.16".organization AS organization
+    LEFT JOIN
+        "fertiscan_0.0.16".organization_information AS information 
+        ON organization.information_id = information.id
+    LEFT JOIN
+        "fertiscan_0.0.16".full_location_view AS location 
+        ON organization.main_location_id = location.id;
+
+
 end if;
 END
 $do$;

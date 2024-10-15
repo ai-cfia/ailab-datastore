@@ -9,7 +9,13 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
-from fertiscan.db.models import Location, OrganizationInformation, Province, Region
+from fertiscan.db.models import (
+    FullOrganization,
+    Location,
+    OrganizationInformation,
+    Province,
+    Region,
+)
 from fertiscan.db.queries import organization
 from fertiscan.db.queries.location import create_location
 from fertiscan.db.queries.organization_information import (
@@ -58,17 +64,19 @@ class test_organization(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_new_organization(self):
-        organization_id = organization.new_organization(
+        organization_id = organization.create_organization(
             self.cursor, self.org_info.id, self.location.id
         )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
     def test_new_organization_no_location(self):
-        organization_id = organization.new_organization(self.cursor, self.org_info.id)
+        organization_id = organization.create_organization(
+            self.cursor, self.org_info.id
+        )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
     def test_update_organization(self):
-        organization_id = organization.new_organization(
+        organization_id = organization.create_organization(
             self.cursor, self.org_info.id, self.location.id
         )
         new_location = create_location(
@@ -78,31 +86,32 @@ class test_organization(unittest.TestCase):
         organization.update_organization(
             self.cursor, organization_id, self.org_info.id, new_location.id
         )
-        organization_data = organization.get_organization(self.cursor, organization_id)
+        organization_data = organization.read_organization(self.cursor, organization_id)
         self.assertEqual(organization_data[0], self.org_info.id)
         self.assertEqual(organization_data[1], new_location.id)
 
     def test_get_organization(self):
-        organization_id = organization.new_organization(
+        organization_id = organization.create_organization(
             self.cursor, self.org_info.id, self.location.id
         )
-        organization_data = organization.get_organization(self.cursor, organization_id)
+        organization_data = organization.read_organization(self.cursor, organization_id)
         self.assertEqual(organization_data[0], self.org_info.id)
         self.assertEqual(organization_data[1], self.location.id)
 
     def test_get_organization_not_found(self):
         with self.assertRaises(organization.OrganizationNotFoundError):
-            organization.get_organization(self.cursor, str(uuid.uuid4()))
+            organization.read_organization(self.cursor, str(uuid.uuid4()))
 
     def test_get_full_organization(self):
-        organization_id = organization.new_organization(
+        organization_id = organization.create_organization(
             self.cursor, self.org_info.id, self.location.id
         )
-        organization_data = organization.get_full_organization(
+        organization_data = organization.read_full_organization(
             self.cursor, organization_id
         )
-        self.assertEqual(organization_data[0], organization_id)
-        self.assertEqual(organization_data[1], self.name)
-        self.assertEqual(organization_data[5], self.location_name)
-        self.assertEqual(organization_data[8], self.region_name)
-        self.assertEqual(organization_data[10], self.province_name)
+        full_organization = FullOrganization.model_validate(organization_data)
+        self.assertEqual(full_organization.id, organization_id)
+        self.assertEqual(full_organization.name, self.name)
+        self.assertEqual(full_organization.location_name, self.location_name)
+        self.assertEqual(full_organization.region_name, self.region_name)
+        self.assertEqual(full_organization.province_name, self.province_name)

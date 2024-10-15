@@ -4,6 +4,11 @@ This module represent the function for the table organization and its children t
 
 """
 
+from uuid import UUID
+
+from psycopg import Cursor
+from psycopg.rows import dict_row
+
 
 class OrganizationCreationError(Exception):
     pass
@@ -17,7 +22,7 @@ class OrganizationUpdateError(Exception):
     pass
 
 
-def new_organization(cursor, information_id, location_id=None):
+def create_organization(cursor, information_id, location_id=None):
     """
     This function create a new organization in the database.
 
@@ -107,7 +112,7 @@ def update_organization(cursor, organization_id, information_id, location_id):
         )
 
 
-def get_organization(cursor, organization_id):
+def read_organization(cursor, organization_id):
     """
     This function get a organization from the database.
 
@@ -141,54 +146,18 @@ def get_organization(cursor, organization_id):
         raise Exception("Datastore organization unhandeled error" + e.__str__())
 
 
-def get_full_organization(cursor, org_id):
+def read_full_organization(cursor: Cursor, id: str | UUID):
     """
-    This function get the full organization details from the database.
-    This includes the location, region and province info of the organization.
+    Retrieve full organization details from the database using the organization view.
 
     Parameters:
-    - cursor (cursor): The cursor of the database.
-    - org_id (str): The UUID of the organization.
+    - cursor (Cursor): The database cursor.
+    - organization_id (str | UUID): The ID of the organization to retrieve.
 
     Returns:
-    - dict: The organization
+    - dict | None: A dictionary with organization details or None if not found.
     """
-    try:
-        query = """
-            SELECT 
-                organization.id, 
-                information.name, 
-                information.website, 
-                information.phone_number,
-                location.id, 
-                location.name,
-                location.address,
-                region.id,
-                region.name,
-                province.id,
-                province.name
-            FROM
-                organization
-            LEFT JOIN
-                organization_information as information
-            ON
-                organization.information_id = information.id
-            LEFT JOIN
-                location
-            ON
-                organization.main_location_id = location.id
-            LEFT JOIN
-                region
-            ON
-                location.region_id = region.id
-            LEFT JOIN
-                province
-            ON
-                region.province_id = province.id
-            WHERE 
-                organization.id = %s
-            """
-        cursor.execute(query, (org_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore organization unhandeled error" + e.__str__())
+    query = "SELECT * FROM full_organization_view WHERE id = %s"
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (id,))
+        return new_cur.fetchone()

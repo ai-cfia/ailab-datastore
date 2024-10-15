@@ -16,14 +16,14 @@ from fertiscan.db.models import (
 from fertiscan.db.queries.location import (
     create_location,
     delete_location,
-    get_full_location,
     query_locations,
     read_all_locations,
+    read_full_location,
     read_location,
     update_location,
     upsert_location,
 )
-from fertiscan.db.queries.organization import new_organization
+from fertiscan.db.queries.organization import create_organization
 from fertiscan.db.queries.organization_information import (
     create_organization_information,
 )
@@ -68,7 +68,7 @@ class TestLocationFunctions(unittest.TestCase):
             None,  # No location yet
         )
         org_info = OrganizationInformation.model_validate(org_info)
-        self.organization_id = new_organization(
+        self.organization_id = create_organization(
             self.cursor,
             org_info.id,
             None,  # No location yet
@@ -294,7 +294,7 @@ class TestLocationFunctions(unittest.TestCase):
         )
 
         # Fetch full location details
-        full_location = get_full_location(self.cursor, location_id)
+        full_location = read_full_location(self.cursor, location_id)
         full_location = FullLocation.model_validate(full_location)
 
         self.assertIsNotNone(full_location)
@@ -311,7 +311,7 @@ class TestLocationFunctions(unittest.TestCase):
         location_id = upsert_location(self.cursor, address, name=name)
 
         # Fetch full location details
-        full_location = get_full_location(self.cursor, location_id)
+        full_location = read_full_location(self.cursor, location_id)
         full_location = FullLocation.model_validate(full_location)
 
         self.assertIsNotNone(full_location)
@@ -326,7 +326,7 @@ class TestLocationFunctions(unittest.TestCase):
         invalid_location_id = uuid.uuid4()
 
         # Ensure that no location is returned for the invalid ID
-        full_location = get_full_location(self.cursor, invalid_location_id)
+        full_location = read_full_location(self.cursor, invalid_location_id)
 
         self.assertIsNone(full_location)
 

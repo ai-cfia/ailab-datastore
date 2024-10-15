@@ -154,6 +154,7 @@ class test_label(unittest.TestCase):
             self.cursor, label_id
         )
         company_manufacturer = CompanyManufacturer.model_validate(company_manufacturer)
+        print("company_manufacturer", company_manufacturer)
 
         # Verify that the company and manufacturer are correctly retrieved
         self.assertIsNotNone(company_manufacturer.company)

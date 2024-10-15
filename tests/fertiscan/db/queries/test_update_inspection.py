@@ -215,7 +215,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Check if the owner_id matches the organization information created for the manufacturer
-        organization_data = organization.get_organization(
+        organization_data = organization.read_organization(
             self.cursor, created_fertilizer.owner_id
         )
         information_id = organization_data[0]

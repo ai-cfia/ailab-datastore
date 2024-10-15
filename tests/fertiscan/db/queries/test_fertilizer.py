@@ -25,7 +25,7 @@ from fertiscan.db.queries.fertilizer import (
 )
 from fertiscan.db.queries.inspection import new_inspection
 from fertiscan.db.queries.location import create_location
-from fertiscan.db.queries.organization import new_organization
+from fertiscan.db.queries.organization import create_organization
 from fertiscan.db.queries.organization_information import (
     create_organization_information,
 )
@@ -75,7 +75,7 @@ class TestFertilizerFunctions(unittest.TestCase):
         self.organization_info = OrganizationInformation.model_validate(
             self.organization_info
         )
-        self.organization_id = new_organization(
+        self.organization_id = create_organization(
             self.cursor, self.organization_info.id, self.location.id
         )
         self.inspection_id = new_inspection(self.cursor, self.inspector_id, None, False)

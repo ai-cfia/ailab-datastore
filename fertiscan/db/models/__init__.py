@@ -153,9 +153,12 @@ class Province(ValidatedModel):
 
 class FullLocation(ValidatedModel):
     id: UUID4
-    name: str
-    address: str | None = None
+    name: str | None = None
+    address: str
+    owner_id: UUID4 | None = None
+    region_id: UUID4 | None = None
     region_name: str | None = None
+    province_id: int | None = None
     province_name: str | None = None
 
 
@@ -170,3 +173,17 @@ class CompanyManufacturer(ValidatedModel):
     manufacturer: LocatedOrganizationInformation | None = (
         LocatedOrganizationInformation()
     )
+
+
+class FullOrganization(ValidatedModel):
+    id: UUID4
+    name: str | None = None
+    website: str | None = None
+    phone_number: str | None = None
+    location_id: UUID4 | None = None
+    location_name: str | None = None
+    location_address: str | None = None
+    region_id: UUID4 | None = None
+    region_name: str | None = None
+    province_id: int | None = None
+    province_name: str | None = None
