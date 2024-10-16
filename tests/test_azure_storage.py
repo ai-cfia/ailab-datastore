@@ -16,6 +16,8 @@ from datastore.blob.azure_storage_api import (
     GetBlobError,
     GetFolderUUIDError,
     MountContainerError,
+    build_blob_name,
+    build_container_name,
     create_folder,
     generate_hash,
     get_blob,
@@ -39,6 +41,31 @@ if BLOB_ACCOUNT is None or BLOB_ACCOUNT == "":
 BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
+
+class TestBuildContainerNameFunction(unittest.TestCase):
+    def setUp(self):
+        self.tier = "test-user"
+        self.container_uuid = str(uuid.uuid4())
+
+    def test_build_container_name(self):
+        result = build_container_name(self.container_uuid,self.tier)
+        expected_result = "{}-{}".format(self.tier,self.container_uuid)
+        self.assertEqual(result, expected_result)
+
+class TestBuildBlobNameFunction(unittest.TestCase):
+    def setUp(self):
+        self.tier = "test-user"
+        self.container_uuid = str(uuid.uuid4())
+        self.blob_name = "test_blob"
+        self.blob_type="png"
+        self.container_name = build_container_name(self.container_uuid,self.tier)
+        self.folder_name = "test_folder"
+        self.folder_path = "{}/{}".format(self.container_name,self.folder_name)
+
+    def test_build_blob_name(self):
+        result = build_blob_name(self.folder_path,self.blob_name,self.blob_type)
+        expected_blob_path = "{}/{}.{}".format(self.folder_path,self.blob_name,self.blob_type)
+        self.assertEqual(result, expected_blob_path)
 
 
 class TestMountContainerFunction(unittest.TestCase):
