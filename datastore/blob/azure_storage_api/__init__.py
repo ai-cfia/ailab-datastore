@@ -56,30 +56,30 @@ def build_container_name(name:str,tier:str="user"):
     We include a tier to better structure the container names in the future. Other tiers could be 'dev' or 'test-user'
 
     Parameters:
-    - tier (str): the tier of the container; Default is 'user'
     - name (str): the name of the container. Usually the user uuid
+    - tier (str): the tier of the container; Default is 'user'
     """
     if not name:
         raise ValueError("Name is required")
     return "{}-{}".format(tier, name)
 
-def build_blob_name(folder_name:str, blob_name:str,file_type:str=None):
+def build_blob_name(folder_path:str, blob_name:str,file_type:str=None):
     """
     This function builds the blob name based on the folder name and the image uuid
 
     Parameters:
-    - folder_name (str): the name of the folder or the path to the folder
+    - folder_path (str): The path to the folder
     - blob_name (str): Usually the uuid of the image
     - file_type (str): the type of the file (ex: png, jpg, json)
     """
-    if not folder_name:
+    if not folder_path:
         raise ValueError("Folder name is required")
     if not blob_name:
         raise ValueError("Image uuid is required")
     if file_type:
-        return "{}/{}.{}".format(folder_name, blob_name, file_type)
+        return "{}/{}.{}".format(folder_path, blob_name, file_type)
     else:
-        return "{}/{}".format(folder_name, blob_name)
+        return "{}/{}".format(folder_path, blob_name)
 
 async def mount_container(
     connection_string,
