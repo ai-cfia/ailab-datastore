@@ -184,7 +184,7 @@ def get_label_dimension(cursor, label_id):
     cursor.execute(query, (label_id,))
     data = cursor.fetchone()
     if data is None or data[0] is None:
-        raise LabelInformationNotFoundError(
+        raise LabelInformationQueryError(
             "Error: could not get the label dimension for label: " + str(label_id)
         )
     return data
