@@ -9,28 +9,21 @@ from typing import List, Optional
 
 from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
+from fertiscan.db.metadata.errors import (
+    BuildInspectionExportError,
+    BuildInspectionImportError,
+    MetadataError,
+    NPKError,
+)
 from fertiscan.db.queries import (
-    ingredient,
     inspection,
     label,
     metric,
     nutrients,
     organization,
-    specification,
     sub_label,
 )
-
-
-class MissingKeyError(Exception):
-    pass
-
-
-class NPKError(Exception):
-    pass
-
-
-class MetadataFormattingError(Exception):
-    pass
+from fertiscan.db.queries.errors import QueryError
 
 
 class ValidatedModel(BaseModel):
@@ -180,7 +173,9 @@ def build_inspection_import(analysis_form: dict) -> str:
             if key not in analysis_form:
                 missing_keys.append(key)
         if len(missing_keys) > 0:
-            raise MissingKeyError(missing_keys)
+            raise BuildInspectionImportError(
+                f"The analysis form is missing keys: {missing_keys}"
+            )
 
         npk = extract_npk(analysis_form.get("npk"))
 
@@ -335,16 +330,13 @@ def build_inspection_import(analysis_form: dict) -> str:
             guaranteed_analysis=guaranteed,
         )
         Inspection(**inspection_formatted.model_dump())
-    except MissingKeyError as e:
-        raise MissingKeyError("Missing keys:" + str(e))
+        return inspection_formatted.model_dump_json()
+    except MetadataError:
+        raise
     except ValidationError as e:
-        print(analysis_form.get("cautions_en", []))
-        print(analysis_form.get("cautions_fr", []))
-        raise MetadataFormattingError(
-            "Error InspectionCreationError not created: " + str(e)
-        ) from None
-    # print(inspection_formatted.model_dump_json())
-    return inspection_formatted.model_dump_json()
+        raise BuildInspectionImportError(f"Validation error: {e}") from e
+    except Exception as e:
+        raise BuildInspectionImportError(f"Unexpected error: {e}") from e
 
 
 def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
@@ -396,21 +388,10 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         )
 
         return inspection_formatted.model_dump_json()
-    except (
-        label.LabelInformationNotFoundError
-        or metric.MetricNotFoundError
-        or organization.OrganizationNotFoundError
-        or sub_label.SubLabelNotFoundError
-        or ingredient.IngredientNotFoundError
-        or nutrients.MicronutrientNotFoundError
-        or nutrients.GuaranteedNotFoundError
-        or specification.SpecificationNotFoundError
-    ):
-        raise
+    except QueryError as e:
+        raise BuildInspectionExportError(f"Error fetching data: {e}") from e
     except Exception as e:
-        raise MetadataFormattingError(
-            "Error Inspection Form not created: " + str(e)
-        ) from e
+        raise BuildInspectionImportError(f"Unexpected error: {e}") from e
 
 
 def split_value_unit(value_unit: str) -> dict:
@@ -452,22 +433,27 @@ def extract_npk(npk: str):
     Returns:
     - A list containing the npk values.
     """
-    if npk is None or npk == "" or len(npk) < 5:
-        return [None, None, None]
-    npk_formated = npk.replace("N", "-")
-    npk_formated = npk_formated.replace("P", "-")
-    npk_formated = npk_formated.replace("K", "-")
-    npk_reformated = npk.split("-")
-    for i in range(len(npk_reformated)):
-        if not npk_reformated[i].isnumeric():
-            NPKError(
-                "NPK values must be numeric. Issue with: "
-                + npk_reformated[i]
-                + "in the NPK string: "
-                + npk
-            )
-    return [
-        float(npk_reformated[0]),
-        float(npk_reformated[1]),
-        float(npk_reformated[2]),
-    ]
+    try:
+        if npk is None or npk == "" or len(npk) < 5:
+            return [None, None, None]
+        npk_formated = npk.replace("N", "-")
+        npk_formated = npk_formated.replace("P", "-")
+        npk_formated = npk_formated.replace("K", "-")
+        npk_reformated = npk.split("-")
+        for i in range(len(npk_reformated)):
+            if not npk_reformated[i].isnumeric():
+                NPKError(
+                    "NPK values must be numeric. Issue with: "
+                    + npk_reformated[i]
+                    + "in the NPK string: "
+                    + npk
+                )
+        return [
+            float(npk_reformated[0]),
+            float(npk_reformated[1]),
+            float(npk_reformated[2]),
+        ]
+    except NPKError:
+        raise
+    except Exception as e:
+        raise NPKError(f"Unexpected error: {e}") from e

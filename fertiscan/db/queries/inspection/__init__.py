@@ -6,32 +6,23 @@ This module represent the function for the table inspection:
 import json
 from uuid import UUID
 
-from psycopg import Cursor, DatabaseError, Error, OperationalError
+from psycopg import Cursor
 from psycopg.rows import dict_row
 from psycopg.sql import SQL
 
-
-class InspectionCreationError(Exception):
-    pass
-
-
-class InspectionUpdateError(Exception):
-    pass
-
-
-class InspectionRetrievalError(Exception):
-    pass
+from fertiscan.db.queries.errors import (
+    InspectionCreationError,
+    InspectionDeleteError,
+    InspectionNotFoundError,
+    InspectionQueryError,
+    InspectionRetrievalError,
+    InspectionUpdateError,
+    handle_query_errors,
+)
 
 
-class InspectionDeleteError(Exception):
-    pass
-
-
-class InspectionNotFoundError(Exception):
-    pass
-
-
-def new_inspection(cursor, user_id, picture_set_id, verified=False):
+@handle_query_errors(InspectionCreationError)
+def new_inspection(cursor: Cursor, user_id, picture_set_id, verified=False):
     """
     This function uploads a new inspection to the database.
 
@@ -45,25 +36,25 @@ def new_inspection(cursor, user_id, picture_set_id, verified=False):
     - The UUID of the inspection.
     """
 
-    try:
-        query = """
-            INSERT INTO inspection (
-                inspector_id,
-                picture_set_id,
-                verified
-                )
-            VALUES 
-                (%s, %s, %s)
-            RETURNING 
-                id
-            """
-        cursor.execute(query, (user_id, picture_set_id, verified))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise InspectionCreationError("Datastore inspection unhandeled error")
+    query = """
+        INSERT INTO inspection (
+            inspector_id,
+            picture_set_id,
+            verified
+            )
+        VALUES 
+            (%s, %s, %s)
+        RETURNING 
+            id
+        """
+    cursor.execute(query, (user_id, picture_set_id, verified))
+    if result := cursor.fetchone():
+        return result[0]
+    raise InspectionCreationError("Failed to create inspection. No data returned.")
 
 
-def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
+@handle_query_errors(InspectionCreationError)
+def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, label_json):
     """
     This function calls the new_inspection function within the database and adds the label information to the inspection.
 
@@ -77,17 +68,15 @@ def new_inspection_with_label_info(cursor, user_id, picture_set_id, label_json):
     Returns:
     - The json with ids of the inspection and the label information.
     """
-    try:
-        query = """
-            SELECT new_inspection(%s, %s, %s)
-            """
-        cursor.execute(query, (user_id, picture_set_id, label_json))
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise InspectionCreationError(e.__str__())
+    query = """
+        SELECT new_inspection(%s, %s, %s)
+        """
+    cursor.execute(query, (user_id, picture_set_id, label_json))
+    return cursor.fetchone()[0]
 
 
-def is_a_inspection_id(cursor, inspection_id):
+@handle_query_errors(InspectionQueryError)
+def is_a_inspection_id(cursor: Cursor, inspection_id) -> bool:
     """
     This function checks if the inspection exists in the database.
 
@@ -99,25 +88,23 @@ def is_a_inspection_id(cursor, inspection_id):
     - The value if the inspection exists.
     """
 
-    try:
-        query = """
-            SELECT 
-                EXISTS(
-                    SELECT 
-                        1
-                    FROM 
-                        inspection
-                    WHERE 
-                        id = %s
-                )
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            EXISTS(
+                SELECT 
+                    1
+                FROM 
+                    inspection
+                WHERE 
+                    id = %s
+            )
+        """
+    cursor.execute(query, (inspection_id,))
+    return cursor.fetchone()[0]
 
 
-def is_inspection_verified(cursor, inspection_id):
+@handle_query_errors(InspectionQueryError)
+def is_inspection_verified(cursor: Cursor, inspection_id):
     """
     This function checks if the inspection has been verified.
 
@@ -129,22 +116,24 @@ def is_inspection_verified(cursor, inspection_id):
     - The value if the inspection has been verified.
     """
 
-    try:
-        query = """
-            SELECT 
-                verified
-            FROM 
-                inspection
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()[0]
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            verified
+        FROM 
+            inspection
+        WHERE 
+            id = %s
+        """
+    cursor.execute(query, (inspection_id,))
+    if result := cursor.fetchone():
+        return result[0]
+    raise InspectionNotFoundError(
+        "Failed to check inspection verification status. No data returned."
+    )
 
 
-def get_inspection(cursor, inspection_id):
+@handle_query_errors(InspectionRetrievalError)
+def get_inspection(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -156,30 +145,28 @@ def get_inspection(cursor, inspection_id):
     - The inspection.
     """
 
-    try:
-        query = """
-            SELECT 
-                verified,
-                upload_date,
-                updated_at,
-                inspector_id,
-                label_info_id,
-                sample_id,
-                picture_set_id,
-                fertilizer_id,
-                inspection_comment
-            FROM 
-                inspection
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            verified,
+            upload_date,
+            updated_at,
+            inspector_id,
+            label_info_id,
+            sample_id,
+            picture_set_id,
+            fertilizer_id,
+            inspection_comment
+        FROM 
+            inspection
+        WHERE 
+            id = %s
+        """
+    cursor.execute(query, (inspection_id,))
+    return cursor.fetchone()
 
 
-def get_inspection_dict(cursor: Cursor, inspection_id: str):
+@handle_query_errors(InspectionRetrievalError)
+def get_inspection_dict(cursor: Cursor, inspection_id: str | UUID):
     """
     This function fetches the inspection by its ID from the database.
 
@@ -190,14 +177,14 @@ def get_inspection_dict(cursor: Cursor, inspection_id: str):
     Returns:
     - The inspection as a dictionary, or None if no record is found.
     """
-
     with cursor.connection.cursor(row_factory=dict_row) as dict_cursor:
         query = SQL("SELECT * FROM inspection WHERE id = %s")
         dict_cursor.execute(query, (inspection_id,))
         return dict_cursor.fetchone()
 
 
-def get_inspection_original_dataset(cursor, inspection_id):
+@handle_query_errors(InspectionQueryError)
+def get_inspection_original_dataset(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -209,22 +196,20 @@ def get_inspection_original_dataset(cursor, inspection_id):
     - The inspection.
     """
 
-    try:
-        query = """
-            SELECT 
-                original_dataset
-            FROM 
-                inspection_factial
-            WHERE 
-                inspection_id = %s
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            original_dataset
+        FROM 
+            inspection_factial
+        WHERE 
+            inspection_id = %s
+        """
+    cursor.execute(query, (inspection_id,))
+    return cursor.fetchone()
 
 
-def get_inspection_fk(cursor, inspection_id):
+@handle_query_errors(InspectionQueryError)
+def get_inspection_fk(cursor: Cursor, inspection_id):
     """
     This function gets the foreign keys of the inspection from the database.
 
@@ -245,32 +230,30 @@ def get_inspection_fk(cursor, inspection_id):
     ]
     """
 
-    try:
-        query = """
-            SELECT 
-                inspection.label_info_id,
-                inspection.inspector_id,
-                inspection.picture_set_id,
-                label_info.company_info_id,
-                label_info.manufacturer_info_id,
-                inspection.fertilizer_id,
-                inspection.sample_id
-            FROM 
-                inspection
-            LEFT JOIN
-                label_information as label_info
-            ON
-                inspection.label_info_id = label_info.id
-            WHERE 
-                inspection.id = %s
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            inspection.label_info_id,
+            inspection.inspector_id,
+            inspection.picture_set_id,
+            label_info.company_info_id,
+            label_info.manufacturer_info_id,
+            inspection.fertilizer_id,
+            inspection.sample_id
+        FROM 
+            inspection
+        LEFT JOIN
+            label_information as label_info
+        ON
+            inspection.label_info_id = label_info.id
+        WHERE 
+            inspection.id = %s
+        """
+    cursor.execute(query, (inspection_id,))
+    return cursor.fetchone()
 
 
-def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
+@handle_query_errors(InspectionRetrievalError)
+def get_all_user_inspection_filter_verified(cursor: Cursor, user_id, verified: bool):
     """
     This function gets all the unverified inspection of a user from the database.
 
@@ -282,45 +265,43 @@ def get_all_user_inspection_filter_verified(cursor, user_id, verified: bool):
     - The inspection.
     """
 
-    try:
-        query = """
-            SELECT 
-                inspection.id as inspection_id,
-                inspection.upload_date as upload_date,
-                inspection.updated_at as updated_at,
-                inspection.sample_id as sample_id,
-                inspection.picture_set_id as picture_set_id,
-                label_info.id as label_info_id,
-                label_info.product_name as product_name,
-                label_info.manufacturer_info_id as manufacturer_info_id,
-                company_info.id as company_info_id,
-                company_info.name as company_name
-            FROM 
-                inspection
-            LEFT JOIN 
-                label_information as label_info
-            ON
-                inspection.label_info_id = label_info.id
-            LEFT JOIN
-                organization_information as company_info
-            ON
-                label_info.company_info_id = company_info.id
-            WHERE 
-                inspection.inspector_id = %s AND inspection.verified = %s
-            """
-        cursor.execute(
-            query,
-            (
-                user_id,
-                verified,
-            ),
-        )
-        return cursor.fetchall()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            inspection.id as inspection_id,
+            inspection.upload_date as upload_date,
+            inspection.updated_at as updated_at,
+            inspection.sample_id as sample_id,
+            inspection.picture_set_id as picture_set_id,
+            label_info.id as label_info_id,
+            label_info.product_name as product_name,
+            label_info.manufacturer_info_id as manufacturer_info_id,
+            company_info.id as company_info_id,
+            company_info.name as company_name
+        FROM 
+            inspection
+        LEFT JOIN 
+            label_information as label_info
+        ON
+            inspection.label_info_id = label_info.id
+        LEFT JOIN
+            organization_information as company_info
+        ON
+            label_info.company_info_id = company_info.id
+        WHERE 
+            inspection.inspector_id = %s AND inspection.verified = %s
+        """
+    cursor.execute(
+        query,
+        (
+            user_id,
+            verified,
+        ),
+    )
+    return cursor.fetchall()
 
 
-def get_all_user_inspection(cursor, user_id):
+@handle_query_errors(InspectionRetrievalError)
+def get_all_user_inspection(cursor: Cursor, user_id):
     """
     This function gets all the inspection of a user from the database.
 
@@ -332,30 +313,28 @@ def get_all_user_inspection(cursor, user_id):
     - The inspection.
     """
 
-    try:
-        query = """
-            SELECT 
-                id,
-                verified,
-                upload_date,
-                updated_at,
-                label_info_id,
-                sample_id,
-                picture_set_id,
-                fertilizer_id
-            FROM 
-                inspection
-            WHERE 
-                inspector_id = %s
-            """
-        cursor.execute(query, (user_id,))
-        return cursor.fetchall()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            id,
+            verified,
+            upload_date,
+            updated_at,
+            label_info_id,
+            sample_id,
+            picture_set_id,
+            fertilizer_id
+        FROM 
+            inspection
+        WHERE 
+            inspector_id = %s
+        """
+    cursor.execute(query, (user_id,))
+    return cursor.fetchall()
 
 
 # Deprecated
-def get_all_organization_inspection(cursor, org_id):
+@handle_query_errors(InspectionRetrievalError)
+def get_all_organization_inspection(cursor: Cursor, org_id):
     """
     This function gets all the inspection of an organization from the database.
 
@@ -367,29 +346,27 @@ def get_all_organization_inspection(cursor, org_id):
     - The inspection.
     """
 
-    try:
-        query = """
-            SELECT 
-                id,
-                verified,
-                upload_date,
-                updated_at,
-                inspector_id,
-                label_info_id,
-                sample_id,
-                picture_set_id,
-                fertilizer_id
-            FROM 
-                inspection
-            WHERE 
-                company_id = %s OR manufacturer_id = %s
-            """
-        cursor.execute(query, (org_id, org_id))
-        return cursor.fetchall()
-    except Exception as e:
-        raise Exception("Datastore inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            id,
+            verified,
+            upload_date,
+            updated_at,
+            inspector_id,
+            label_info_id,
+            sample_id,
+            picture_set_id,
+            fertilizer_id
+        FROM 
+            inspection
+        WHERE 
+            company_id = %s OR manufacturer_id = %s
+        """
+    cursor.execute(query, (org_id, org_id))
+    return cursor.fetchall()
 
 
+@handle_query_errors(InspectionUpdateError)
 def update_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
@@ -411,27 +388,16 @@ def update_inspection(
     Raises:
     - InspectionUpdateError: Custom error for handling specific update issues.
     """
-    try:
-        # Prepare and execute the SQL function call
-        query = SQL("SELECT update_inspection(%s, %s, %s)")
-        cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
-        result = cursor.fetchone()
+    # Prepare and execute the SQL function call
+    query = SQL("SELECT update_inspection(%s, %s, %s)")
+    cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
 
-        if result is None:
-            raise InspectionUpdateError(
-                "Failed to update inspection. No data returned."
-            )
-
+    if result := cursor.fetchone():
         return result[0]
-
-    except (Error, DatabaseError, OperationalError) as e:
-        raise InspectionUpdateError(f"Database error occurred: {str(e)}") from e
-    except (ValueError, TypeError) as e:
-        raise InspectionUpdateError(f"Invalid input: {str(e)}") from e
-    except Exception as e:
-        raise InspectionUpdateError(f"Unexpected error: {str(e)}") from e
+    raise InspectionUpdateError("Failed to update inspection. No data returned.")
 
 
+@handle_query_errors(InspectionDeleteError)
 def delete_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
@@ -451,25 +417,16 @@ def delete_inspection(
     Raises:
     - InspectionDeleteError: Custom error for handling specific delete issues.
     """
-    try:
-        query = SQL("SELECT delete_inspection(%s, %s);")
-        cursor.execute(query, (inspection_id, user_id))
-        result = cursor.fetchone()
+    query = SQL("SELECT delete_inspection(%s, %s);")
+    cursor.execute(query, (inspection_id, user_id))
 
-        if result is None:
-            raise InspectionDeleteError(
-                "Failed to delete inspection. No data returned."
-            )
-
+    if result := cursor.fetchone():
         return result[0]
-
-    except (Error, DatabaseError, OperationalError) as e:
-        raise InspectionDeleteError(f"Database error occurred: {str(e)}") from e
-    except Exception as e:
-        raise InspectionDeleteError(f"Unexpected error: {str(e)}") from e
+    raise InspectionDeleteError("Failed to delete inspection. No data returned.")
 
 
-def get_inspection_factual(cursor, inspection_id):
+@handle_query_errors(InspectionQueryError)
+def get_inspection_factual(cursor: Cursor, inspection_id):
     """
     This function gets the inspection from the database.
 
@@ -482,23 +439,20 @@ def get_inspection_factual(cursor, inspection_id):
     """
     if not is_a_inspection_id(cursor, inspection_id):
         raise InspectionNotFoundError(f"Inspection with id {inspection_id} not found")
-    try:
-        query = """
-            SELECT 
-                inspection_id,
-                inspector_id,
-                label_info_id,
-                time_id,
-                sample_id,
-                company_id,
-                manufacturer_id,
-                picture_set_id
-            FROM 
-                inspection_factual
-            WHERE 
-                inspection_id = %s
-            """
-        cursor.execute(query, (inspection_id,))
-        return cursor.fetchone()
-    except Exception as e:
-        raise Exception("Datastore.db.inspection unhandeled error" + e.__str__())
+    query = """
+        SELECT 
+            inspection_id,
+            inspector_id,
+            label_info_id,
+            time_id,
+            sample_id,
+            company_id,
+            manufacturer_id,
+            picture_set_id
+        FROM 
+            inspection_factual
+        WHERE 
+            inspection_id = %s
+        """
+    cursor.execute(query, (inspection_id,))
+    return cursor.fetchone()
