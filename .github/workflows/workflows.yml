@@ -22,6 +22,8 @@ jobs:
         uses: tj-actions/changed-files@v45
         with:
           files: |
+            nachet_pyproject.toml
+            fertiscan_pyproject.toml
             nachet/**
             fertiscan/**
             datastore/**
@@ -76,7 +78,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Trigger Release Workflow for Nachet
-        if: contains(needs.get-changed-files.outputs.files, 'nachet/') || contains(needs.get-changed-files.outputs.files, 'datastore/')
+        if: contains(needs.get-changed-files.outputs.files, 'nachet_pyproject.toml')
         run: |
           gh workflow run publish-package.yml \
           --ref main \
@@ -85,7 +87,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger Release Workflow for Fertiscan
-        if: contains(needs.get-changed-files.outputs.files, 'fertiscan/') || contains(needs.get-changed-files.outputs.files, 'datastore/')
+        if: contains(needs.get-changed-files.outputs.files, 'fertiscan_pyproject.toml')
         run: |
           gh workflow run publish-package.yml \
           --ref main \
