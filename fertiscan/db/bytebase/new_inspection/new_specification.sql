@@ -1,8 +1,8 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_specification(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".new_specification(
 humidity FLOAT,
 ph FLOAT,
 solubility FLOAT,
-language "fertiscan_0.0.15".language,
+language "fertiscan_0.0.16".language,
 label_id UUID,
 edited BOOLEAN = FALSE
 )

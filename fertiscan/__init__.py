@@ -11,6 +11,7 @@ import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
 import fertiscan.db.metadata.inspection as data_inspection
 import fertiscan.db.queries.inspection as inspection
+from fertiscan.db.models import DBInspection, Inspection
 
 load_dotenv()
 
@@ -90,7 +91,7 @@ async def update_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,
-    updated_data: dict | data_inspection.Inspection,
+    updated_data: dict | Inspection,
 ):
     """
     Update an existing inspection record in the database.
@@ -99,10 +100,10 @@ async def update_inspection(
     - cursor (Cursor): Database cursor for executing queries.
     - inspection_id (str | UUID): UUID of the inspection to update.
     - user_id (str | UUID): UUID of the user performing the update.
-    - updated_data (dict | data_inspection.Inspection): Dictionary or Inspection model containing updated inspection data.
+    - updated_data (dict | Inspection): Dictionary or Inspection model containing updated inspection data.
 
     Returns:
-    - data_inspection.Inspection: Updated inspection data from the database.
+    - Inspection: Updated inspection data from the database.
 
     Raises:
     - InspectionUpdateError: If an error occurs during the update.
@@ -114,8 +115,8 @@ async def update_inspection(
     if not user.is_a_user_id(cursor, str(user_id)):
         raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
 
-    if not isinstance(updated_data, data_inspection.Inspection):
-        updated_data = data_inspection.Inspection.model_validate(updated_data)
+    if not isinstance(updated_data, Inspection):
+        updated_data = Inspection.model_validate(updated_data)
 
     # The inspection record must exist before updating it
     if not inspection.is_a_inspection_id(cursor, str(inspection_id)):
@@ -126,7 +127,7 @@ async def update_inspection(
     updated_result = inspection.update_inspection(
         cursor, inspection_id, user_id, updated_data.model_dump()
     )
-    return data_inspection.Inspection.model_validate(updated_result)
+    return Inspection.model_validate(updated_result)
 
 
 async def get_full_inspection_json(
@@ -268,7 +269,7 @@ async def delete_inspection(
     inspection_id: str | UUID,
     user_id: str | UUID,
     container_client: ContainerClient,
-) -> data_inspection.DBInspection:
+) -> DBInspection:
     """
     Delete an existing inspection record and its associated picture set from the database.
 
@@ -278,7 +279,7 @@ async def delete_inspection(
     - user_id (str | UUID): UUID of the user performing the deletion.
 
     Returns:
-    - data_inspection.Inspection: The deleted inspection data from the database.
+    - DBInspection: The deleted inspection data from the database.
 
     """
     if isinstance(inspection_id, str):
@@ -288,7 +289,7 @@ async def delete_inspection(
 
     # Delete the inspection and get the returned data
     deleted_inspection = inspection.delete_inspection(cursor, inspection_id, user_id)
-    deleted_inspection = data_inspection.DBInspection.model_validate(deleted_inspection)
+    deleted_inspection = DBInspection.model_validate(deleted_inspection)
 
     await datastore.delete_picture_set_permanently(
         cursor, str(user_id), str(deleted_inspection.picture_set_id), container_client

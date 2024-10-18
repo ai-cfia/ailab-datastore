@@ -7,8 +7,8 @@ import os
 import unittest
 
 import datastore.db as db
-from fertiscan.db.metadata import inspection as metadata
 from datastore.db.metadata import validator
+from fertiscan.db.models import GuaranteedAnalysis
 from fertiscan.db.queries import label, nutrients
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -196,7 +196,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         data = nutrients.get_guaranteed_analysis_json(
             self.cursor, label_id=self.label_information_id
         )
-        data = metadata.GuaranteedAnalysis.model_validate(data)
+        data = GuaranteedAnalysis.model_validate(data)
         self.assertEqual(
             data.fr[0].name,
             self.guaranteed_analysis_name,
@@ -207,7 +207,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         data = nutrients.get_guaranteed_analysis_json(
             self.cursor, label_id=self.label_information_id
         )
-        data = metadata.GuaranteedAnalysis.model_validate(data)
+        data = GuaranteedAnalysis.model_validate(data)
         self.assertIsNotNone(data.title)
         self.assertIsNotNone(data.title.en)
 
