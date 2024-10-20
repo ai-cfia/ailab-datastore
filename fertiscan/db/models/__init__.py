@@ -211,3 +211,11 @@ class FullGuaranteed(ValidatedModel):
     element_symbol: str | None = None
     edited: bool = False
     reading: str | None = None
+
+
+class ElementCompound(ValidatedModel):
+    id: int
+    number: int
+    name_fr: str
+    name_en: str
+    symbol: str

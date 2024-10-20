@@ -8,8 +8,8 @@ import unittest
 import uuid
 
 import datastore.db as db
-from fertiscan.db.models import FullGuaranteed, Guaranteed
-from fertiscan.db.queries import label, nutrients
+from fertiscan.db.models import ElementCompound, FullGuaranteed, Guaranteed
+from fertiscan.db.queries.element_compound import create_element_compound
 from fertiscan.db.queries.guaranteed import (
     create_guaranteed,
     query_guaranteed,
@@ -17,6 +17,7 @@ from fertiscan.db.queries.guaranteed import (
     read_full_guaranteed,
     read_guaranteed,
 )
+from fertiscan.db.queries.label import new_label_information
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -25,83 +26,6 @@ if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
 DB_SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
-
-
-class test_element(unittest.TestCase):
-    def setUp(self):
-        self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
-        self.cursor = self.con.cursor()
-        db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-
-        self.element_name_fr = "test-nutriment"
-        self.element_name_en = "test-nutrient"
-        self.element_symbol = "Xy"
-        self.element_number = 700
-
-    def tearDown(self):
-        self.con.rollback()
-        db.end_query(self.con, self.cursor)
-
-    def test_new_element(self):
-        element_id = nutrients.new_element(
-            self.cursor,
-            self.element_number,
-            self.element_name_fr,
-            self.element_name_en,
-            self.element_symbol,
-        )
-        self.assertIsInstance(element_id, int)
-
-    def test_get_element_id(self):
-        element_id = nutrients.new_element(
-            self.cursor,
-            self.element_number,
-            self.element_name_fr,
-            self.element_name_en,
-            self.element_symbol,
-        )
-        self.assertEqual(
-            nutrients.get_element_id_full_search(self.cursor, self.element_symbol),
-            element_id,
-        )
-        self.assertEqual(
-            nutrients.get_element_id_full_search(self.cursor, self.element_name_fr),
-            element_id,
-        )
-        self.assertEqual(
-            nutrients.get_element_id_full_search(self.cursor, self.element_name_en),
-            element_id,
-        )
-        self.assertEqual(
-            nutrients.get_element_id_name(self.cursor, self.element_name_fr), element_id
-        )
-        self.assertEqual(
-            nutrients.get_element_id_name(self.cursor, self.element_name_en), element_id
-        )
-        self.assertEqual(
-            nutrients.get_element_id_symbol(self.cursor, self.element_symbol),
-            element_id,
-        )
-
-    def test_get_element_error(self):
-        self.assertRaises(
-            nutrients.ElementNotFoundError,
-            nutrients.get_element_id_full_search,
-            self.cursor,
-            "not-an-element",
-        )
-        self.assertRaises(
-            nutrients.ElementNotFoundError,
-            nutrients.get_element_id_name,
-            self.cursor,
-            "not-an-element",
-        )
-        self.assertRaises(
-            nutrients.ElementNotFoundError,
-            nutrients.get_element_id_symbol,
-            self.cursor,
-            "not-an-element",
-        )
 
 
 class TestGuaranteedAnalysis(unittest.TestCase):
@@ -114,13 +38,14 @@ class TestGuaranteedAnalysis(unittest.TestCase):
         self.element_name_en = "test-nutrient"
         self.element_symbol = "Xy"
         self.element_number = 700
-        self.element_id = nutrients.new_element(
+        self.element = create_element_compound(
             self.cursor,
             self.element_number,
             self.element_name_fr,
             self.element_name_en,
             self.element_symbol,
         )
+        self.element = ElementCompound.model_validate(self.element)
 
         self.guaranteed_analysis_name = "test-micronutrient"
         self.guaranteed_analysis_value = 10
@@ -142,7 +67,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
         self.volume = None
         self.warranty = "warranty"
 
-        self.label_information_id = label.new_label_information(
+        self.label_information_id = new_label_information(
             self.cursor,
             self.product_name,
             self.lot_number,
@@ -170,7 +95,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -180,7 +105,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
         self.assertEqual(guaranteed.value, self.guaranteed_analysis_value)
         self.assertEqual(guaranteed.unit, self.guaranteed_analysis_unit)
         self.assertEqual(guaranteed.language, self.language)
-        self.assertEqual(guaranteed.element_id, self.element_id)
+        self.assertEqual(guaranteed.element_id, self.element.id)
         self.assertEqual(guaranteed.label_id, self.label_information_id)
 
     def test_create_guaranteed_analysis_empty(self):
@@ -191,7 +116,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
                 None,
                 None,
                 self.language,
-                self.element_id,
+                self.element.id,
                 self.label_information_id,
                 False,
             )
@@ -203,7 +128,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -216,7 +141,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
         self.assertEqual(fetched.value, self.guaranteed_analysis_value)
         self.assertEqual(fetched.unit, self.guaranteed_analysis_unit)
         self.assertEqual(fetched.language, self.language)
-        self.assertEqual(fetched.element_id, self.element_id)
+        self.assertEqual(fetched.element_id, self.element.id)
         self.assertEqual(fetched.label_id, self.label_information_id)
 
     def test_read_full_guaranteed_analysis(self):
@@ -226,7 +151,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -258,7 +183,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -268,7 +193,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -286,7 +211,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.assertEqual(guaranteed.value, self.guaranteed_analysis_value)
             self.assertEqual(guaranteed.unit, self.guaranteed_analysis_unit)
             self.assertEqual(guaranteed.language, self.language)
-            self.assertEqual(guaranteed.element_id, self.element_id)
+            self.assertEqual(guaranteed.element_id, self.element.id)
             self.assertEqual(guaranteed.label_id, self.label_information_id)
 
     def test_query_guaranteed_analysis_no_filters(self):
@@ -297,7 +222,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -317,7 +242,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             self.guaranteed_analysis_value,
             self.guaranteed_analysis_unit,
             self.language,
-            self.element_id,
+            self.element.id,
             self.label_information_id,
             False,
         )
@@ -329,7 +254,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
             value=self.guaranteed_analysis_value,
             unit=self.guaranteed_analysis_unit,
             language=self.language,
-            element_id=self.element_id,
+            element_id=self.element.id,
             label_id=self.label_information_id,
             edited=False,
         )
@@ -342,7 +267,7 @@ class TestGuaranteedAnalysis(unittest.TestCase):
         self.assertEqual(record.value, self.guaranteed_analysis_value)
         self.assertEqual(record.unit, self.guaranteed_analysis_unit)
         self.assertEqual(record.language, self.language)
-        self.assertEqual(record.element_id, self.element_id)
+        self.assertEqual(record.element_id, self.element.id)
         self.assertEqual(record.label_id, self.label_information_id)
 
     def test_query_guaranteed_analysis_no_results(self):
