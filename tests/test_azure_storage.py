@@ -43,29 +43,33 @@ BLOB_KEY = os.environ["NACHET_BLOB_KEY_TESTING"]
 if BLOB_KEY is None or BLOB_KEY == "":
     raise ValueError("NACHET_BLOB_KEY is not set")
 
+
 class TestBuildContainerNameFunction(unittest.TestCase):
     def setUp(self):
         self.tier = "test-user"
         self.container_uuid = str(uuid.uuid4())
 
     def test_build_container_name(self):
-        result = build_container_name(self.container_uuid,self.tier)
-        expected_result = "{}-{}".format(self.tier,self.container_uuid)
+        result = build_container_name(self.container_uuid, self.tier)
+        expected_result = "{}-{}".format(self.tier, self.container_uuid)
         self.assertEqual(result, expected_result)
+
 
 class TestBuildBlobNameFunction(unittest.TestCase):
     def setUp(self):
         self.tier = "test-user"
         self.container_uuid = str(uuid.uuid4())
         self.blob_name = "test_blob"
-        self.blob_type="png"
-        self.container_name = build_container_name(self.container_uuid,self.tier)
+        self.blob_type = "png"
+        self.container_name = build_container_name(self.container_uuid, self.tier)
         self.folder_name = "test_folder"
-        self.folder_path = "{}/{}".format(self.container_name,self.folder_name)
+        self.folder_path = "{}/{}".format(self.container_name, self.folder_name)
 
     def test_build_blob_name(self):
-        result = build_blob_name(self.folder_path,self.blob_name,self.blob_type)
-        expected_blob_path = "{}/{}.{}".format(self.folder_path,self.blob_name,self.blob_type)
+        result = build_blob_name(self.folder_path, self.blob_name, self.blob_type)
+        expected_blob_path = "{}/{}.{}".format(
+            self.folder_path, self.blob_name, self.blob_type
+        )
         self.assertEqual(result, expected_blob_path)
 
 
@@ -176,7 +180,7 @@ class TestUploadImage(unittest.TestCase):
         self.container_client.delete_container()
 
     def test_upload_image(self):
-        expected_result = build_blob_name(self.folder_name,self.image_uuid)
+        expected_result = build_blob_name(self.folder_name, self.image_uuid)
         result = asyncio.run(
             upload_image(
                 self.container_client,
@@ -491,59 +495,60 @@ class TestMoveBlob(unittest.TestCase):
                 )
             )
 
+
 class TestGetImageCount(unittest.TestCase):
-        def setUp(self):
-            self.storage_url = BLOB_CONNECTION_STRING
-            self.tier = "testuser"
-            self.container_uuid = str(uuid.uuid4())
-            self.container_name = f"{self.tier}-{self.container_uuid}"
-            self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
-            self.container_client = self.blob_service_client.create_container(
-                self.container_name
-            )
-            self.image = Image.new("RGB", (1980, 1080), "blue")
-            self.image_byte_array = io.BytesIO()
-            self.image.save(self.image_byte_array, format="TIFF")
-            self.image_byte = self.image.tobytes()
-            self.image_hash = asyncio.run(generate_hash(self.image_byte))
-            self.image_uuid = str(uuid.uuid4())
-            self.image2_uuid = str(uuid.uuid4())
-            self.folder_name = "test_folder"
-            self.folder_uuid = str(uuid.uuid4())
-            asyncio.run(
-                create_folder(self.container_client, self.folder_uuid, self.folder_name)
-            )
+    def setUp(self):
+        self.storage_url = BLOB_CONNECTION_STRING
+        self.tier = "testuser"
+        self.container_uuid = str(uuid.uuid4())
+        self.container_name = f"{self.tier}-{self.container_uuid}"
+        self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
+        self.container_client = self.blob_service_client.create_container(
+            self.container_name
+        )
+        self.image = Image.new("RGB", (1980, 1080), "blue")
+        self.image_byte_array = io.BytesIO()
+        self.image.save(self.image_byte_array, format="TIFF")
+        self.image_byte = self.image.tobytes()
+        self.image_hash = asyncio.run(generate_hash(self.image_byte))
+        self.image_uuid = str(uuid.uuid4())
+        self.image2_uuid = str(uuid.uuid4())
+        self.folder_name = "test_folder"
+        self.folder_uuid = str(uuid.uuid4())
+        asyncio.run(
+            create_folder(self.container_client, self.folder_uuid, self.folder_name)
+        )
 
-        def tearDown(self):
-            self.container_client.delete_container()
+    def tearDown(self):
+        self.container_client.delete_container()
 
-        def test_get_image_count(self):
-            
-            result = asyncio.run(get_image_count(self.container_client, self.folder_name))
-            self.assertEqual(result, 0)
-            
-            asyncio.run(
-                upload_image(
-                    self.container_client,
-                    self.folder_name,
-                    self.folder_uuid,
-                    self.image_hash,
-                    self.image_uuid,
-                )
+    def test_get_image_count(self):
+
+        result = asyncio.run(get_image_count(self.container_client, self.folder_name))
+        self.assertEqual(result, 0)
+
+        asyncio.run(
+            upload_image(
+                self.container_client,
+                self.folder_name,
+                self.folder_uuid,
+                self.image_hash,
+                self.image_uuid,
             )
-            asyncio.run(
-                upload_image(
-                    self.container_client,
-                    self.folder_name,
-                    self.folder_uuid,
-                    self.image_hash,
-                    self.image2_uuid,
-                )
+        )
+        asyncio.run(
+            upload_image(
+                self.container_client,
+                self.folder_name,
+                self.folder_uuid,
+                self.image_hash,
+                self.image2_uuid,
             )
-            #folder_path = build_blob_name(build_container_name(self.container_uuid,self.tier),self.folder_uuid)
-            #print("tests folder_path: " + folder_path)
-            result = asyncio.run(get_image_count(self.container_client, self.folder_name))
-            self.assertEqual(result, 2)
+        )
+        # folder_path = build_blob_name(build_container_name(self.container_uuid,self.tier),self.folder_uuid)
+        # print("tests folder_path: " + folder_path)
+        result = asyncio.run(get_image_count(self.container_client, self.folder_name))
+        self.assertEqual(result, 2)
 
 
 if __name__ == "__main__":
