@@ -5,9 +5,10 @@ This module represent the function for the table label_information
 from psycopg import Cursor
 
 from fertiscan.db.queries.errors import (
+    LabelDimensionNotFoundError,
+    LabelDimensionQueryError,
     LabelInformationCreationError,
     LabelInformationNotFoundError,
-    LabelInformationQueryError,
     LabelInformationRetrievalError,
     handle_query_errors,
 )
@@ -146,7 +147,7 @@ def get_label_information_json(cursor, label_info_id) -> dict:
     return label_info[0]
 
 
-@handle_query_errors(LabelInformationQueryError)
+@handle_query_errors(LabelDimensionQueryError)
 def get_label_dimension(cursor, label_id):
     """
     This function get the label_dimension from the database.
@@ -184,7 +185,7 @@ def get_label_dimension(cursor, label_id):
     cursor.execute(query, (label_id,))
     data = cursor.fetchone()
     if data is None or data[0] is None:
-        raise LabelInformationQueryError(
+        raise LabelDimensionNotFoundError(
             "Error: could not get the label dimension for label: " + str(label_id)
         )
     return data

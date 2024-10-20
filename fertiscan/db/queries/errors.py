@@ -5,6 +5,7 @@ Query exceptions hierarchy:
     |__QueryError
        |__InspectionQueryError
        |__LabelInformationQueryError
+       |__LabelDimensionQueryError
        |__MetricQueryError
        |__UnitQueryError
        |__ElementCompoundQueryError
@@ -101,6 +102,18 @@ class LabelInformationRetrievalError(LabelInformationQueryError):
 
 class LabelInformationDeleteError(LabelInformationQueryError):
     """Raised when an error occurs during the deletion of a label information."""
+
+    pass
+
+
+class LabelDimensionQueryError(QueryError):
+    """Base exception for all label dimension-related query errors."""
+
+    pass
+
+
+class LabelDimensionNotFoundError(LabelDimensionQueryError):
+    """Raised when a label dimension is not found."""
 
     pass
 
