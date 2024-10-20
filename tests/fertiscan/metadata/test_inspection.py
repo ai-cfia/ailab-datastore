@@ -1,11 +1,18 @@
 import json
 import os
 import unittest
+from unittest.mock import Mock, patch
 
 import datastore.db as db
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture, user
+from fertiscan.db.metadata.errors import (
+    BuildInspectionExportError,
+    BuildInspectionImportError,
+    NPKError,
+)
 from fertiscan.db.queries import inspection
+from fertiscan.db.queries.errors import QueryError
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -16,7 +23,7 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
     raise ValueError("FERTISCAN_SCHEMA_TESTING is not set")
 
 
-class test_inspection_export(unittest.TestCase):
+class TestInspectionExport(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
@@ -389,7 +396,6 @@ class test_inspection_export(unittest.TestCase):
     # "Empty specification found in 'fr' list"
     # )
 
-    
     def test_null_in_middle_of_sub_label_en(self):
         formatted_analysis = metadata.build_inspection_import(self.analyse)
 
@@ -553,8 +559,37 @@ class test_inspection_export(unittest.TestCase):
         self.assertEqual(inspection_data["manufacturer"]["name"], test_str)
         self.assertEqual(inspection_data["company"]["website"], test_str)
 
+    @patch("fertiscan.db.queries.label.get_label_information_json")
+    def test_query_error(self, mock_get_label_info):
+        # Simulate QueryError being raised
+        mock_get_label_info.side_effect = QueryError("Simulated query error")
 
-class test_inspection_import(unittest.TestCase):
+        cursor = Mock()
+        inspection_id = 1
+        label_info_id = 2
+
+        with self.assertRaises(BuildInspectionExportError) as context:
+            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+
+        self.assertIn("Error fetching data", str(context.exception))
+        self.assertIn("Simulated query error", str(context.exception))
+
+    @patch("fertiscan.db.queries.label.get_label_information_json")
+    def test_unexpected_error(self, mock_get_label_info):
+        mock_get_label_info.side_effect = TypeError("Simulated unexpected error")
+
+        cursor = Mock()
+        inspection_id = 1
+        label_info_id = 2
+
+        with self.assertRaises(BuildInspectionImportError) as context:
+            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+
+        self.assertIn("Unexpected error", str(context.exception))
+        self.assertIn("Simulated unexpected error", str(context.exception))
+
+
+class TestInspectionImport(unittest.TestCase):
     def setUp(self):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
@@ -608,3 +643,35 @@ class test_inspection_import(unittest.TestCase):
         self.assertIsNotNone(inspection_data["cautions"])
         self.assertEqual(inspection_data["cautions"]["en"], [])
         self.assertEqual(inspection_data["cautions"]["fr"], [])
+
+    def test_missing_keys(self):
+        analysis_form = {
+            "company_name": "Test Company",
+            "fertiliser_name": "Test Fertilizer",
+            # intentionally leaving out other required keys
+        }
+        with self.assertRaises(BuildInspectionImportError) as context:
+            metadata.build_inspection_import(analysis_form)
+        self.assertIn("The analysis form is missing keys", str(context.exception))
+
+    def test_validation_error(self):
+        self.analyse["weight"] = [{"unit": "kg", "value": "invalid_value"}]
+        with self.assertRaises(BuildInspectionImportError) as context:
+            metadata.build_inspection_import(self.analyse)
+        self.assertIn("Validation error", str(context.exception))
+
+    def test_npk_error(self):
+        self.analyse["npk"] = "invalid_npk"
+        with self.assertRaises(NPKError):
+            metadata.build_inspection_import(self.analyse)
+
+    @patch("fertiscan.db.metadata.inspection.extract_npk")
+    def test_unexpected_error(self, mock_extract_npk):
+        # Mock extract_npk to raise an exception to simulate an unexpected error
+        mock_extract_npk.side_effect = Exception("Simulated unexpected error")
+
+        with self.assertRaises(BuildInspectionImportError) as context:
+            metadata.build_inspection_import(self.analyse)
+
+        self.assertIn("Unexpected error", str(context.exception))
+        self.assertIn("Simulated unexpected error", str(context.exception))

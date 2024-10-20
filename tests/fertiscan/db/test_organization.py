@@ -208,7 +208,7 @@ class test_organization_information(unittest.TestCase):
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_located_empty(self):
-        with self.assertRaises(organization.OrganizationCreationError):
+        with self.assertRaises(organization.OrganizationInformationCreationError):
             organization.new_organization_info_located(
                 self.cursor, None, None, None, None
             )
@@ -234,7 +234,7 @@ class test_organization_information(unittest.TestCase):
         self.assertEqual(data[3], self.location_id)
 
     def test_get_organization_info_not_found(self):
-        with self.assertRaises(organization.OrganizationNotFoundError):
+        with self.assertRaises(organization.OrganizationInformationNotFoundError):
             organization.get_organization_info(self.cursor, str(uuid.uuid4()))
 
     def test_update_organization_info(self):

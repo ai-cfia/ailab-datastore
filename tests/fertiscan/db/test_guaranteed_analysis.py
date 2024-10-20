@@ -7,8 +7,9 @@ import os
 import unittest
 
 import datastore.db as db
-from fertiscan.db.metadata import inspection as metadata
 from datastore.db.metadata import validator
+from fertiscan.db.metadata import inspection as metadata
+from fertiscan.db.queries import errors as e
 from fertiscan.db.queries import label, nutrients
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -78,19 +79,19 @@ class test_element(unittest.TestCase):
 
     def test_get_element_error(self):
         self.assertRaises(
-            nutrients.ElementNotFoundError,
+            e.ElementCompoundNotFoundError,
             nutrients.get_element_id_full_search,
             self.cursor,
             "not-an-element",
         )
         self.assertRaises(
-            nutrients.ElementNotFoundError,
+            e.ElementCompoundNotFoundError,
             nutrients.get_element_id_name,
             self.cursor,
             "not-an-element",
         )
         self.assertRaises(
-            nutrients.ElementNotFoundError,
+            e.ElementCompoundNotFoundError,
             nutrients.get_element_id_symbol,
             self.cursor,
             "not-an-element",
@@ -170,7 +171,7 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
 
     def test_new_guaranteed_analysis_empty(self):
-        with self.assertRaises(nutrients.GuaranteedCreationError):
+        with self.assertRaises(e.GuaranteedAnalysisCreationError):
             nutrients.new_guaranteed_analysis(
                 self.cursor,
                 None,

@@ -3,23 +3,19 @@ This module represent the function for the table metric and its children unit:
 
 """
 
+from psycopg import Cursor
 
-class MetricCreationError(Exception):
-    pass
-
-
-class MetricNotFoundError(Exception):
-    pass
-
-
-class UnitCreationError(Exception):
-    pass
-
-
-class UnitNotFoundError(Exception):
-    pass
+from fertiscan.db.queries.errors import (
+    MetricCreationError,
+    MetricQueryError,
+    MetricRetrievalError,
+    UnitCreationError,
+    UnitQueryError,
+    handle_query_errors,
+)
 
 
+@handle_query_errors(MetricQueryError)
 def is_a_metric(cursor, metric_id):
     """
     This function checks if the metric is in the database.
@@ -32,24 +28,24 @@ def is_a_metric(cursor, metric_id):
     - boolean: if the metric exists.
     """
 
-    try:
-        query = """
-            SELECT EXISTS(
-                SELECT 
-                    1 
-                FROM 
-                    metric
-                WHERE 
-                    id = %s
-                )   
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()[0]
-    except Exception:
-        return False
+    query = """
+        SELECT EXISTS(
+            SELECT 
+                1 
+            FROM 
+                metric
+            WHERE 
+                id = %s
+            )   
+        """
+    cursor.execute(query, (metric_id,))
+    return cursor.fetchone()[0]
 
 
-def new_metric(cursor, value, read_unit, label_id, metric_type: str, edited=False):
+@handle_query_errors(MetricCreationError)
+def new_metric(
+    cursor: Cursor, value, read_unit, label_id, metric_type: str, edited=False
+):
     """
     This function uploads a new metric to the database.
 
@@ -62,33 +58,30 @@ def new_metric(cursor, value, read_unit, label_id, metric_type: str, edited=Fals
     Returns:
     - The UUID of the metric.
     """
-
-    try:
-        if metric_type.lower() not in ["density", "weight", "volume"]:
-            raise MetricCreationError(
-                f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'"
-            )
-        query = """
-            SELECT new_metric_unit(%s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            query,
-            (
-                value,
-                read_unit,
-                label_id,
-                metric_type.lower(),
-                edited,
-            ),
+    if metric_type.lower() not in ["density", "weight", "volume"]:
+        raise MetricCreationError(
+            f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'"
         )
-        return cursor.fetchone()[0]
-    except MetricCreationError as e:
-        raise e
-    except Exception:
-        raise MetricCreationError("Error: metric not uploaded")
+    query = """
+        SELECT new_metric_unit(%s, %s, %s, %s, %s);
+        """
+    cursor.execute(
+        query,
+        (
+            value,
+            read_unit,
+            label_id,
+            metric_type.lower(),
+            edited,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise MetricCreationError("Failed to create metric. No data returned.")
 
 
-def get_metric(cursor, metric_id):
+@handle_query_errors(MetricRetrievalError)
+def get_metric(cursor: Cursor, metric_id):
     """
     This function gets the metric from the database.
 
@@ -100,25 +93,23 @@ def get_metric(cursor, metric_id):
     - The metric.
     """
 
-    try:
-        query = """
-            SELECT
-                value,
-                unit_id,
-                edited,
-                metric_type
-            FROM
-                metric
-            WHERE
-                id = %s
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
+    query = """
+        SELECT
+            value,
+            unit_id,
+            edited,
+            metric_type
+        FROM
+            metric
+        WHERE
+            id = %s
+        """
+    cursor.execute(query, (metric_id,))
+    return cursor.fetchone()
 
 
-def get_metric_by_label(cursor, label_id):
+@handle_query_errors(MetricRetrievalError)
+def get_metric_by_label(cursor: Cursor, label_id):
     """
     This function gets the metric from the database.
 
@@ -130,28 +121,26 @@ def get_metric_by_label(cursor, label_id):
     - The metric.
     """
 
-    try:
-        query = """
-            SELECT
-                id,
-                value,
-                unit_id,
-                edited,
-                metric_type
-            FROM
-                metric
-            WHERE
-                label_id = %s
-            ORDER BY
-                metric_type
-            """
-        cursor.execute(query, (label_id,))
-        return cursor.fetchall()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
+    query = """
+        SELECT
+            id,
+            value,
+            unit_id,
+            edited,
+            metric_type
+        FROM
+            metric
+        WHERE
+            label_id = %s
+        ORDER BY
+            metric_type
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.fetchall()
 
 
-def get_metrics_json(cursor, label_id) -> dict:
+@handle_query_errors(MetricRetrievalError)
+def get_metrics_json(cursor: Cursor, label_id) -> dict:
     """
     This function gets the metric from the database and returns it in json format.
 
@@ -162,24 +151,19 @@ def get_metrics_json(cursor, label_id) -> dict:
     Returns:
     - The metric in dict format.
     """
-    try:
-        query = """
-            SELECT get_metrics_json(%s);
-            """
-        cursor.execute(query, (str(label_id),))
-        metric = cursor.fetchone()
-        if metric is None:
-            raise MetricNotFoundError(
-                "Error: could not get the metric for label: " + str(label_id)
-            )
-        return metric[0]
-    except MetricNotFoundError as e:
-        raise e
-    except Exception:
-        raise Exception("Error: could not get the metric for label: " + str(label_id))
+    query = """
+        SELECT get_metrics_json(%s);
+        """
+    cursor.execute(query, (str(label_id),))
+    if result := cursor.fetchone():
+        return result[0]
+    raise MetricRetrievalError(
+        "Failed to retrieve metrics json. No data returned for: " + str(label_id)
+    )
 
 
-def get_full_metric(cursor, metric_id):
+@handle_query_errors(MetricRetrievalError)
+def get_full_metric(cursor: Cursor, metric_id):
     """
     This function gets the metric from the database with the unit.
 
@@ -191,32 +175,30 @@ def get_full_metric(cursor, metric_id):
     - The metric with the unit.
     """
 
-    try:
-        query = """
-            SELECT
-                metric.id,
-                metric.value,
-                unit.unit,
-                unit.to_si_unit,
-                metric.edited,
-                metric.metric_type,
-                CONCAT(CAST(metric.value AS CHAR), ' ', unit.unit) AS full_metric
-            FROM
-                metric
-            JOIN
-                unit
-            ON
-                metric.unit_id = unit.id
-            WHERE
-                metric.id = %s
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
+    query = """
+        SELECT
+            metric.id,
+            metric.value,
+            unit.unit,
+            unit.to_si_unit,
+            metric.edited,
+            metric.metric_type,
+            CONCAT(CAST(metric.value AS CHAR), ' ', unit.unit) AS full_metric
+        FROM
+            metric
+        JOIN
+            unit
+        ON
+            metric.unit_id = unit.id
+        WHERE
+            metric.id = %s
+        """
+    cursor.execute(query, (metric_id,))
+    return cursor.fetchone()
 
 
-def new_unit(cursor, unit, to_si_unit):
+@handle_query_errors(UnitCreationError)
+def new_unit(cursor: Cursor, unit, to_si_unit):
     """
     This function uploads a new unit to the database.
 
@@ -229,30 +211,30 @@ def new_unit(cursor, unit, to_si_unit):
     - The UUID of the unit.
     """
 
-    try:
-        query = """
-            INSERT INTO 
-                unit(
-                    unit,
-                    to_si_unit
-                    )
-            VALUES
-                (%s, %s)
-            RETURNING id
-            """
-        cursor.execute(
-            query,
-            (
+    query = """
+        INSERT INTO 
+            unit(
                 unit,
-                to_si_unit,
-            ),
-        )
-        return cursor.fetchone()[0]
-    except Exception:
-        raise UnitCreationError("Error: unit not uploaded")
+                to_si_unit
+                )
+        VALUES
+            (%s, %s)
+        RETURNING id
+        """
+    cursor.execute(
+        query,
+        (
+            unit,
+            to_si_unit,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise UnitCreationError("Failed to create unit. No data returned.")
 
 
-def is_a_unit(cursor, unit):
+@handle_query_errors(UnitQueryError)
+def is_a_unit(cursor: Cursor, unit):
     """
     This function checks if the unit is in the database.
 
@@ -264,24 +246,22 @@ def is_a_unit(cursor, unit):
     - boolean: if the unit exists.
     """
 
-    try:
-        query = """
-            SELECT EXISTS(
-                SELECT 
-                    1 
-                FROM 
-                    unit
-                WHERE 
-                    unit = %s
-                )   
-            """
-        cursor.execute(query, (unit,))
-        return cursor.fetchone()[0]
-    except Exception:
-        return False
+    query = """
+        SELECT EXISTS(
+            SELECT 
+                1 
+            FROM 
+                unit
+            WHERE 
+                unit = %s
+            )   
+        """
+    cursor.execute(query, (unit,))
+    return cursor.fetchone()[0]
 
 
-def get_unit_id(cursor, unit):
+@handle_query_errors(UnitQueryError)
+def get_unit_id(cursor: Cursor, unit):
     """
     This function gets the unit from the database.
 
@@ -293,16 +273,15 @@ def get_unit_id(cursor, unit):
     - The UUID of the unit.
     """
 
-    try:
-        query = """
-            SELECT
-                id
-            FROM
-                unit
-            WHERE
-                unit = %s
-            """
-        cursor.execute(query, (unit,))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise UnitNotFoundError("Error: unit not found")
+    query = """
+        SELECT
+            id
+        FROM
+            unit
+        WHERE
+            unit = %s
+        """
+    cursor.execute(query, (unit,))
+    if result := cursor.fetchone():
+        return result[0]
+    raise UnitQueryError("Failed to retrieve unit id. No data returned.")

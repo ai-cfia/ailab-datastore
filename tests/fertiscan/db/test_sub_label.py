@@ -50,7 +50,7 @@ class test_sub_type(unittest.TestCase):
         self.assertEqual(str(data_fr), str(sub_type_id))
 
     def test_get_sub_type_id_not_found(self):
-        with self.assertRaises(sub_label.SubTypeNotFoundError):
+        with self.assertRaises(sub_label.SubTypeQueryError):
             sub_label.get_sub_type_id(self.cursor, "not-a-type")
 
 
