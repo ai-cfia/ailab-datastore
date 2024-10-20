@@ -276,9 +276,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         instructions = SubLabel.model_validate(sub_labels.get("instructions"))
 
         # Get the guaranteed analysis
-        guaranteed_analysis = nutrients.get_guaranteed_analysis_json(
-            cursor, label_info_id
-        )
+        guaranteed_analysis = label.get_guaranteed_analysis_json(cursor, label_info_id)
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
         # Get the inspection information

@@ -18,8 +18,9 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.models import DBInspection
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label
+from fertiscan.db.models import DBInspection, Guaranteed
+from fertiscan.db.queries import inspection, label, metric, sub_label
+from fertiscan.db.queries.guaranteed import query_guaranteed
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -437,10 +438,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             ],
             "fr": [
                 {
-                    "value": old_value,
+                    "value": new_value,
                     "unit": "%",
-                    "name": old_name,
-                    "edited": False,
+                    "name": new_name,
+                    "edited": True,
                 },
             ],
         }
@@ -501,12 +502,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(label_info_data[8], old_title)
         self.assertEqual(label_info_data[9], old_title)
 
-        guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
+        guaranteed_data = query_guaranteed(self.cursor, label_id=label_id)
+        guaranteed_data = [Guaranteed.model_validate(data) for data in guaranteed_data]
         for guaranteed in guaranteed_data:
-            if guaranteed[7]:
-                self.assertEqual(guaranteed[1], new_value)
-            else:
-                self.assertEqual(guaranteed[1], old_value)
+            self.assertEqual(
+                guaranteed.value, new_value if guaranteed.edited else old_value
+            )
 
         # Verify user's comment are saved
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)

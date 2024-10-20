@@ -17,6 +17,10 @@ def create_region(cursor: Cursor, name: str, province_id: int):
     Returns:
         The inserted region record as a dictionary, or None if failed.
     """
+
+    if not name:
+        raise ValueError("Region name must be provided.")
+
     query = SQL("""
         INSERT INTO region (name, province_id)
         VALUES (%s, %s)
@@ -27,20 +31,23 @@ def create_region(cursor: Cursor, name: str, province_id: int):
         return new_cur.fetchone()
 
 
-def read_region(cursor: Cursor, region_id: UUID):
+def read_region(cursor: Cursor, id: str | UUID):
     """
     Retrieves a region record by ID.
 
     Args:
         cursor: Database cursor object.
-        region_id: UUID of the region.
+        id: UUID of the region.
 
     Returns:
         The region record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Region ID must be provided.")
+
     query = SQL("SELECT * FROM region WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (region_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -62,7 +69,7 @@ def read_all_regions(cursor: Cursor):
 
 def update_region(
     cursor: Cursor,
-    region_id: UUID,
+    id: str | UUID,
     name: str | None = None,
     province_id: int | None = None,
 ):
@@ -71,13 +78,19 @@ def update_region(
 
     Args:
         cursor: Database cursor object.
-        region_id: UUID of the region.
+        id: UUID of the region.
         name: Optional new name of the region.
         province_id: Optional new province ID.
 
     Returns:
         The updated region record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Region ID must be provided.")
+
+    if not name:
+        raise ValueError("Region name must be provided.")
+
     query = SQL("""
         UPDATE region
         SET name = COALESCE(%s, name),
@@ -86,28 +99,31 @@ def update_region(
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (name, province_id, region_id))
+        new_cur.execute(query, (name, province_id, id))
         return new_cur.fetchone()
 
 
-def delete_region(cursor: Cursor, region_id: UUID):
+def delete_region(cursor: Cursor, id: str | UUID):
     """
     Deletes a region record by ID.
 
     Args:
         cursor: Database cursor object.
-        region_id: UUID of the region.
+        id: UUID of the region.
 
     Returns:
         The deleted region record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Region ID must be provided.")
+
     query = SQL("""
         DELETE FROM region
         WHERE id = %s
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (region_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -143,17 +159,20 @@ def query_regions(
         return new_cur.fetchall()
 
 
-def get_full_region(cursor: Cursor, region_id: UUID):
+def get_full_region(cursor: Cursor, id: str | UUID):
     """
     Retrieves the full region details, including associated province info.
 
     Args:
         cursor: Database cursor object.
-        region_id: UUID of the region.
+        id: UUID of the region.
 
     Returns:
         A dictionary with the full region details, or None if not found.
     """
+    if not id:
+        raise ValueError("Region ID must be provided.")
+
     query = """
         SELECT
             region.id,
@@ -170,5 +189,5 @@ def get_full_region(cursor: Cursor, region_id: UUID):
             region.id = %s;
     """
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (region_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()

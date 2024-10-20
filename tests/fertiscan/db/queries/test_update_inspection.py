@@ -18,7 +18,8 @@ from fertiscan.db.models import (
     Metrics,
     OrganizationInformation,
 )
-from fertiscan.db.queries import inspection, metric, nutrients, organization
+from fertiscan.db.queries import inspection, metric, organization
+from fertiscan.db.queries import label
 from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
 from fertiscan.db.queries.label import get_company_manufacturer_json
@@ -160,7 +161,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify the guaranteed analysis value was updated
-        ga = nutrients.get_guaranteed_analysis_json(
+        ga = label.get_guaranteed_analysis_json(
             self.cursor, self.inspection.product.label_id
         )
         ga = GuaranteedAnalysis.model_validate(ga)

@@ -28,6 +28,10 @@ def create_fertilizer(
     Returns:
         The inserted fertilizer record as a dictionary, or None if failed.
     """
+
+    if all(v is None for v in (name, registration_number)):
+        raise ValueError("At least one of name, registration_number must be provided")
+
     query = SQL("""
         INSERT INTO fertilizer (name, registration_number, latest_inspection_id, owner_id)
         VALUES (%s, %s, %s, %s)
@@ -40,20 +44,24 @@ def create_fertilizer(
         return new_cur.fetchone()
 
 
-def read_fertilizer(cursor: Cursor, fertilizer_id: str | UUID):
+def read_fertilizer(cursor: Cursor, id: str | UUID):
     """
     Retrieves a fertilizer record by ID.
 
     Args:
         cursor: Database cursor object.
-        fertilizer_id: UUID or string ID of the fertilizer.
+        id: UUID or string ID of the fertilizer.
 
     Returns:
         The fertilizer record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Fertilizer ID must be provided")
+
     query = SQL("SELECT * FROM fertilizer WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (fertilizer_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -75,8 +83,8 @@ def read_all_fertilizers(cursor: Cursor):
 
 def update_fertilizer(
     cursor: Cursor,
-    fertilizer_id: str | UUID,
-    name: str | None = None,
+    id: str | UUID,
+    name: str,
     registration_number: str | None = None,
     latest_inspection_id: str | UUID | None = None,
     owner_id: str | UUID | None = None,
@@ -86,7 +94,7 @@ def update_fertilizer(
 
     Args:
         cursor: Database cursor object.
-        fertilizer_id: UUID or string ID of the fertilizer.
+        id: UUID or string ID of the fertilizer.
         name: Optional new name of the fertilizer.
         registration_number: Optional new registration number.
         latest_inspection_id: Optional new inspection ID.
@@ -95,6 +103,13 @@ def update_fertilizer(
     Returns:
         The updated fertilizer record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Fertilizer ID must be provided")
+
+    if not name:
+        raise ValueError("Name cannot be null or empty")
+
     query = SQL("""
         UPDATE fertilizer
         SET name = COALESCE(%s, name),
@@ -108,7 +123,7 @@ def update_fertilizer(
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(
             query,
-            (name, registration_number, latest_inspection_id, owner_id, fertilizer_id),
+            (name, registration_number, latest_inspection_id, owner_id, id),
         )
         return new_cur.fetchone()
 
@@ -142,24 +157,28 @@ def upsert_fertilizer(
     return cursor.fetchone()
 
 
-def delete_fertilizer(cursor: Cursor, fertilizer_id: str | UUID):
+def delete_fertilizer(cursor: Cursor, id: str | UUID):
     """
     Deletes a fertilizer record by ID.
 
     Args:
         cursor: Database cursor object.
-        fertilizer_id: UUID or string ID of the fertilizer.
+        id: UUID or string ID of the fertilizer.
 
     Returns:
         The deleted fertilizer record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Fertilizer ID must be provided")
+
     query = SQL("""
         DELETE FROM fertilizer
         WHERE id = %s
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (fertilizer_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 

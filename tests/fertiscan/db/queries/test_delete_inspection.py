@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 
 from datastore.db.queries import user
 from fertiscan.db.queries import (
+    guaranteed,
     ingredient,
     inspection,
     label,
@@ -142,7 +143,7 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Verify that the related guaranteed records were deleted
         self.assertListEqual(
-            nutrients.get_all_guaranteeds(self.cursor, self.label_info_id),
+            guaranteed.query_guaranteed(self.cursor, label_id=self.label_info_id),
             [],
             "Guaranteed records should be deleted.",
         )

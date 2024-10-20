@@ -14,6 +14,9 @@ def create_province(cursor: Cursor, name: str):
     Returns:
         The inserted province record as a dictionary, or None if failed.
     """
+    if not name:
+        raise ValueError("Province name must be provided.")
+
     query = SQL("""
         INSERT INTO province (name)
         VALUES (%s)
@@ -24,20 +27,23 @@ def create_province(cursor: Cursor, name: str):
         return new_cur.fetchone()
 
 
-def read_province(cursor: Cursor, province_id: int):
+def read_province(cursor: Cursor, id: int):
     """
     Retrieves a province record by ID.
 
     Args:
         cursor: Database cursor object.
-        province_id: ID of the province.
+        id: ID of the province.
 
     Returns:
         The province record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Province ID must be provided.")
+
     query = SQL("SELECT * FROM province WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (province_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -57,18 +63,24 @@ def read_all_provinces(cursor: Cursor):
         return new_cur.fetchall()
 
 
-def update_province(cursor: Cursor, province_id: int, name: str):
+def update_province(cursor: Cursor, id: int, name: str):
     """
     Updates an existing province record by ID.
 
     Args:
         cursor: Database cursor object.
-        province_id: ID of the province.
+        id: ID of the province.
         name: New name of the province.
 
     Returns:
         The updated province record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Province ID must be provided.")
+
+    if not name:
+        raise ValueError("Province name must be provided.")
+
     query = SQL("""
         UPDATE province
         SET name = %s
@@ -76,28 +88,31 @@ def update_province(cursor: Cursor, province_id: int, name: str):
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (name, province_id))
+        new_cur.execute(query, (name, id))
         return new_cur.fetchone()
 
 
-def delete_province(cursor: Cursor, province_id: int):
+def delete_province(cursor: Cursor, id: int):
     """
     Deletes a province record by ID.
 
     Args:
         cursor: Database cursor object.
-        province_id: ID of the province.
+        id: ID of the province.
 
     Returns:
         The deleted province record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Province ID must be provided.")
+
     query = SQL("""
         DELETE FROM province
         WHERE id = %s
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (province_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 

@@ -17,8 +17,8 @@ def create_located_organization_information(
     """
     Inserts a new organization record with optional information.
 
-    This function calls the `new_organization_info_located` database function to 
-    create a new organization record with the provided name, address, website, 
+    This function calls the `new_organization_info_located` database function to
+    create a new organization record with the provided name, address, website,
     and phone number. At least one of these fields must be provided.
 
     Args:
@@ -47,7 +47,7 @@ def create_located_organization_information(
         return result[0]
 
 
-def read_located_organization_information(cursor: Cursor, organization_id: str):
+def read_located_organization_information(cursor: Cursor, id: str | UUID):
     """
     Retrieves a specific organization's information by ID.
 
@@ -58,9 +58,12 @@ def read_located_organization_information(cursor: Cursor, organization_id: str):
     Returns:
         dict | None: A dictionary with organization data or None if not found.
     """
+    if not id:
+        raise ValueError("Organization ID must be provided.")
+
     query = SQL("SELECT * FROM located_organization_information_view WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (organization_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -106,6 +109,11 @@ def update_located_organization_information(
     """
     if not id:
         raise ValueError("Organization ID must be provided.")
+
+    if all(v is None for v in (name, address, website, phone_number)):
+        raise ValueError(
+            "At least one of name, address, website, or phone_number must be provided."
+        )
 
     return upsert_located_organization_information(
         cursor=cursor,

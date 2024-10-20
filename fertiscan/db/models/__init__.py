@@ -187,3 +187,27 @@ class FullOrganization(ValidatedModel):
     region_name: str | None = None
     province_id: int | None = None
     province_name: str | None = None
+
+
+class Guaranteed(ValidatedModel):
+    id: UUID4
+    read_name: str | None = None
+    value: float | None = None
+    unit: str | None = None
+    language: str | None = None
+    element_id: int | None = None
+    label_id: UUID4 | None = None
+    edited: bool = False
+    created_at: datetime | None = None
+
+
+class FullGuaranteed(ValidatedModel):
+    id: UUID4
+    read_name: str | None = None
+    value: float | None = None
+    unit: str | None = None
+    element_name_fr: str | None = None
+    element_name_en: str | None = None
+    element_symbol: str | None = None
+    edited: bool = False
+    reading: str | None = None

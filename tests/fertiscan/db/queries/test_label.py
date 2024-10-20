@@ -4,7 +4,11 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
-from fertiscan.db.models import CompanyManufacturer, OrganizationInformation
+from fertiscan.db.models import (
+    CompanyManufacturer,
+    GuaranteedAnalysis,
+    OrganizationInformation,
+)
 from fertiscan.db.queries import label
 from fertiscan.db.queries.organization_information import (
     create_organization_information,
@@ -38,6 +42,10 @@ class test_label(unittest.TestCase):
         self.guaranteed_is_minimal = False
         self.company_info_id = None
         self.manufacturer_info_id = None
+        self.guaranteed_analysis_name = "test-micronutrient"
+        self.guaranteed_analysis_value = 10
+        self.guaranteed_analysis_unit = "%"
+        self.language = "en"
 
     def tearDown(self):
         self.con.rollback()
@@ -154,7 +162,6 @@ class test_label(unittest.TestCase):
             self.cursor, label_id
         )
         company_manufacturer = CompanyManufacturer.model_validate(company_manufacturer)
-        print("company_manufacturer", company_manufacturer)
 
         # Verify that the company and manufacturer are correctly retrieved
         self.assertIsNotNone(company_manufacturer.company)
@@ -201,3 +208,72 @@ class test_label(unittest.TestCase):
         self.assertIsNone(company_manufacturer.manufacturer.address)
         self.assertIsNone(company_manufacturer.manufacturer.website)
         self.assertIsNone(company_manufacturer.manufacturer.phone_number)
+
+    def test_get_guaranteed_analysis_json_empty(self):
+        label_id = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.guaranteed_analysis_title_en,
+            self.guaranteed_analysis_title_fr,
+            self.guaranteed_is_minimal,
+            None,
+            None,
+        )
+
+        ga = label.get_guaranteed_analysis_json(self.cursor, label_id)
+        ga = GuaranteedAnalysis.model_validate(ga)
+        self.assertEqual(ga.title.en, self.guaranteed_analysis_title_en)
+        self.assertEqual(ga.title.fr, self.guaranteed_analysis_title_fr)
+        self.assertEqual(ga.is_minimal, self.guaranteed_is_minimal)
+
+    def test_update_and_get_guaranteed_analysis(self):
+        label_id = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.guaranteed_analysis_title_en,
+            self.guaranteed_analysis_title_fr,
+            self.guaranteed_is_minimal,
+            None,
+            None,
+        )
+
+        input = {
+            "en": [
+                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                {
+                    "name": "Available Phosphate (P2O5)",
+                    "value": 22,
+                    "unit": "%",
+                },
+                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+            ],
+            "fr": [
+                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                {
+                    "name": "Available Phosphate (P2O5)",
+                    "value": 22,
+                    "unit": "%",
+                },
+                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+            ],
+        }
+        input = GuaranteedAnalysis.model_validate(input)
+        label.update_guaranteed_analysis(self.cursor, label_id, input)
+
+        # Verify that the data is correctly saved
+        output = label.get_guaranteed_analysis_json(self.cursor, label_id)
+        output = GuaranteedAnalysis.model_validate(output)
+        self.assertIsNotNone(output)
+        self.assertEqual(input, output)

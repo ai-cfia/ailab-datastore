@@ -26,6 +26,11 @@ def create_organization_information(
         The inserted organization_information record as a dictionary, or None if insertion failed.
     """
 
+    if all(v is None for v in (name, website, phone_number)):
+        raise ValueError(
+            "At least one of name, website, or phone_number must be provided"
+        )
+
     query = SQL("""
         INSERT INTO organization_information 
         (name, website, phone_number, location_id)
@@ -48,6 +53,10 @@ def read_organization_information(cursor: Cursor, id: str):
     Returns:
         The organization_information record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Organization ID must be provided.")
+
     query = SQL("SELECT * FROM organization_information WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(query, (id,))
@@ -98,6 +107,11 @@ def update_organization_information(
     if id is None:
         raise ValueError("Organization ID must be provided.")
 
+    if all(v is None for v in (name, website, phone_number)):
+        raise ValueError(
+            "At least one of name, website, or phone_number must be provided."
+        )
+
     query = SQL("""
         UPDATE organization_information
         SET name = COALESCE(%s, name),
@@ -122,7 +136,7 @@ def delete_organization_information(cursor: Cursor, id: str):
 
     Args:
         cursor: Database cursor object.
-        organization_id: The ID of the organization to delete.
+        id: The ID of the organization to delete.
 
     Returns:
         The deleted organization_information record as a dictionary, or None if not found.

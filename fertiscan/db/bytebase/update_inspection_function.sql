@@ -309,33 +309,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-drop FUNCTION IF EXISTS "fertiscan_0.0.16".update_guaranteed;
+DROP FUNCTION IF EXISTS "fertiscan_0.0.16".update_guaranteed_analysis;
 -- Function to update guaranteed analysis: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_guaranteed(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_guaranteed_analysis(
     p_label_id uuid,
     new_guaranteed jsonb
 )
 RETURNS void AS $$
 DECLARE
     guaranteed_record jsonb;
-    language_record record;
     guaranteed_analysis_language text;
 BEGIN
     -- Delete existing guaranteed analysis for the given label_id
     DELETE FROM guaranteed WHERE label_id = p_label_id;
 
-	-- Loop through each language ('en' and 'fr')
-    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.16".LANGUAGE))
-	LOOP
-		FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed->guaranteed_analysis_language)
-		LOOP
-            --CHECK IF ANY OF THE VALUES ARE NOT NULL
+    -- Update the label_information table with the new titles and minimal flag
+    UPDATE label_information
+    SET
+        guaranteed_title_en = new_guaranteed->'title'->>'en',
+        guaranteed_title_fr = new_guaranteed->'title'->>'fr',
+        title_is_minimal = (new_guaranteed->>'is_minimal')::boolean
+    WHERE id = p_label_id;
+
+    -- Loop through each language ('en' and 'fr')
+    FOR guaranteed_analysis_language IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.16".LANGUAGE))
+    LOOP
+        FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed->guaranteed_analysis_language)
+        LOOP
+            -- CHECK IF ANY OF THE VALUES ARE NOT NULL
             IF COALESCE(
-                guaranteed_record->>'name', 
-                guaranteed_record->>'value', 
+                guaranteed_record->>'name',
+                guaranteed_record->>'value',
                 guaranteed_record->>'unit',
-                '') <> ''
-            THEN
+                ''
+            ) <> '' THEN
                 -- Insert each guaranteed analysis record
                 INSERT INTO guaranteed (
                     read_name, value, unit, edited, label_id, language
@@ -344,7 +351,7 @@ BEGIN
                     guaranteed_record->>'name',
                     NULLIF(guaranteed_record->>'value', '')::float,
                     guaranteed_record->>'unit',
-                    FALSE,  -- not handled
+                    COALESCE(guaranteed_record->>'edited', 'False')::boolean,
                     p_label_id,
                     guaranteed_analysis_language::language
                 );
@@ -605,9 +612,6 @@ BEGIN
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
-    guaranteed_title_en = p_input_json->'guaranteed_analysis'->'title'->>'en',
-    guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
-    title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
     "manufacturer_info_id" = manufacturer_info_id
     WHERE id = label_info_id_value;
@@ -627,7 +631,7 @@ BEGIN
     -- PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
 
     -- Update guaranteed analysis related to the label
-    PERFORM update_guaranteed(label_info_id_value, p_input_json->'guaranteed_analysis');
+    PERFORM update_guaranteed_analysis(label_info_id_value, p_input_json->'guaranteed_analysis');
 
     -- Update sub labels related to the label
     PERFORM update_sub_labels(label_info_id_value, p_input_json);

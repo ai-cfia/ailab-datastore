@@ -404,6 +404,22 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         ON organization.main_location_id = location.id;
 
 
+    CREATE OR REPLACE VIEW "fertiscan_0.0.16".full_guaranteed_view AS
+    SELECT
+        g.id, 
+        g.read_name,
+        g.value,
+        g.unit,
+        ec.name_fr as element_name_fr,
+        ec.name_en as element_name_en,
+        ec.symbol as element_symbol,
+        g.edited,
+        CONCAT(CAST(g.read_name AS TEXT), ' ', g.value, ' ', g.unit) AS reading
+    FROM 
+        "fertiscan_0.0.16".guaranteed g
+    JOIN 
+        "fertiscan_0.0.16".element_compound ec ON g.element_id = ec.id;
+
 end if;
 END
 $do$;

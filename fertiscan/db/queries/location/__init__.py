@@ -25,6 +25,10 @@ def create_location(
     Returns:
         The inserted location record as a dictionary, or None if failed.
     """
+
+    if all(v is None for v in (name, address)):
+        raise ValueError("At least one of name and address must be provided")
+
     query = SQL("""
         INSERT INTO location (name, address, region_id, owner_id)
         VALUES (%s, %s, %s, %s)
@@ -35,20 +39,24 @@ def create_location(
         return new_cur.fetchone()
 
 
-def read_location(cursor: Cursor, location_id: str | UUID):
+def read_location(cursor: Cursor, id: str | UUID):
     """
     Retrieves a location record by ID.
 
     Args:
         cursor: Database cursor object.
-        location_id: UUID or string ID of the location.
+        id: UUID or string ID of the location.
 
     Returns:
         The location record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Location ID must be provided")
+
     query = SQL("SELECT * FROM location WHERE id = %s;")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (location_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -70,7 +78,7 @@ def read_all_locations(cursor: Cursor):
 
 def update_location(
     cursor: Cursor,
-    location_id: str | UUID,
+    id: str | UUID,
     name: str | None = None,
     address: str | None = None,
     region_id: str | UUID | None = None,
@@ -81,7 +89,7 @@ def update_location(
 
     Args:
         cursor: Database cursor object.
-        location_id: UUID or string ID of the location.
+        id: UUID or string ID of the location.
         name: Optional new name of the location.
         address: Optional new address.
         region_id: Optional new region UUID.
@@ -90,6 +98,12 @@ def update_location(
     Returns:
         The updated location record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Location ID must be provided")
+
+    if all(v is None for v in (name, address)):
+        raise ValueError("At least one of name and address must be provided")
+
     query = SQL("""
         UPDATE location
         SET name = COALESCE(%s, name),
@@ -100,14 +114,14 @@ def update_location(
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (name, address, region_id, owner_id, location_id))
+        new_cur.execute(query, (name, address, region_id, owner_id, id))
         return new_cur.fetchone()
 
 
 def upsert_location(
     cursor: Cursor,
     address: str,
-    location_id: str | UUID | None = None,
+    id: str | UUID | None = None,
     name: str | None = None,
     region_id: str | UUID | None = None,
     owner_id: str | UUID | None = None,
@@ -118,7 +132,7 @@ def upsert_location(
     Args:
         cursor: Database cursor object.
         address: Address of the location. Cannot be None or Empty.
-        location_id: UUID or string ID of the location. If None, a new location is created.
+        id: UUID or string ID of the location. If None, a new location is created.
         name: Name of the location. Can be None.
         region_id: UUID or string ID of the associated region. Can be None.
         owner_id: UUID or string ID of the associated owner. Can be None.
@@ -130,28 +144,32 @@ def upsert_location(
         raise ValueError("Address cannot be empty or null or empty")
 
     query = SQL("SELECT upsert_location(%s, %s, %s, %s, %s);")
-    cursor.execute(query, (location_id, name, address, region_id, owner_id))
+    cursor.execute(query, (id, name, address, region_id, owner_id))
     return cursor.fetchone()[0]
 
 
-def delete_location(cursor: Cursor, location_id: str | UUID):
+def delete_location(cursor: Cursor, id: str | UUID):
     """
     Deletes a location record by ID.
 
     Args:
         cursor: Database cursor object.
-        location_id: UUID or string ID of the location.
+        id: UUID or string ID of the location.
 
     Returns:
         The deleted location record as a dictionary, or None if not found.
     """
+
+    if not id:
+        raise ValueError("Location ID must be provided")
+
     query = SQL("""
         DELETE FROM location
         WHERE id = %s
         RETURNING *;
     """)
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (location_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
 
 
@@ -199,18 +217,21 @@ def query_locations(
         return new_cur.fetchall()
 
 
-def read_full_location(cursor: Cursor, location_id: str | UUID):
+def read_full_location(cursor: Cursor, id: str | UUID):
     """
     Retrieve full location details from the database using the location view.
 
     Parameters:
     - cursor (Cursor): The database cursor.
-    - location_id (str | UUID): The ID of the location to retrieve.
+    - id (str | UUID): The ID of the location to retrieve.
 
     Returns:
     - dict | None: A dictionary with location details or None if not found.
     """
+    if not id:
+        raise ValueError("Location ID must be provided")
+
     query = SQL("SELECT * FROM full_location_view WHERE id = %s")
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
-        new_cur.execute(query, (location_id,))
+        new_cur.execute(query, (id,))
         return new_cur.fetchone()
