@@ -9,7 +9,6 @@ import json
 import os
 import unittest
 
-from azure.storage.blob import ContainerClient
 from PIL import Image
 
 import datastore
