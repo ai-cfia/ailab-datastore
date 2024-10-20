@@ -1,6 +1,7 @@
 import os
 from uuid import UUID
 
+from azure.storage.blob import ContainerClient
 from dotenv import load_dotenv
 from psycopg import Cursor
 
