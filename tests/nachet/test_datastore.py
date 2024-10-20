@@ -728,17 +728,15 @@ class test_picture_set(unittest.TestCase):
 
         # Check blobs have also moved in blob storage
         for picture_id in validated_pictures:
-            blob_name = "{}/{}.png".format(self.folder_name, str(picture_id))
+            blob_name = datastore.azure_storage.build_blob_name(self.folder_name, str(picture_id))
             with self.assertRaises(Exception):
                 asyncio.run(
                     datastore.azure_storage.get_blob(self.container_client, blob_name)
                 )
 
-            blob_name = "{}/{}/{}.png".format(
-                str(self.user_id), self.folder_name, str(picture_id)
-            )
+            dev_blob_name = datastore.azure_storage.build_blob_name(str(self.user_id), blob_name)    
             blob = asyncio.run(
-                datastore.azure_storage.get_blob(self.dev_container_client, blob_name)
+                datastore.azure_storage.get_blob(self.dev_container_client, dev_blob_name)
             )
             self.assertEqual(blob, self.pic_encoded)
 

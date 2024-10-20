@@ -100,7 +100,7 @@ async def upload_picture_unknown(
         )
         # Update the picture metadata in the DB
         data = {
-            "link": f"{folder_name}/" + str(picture_id),
+            "link": azure_storage.build_blob_name(folder_name, picture_id),
             "description": "Uploaded through the API",
         }
 
@@ -166,7 +166,7 @@ async def upload_picture_known(
             container_client, folder_name, picture_set_id, picture_hash, picture_id
         )
         picture_link = (
-            container_client.url + "/" + str(folder_name) + "/" + str(picture_id)
+            container_client.url + "/" + azure_storage.build_blob_name(folder_name, picture_id)
         )
         # Create picture metadata and update DB instance (with link to Azure blob)
         """
@@ -777,7 +777,7 @@ async def get_picture_blob(cursor, user_id: str, container_client, picture_id: s
             folder_name = "General"
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        blob_name = "{}/{}.png".format(folder_name, picture_id)
+        blob_name = azure_storage.build_blob_name(folder_name, picture_id)
         picture_blob = await azure_storage.get_blob(container_client, blob_name)
         return picture_blob
     except(user.UserNotFoundError,picture.PictureNotFoundError,UserNotOwnerError) as e:
@@ -854,9 +854,11 @@ async def delete_picture_set_with_archive(
 
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
-            blob_name = f"{folder_name}/{str(picture_id)}.png"
             # change the link in the metadata
-            picture_metadata["link"] = f"{user_id}/{folder_name}/{picture_id}"
+            blob_name = azure_storage.build_blob_name(folder_name, picture_id)
+            # special case for the dev container pictures
+            dev_blob_name = azure_storage.build_blob_name(folder_path=user_id, blob_name=blob_name)
+            picture_metadata["link"] = dev_blob_name
             picture.update_picture_metadata(
                 cursor, picture_id, json.dumps(picture_metadata), 0
             )
@@ -865,11 +867,10 @@ async def delete_picture_set_with_archive(
                 cursor, picture_id, dev_picture_set_id
             )
             # move the picture to the dev container
-            new_blob_name = "{}/{}/{}.png".format(user_id, folder_name, str(picture_id))
             if not (
                 await azure_storage.move_blob(
                     blob_name,
-                    new_blob_name,
+                    dev_blob_name,
                     dev_picture_set_id,
                     container_client,
                     dev_container_client,
