@@ -219,3 +219,9 @@ class ElementCompound(ValidatedModel):
     name_fr: str
     name_en: str
     symbol: str
+
+
+class Unit(ValidatedModel):
+    id: UUID4
+    unit: str
+    to_si_unit: float | None = None
