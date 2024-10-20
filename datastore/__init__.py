@@ -81,10 +81,14 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        container_client = blob_service_client.create_container(azure_storage.build_container_name(str(user_uuid), "user"))
+        container_client = blob_service_client.create_container(
+            azure_storage.build_container_name(str(user_uuid), "user")
+        )
 
         if not container_client.exists():
-            raise ContainerCreationError("Error creating the user container: container does not exists")
+            raise ContainerCreationError(
+                "Error creating the user container: container does not exists"
+            )
 
         # Link the container to the user in the database
         pic_set_metadata = data_picture_set.build_picture_set(
@@ -102,7 +106,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
     except azure_storage.CreateDirectoryError as e:
-        raise FolderCreationError("Error creating the user folder:"+ str(e))
+        raise FolderCreationError("Error creating the user folder:" + str(e))
     except UserAlreadyExistsError:
         raise
     except ContainerCreationError:
@@ -180,7 +184,9 @@ async def create_picture_set(
     ) as e:
         raise e
     except Exception as e:
-        raise BlobUploadError("An error occured during the upload of the picture set: "+str(e))
+        raise BlobUploadError(
+            "An error occured during the upload of the picture set: " + str(e)
+        )
 
 
 async def get_picture_sets_info(cursor, user_id: str):
@@ -246,7 +252,9 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
             if "link" in pic_metadata:
                 blob_link = pic_metadata["link"]
             else:
-                blob_link = azure_storage.build_blob_name(picture_set_name,pic_id,None)
+                blob_link = azure_storage.build_blob_name(
+                    picture_set_name, pic_id, None
+                )
             blob_obj = azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
             pic_metadata["blob"] = blob_obj
