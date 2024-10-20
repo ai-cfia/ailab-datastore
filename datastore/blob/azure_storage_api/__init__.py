@@ -76,7 +76,7 @@ def build_blob_name(folder_path:str, blob_name:str,file_type:str=None):
         raise ValueError("Folder name is required")
     if not blob_name:
         raise ValueError("Image uuid is required")
-    if file_type:
+    if file_type is not None:
         return "{}/{}.{}".format(folder_path, blob_name, file_type)
     else:
         return "{}/{}".format(folder_path, blob_name)
@@ -322,14 +322,17 @@ async def get_folder_uuid(container_client, folder_name):
     try:
         blob_list = container_client.list_blobs()
         for blob in blob_list:
+            
             if (
                 blob.name.split(".")[-1] == "json"
                 and blob.name.count("/") == 1
                 and blob.name.split("/")[0] == blob.name.split("/")[1].split(".")[0]
             ):
                 folder_json = await get_blob(container_client, blob.name)
+                
                 if folder_json:
                     folder_json = json.loads(folder_json)
+
                     if folder_json["folder_name"] == folder_name:
                         if "folder_uuid" not in folder_json:
                             raise GetFolderUUIDError("Folder UUID not found in folder metadata")
@@ -353,8 +356,9 @@ async def get_image_count(container_client, folder_name):
             blob_list = container_client.list_blobs()
             count = 0
             for blob in blob_list:
+                
                 if (blob.name.split("/")[0] == folder_name) and (
-                    blob.name.split(".")[-1] == "png"
+                    blob.name.split(".")[-1] != "json"
                 ):
                     count += 1
             return count
