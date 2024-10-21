@@ -158,10 +158,10 @@ async def create_picture_set(
                 f"User not found based on the given id: {user_id}"
             )
 
-        picture_set = data_picture_set.build_picture_set(user_id, nb_pictures)
+        picture_set_metadata = data_picture_set.build_picture_set(user_id, nb_pictures)
         picture_set_id = picture.new_picture_set(
             cursor=cursor,
-            picture_set=picture_set,
+            picture_set=picture_set_metadata,
             user_id=user_id,
             folder_name=folder_name,
         )
