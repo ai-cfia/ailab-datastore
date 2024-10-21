@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from psycopg import Cursor
 from psycopg.rows import dict_row
 from psycopg.sql import SQL
@@ -28,7 +30,7 @@ def create_unit(cursor: Cursor, unit: str, to_si_unit: float | None = None):
         return new_cur.fetchone()
 
 
-def read_unit(cursor: Cursor, id: str):
+def read_unit(cursor: Cursor, id: str | UUID):
     """
     Retrieves a unit record by ID.
 
@@ -64,7 +66,9 @@ def read_all_units(cursor: Cursor):
         return new_cur.fetchall()
 
 
-def update_unit(cursor: Cursor, id: str, unit: str, to_si_unit: float | None = None):
+def update_unit(
+    cursor: Cursor, id: str | UUID, unit: str, to_si_unit: float | None = None
+):
     """
     Updates an existing unit record by ID.
 
@@ -94,7 +98,7 @@ def update_unit(cursor: Cursor, id: str, unit: str, to_si_unit: float | None = N
         return new_cur.fetchone()
 
 
-def delete_unit(cursor: Cursor, id: str):
+def delete_unit(cursor: Cursor, id: str | UUID):
     """
     Deletes a unit record by ID.
 
@@ -149,4 +153,3 @@ def query_units(
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(query, parameters)
         return new_cur.fetchall()
-

@@ -18,7 +18,7 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.models import DBInspection, Guaranteed
+from fertiscan.db.models import DBInspection, DBMetric, Guaranteed, Metric
 from fertiscan.db.queries import inspection, label, metric, sub_label
 from fertiscan.db.queries.guaranteed import query_guaranteed
 
@@ -167,9 +167,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(validator.is_valid_uuid(analysis["product"]["label_id"]))
         label_id = analysis["product"]["label_id"]
 
-        metrics = metric.get_metric_by_label(
-            self.cursor, str(analysis["product"]["label_id"])
+        metrics = metric.query_metrics(
+            self.cursor, label_id=str(analysis["product"]["label_id"])
         )
+        metrics = [Metric.model_validate(data) for data in metrics]
 
         self.assertIsNotNone(metrics)
         self.assertEqual(
@@ -481,19 +482,19 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         #         self.assertFalse(specific[4])
         #         self.assertEqual(specific[1], old_value)
         # check if metrics are updated correctly
-        metrics = metric.get_metric_by_label(self.cursor, label_id)
-        for metric_data in metrics:
-            if metric_data[4] == "weight":
-                if metric_data[3] is True:
-                    self.assertEqual(metric_data[1], new_weight)
-                else:
-                    self.assertEqual(metric_data[1], untouched_weight)
-            elif metric_data[4] == "density":
-                self.assertEqual(metric_data[1], new_density)
-                self.assertTrue(metric_data[3])
-            elif metric_data[4] == "volume":
-                self.assertEqual(metric_data[1], untouched_volume)
-                self.assertFalse(metric_data[3])
+
+        metrics = metric.query_metrics(self.cursor, label_id=label_id)
+        metrics = [DBMetric.model_validate(data) for data in metrics]
+        for m in metrics:
+            if m.metric_type == "weight":
+                self.assertEqual(m.value, new_weight if m.edited else untouched_weight)
+            elif m.metric_type == "density":
+                self.assertEqual(m.value, new_density)
+                self.assertTrue(m.edited)
+            elif m.metric_type == "volume":
+                self.assertEqual(m.value, untouched_volume)
+                self.assertFalse(m.edited)
+
         # verify npk update & guaranteed title updates(label_information)
         label_info_data = label.get_label_information(self.cursor, label_id)
         self.assertEqual(label_info_data[3], new_npk)

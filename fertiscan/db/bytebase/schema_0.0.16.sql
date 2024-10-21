@@ -420,6 +420,25 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     JOIN 
         "fertiscan_0.0.16".element_compound ec ON g.element_id = ec.id;
 
+
+    CREATE VIEW "fertiscan_0.0.16".full_metric_view AS
+    SELECT
+        m.id,
+        m.value,
+        u.unit,
+        u.to_si_unit,
+        m.edited,
+        m.metric_type,
+        m.label_id,
+        CONCAT(CAST(m.value AS CHAR), ' ', u.unit) AS full_metric
+    FROM
+        "fertiscan_0.0.16".metric m
+    JOIN
+        "fertiscan_0.0.16".unit u
+    ON
+        m.unit_id = u.id;
+
+
 end if;
 END
 $do$;

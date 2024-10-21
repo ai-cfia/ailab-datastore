@@ -1,8 +1,10 @@
 from uuid import UUID
 
 from psycopg import Cursor
-from psycopg.rows import dict_row
+from psycopg.rows import dict_row, tuple_row
 from psycopg.sql import SQL
+
+from fertiscan.db.models import GuaranteedAnalysis
 
 
 def create_guaranteed(
@@ -247,3 +249,51 @@ def read_full_guaranteed(cursor: Cursor, id: str | UUID):
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(query, (id,))
         return new_cur.fetchone()
+
+
+def get_guaranteed_analysis_json(cursor: Cursor, label_id: str | UUID):
+    """
+    Retrieves the guaranteed analysis JSON for a specific label from the database.
+
+    Args:
+        cursor (Cursor): The database cursor used to execute the query.
+        label_id (str | UUID): The UUID or string ID of the label.
+
+    Returns:
+        dict: The guaranteed analysis JSON as a dictionary. If no data is found,
+        returns a default dictionary with keys "title", "is_minimal", "en", and "fr".
+    """
+    query = """
+        SELECT get_guaranteed_analysis_json(%s);
+    """
+    cursor.row_factory = tuple_row
+    cursor.execute(query, (label_id,))
+    data = cursor.fetchone()[0]
+    if data is None:
+        data = {"title": None, "is_minimal": False, "en": [], "fr": []}
+    return data
+
+
+def update_guaranteed_analysis(
+    cursor: Cursor, label_id: str | UUID, guaranteed_analysis: dict | GuaranteedAnalysis
+):
+    """
+    Updates the guaranteed analysis for a specific label in the database.
+
+    Args:
+        cursor (Cursor): The database cursor used to execute the query.
+        label_id (str | UUID): The UUID or string ID of the label.
+        guaranteed_analysis (dict | GuaranteedAnalysis): The guaranteed analysis
+        data, either as a dictionary or a GuaranteedAnalysis instance.
+
+    Returns:
+        None
+    """
+    if not isinstance(guaranteed_analysis, GuaranteedAnalysis):
+        guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
+
+    cursor.row_factory = tuple_row
+    cursor.execute(
+        "SELECT update_guaranteed_analysis(%s, %s);",
+        (label_id, guaranteed_analysis.model_dump_json()),
+    )

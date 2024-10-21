@@ -8,14 +8,21 @@ import unittest
 import uuid
 
 import datastore.db as db
-from fertiscan.db.models import ElementCompound, FullGuaranteed, Guaranteed
+from fertiscan.db.models import (
+    ElementCompound,
+    FullGuaranteed,
+    Guaranteed,
+    GuaranteedAnalysis,
+)
 from fertiscan.db.queries.element_compound import create_element_compound
 from fertiscan.db.queries.guaranteed import (
     create_guaranteed,
+    get_guaranteed_analysis_json,
     query_guaranteed,
     read_all_guaranteed,
     read_full_guaranteed,
     read_guaranteed,
+    update_guaranteed_analysis,
 )
 from fertiscan.db.queries.label import new_label_information
 
@@ -281,3 +288,72 @@ class TestGuaranteedAnalysis(unittest.TestCase):
 
         # Assert that no results are returned
         self.assertEqual(len(results), 0)
+
+    def test_get_guaranteed_analysis_json_empty(self):
+        label_id = new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.title_en,
+            self.title_fr,
+            self.is_minimal,
+            None,
+            None,
+        )
+
+        ga = get_guaranteed_analysis_json(self.cursor, label_id)
+        ga = GuaranteedAnalysis.model_validate(ga)
+        self.assertEqual(ga.title.en, self.title_en)
+        self.assertEqual(ga.title.fr, self.title_fr)
+        self.assertEqual(ga.is_minimal, self.is_minimal)
+
+    def test_update_and_get_guaranteed_analysis(self):
+        label_id = new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            self.title_en,
+            self.title_fr,
+            self.is_minimal,
+            None,
+            None,
+        )
+
+        input = {
+            "en": [
+                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                {
+                    "name": "Available Phosphate (P2O5)",
+                    "value": 22,
+                    "unit": "%",
+                },
+                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+            ],
+            "fr": [
+                {"name": "Total Nitrogen (N)", "value": 22, "unit": "%"},
+                {
+                    "name": "Available Phosphate (P2O5)",
+                    "value": 22,
+                    "unit": "%",
+                },
+                {"name": "Soluble Potash (K2O)", "value": 22, "unit": "%"},
+            ],
+        }
+        input = GuaranteedAnalysis.model_validate(input)
+        update_guaranteed_analysis(self.cursor, label_id, input)
+
+        # Verify that the data is correctly saved
+        output = get_guaranteed_analysis_json(self.cursor, label_id)
+        output = GuaranteedAnalysis.model_validate(output)
+        self.assertIsNotNone(output)
+        self.assertEqual(input, output)

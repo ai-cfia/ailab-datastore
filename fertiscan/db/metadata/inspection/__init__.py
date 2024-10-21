@@ -20,9 +20,11 @@ from fertiscan.db.models import (
     Value,
 )
 from fertiscan.db.queries import (
+    guaranteed,
     ingredient,
     inspection,
     label,
+    located_organization_information,
     metric,
     nutrients,
     organization,
@@ -267,7 +269,9 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         product_info.metrics = metrics
 
         # get the organizations information (Company and Manufacturer)
-        org = label.get_company_manufacturer_json(cursor, label_info_id)
+        org = located_organization_information.get_company_manufacturer_json(
+            cursor, label_info_id
+        )
         org = CompanyManufacturer.model_validate(org)
 
         # Get all the sub labels
@@ -276,7 +280,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         instructions = SubLabel.model_validate(sub_labels.get("instructions"))
 
         # Get the guaranteed analysis
-        guaranteed_analysis = label.get_guaranteed_analysis_json(cursor, label_info_id)
+        guaranteed_analysis = guaranteed.get_guaranteed_analysis_json(cursor, label_info_id)
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
         # Get the inspection information
@@ -303,7 +307,6 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
         or sub_label.SubLabelNotFoundError
         or ingredient.IngredientNotFoundError
         or nutrients.MicronutrientNotFoundError
-        or nutrients.GuaranteedNotFoundError
         or specification.SpecificationNotFoundError
     ):
         raise

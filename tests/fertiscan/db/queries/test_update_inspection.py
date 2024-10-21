@@ -18,11 +18,18 @@ from fertiscan.db.models import (
     Metrics,
     OrganizationInformation,
 )
-from fertiscan.db.queries import inspection, metric, organization
-from fertiscan.db.queries import label
 from fertiscan.db.queries.fertilizer import query_fertilizers
-from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
-from fertiscan.db.queries.label import get_company_manufacturer_json
+from fertiscan.db.queries.guaranteed import get_guaranteed_analysis_json
+from fertiscan.db.queries.inspection import (
+    get_inspection_dict,
+    new_inspection_with_label_info,
+    update_inspection,
+)
+from fertiscan.db.queries.located_organization_information import (
+    get_company_manufacturer_json,
+)
+from fertiscan.db.queries.metric import get_metrics_json
+from fertiscan.db.queries.organization import read_organization
 from fertiscan.db.queries.organization_information import read_organization_information
 
 load_dotenv()
@@ -64,7 +71,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Create initial inspection data in the database
         self.picture_set_id = None  # No picture set ID for this test case
-        data = inspection.new_inspection_with_label_info(
+        data = new_inspection_with_label_info(
             self.cursor, self.inspector_id, self.picture_set_id, create_input_json_str
         )
         self.inspection = Inspection.model_validate(data)
@@ -146,7 +153,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify the metrics were updated
-        metrics = metric.get_metrics_json(self.cursor, self.inspection.product.label_id)
+        metrics = get_metrics_json(self.cursor, self.inspection.product.label_id)
         metrics = Metrics.model_validate(metrics)
         self.assertEqual(
             metrics.weight[0].value,
@@ -161,9 +168,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Verify the guaranteed analysis value was updated
-        ga = label.get_guaranteed_analysis_json(
-            self.cursor, self.inspection.product.label_id
-        )
+        ga = get_guaranteed_analysis_json(self.cursor, self.inspection.product.label_id)
         ga = GuaranteedAnalysis.model_validate(ga)
         nutrient = next((n for n in ga.en if n.name == "Total Nitrogen (N)"), None)
 
@@ -216,9 +221,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         # Check if the owner_id matches the organization information created for the manufacturer
-        organization_data = organization.read_organization(
-            self.cursor, created_fertilizer.owner_id
-        )
+        organization_data = read_organization(self.cursor, created_fertilizer.owner_id)
         information_id = organization_data[0]
         org_info = read_organization_information(self.cursor, information_id)
         org_info = OrganizationInformation.model_validate(org_info)

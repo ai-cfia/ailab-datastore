@@ -248,3 +248,24 @@ def delete_located_organization_information(cursor: Cursor, id: str | UUID):
     with cursor.connection.cursor(row_factory=dict_row) as new_cur:
         new_cur.execute(query, (id,))
         return new_cur.fetchone()
+
+
+def get_company_manufacturer_json(cursor: Cursor, label_id: str | UUID):
+    """
+    Retrieves a JSON containing both company and manufacturer information for a
+    specific label.
+
+    Args:
+        cursor (Cursor): The database cursor used to execute the query.
+        label_id (str | UUID): The UUID or string ID of the label.
+
+    Returns:
+        dict | None: A dictionary containing company and manufacturer information,
+        or None if not found.
+    """
+    query = SQL(
+        "SELECT * FROM label_company_manufacturer_json_view WHERE label_id = %s;"
+    )
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (label_id,))
+        return new_cur.fetchone()

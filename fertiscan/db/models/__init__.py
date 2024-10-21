@@ -225,3 +225,23 @@ class Unit(ValidatedModel):
     id: UUID4
     unit: str
     to_si_unit: float | None = None
+
+
+class DBMetric(ValidatedModel):
+    id: UUID4
+    value: float | None = None
+    unit_id: UUID4 | None = None
+    edited: bool | None = None
+    metric_type: str | None = None
+    label_id: UUID4 | None = None
+
+
+class FullMetric(ValidatedModel):
+    id: UUID4
+    value: float | None = None
+    unit: str | None = None
+    to_si_unit: float | None = None
+    edited: bool | None = None
+    metric_type: str | None = None
+    label_id: UUID4 | None = None
+    full_metric: str | None = None

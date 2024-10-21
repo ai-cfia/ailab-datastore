@@ -116,7 +116,7 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         # Verify that the related metrics were deleted
         self.assertListEqual(
-            metric.get_metric_by_label(self.cursor, self.label_info_id),
+            metric.query_metrics(self.cursor, label_id=self.label_info_id),
             [],
             "Metrics should not be found after deletion.",
         )
