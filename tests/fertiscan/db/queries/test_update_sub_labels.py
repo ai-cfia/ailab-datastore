@@ -5,13 +5,22 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-import fertiscan.db.queries.sub_label as sub_label
 import fertiscan.db.queries.label as label
-from fertiscan.db.metadata.inspection import (
+import fertiscan.db.queries.sub_label as sub_label
+from fertiscan.db.models import (
     Inspection,
+    Location,
     OrganizationInformation,
+    Province,
+    Region,
     SubLabel,
 )
+from fertiscan.db.queries.location import create_location
+from fertiscan.db.queries.organization_information import (
+    create_organization_information,
+)
+from fertiscan.db.queries.province import create_province
+from fertiscan.db.queries.region import create_region
 
 load_dotenv()
 
@@ -90,19 +99,31 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         }
         self.nb_updated = 10
 
-        # Set up organization information using the Pydantic model
-        sample_org_info = OrganizationInformation(
-            name="Test Company",
-            address="123 Test Address",
-            website="http://www.testcompany.com",
-            phone_number="+1 800 555 0123",
-        ).model_dump_json()
+        # Set up organization information
+        self.province_name = "a-test-province"
+        self.region_name = "test-region"
+        self.name = "test-organization"
+        self.website = "www.test.com"
+        self.phone = "123456789"
+        self.location_name = "test-location"
+        self.location_address = "test-address"
+        self.province = create_province(self.cursor, self.province_name)
+        self.province = Province.model_validate(self.province)
+        self.region = create_region(self.cursor, self.region_name, self.province.id)
+        self.region = Region.model_validate(self.region)
+        self.location = create_location(
+            self.cursor, self.location_name, self.location_address, self.region.id
+        )
+        self.location = Location.model_validate(self.location)
+        self.company_info = create_organization_information(
+            self.cursor,
+            self.name,
+            self.website,
+            self.phone,
+            self.location.id,
+        )
+        self.company_info = OrganizationInformation.model_validate(self.company_info)
 
-        # Insert organization info and retrieve company_info_id
-        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
-        self.company_info_id = self.cursor.fetchone()[0]
-
-        # Insert label information
         self.label_id = label.new_label_information(
             self.cursor,
             "test-label",
@@ -115,8 +136,8 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             None,
             None,
             None,
-            self.company_info_id,
-            self.company_info_id,
+            self.company_info.id,
+            self.company_info.id,
         )
 
     def tearDown(self):
@@ -127,39 +148,30 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
     def test_update_sub_labels(self):
         # Insert initial sub labels
+        # TODO: write missing sub_label functions
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
             (self.label_id, json.dumps(self.sample_sub_labels)),
         )
 
-        saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
-        nb_sub_labels = len(saved_data["instructions"]["en"]) + len(
-            saved_data["cautions"]["en"]
-        )
-
-        self.assertEqual(
-            nb_sub_labels,
-            self.nb_sub_labels,
-            f"There should be {self.nb_sub_labels} sub label records inserted",
-        )
+        saved_sub_labels = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        for k, v in saved_sub_labels.items():
+            self.assertDictEqual(v, self.sample_sub_labels[k])
+            for lang, arr in v.items():
+                self.assertCountEqual(arr, self.sample_sub_labels[k][lang])
 
         # Update sub labels
+        # TODO: write missing sub_label functions
         self.cursor.execute(
             "SELECT update_sub_labels(%s, %s);",
             (self.label_id, json.dumps(self.updated_sub_labels)),
         )
 
         # Verify that the data is correctly updated
-        updated_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
-        nb_updated = len(updated_data["instructions"]["en"]) + len(
-            updated_data["cautions"]["en"]
-        )
-
-        self.assertEqual(
-            nb_updated,
-            self.nb_updated,
-            f"There should be {self.nb_updated} sub label records updated",
-        )
+        updated_sub_labels = sub_label.get_sub_label_json(self.cursor, self.label_id)
+        for k, v in updated_sub_labels.items():
+            for lang, arr in v.items():
+                self.assertCountEqual(arr, self.updated_sub_labels[k][lang])
 
     def test_update_sub_labels_with_mismatched_arrays(self):
         # Load the sub-labels from sample data
@@ -173,6 +185,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         try:
             # Attempt to update the sub-labels in the database
+            # TODO: write missing sub_label functions
             self.cursor.execute(
                 "SELECT update_sub_labels(%s, %s);",
                 (self.label_id, mismatched_sub_labels),
@@ -214,6 +227,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
 
         try:
             # Execute the function with empty sub labels
+            # TODO: write missing sub_label functions
             self.cursor.execute(
                 "SELECT update_sub_labels(%s, %s);", (self.label_id, empty_sub_labels)
             )
@@ -221,15 +235,10 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             self.fail(f"update_sub_labels raised an exception with empty arrays: {e}")
 
         # Verify that no new data was inserted
-        self.cursor.execute(
-            "SELECT text_content_fr, text_content_en FROM sub_label WHERE label_id = %s;",
-            (self.label_id,),
-        )
-        saved_data_empty = self.cursor.fetchall()
-
-        self.assertEqual(
-            len(saved_data_empty),
-            0,
+        saved_data_empty = sub_label.get_all_sub_label(self.cursor, self.label_id)
+        self.assertListEqual(
+            saved_data_empty,
+            [],
             "No sub label records should be inserted when arrays are empty",
         )
 

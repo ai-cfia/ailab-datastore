@@ -2,12 +2,16 @@ import asyncio
 import json
 import os
 import unittest
+import uuid
 
 from dotenv import load_dotenv
 from psycopg import connect
 
+from datastore.db.queries import user
 from fertiscan import get_full_inspection_json
-from fertiscan.db.metadata.inspection import Inspection
+from fertiscan.db.models import Fertilizer, Inspection
+from fertiscan.db.queries import inspection
+from fertiscan.db.queries.fertilizer import query_fertilizers
 from fertiscan.db.queries.inspection import update_inspection
 
 load_dotenv()
@@ -34,17 +38,10 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         self.cursor = self.conn.cursor()
 
         # Create a user to act as inspector
-        self.cursor.execute(
-            """
-            INSERT INTO users (email) 
-            VALUES (%s)
-            ON CONFLICT (email) DO UPDATE 
-            SET email = EXCLUDED.email 
-            RETURNING id;
-            """,
-            ("inspector@example.com",),
+        self.username = uuid.uuid4().hex
+        self.inspector_id = user.register_user(
+            self.cursor, f"{self.username}@example.com"
         )
-        self.inspector_id = self.cursor.fetchone()[0]
 
         # Load the JSON data for creating a new inspection
         with open(TEST_INSPECTION_JSON_PATH, "r") as file:
@@ -54,11 +51,9 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
 
         # Create initial inspection data in the database
         self.picture_set_id = None
-        self.cursor.execute(
-            "SELECT new_inspection(%s, %s, %s);",
-            (self.inspector_id, self.picture_set_id, create_input_json_str),
+        self.created_data = inspection.new_inspection_with_label_info(
+            self.cursor, self.inspector_id, self.picture_set_id, create_input_json_str
         )
-        self.created_data = self.cursor.fetchone()[0]
         self.created_inspection = Inspection.model_validate(self.created_data)
 
         # Store the inspection ID for later use
@@ -119,16 +114,10 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         )
 
         # Verify that no fertilizer record was created
-        self.cursor.execute(
-            "SELECT COUNT(*) FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection_id,),
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection_id
         )
-        fertilizer_count = self.cursor.fetchone()[0]
-        self.assertEqual(
-            fertilizer_count,
-            0,
-            "No fertilizer should be created when verified is false.",
-        )
+        self.assertListEqual(fertilizers, [])
 
     def test_python_function_update_inspection_with_verified_true(self):
         # Create a model copy and update the verified status via the model
@@ -155,13 +144,17 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
             "The verified status should be True as updated.",
         )
 
-        self.cursor.execute(
-            "SELECT id FROM fertilizer WHERE latest_inspection_id = %s;",
-            (self.inspection_id,),
+        # Verify that a fertilizer record was created
+        fertilizers = query_fertilizers(
+            cursor=self.cursor, latest_inspection_id=self.inspection_id
         )
-        fertilizer_id = self.cursor.fetchone()
-        self.assertIsNotNone(
-            fertilizer_id, "A fertilizer record should have been created."
+        self.assertEqual(len(fertilizers), 1)
+        created_fertilizer = Fertilizer.model_validate(fertilizers[0])
+        self.assertIsNotNone(created_fertilizer)
+        self.assertEqual(created_fertilizer.name, updated_inspection.product.name)
+        self.assertEqual(
+            created_fertilizer.registration_number,
+            updated_inspection.product.registration_number,
         )
 
 

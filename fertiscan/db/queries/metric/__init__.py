@@ -1,7 +1,10 @@
-"""
-This module represent the function for the table metric and its children unit:
+from uuid import UUID
 
-"""
+from psycopg import Cursor
+from psycopg.rows import dict_row, tuple_row
+from psycopg.sql import SQL
+
+from fertiscan.db.models import Metrics
 
 
 class MetricCreationError(Exception):
@@ -12,146 +15,212 @@ class MetricNotFoundError(Exception):
     pass
 
 
-class UnitCreationError(Exception):
-    pass
-
-
-class UnitNotFoundError(Exception):
-    pass
-
-
-def is_a_metric(cursor, metric_id):
+def create_metric(
+    cursor: Cursor,
+    value: float | None = None,
+    edited: bool | None = None,
+    unit_id: str | UUID | None = None,
+    metric_type: str | None = None,
+    label_id: str | UUID | None = None,
+):
     """
-    This function checks if the metric is in the database.
+    Inserts a new metric record into the database.
 
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - metric_id (str): The UUID of the metric.
+    Args:
+        cursor: Database cursor object.
+        value: The value of the metric (optional).
+        edited: Whether the metric is edited (optional).
+        unit_id: The ID of the unit associated with the metric (optional).
+        metric_type: The type of the metric (optional).
+        label_id: The ID of the label information (optional).
 
     Returns:
-    - boolean: if the metric exists.
+        The inserted metric record as a dictionary, or None if failed.
     """
-
-    try:
-        query = """
-            SELECT EXISTS(
-                SELECT 
-                    1 
-                FROM 
-                    metric
-                WHERE 
-                    id = %s
-                )   
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()[0]
-    except Exception:
-        return False
+    query = SQL("""
+        INSERT INTO metric (value, edited, unit_id, metric_type, label_id)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING *;
+    """)
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (value, edited, unit_id, metric_type, label_id))
+        return new_cur.fetchone()
 
 
-def new_metric(cursor, value, read_unit, label_id, metric_type: str, edited=False):
+def read_metric(cursor: Cursor, id: str | UUID):
     """
-    This function uploads a new metric to the database.
+    Retrieves a metric record by ID.
 
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - value (float): The value of the metric.
-    - unit_id (str): The UUID of the unit.
-    - edited (boolean, optional): The value if the metric has been edited by the user after confirmation. Default is False.
+    Args:
+        cursor: Database cursor object.
+        id: ID of the metric.
 
     Returns:
-    - The UUID of the metric.
+        The metric record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Metric ID must be provided.")
 
-    try:
-        if metric_type.lower() not in ["density", "weight", "volume"]:
-            raise MetricCreationError(
-                f"Error: metric type:{metric_type} not valid. Metric type must be one of the following: 'density','weight','volume'"
-            )
-        query = """
-            SELECT new_metric_unit(%s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            query,
-            (
-                value,
-                read_unit,
-                label_id,
-                metric_type.lower(),
-                edited,
-            ),
-        )
-        return cursor.fetchone()[0]
-    except MetricCreationError as e:
-        raise e
-    except Exception:
-        raise MetricCreationError("Error: metric not uploaded")
+    query = SQL("SELECT * FROM metric WHERE id = %s;")
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (id,))
+        return new_cur.fetchone()
 
 
-def get_metric(cursor, metric_id):
+def read_all_metrics(cursor: Cursor):
     """
-    This function gets the metric from the database.
+    Retrieves all metric records from the database.
 
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - metric_id (str): The UUID of the metric.
+    Args:
+        cursor: Database cursor object.
 
     Returns:
-    - The metric.
+        A list of all metric records as dictionaries.
     """
-
-    try:
-        query = """
-            SELECT
-                value,
-                unit_id,
-                edited,
-                metric_type
-            FROM
-                metric
-            WHERE
-                id = %s
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
+    query = SQL("SELECT * FROM metric;")
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query)
+        return new_cur.fetchall()
 
 
-def get_metric_by_label(cursor, label_id):
+def update_metric(
+    cursor: Cursor,
+    id: str | UUID,
+    value: float | None = None,
+    edited: bool | None = None,
+    unit_id: str | UUID | None = None,
+    metric_type: str | None = None,
+    label_id: str | UUID | None = None,
+):
     """
-    This function gets the metric from the database.
+    Updates an existing metric record by ID.
 
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - label_id (str): The UUID of the label.
+    Args:
+        cursor: Database cursor object.
+        id: ID of the metric.
+        value: New value of the metric (optional).
+        edited: New edited status (optional).
+        unit_id: New unit ID associated with the metric (optional).
+        metric_type: New type of the metric (optional).
+        label_id: New label information ID (optional).
 
     Returns:
-    - The metric.
+        The updated metric record as a dictionary, or None if not found.
     """
+    if not id:
+        raise ValueError("Metric ID must be provided.")
 
-    try:
-        query = """
-            SELECT
-                id,
-                value,
-                unit_id,
-                edited,
-                metric_type
-            FROM
-                metric
-            WHERE
-                label_id = %s
-            ORDER BY
-                metric_type
-            """
-        cursor.execute(query, (label_id,))
-        return cursor.fetchall()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
+    query = SQL("""
+        UPDATE metric
+        SET value = %s, edited = %s, unit_id = %s, metric_type = %s, label_id = %s
+        WHERE id = %s
+        RETURNING *;
+    """)
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (value, edited, unit_id, metric_type, label_id, id))
+        return new_cur.fetchone()
 
 
-def get_metrics_json(cursor, label_id) -> dict:
+def delete_metric(cursor: Cursor, id: str | UUID):
+    """
+    Deletes a metric record by ID.
+
+    Args:
+        cursor: Database cursor object.
+        id: ID of the metric.
+
+    Returns:
+        The deleted metric record as a dictionary, or None if not found.
+    """
+    if not id:
+        raise ValueError("Metric ID must be provided.")
+
+    query = SQL("""
+        DELETE FROM metric
+        WHERE id = %s
+        RETURNING *;
+    """)
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (id,))
+        return new_cur.fetchone()
+
+
+def query_metrics(
+    cursor: Cursor,
+    value_from: float | None = None,
+    value_to: float | None = None,
+    edited: bool | None = None,
+    unit_id: str | UUID | None = None,
+    metric_type: str | None = None,
+    label_id: str | UUID | None = None,
+) -> list[dict]:
+    """
+    Queries metrics based on optional filter criteria, including a range of values.
+
+    Args:
+        cursor: Database cursor object.
+        value_from: Start of the value range (inclusive).
+        value_to: End of the value range (inclusive).
+        edited: Optional edited status to filter metrics.
+        unit_id: Optional unit ID to filter metrics.
+        metric_type: Optional metric type to filter metrics.
+        label_id: Optional label ID to filter metrics.
+
+    Returns:
+        A list of metric records matching the filter criteria, as dictionaries.
+    """
+    conditions = []
+    parameters = []
+
+    if value_from is not None:
+        conditions.append("value >= %s")
+        parameters.append(value_from)
+    if value_to is not None:
+        conditions.append("value <= %s")
+        parameters.append(value_to)
+
+    if edited is not None:
+        conditions.append("edited = %s")
+        parameters.append(edited)
+    if unit_id is not None:
+        conditions.append("unit_id = %s")
+        parameters.append(unit_id)
+    if metric_type is not None:
+        conditions.append("metric_type = %s")
+        parameters.append(metric_type)
+    if label_id is not None:
+        conditions.append("label_id = %s")
+        parameters.append(label_id)
+
+    where_clause = " WHERE " + " AND ".join(conditions) if conditions else ""
+    query = SQL(f"SELECT * FROM metric{where_clause};")
+
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, parameters)
+        return new_cur.fetchall()
+
+
+def read_full_metric(cursor: Cursor, id: str | UUID):
+    """
+    Retrieves full metric details from the database using the full_metric_view.
+
+    Args:
+        cursor (Cursor): The database cursor used to execute the query.
+        id (str | UUID): The UUID or string ID of the metric record.
+
+    Returns:
+        dict | None: The metric record as a dictionary, or None if not found.
+    """
+    if not id:
+        raise ValueError("Metric ID must be provided.")
+
+    query = SQL("SELECT * FROM full_metric_view WHERE id = %s;")
+    with cursor.connection.cursor(row_factory=dict_row) as new_cur:
+        new_cur.execute(query, (id,))
+        return new_cur.fetchone()
+
+
+def get_metrics_json(cursor: Cursor, label_id) -> dict:
     """
     This function gets the metric from the database and returns it in json format.
 
@@ -162,147 +231,36 @@ def get_metrics_json(cursor, label_id) -> dict:
     Returns:
     - The metric in dict format.
     """
-    try:
-        query = """
-            SELECT get_metrics_json(%s);
-            """
-        cursor.execute(query, (str(label_id),))
-        metric = cursor.fetchone()
-        if metric is None:
-            raise MetricNotFoundError(
-                "Error: could not get the metric for label: " + str(label_id)
-            )
-        return metric[0]
-    except MetricNotFoundError as e:
-        raise e
-    except Exception:
-        raise Exception("Error: could not get the metric for label: " + str(label_id))
-
-
-def get_full_metric(cursor, metric_id):
-    """
-    This function gets the metric from the database with the unit.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - metric_id (str): The UUID of the metric.
-
-    Returns:
-    - The metric with the unit.
-    """
-
-    try:
-        query = """
-            SELECT
-                metric.id,
-                metric.value,
-                unit.unit,
-                unit.to_si_unit,
-                metric.edited,
-                metric.metric_type,
-                CONCAT(CAST(metric.value AS CHAR), ' ', unit.unit) AS full_metric
-            FROM
-                metric
-            JOIN
-                unit
-            ON
-                metric.unit_id = unit.id
-            WHERE
-                metric.id = %s
-            """
-        cursor.execute(query, (metric_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MetricNotFoundError("Error: metric not found")
-
-
-def new_unit(cursor, unit, to_si_unit):
-    """
-    This function uploads a new unit to the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - unit (str): The unit.
-    - to_si_unit (float): The unit in SI units.
-
-    Returns:
-    - The UUID of the unit.
-    """
-
-    try:
-        query = """
-            INSERT INTO 
-                unit(
-                    unit,
-                    to_si_unit
-                    )
-            VALUES
-                (%s, %s)
-            RETURNING id
-            """
-        cursor.execute(
-            query,
-            (
-                unit,
-                to_si_unit,
-            ),
+    query = """
+        SELECT get_metrics_json(%s);
+        """
+    cursor.execute(query, (str(label_id),))
+    metric = cursor.fetchone()
+    if metric is None:
+        raise MetricNotFoundError(
+            "Error: could not get the metric for label: " + str(label_id)
         )
-        return cursor.fetchone()[0]
-    except Exception:
-        raise UnitCreationError("Error: unit not uploaded")
+    return metric[0]
 
 
-def is_a_unit(cursor, unit):
+def update_metrics(cursor: Cursor, label_id: str | UUID, metrics: dict | Metrics):
     """
-    This function checks if the unit is in the database.
+    Updates the metrics for a specific label in the database.
 
     Parameters:
-    - cursor (cursor): The cursor of the database.
-    - unit (str): The unit.
+    - cursor (Cursor): The database cursor used to execute the query.
+    - label_id (str | UUID): The UUID or string ID of the label whose metrics
+      need to be updated.
+    - metrics (dict | Metrics): The metrics data, either as a dictionary or a
+      Metrics instance. This data contains the updated metrics information
+      to be stored.
 
-    Returns:
-    - boolean: if the unit exists.
     """
+    if not isinstance(metrics, Metrics):
+        metrics = Metrics.model_validate(metrics)
 
-    try:
-        query = """
-            SELECT EXISTS(
-                SELECT 
-                    1 
-                FROM 
-                    unit
-                WHERE 
-                    unit = %s
-                )   
-            """
-        cursor.execute(query, (unit,))
-        return cursor.fetchone()[0]
-    except Exception:
-        return False
-
-
-def get_unit_id(cursor, unit):
-    """
-    This function gets the unit from the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - unit (str): The unit.
-
-    Returns:
-    - The UUID of the unit.
-    """
-
-    try:
-        query = """
-            SELECT
-                id
-            FROM
-                unit
-            WHERE
-                unit = %s
-            """
-        cursor.execute(query, (unit,))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise UnitNotFoundError("Error: unit not found")
+    cursor.row_factory = tuple_row
+    cursor.execute(
+        "SELECT update_metrics(%s, %s);",
+        (label_id, metrics.model_dump_json()),
+    )
