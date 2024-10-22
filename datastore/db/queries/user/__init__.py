@@ -3,6 +3,9 @@ This module contains the queries related to the user table.
 """
 
 
+from uuid import UUID
+
+
 class UserCreationError(Exception):
     pass
 
@@ -104,7 +107,7 @@ def get_user_id(cursor, email: str) -> str:
         raise Exception("Unhandled Error")
 
 
-def register_user(cursor, email: str) -> None:
+def register_user(cursor, email: str) -> UUID:
     """
     This function registers a user in the database.
 

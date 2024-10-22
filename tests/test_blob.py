@@ -7,6 +7,7 @@ from azure.storage.blob import BlobServiceClient
 
 import datastore.blob.__init__ as blob
 from datastore.blob.__init__ import ConnectionStringError
+from datastore.blob.azure_storage_api import build_container_name
 
 BLOB_CONNECTION_STRING = os.environ["NACHET_STORAGE_URL_TESTING"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -30,7 +31,7 @@ class TestGetBlobServiceClient(unittest.TestCase):
 class TestCreateContainerClient(unittest.TestCase):
     def setUp(self):
         self.storage_url = BLOB_CONNECTION_STRING
-        self.container_name = "test-" + str(uuid.uuid4())
+        self.container_name = build_container_name("test-container", str(uuid.uuid4()))
         self.blob_service_client = BlobServiceClient.from_connection_string(
             self.storage_url
         )
