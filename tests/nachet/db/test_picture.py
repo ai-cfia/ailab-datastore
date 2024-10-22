@@ -50,7 +50,7 @@ class test_pictures_functions(unittest.TestCase):
             "utf8"
         )
         self.nb_seed = 1
-        self.picture_set = picture_set_data.build_picture_set(self.user_id, 1)
+        self.picture_set = picture_set_data.build_picture_set_metadata(self.user_id, 1)
         self.picture = picture_data.build_picture(
             self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
         )
