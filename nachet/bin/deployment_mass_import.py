@@ -101,7 +101,7 @@ def local_import(
         ]
     )
     # build picture_set
-    picture_set = picture_set_metadata.build_picture_set(
+    picture_set = picture_set_metadata.build_picture_set_metadata(
         user_id=user_id, nb_picture=nb_file
     )
 
