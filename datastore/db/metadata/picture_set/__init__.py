@@ -9,9 +9,9 @@ class PictureSetCreationError(Exception):
     pass
 
 
-def build_picture_set(user_id: str, nb_picture: int):
+def build_picture_set_metadata(user_id: str, nb_picture: int):
     """
-    This function builds the picture_set needed to represent each folder (with pictures in it) of a container.
+    This function builds the picture_set_metadata needed to represent each folder (with pictures in it) of a container.
 
     Parameters:
     - user_id (str): The UUID of the user uploading.
