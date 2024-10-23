@@ -107,7 +107,7 @@ def local_import(
 
     # upload picture_set to database
     picture_set_id = picture_query.new_picture_set(
-        cursor=cur, picture_set=picture_set, user_id=user_id
+        cursor=cur, picture_set_metadata=picture_set, user_id=user_id
     )
 
     # Get a list of files in the directory
