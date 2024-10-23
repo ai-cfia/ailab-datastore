@@ -131,6 +131,16 @@ def is_inspection_verified(cursor: Cursor, inspection_id):
         "Failed to check inspection verification status. No data returned."
     )
 
+VERIFIED = 0
+UPLOAD_DATE = 1
+UPDATED_AT = 2
+INSPECTOR_ID = 3
+LABEL_INFO_ID = 4
+SAMPLE_ID = 5
+PICTURE_SET_ID = 6
+FERTILIZER_ID = 7
+INSPECTION_COMMENT = 8
+
 
 @handle_query_errors(InspectionRetrievalError)
 def get_inspection(cursor: Cursor, inspection_id):

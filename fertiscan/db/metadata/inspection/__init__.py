@@ -341,11 +341,12 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
         raise BuildInspectionImportError(f"Unexpected error: {e}") from e
 
 
-def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
+def build_inspection_export(cursor, inspection_id) -> str:
     """
     This funtion build an inspection json object from the database.
     """
     try:
+        label_info_id = inspection.get_inspection(cursor,inspection_id)[inspection.LABEL_INFO_ID]
         # get the label information
         product_info = label.get_label_information_json(cursor, label_info_id)
         product_info = ProductInformation(**product_info)

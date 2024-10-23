@@ -288,7 +288,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         # Verify getters
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
         # TODO: investigate if this should pass and why it doesn't

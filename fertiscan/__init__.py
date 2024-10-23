@@ -203,7 +203,7 @@ async def get_full_inspection_json(
 
     # Retrieve label_info
     inspection_metadata = data_inspection.build_inspection_export(
-        cursor, inspection_id, label_info_id
+        cursor, inspection_id
     )
 
     return inspection_metadata
