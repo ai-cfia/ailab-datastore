@@ -123,6 +123,7 @@ class DBInspection(ValidatedModel):
 
 class Inspection(ValidatedModel):
     inspection_id: Optional[str] = None
+    inspector_id: Optional[str] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
     company: Optional[OrganizationInformation] = OrganizationInformation()
@@ -133,7 +134,7 @@ class Inspection(ValidatedModel):
     guaranteed_analysis: GuaranteedAnalysis
 
 
-def build_inspection_import(analysis_form: dict) -> str:
+def build_inspection_import(analysis_form: dict,user_id) -> str:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
@@ -322,6 +323,7 @@ def build_inspection_import(analysis_form: dict) -> str:
         )
 
         inspection_formatted = Inspection(
+            inspector_id=str(user_id),
             company=company,
             manufacturer=manufacturer,
             product=product,
@@ -377,6 +379,7 @@ def build_inspection_export(cursor, inspection_id, label_info_id) -> str:
 
         inspection_formatted = Inspection(
             inspection_id=str(inspection_id),
+            inspector_id=str(db_inspection.inspector_id),
             inspection_comment=db_inspection.inspection_comment,
             cautions=cautions,
             company=company,

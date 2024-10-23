@@ -269,7 +269,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "guaranteed_analysis_fr": {"title": None, "nutrients": []},
         }
 
-        formatted_analysis = metadata.build_inspection_import(empty_analysis)
+        formatted_analysis = metadata.build_inspection_import(empty_analysis,self.user.id)
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -321,7 +321,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
 
     def test_get_full_inspection_json(self):
-        formatted_analysis = metadata.build_inspection_import(self.analysis_json)
+        formatted_analysis = metadata.build_inspection_import(self.analysis_json, self.user.id)
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -336,6 +336,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
         data = json.loads(data)
         self.assertEqual(data["inspection_id"], str(inspection_id))
+        self.assertEqual(data["inspector_id"], str(self.user.id))
 
     def test_delete_inspection(self):
         # Create a new inspection to delete later

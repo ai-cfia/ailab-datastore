@@ -73,7 +73,7 @@ async def register_analysis(
     )
 
     # Register analysis in the database
-    formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
+    formatted_analysis = data_inspection.build_inspection_import(analysis_dict,user_id)
 
     analysis_db = inspection.new_inspection_with_label_info(
         cursor, user_id, picture_set_id, formatted_analysis
