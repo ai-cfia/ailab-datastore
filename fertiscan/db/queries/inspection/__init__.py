@@ -143,6 +143,16 @@ def is_inspection_verified(cursor, inspection_id):
     except Exception as e:
         raise Exception("Datastore inspection unhandeled error" + e.__str__())
 
+VERIFIED = 0
+UPLOAD_DATE = 1
+UPDATED_AT = 2
+INSPECTOR_ID = 3
+LABEL_INFO_ID = 4
+SAMPLE_ID = 5
+PICTURE_SET_ID = 6
+FERTILIZER_ID = 7
+INSPECTION_COMMENT = 8
+
 
 def get_inspection(cursor, inspection_id):
     """
