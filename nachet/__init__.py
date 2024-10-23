@@ -880,7 +880,7 @@ async def delete_picture_set_with_archive(
         )
         dev_picture_set_id = picture.new_picture_set(
             cursor=cursor,
-            picture_set=picture_set,
+            picture_set_metadata=picture_set,
             user_id=dev_user_id,
             folder_name=folder_name,
         )

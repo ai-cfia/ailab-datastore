@@ -35,13 +35,13 @@ This module contains all the queries related to the Picture and PictureSet table
 """
 
 
-def new_picture_set(cursor, picture_set, user_id: str, folder_name: str = None):
+def new_picture_set(cursor, picture_set_metadata, user_id: str, folder_name: str = None):
     """
     This function uploads a new PictureSet to the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - picture_set (str): The PictureSet to upload. Must be formatted as a json
+    - picture_set_metadata (json -> str): The PictureSet to upload. Must be formatted as a json
     - user_id (str): The UUID of the user uploading.
     - folder_name (str, optional): The name of the folder. Defaults to None.
 
@@ -63,7 +63,7 @@ def new_picture_set(cursor, picture_set, user_id: str, folder_name: str = None):
         cursor.execute(
             query,
             (
-                picture_set,
+                picture_set_metadata,
                 user_id,
                 folder_name,
             ),
