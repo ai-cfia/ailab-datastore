@@ -31,44 +31,52 @@ DECLARE
     address_str text;
 BEGIN
     -- Skip processing if the input JSON object is empty or null
-    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
+    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) or
+    COALESCE(input_org_info->>'name', 
+		input_org_info->>'website', 
+		input_org_info->>'phone_number', 
+		input_org_info->>'address',
+		 '') = ''  THEN
+         RAISE WARNING 'Organization information is empty or null';
         RETURN NULL;
-    END IF;
-    address_str := input_org_info->>'address';
+    ELSE
+        
+        address_str := input_org_info->>'address';
 
-    -- CHECK IF ADRESS IS NULL
-    IF address_str IS NULL THEN
-        RAISE WARNING 'Address cannot be null';
-    ELSE 
-        -- Check if organization location exists by address
-        SELECT id INTO location_id
-        FROM location
-        WHERE location.address ILIKE address_str
-        LIMIT 1;
-            -- Use upsert_location to insert or update the location
-        location_id := upsert_location(location_id, address_str);
-    END IF;
+        -- CHECK IF ADRESS IS NULL
+        IF address_str IS NULL THEN
+            RAISE WARNING 'Address cannot be null';
+        ELSE 
+            -- Check if organization location exists by address
+            SELECT id INTO location_id
+            FROM location
+            WHERE location.address ILIKE address_str
+            LIMIT 1;
+                -- Use upsert_location to insert or update the location
+            location_id := upsert_location(location_id, address_str);
+        END IF;
 
-    -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
-    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
+        -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
+        organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
-    -- Upsert organization information
-    INSERT INTO organization_information (id, name, website, phone_number, location_id)
-    VALUES (
-        organization_info_id,
-        input_org_info->>'name',
-        input_org_info->>'website',
-        input_org_info->>'phone_number',
-        location_id
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET name = EXCLUDED.name,
-        website = EXCLUDED.website,
-        phone_number = EXCLUDED.phone_number,
-        location_id = EXCLUDED.location_id
-    RETURNING id INTO organization_info_id;
+        -- Upsert organization information
+        INSERT INTO organization_information (id, name, website, phone_number, location_id)
+        VALUES (
+            organization_info_id,
+            input_org_info->>'name',
+            input_org_info->>'website',
+            input_org_info->>'phone_number',
+            location_id
+        )
+        ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            website = EXCLUDED.website,
+            phone_number = EXCLUDED.phone_number,
+            location_id = EXCLUDED.location_id
+        RETURNING id INTO organization_info_id;
 
-    RETURN organization_info_id;
+        RETURN organization_info_id;
+    end if;
 END;
 $$ LANGUAGE plpgsql;
 
