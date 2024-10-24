@@ -174,7 +174,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     CREATE TABLE "fertiscan_0.0.15"."sub_type" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "type_fr" text Unique NOT NULL,
-        "type_en" text unique NOT NULL
+        "type_en" text unique NOT NULL,
     );
 
 
@@ -194,7 +194,10 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "text_content_en" text NOT NULL DEFAULT '',
         "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
-        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."sub_type" ("id")
+        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."sub_type" ("id"),
+        CONSTRAINT check_not_all_null CHECK (
+            COALESCE(text_content_en,text_content_fr, '') <> ''
+        )
     );
 
     CREATE TABLE "fertiscan_0.0.15"."micronutrient" (
