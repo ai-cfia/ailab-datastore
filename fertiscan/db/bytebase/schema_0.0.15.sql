@@ -60,7 +60,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "website" text,
         "phone_number" text,
         "location_id" uuid REFERENCES "fertiscan_0.0.15".location(id),
-        "edited" boolean DEFAULT false
+        "edited" boolean DEFAULT false,
+        CONSTRAINT check_not_all_null CHECK (
+            (name IS NOT NULL)::integer +
+            (website IS NOT NULL)::integer +
+            (phone_number IS NOT NULL)::integer +
+            (location_id is not null)::integer >= 1
     );
 
     CREATE TABLE "fertiscan_0.0.15"."organization" (
@@ -160,13 +165,16 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "edited" boolean,
     "unit_id" uuid REFERENCES "fertiscan_0.0.15".unit(id),
     "metric_type" "fertiscan_0.0.15".metric_type,
-    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE
+    "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
+    CONSTRAINT check_not_all_null CHECK (
+        (value IS NOT NULL)::integer +
+        (unit_id IS NOT NULL)::integer >= 1
     );
 
     CREATE TABLE "fertiscan_0.0.15"."sub_type" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "type_fr" text Unique NOT NULL,
-        "type_en" text unique NOT NULL
+        "type_en" text unique NOT NULL,
     );
 
 
@@ -186,7 +194,10 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "text_content_en" text NOT NULL DEFAULT '',
         "label_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."label_information" ("id") ON DELETE CASCADE,
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
-        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."sub_type" ("id")
+        "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.15"."sub_type" ("id"),
+        CONSTRAINT check_not_all_null CHECK (
+            COALESCE(text_content_en,text_content_fr, '') <> ''
+        )
     );
 
     CREATE TABLE "fertiscan_0.0.15"."micronutrient" (
@@ -208,7 +219,11 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "language" "fertiscan_0.0.15".LANGUAGE,
     "element_id" int REFERENCES "fertiscan_0.0.15".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
-    "edited" boolean
+    "edited" boolean,
+    CONSTRAINT check_not_all_null CHECK (
+        (read_name IS NOT NULL)::integer +
+        (value IS NOT NULL)::integer +
+        (unit IS NOT NULL)::integer >= 1
     );
 
     CREATE TABLE "fertiscan_0.0.15"."ingredient" (
