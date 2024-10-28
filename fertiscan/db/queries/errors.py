@@ -20,7 +20,7 @@ Query exceptions hierarchy:
        |__SubLabelQueryError
        |__SubTypeQueryError
 
-Each QueryError sub type exception has specific errors related to creation, retrieval, updating, and deletion, as well as a 'not found' error.
+Each QueryError sub type exception also has specific errors sub types related to creation, retrieval, updating, and deletion, as well as a 'not found' error.
 """
 
 from functools import wraps
