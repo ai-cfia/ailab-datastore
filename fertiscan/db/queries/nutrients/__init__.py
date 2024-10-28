@@ -3,32 +3,22 @@ This module represent the function for the table micronutrient, guaranteed and i
 
 """
 
+from psycopg import Cursor
 
-class ElementCreationError(Exception):
-    pass
-
-
-class ElementNotFoundError(Exception):
-    pass
-
-
-class MicronutrientCreationError(Exception):
-    pass
-
-
-class MicronutrientNotFoundError(Exception):
-    pass
+from fertiscan.db.queries.errors import (
+    ElementCompoundCreationError,
+    ElementCompoundNotFoundError,
+    ElementCompoundQueryError,
+    GuaranteedAnalysisCreationError,
+    GuaranteedAnalysisRetrievalError,
+    MicronutrientCreationError,
+    MicronutrientRetrievalError,
+    handle_query_errors,
+)
 
 
-class GuaranteedCreationError(Exception):
-    pass
-
-
-class GuaranteedNotFoundError(Exception):
-    pass
-
-
-def new_element(cursor, number, name_fr, name_en, symbol):
+@handle_query_errors(ElementCompoundCreationError)
+def new_element(cursor: Cursor, number, name_fr, name_en, symbol):
     """
     This function add a new element in the database.
 
@@ -43,19 +33,19 @@ def new_element(cursor, number, name_fr, name_en, symbol):
     - str: The UUID of the element.
     """
 
-    try:
-        query = """
-            INSERT INTO element_compound (number,name_fr,name_en,symbol)
-            VALUES (%s,%s,%s,%s)
-            RETURNING id
-            """
-        cursor.execute(query, (number, name_fr, name_en, symbol))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise ElementCreationError
+    query = """
+        INSERT INTO element_compound (number,name_fr,name_en,symbol)
+        VALUES (%s,%s,%s,%s)
+        RETURNING id
+        """
+    cursor.execute(query, (number, name_fr, name_en, symbol))
+    if result := cursor.fetchone():
+        return result[0]
+    raise ElementCompoundCreationError("Failed to create element. No data returned.")
 
 
-def get_element_id_full_search(cursor, name):
+@handle_query_errors(ElementCompoundQueryError)
+def get_element_id_full_search(cursor: Cursor, name):
     """
     This function get the element in the database.
 
@@ -67,19 +57,21 @@ def get_element_id_full_search(cursor, name):
     - str: The UUID of the element.
     """
 
-    try:
-        query = """
-            SELECT id
-            FROM element_compound
-            WHERE name_fr ILIKE %s OR name_en ILIKE %s OR symbol = %s
-            """
-        cursor.execute(query, (name, name, name))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise ElementNotFoundError
+    query = """
+        SELECT id
+        FROM element_compound
+        WHERE name_fr ILIKE %s OR name_en ILIKE %s OR symbol = %s
+        """
+    cursor.execute(query, (name, name, name))
+    if result := cursor.fetchone():
+        return result[0]
+    raise ElementCompoundNotFoundError(
+        "Failed to retrieve element id. No data returned."
+    )
 
 
-def get_element_id_name(cursor, name):
+@handle_query_errors(ElementCompoundQueryError)
+def get_element_id_name(cursor: Cursor, name):
     """
     This function get the element in the database.
 
@@ -91,23 +83,25 @@ def get_element_id_name(cursor, name):
     - str: The UUID of the element.
     """
 
-    try:
-        query = """
-            SELECT 
-                id
-            FROM 
-                element_compound
-            WHERE 
-                name_fr = %s OR 
-                name_en = %s
-            """
-        cursor.execute(query, (name, name))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise ElementNotFoundError
+    query = """
+        SELECT 
+            id
+        FROM 
+            element_compound
+        WHERE 
+            name_fr = %s OR 
+            name_en = %s
+        """
+    cursor.execute(query, (name, name))
+    if result := cursor.fetchone():
+        return result[0]
+    raise ElementCompoundNotFoundError(
+        "Failed to retrieve element id. No data returned."
+    )
 
 
-def get_element_id_symbol(cursor, symbol):
+@handle_query_errors(ElementCompoundQueryError)
+def get_element_id_symbol(cursor: Cursor, symbol):
     """
     This function get the element in the database.
 
@@ -119,23 +113,25 @@ def get_element_id_symbol(cursor, symbol):
     - str: The UUID of the element.
     """
 
-    try:
-        query = """
-            SELECT 
-                id
-            FROM 
-                element_compound
-            WHERE 
-                symbol ILIKE %s
-            """
-        cursor.execute(query, (symbol,))
-        return cursor.fetchone()[0]
-    except Exception:
-        raise ElementNotFoundError
+    query = """
+        SELECT 
+            id
+        FROM 
+            element_compound
+        WHERE 
+            symbol ILIKE %s
+        """
+    cursor.execute(query, (symbol,))
+    if result := cursor.fetchone():
+        return result[0]
+    raise ElementCompoundNotFoundError(
+        "Failed to retrieve element id. No data returned."
+    )
 
 
+@handle_query_errors(MicronutrientCreationError)
 def new_micronutrient(
-    cursor,
+    cursor: Cursor,
     read_name: str,
     value: float,
     unit: str,
@@ -159,21 +155,19 @@ def new_micronutrient(
     - str: The UUID of the micronutrient.
     """
 
-    try:
-        if language.lower() not in ["fr", "en"]:
-            raise MicronutrientCreationError("Language not supported")
-        query = """
-            SELECT new_micronutrient(%s, %s, %s, %s, %s,%s,%s);
-            """
-        cursor.execute(
-            query, (read_name, value, unit, label_id, language, edited, element_id)
-        )
-        return cursor.fetchone()[0]
-    except Exception:
-        raise MicronutrientCreationError
+    if language.lower() not in ["fr", "en"]:
+        raise MicronutrientCreationError("Language not supported")
+    query = """
+        SELECT new_micronutrient(%s, %s, %s, %s, %s,%s,%s);
+        """
+    cursor.execute(
+        query, (read_name, value, unit, label_id, language, edited, element_id)
+    )
+    return cursor.fetchone()[0]
 
 
-def get_micronutrient(cursor, micronutrient_id):
+@handle_query_errors(MicronutrientRetrievalError)
+def get_micronutrient(cursor: Cursor, micronutrient_id):
     """
     This function get the micronutrient in the database.
 
@@ -185,28 +179,26 @@ def get_micronutrient(cursor, micronutrient_id):
     - str: The UUID of the micronutrient.
     """
 
-    try:
-        query = """
-            SELECT 
-                read_name,
-                value,
-                unit,
-                element_id,
-                edited,
-                language,
-                CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
-            FROM 
-                micronutrient
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (micronutrient_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MicronutrientNotFoundError
+    query = """
+        SELECT 
+            read_name,
+            value,
+            unit,
+            element_id,
+            edited,
+            language,
+            CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
+        FROM 
+            micronutrient
+        WHERE 
+            id = %s
+        """
+    cursor.execute(query, (micronutrient_id,))
+    return cursor.fetchone()
 
 
-def get_micronutrient_json(cursor, label_id) -> dict:
+@handle_query_errors(MicronutrientRetrievalError)
+def get_micronutrient_json(cursor: Cursor, label_id) -> dict:
     """
     This function get the micronutrient in the database for a specific label.
 
@@ -217,24 +209,19 @@ def get_micronutrient_json(cursor, label_id) -> dict:
     Returns:
     - micronutrient (dict): The micronutrient.
     """
-    try:
-        query = """
-            SELECT get_micronutrient_json(%s);
-            """
-        cursor.execute(query, (label_id,))
-        data = cursor.fetchone()
-        if data is None:
-            raise MicronutrientNotFoundError(
-                "Error: could not get the micronutrient for label: " + str(label_id)
-            )
-        return data[0]
-    except MicronutrientNotFoundError as e:
-        raise e
-    except Exception:
-        raise MicronutrientNotFoundError
+    query = """
+        SELECT get_micronutrient_json(%s);
+        """
+    cursor.execute(query, (label_id,))
+    if result := cursor.fetchone():
+        return result[0]
+    raise MicronutrientRetrievalError(
+        "Failed to retrieve micronutrient json. No data returned for: " + str(label_id)
+    )
 
 
-def get_full_micronutrient(cursor, micronutrient_id):
+@handle_query_errors(MicronutrientRetrievalError)
+def get_full_micronutrient(cursor: Cursor, micronutrient_id):
     """
     This function get the micronutrient in the database with the element.
 
@@ -244,32 +231,30 @@ def get_full_micronutrient(cursor, micronutrient_id):
 
     """
 
-    try:
-        query = """
-            SELECT 
-                m.read_name,
-                m.value,
-                m.unit,
-                ec.name_fr,
-                ec.name_en,
-                ec.symbol,
-                m.edited,
-                m.language,
-                CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
-            FROM 
-                micronutrient m
-            LEFT JOIN 
-                element_compound ec ON m.element_id = ec.id
-            WHERE 
-                m.id = %s
-            """
-        cursor.execute(query, (micronutrient_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise MicronutrientNotFoundError
+    query = """
+        SELECT 
+            m.read_name,
+            m.value,
+            m.unit,
+            ec.name_fr,
+            ec.name_en,
+            ec.symbol,
+            m.edited,
+            m.language,
+            CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
+        FROM 
+            micronutrient m
+        LEFT JOIN 
+            element_compound ec ON m.element_id = ec.id
+        WHERE 
+            m.id = %s
+        """
+    cursor.execute(query, (micronutrient_id,))
+    return cursor.fetchone()
 
 
-def get_all_micronutrients(cursor, label_id):
+@handle_query_errors(MicronutrientRetrievalError)
+def get_all_micronutrients(cursor: Cursor, label_id):
     """
     This function get all the micronutrients with the right label_id in the database.
 
@@ -281,34 +266,32 @@ def get_all_micronutrients(cursor, label_id):
     - str: The UUID of the micronutrient.
     """
 
-    try:
-        query = """
-            SELECT 
-                m.id,
-                m.read_name,
-                m.value,
-                m.unit,
-                ec.name_fr,
-                ec.name_en,
-                ec.symbol,
-                m.edited,
-                m.language,
-                CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
-            FROM 
-                micronutrient m
-            LEFT JOIN 
-                element_compound ec ON m.element_id = ec.id
-            WHERE 
-                m.label_id = %s
-            """
-        cursor.execute(query, (label_id,))
-        return cursor.fetchall()
-    except Exception:
-        raise MicronutrientNotFoundError
+    query = """
+        SELECT 
+            m.id,
+            m.read_name,
+            m.value,
+            m.unit,
+            ec.name_fr,
+            ec.name_en,
+            ec.symbol,
+            m.edited,
+            m.language,
+            CONCAT(CAST(m.read_name AS TEXT),' ',m.value,' ', m.unit) AS reading
+        FROM 
+            micronutrient m
+        LEFT JOIN 
+            element_compound ec ON m.element_id = ec.id
+        WHERE 
+            m.label_id = %s
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.fetchall()
 
 
+@handle_query_errors(GuaranteedAnalysisCreationError)
 def new_guaranteed_analysis(
-    cursor,
+    cursor: Cursor,
     read_name,
     value,
     unit,
@@ -332,27 +315,29 @@ def new_guaranteed_analysis(
     - str: The UUID of the guaranteed.
     """
 
-    try:
-        if language.lower() not in ["fr", "en"]:
-            raise GuaranteedCreationError("Language not supported")
-        if (
-            (read_name is None or read_name == "")
-            and (value is None or value == "")
-            and (unit is None or unit == "")
-        ):
-            raise GuaranteedCreationError("Read name and value cannot be empty")
-        query = """
-            SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s, %s);
-            """
-        cursor.execute(
-            query, (read_name, value, unit, label_id, language, edited, element_id)
-        )
-        return cursor.fetchone()[0]
-    except Exception:
-        raise GuaranteedCreationError
+    if language.lower() not in ["fr", "en"]:
+        raise GuaranteedAnalysisCreationError("Language not supported")
+    if (
+        (read_name is None or read_name == "")
+        and (value is None or value == "")
+        and (unit is None or unit == "")
+    ):
+        raise GuaranteedAnalysisCreationError("Read name and value cannot be empty")
+    query = """
+        SELECT new_guaranteed_analysis(%s, %s, %s, %s, %s, %s, %s);
+        """
+    cursor.execute(
+        query, (read_name, value, unit, label_id, language, edited, element_id)
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise GuaranteedAnalysisCreationError(
+        "Failed to create guaranteed analysis. No data returned."
+    )
 
 
-def get_guaranteed(cursor, guaranteed_id):
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_guaranteed(cursor: Cursor, guaranteed_id):
     """
     This function get the guaranteed in the database.
 
@@ -364,29 +349,27 @@ def get_guaranteed(cursor, guaranteed_id):
     - str: The UUID of the guaranteed.
     """
 
-    try:
-        query = """
-            SELECT 
-                read_name,
-                value,
-                unit,
-                element_id,
-                label_id,
-                edited,
-                language,
-                CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
-            FROM 
-                guaranteed
-            WHERE 
-                id = %s
-            """
-        cursor.execute(query, (guaranteed_id,))
-        return cursor.fetchone()
-    except Exception:
-        raise GuaranteedNotFoundError
+    query = """
+        SELECT 
+            read_name,
+            value,
+            unit,
+            element_id,
+            label_id,
+            edited,
+            language,
+            CONCAT(CAST(read_name AS TEXT),' ',value,' ', unit) AS reading
+        FROM 
+            guaranteed
+        WHERE 
+            id = %s
+        """
+    cursor.execute(query, (guaranteed_id,))
+    return cursor.fetchone()
 
 
-def get_guaranteed_analysis_json(cursor, label_id) -> dict:
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_guaranteed_analysis_json(cursor: Cursor, label_id) -> dict:
     """
     This function get the guaranteed in the database for a specific label.
 
@@ -397,24 +380,22 @@ def get_guaranteed_analysis_json(cursor, label_id) -> dict:
     Returns:
     - guaranteed (dict): The guaranteed.
     """
-    try:
-        query = """
-            SELECT get_guaranteed_analysis_json(%s);
-            """
-        cursor.execute(query, (label_id,))
-        data = cursor.fetchone()[0]
-        if data is None:
-            data = {"title": None, "is_minimal": False, "en": [], "fr": []}
+    query = """
+        SELECT get_guaranteed_analysis_json(%s);
+        """
+    cursor.execute(query, (label_id,))
+    if result := cursor.fetchone():
+        if (data := result[0]) is None:
+            return {"title": None, "is_minimal": False, "en": [], "fr": []}
         return data
-    except GuaranteedNotFoundError as e:
-        raise e
-    except Exception:
-        raise GuaranteedNotFoundError(
-            "Error: could not get the guaranteed for label: " + str(label_id)
-        )
+    raise GuaranteedAnalysisRetrievalError(
+        "Failed to retrieve guaranteed analysis json. No data returned for: "
+        + str(label_id)
+    )
 
 
-def get_full_guaranteed(cursor, guaranteed):
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_full_guaranteed(cursor: Cursor, guaranteed):
     """
     This function get the guaranteed in the database with the element.
 
@@ -426,31 +407,29 @@ def get_full_guaranteed(cursor, guaranteed):
     - str: The UUID of the guaranteed.
     """
 
-    try:
-        query = """
-            SELECT 
-                g.read_name,
-                g.value,
-                g.unit,
-                ec.name_fr,
-                ec.name_en,
-                ec.symbol,
-                g.edited,
-                CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
-            FROM 
-                guaranteed g
-            JOIN 
-                element_compound ec ON g.element_id = ec.id
-            WHERE 
-                g.id = %s
-            """
-        cursor.execute(query, (guaranteed,))
-        return cursor.fetchone()
-    except Exception:
-        raise GuaranteedNotFoundError
+    query = """
+        SELECT 
+            g.read_name,
+            g.value,
+            g.unit,
+            ec.name_fr,
+            ec.name_en,
+            ec.symbol,
+            g.edited,
+            CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
+        FROM 
+            guaranteed g
+        JOIN 
+            element_compound ec ON g.element_id = ec.id
+        WHERE 
+            g.id = %s
+        """
+    cursor.execute(query, (guaranteed,))
+    return cursor.fetchone()
 
 
-def get_all_guaranteeds(cursor, label_id):
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_all_guaranteeds(cursor: Cursor, label_id):
     """
     This function get all the guaranteed in the database.
 
@@ -462,26 +441,23 @@ def get_all_guaranteeds(cursor, label_id):
     - str: The UUID of the guaranteed.
     """
 
-    try:
-        query = """
-            SELECT 
-                g.id,
-                g.read_name,
-                g.value,
-                g.unit,
-                ec.name_fr,
-                ec.name_en,
-                ec.symbol,
-                g.edited,
-                CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
-            FROM 
-                guaranteed g
-            JOIN 
-                element_compound ec ON g.element_id = ec.id
-            WHERE 
-                g.label_id = %s
-            """
-        cursor.execute(query, (label_id,))
-        return cursor.fetchall()
-    except Exception:
-        raise GuaranteedNotFoundError
+    query = """
+        SELECT 
+            g.id,
+            g.read_name,
+            g.value,
+            g.unit,
+            ec.name_fr,
+            ec.name_en,
+            ec.symbol,
+            g.edited,
+            CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
+        FROM 
+            guaranteed g
+        JOIN 
+            element_compound ec ON g.element_id = ec.id
+        WHERE 
+            g.label_id = %s
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.fetchall()

@@ -304,7 +304,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_register_analysy_missing_key(self):
         self.analysis_json.pop("specification_en", None)
-        with self.assertRaises(fertiscan.data_inspection.MissingKeyError):
+        with self.assertRaises(fertiscan.data_inspection.BuildInspectionImportError):
             asyncio.run(
                 fertiscan.register_analysis(
                     self.cursor,
