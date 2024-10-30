@@ -11,7 +11,7 @@ import datastore.db as db
 from datastore.db.metadata import validator
 from fertiscan.db.queries import label, organization
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
