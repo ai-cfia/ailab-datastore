@@ -32,9 +32,9 @@ class TestInspectionExport(unittest.TestCase):
         with open("tests/fertiscan/analyse.json") as f:
             self.analyse = json.load(f)
 
-        self.formatted_analysis = metadata.build_inspection_import(self.analyse)
-
         self.user_id = user.register_user(self.cursor, "test-email@email")
+
+        self.formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         self.picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user_id
@@ -45,7 +45,7 @@ class TestInspectionExport(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         inspection_dict = inspection.new_inspection_with_label_info(
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
@@ -61,6 +61,7 @@ class TestInspectionExport(unittest.TestCase):
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
         self.assertDictEqual(inspection_dict["product"], data["product"])
@@ -81,7 +82,7 @@ class TestInspectionExport(unittest.TestCase):
         self.analyse["manufacturer_phone_number"] = None
         self.analyse["manufacturer_address"] = None
 
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # print(formatted_analysis)
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -98,6 +99,7 @@ class TestInspectionExport(unittest.TestCase):
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
         self.assertDictEqual(inspection_dict["company"], data["company"])
@@ -110,7 +112,7 @@ class TestInspectionExport(unittest.TestCase):
 
     def test_no_volume(self):
         self.analyse["volume"] = None
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # print(formatted_analysis)
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -127,6 +129,7 @@ class TestInspectionExport(unittest.TestCase):
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
 
@@ -139,7 +142,7 @@ class TestInspectionExport(unittest.TestCase):
 
     def test_no_weight(self):
         self.analyse["weight"] = []
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # print(formatted_analysis)
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -156,6 +159,7 @@ class TestInspectionExport(unittest.TestCase):
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
 
@@ -165,7 +169,7 @@ class TestInspectionExport(unittest.TestCase):
     def test_missing_sub_label(self):
         self.analyse["instructions_en"] = []
         self.analyse["instructions_fr"] = []
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # print(formatted_analysis)
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -182,6 +186,7 @@ class TestInspectionExport(unittest.TestCase):
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
 
@@ -196,7 +201,8 @@ class TestInspectionExport(unittest.TestCase):
         expected_instructions_fr = ["un", "deux"]
         self.analyse["instructions_en"] = expected_instructions_en
         self.analyse["instructions_fr"] = expected_instructions_fr
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         inspection_dict = inspection.new_inspection_with_label_info(
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
@@ -324,7 +330,7 @@ class TestInspectionExport(unittest.TestCase):
             "title": None,
             "nutrients": [],
         }
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # print(formatted_analysis)
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -343,6 +349,7 @@ class TestInspectionExport(unittest.TestCase):
         )
 
         self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
 
@@ -397,7 +404,7 @@ class TestInspectionExport(unittest.TestCase):
     # )
 
     def test_null_in_middle_of_sub_label_en(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # Convert the JSON string to a dictionary
         formatted_analysis_dict = json.loads(formatted_analysis)
@@ -442,7 +449,7 @@ class TestInspectionExport(unittest.TestCase):
         )
 
     def test_mismatched_sub_label_lengths_en_longer(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # Convert the JSON string to a dictionary
         formatted_analysis_dict = json.loads(formatted_analysis)
@@ -483,7 +490,7 @@ class TestInspectionExport(unittest.TestCase):
         )
 
     def test_mismatched_sub_label_lengths_fr_longer(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # Convert the JSON string to a dictionary
         formatted_analysis_dict = json.loads(formatted_analysis)
@@ -536,7 +543,7 @@ class TestInspectionExport(unittest.TestCase):
         self.analyse["company_phone_number"] = None
         self.analyse["company_website"] = test_str
 
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # Create inspection and get label information
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -609,7 +616,7 @@ class TestInspectionImport(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_perfect_inspection(self):
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         inspection_dict = inspection.new_inspection_with_label_info(
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
@@ -624,7 +631,7 @@ class TestInspectionImport(unittest.TestCase):
         self.analyse["cautions_en"] = []
         self.analyse["cautions_fr"] = []
 
-        formatted_analysis = metadata.build_inspection_import(self.analyse)
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
         # Create inspection and get label information
         inspection_dict = inspection.new_inspection_with_label_info(
@@ -651,19 +658,19 @@ class TestInspectionImport(unittest.TestCase):
             # intentionally leaving out other required keys
         }
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(analysis_form)
+            metadata.build_inspection_import(analysis_form,self.user_id)
         self.assertIn("The analysis form is missing keys", str(context.exception))
 
     def test_validation_error(self):
         self.analyse["weight"] = [{"unit": "kg", "value": "invalid_value"}]
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
         self.assertIn("Validation error", str(context.exception))
 
     def test_npk_error(self):
         self.analyse["npk"] = "invalid_npk"
         with self.assertRaises(NPKError):
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
 
     @patch("fertiscan.db.metadata.inspection.extract_npk")
     def test_unexpected_error(self, mock_extract_npk):
@@ -671,7 +678,7 @@ class TestInspectionImport(unittest.TestCase):
         mock_extract_npk.side_effect = Exception("Simulated unexpected error")
 
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
 
         self.assertIn("Unexpected error", str(context.exception))
         self.assertIn("Simulated unexpected error", str(context.exception))
