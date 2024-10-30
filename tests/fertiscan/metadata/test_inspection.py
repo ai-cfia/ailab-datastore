@@ -658,19 +658,19 @@ class TestInspectionImport(unittest.TestCase):
             # intentionally leaving out other required keys
         }
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(analysis_form)
+            metadata.build_inspection_import(analysis_form,self.user_id)
         self.assertIn("The analysis form is missing keys", str(context.exception))
 
     def test_validation_error(self):
         self.analyse["weight"] = [{"unit": "kg", "value": "invalid_value"}]
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
         self.assertIn("Validation error", str(context.exception))
 
     def test_npk_error(self):
         self.analyse["npk"] = "invalid_npk"
         with self.assertRaises(NPKError):
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
 
     @patch("fertiscan.db.metadata.inspection.extract_npk")
     def test_unexpected_error(self, mock_extract_npk):
@@ -678,7 +678,7 @@ class TestInspectionImport(unittest.TestCase):
         mock_extract_npk.side_effect = Exception("Simulated unexpected error")
 
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_import(self.analyse)
+            metadata.build_inspection_import(self.analyse,self.user_id)
 
         self.assertIn("Unexpected error", str(context.exception))
         self.assertIn("Simulated unexpected error", str(context.exception))
