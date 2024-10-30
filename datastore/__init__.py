@@ -128,7 +128,7 @@ async def get_user_container_client(user_id, storage_url, account, key, tier="us
     sas = blob.get_account_sas(account, key)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        storage_url, user_id, True, tier, sas
+        storage_url, str(user_id), True, tier, sas
     )
     if isinstance(container_client, ContainerClient):
         return container_client
@@ -238,7 +238,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
         if len(pictures) == 0:
             return result
         elif len(pictures) != await azure_storage.get_image_count(
-            container_client, picture_set_name
+            container_client, str(picture_set_name)
         ):
             raise Warning(
                 "The number of pictures in the database '"
@@ -253,7 +253,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
                 blob_link = pic_metadata["link"]
             else:
                 blob_link = azure_storage.build_blob_name(
-                    picture_set_name, pic_id, None
+                    str(picture_set_name), str(pic_id), None
                 )
             blob_obj = azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
@@ -307,7 +307,7 @@ async def delete_picture_set_permanently(
             )
 
         # Delete the folder in the blob storage
-        await azure_storage.delete_folder(container_client, picture_set_id)
+        await azure_storage.delete_folder(container_client, str(picture_set_id))
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
 
@@ -354,7 +354,7 @@ async def upload_pictures(
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
-                folder_name = picture_set_id
+                folder_name = str(picture_set_id)
         pic_ids = []
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
@@ -368,13 +368,13 @@ async def upload_pictures(
             response = await azure_storage.upload_image(
                 container_client,
                 str(folder_name),
-                picture_set_id,
+                str(picture_set_id),
                 picture_hash,
-                picture_id,
+                str(picture_id),
             )
             # Update the picture metadata in the DB
             data = {
-                "link": azure_storage.build_blob_name(folder_name, picture_id, None),
+                "link": azure_storage.build_blob_name(folder_name, str(picture_id), None),
                 "description": "Uploaded through the API",
             }
 
@@ -382,7 +382,7 @@ async def upload_pictures(
                 raise BlobUploadError("Error uploading the picture")
 
             picture.update_picture_metadata(
-                cursor, picture_id, json.dumps(data), len(hashed_pictures)
+                cursor, str(picture_id), json.dumps(data), len(hashed_pictures)
             )
             pic_ids.append(picture_id)
         return pic_ids

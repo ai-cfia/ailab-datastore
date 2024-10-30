@@ -87,7 +87,7 @@ async def upload_picture_unknown(
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
-                folder_name = picture_set_id
+                folder_name = str(picture_set_id)
 
         # Create picture instance in DB
         picture_id = picture.new_picture_unknown(
@@ -97,11 +97,11 @@ async def upload_picture_unknown(
         )
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
-            container_client, folder_name, picture_set_id, picture_hash, picture_id
+            container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
         )
         # Update the picture metadata in the DB
         data = {
-            "link": azure_storage.build_blob_name(folder_name, picture_id),
+            "link": azure_storage.build_blob_name(folder_name, str(picture_id)),
             "description": "Uploaded through the API",
         }
 
@@ -161,15 +161,15 @@ async def upload_picture_known(
         # Upload the picture to the Blob Storage
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         if folder_name is None:
-            folder_name = picture_set_id
+            folder_name = str(picture_set_id)
 
         response = await azure_storage.upload_image(
-            container_client, folder_name, picture_set_id, picture_hash, picture_id
+            container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
         )
         picture_link = (
             container_client.url
             + "/"
-            + azure_storage.build_blob_name(folder_name, picture_id)
+            + azure_storage.build_blob_name(folder_name, str(picture_id))
         )
         # Create picture metadata and update DB instance (with link to Azure blob)
         """
@@ -813,7 +813,7 @@ async def get_picture_blob(cursor, user_id: str, container_client, picture_id: s
             folder_name = "General"
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
-        blob_name = azure_storage.build_blob_name(folder_name, picture_id)
+        blob_name = azure_storage.build_blob_name(folder_name, str(picture_id))
         picture_blob = await azure_storage.get_blob(container_client, blob_name)
         return picture_blob
     except (
@@ -861,7 +861,7 @@ async def delete_picture_set_with_archive(
 
         folder_name = picture.get_picture_set_name(cursor, picture_set_id)
         if folder_name is None:
-            folder_name = picture_set_id
+            folder_name = str(picture_set_id)
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
@@ -886,7 +886,7 @@ async def delete_picture_set_with_archive(
         )
 
         folder_created = await azure_storage.create_dev_container_folder(
-            dev_container_client, str(picture_set_id), folder_name, user_id
+            dev_container_client, str(picture_set_id), folder_name, str(user_id)
         )
         if not folder_created:
             raise FolderCreationError(
@@ -896,7 +896,7 @@ async def delete_picture_set_with_archive(
         for picture_id in picture.get_validated_pictures(cursor, picture_set_id):
             picture_metadata = picture.get_picture(cursor, picture_id)
             # change the link in the metadata
-            blob_name = azure_storage.build_blob_name(folder_name, picture_id)
+            blob_name = azure_storage.build_blob_name(folder_name, str(picture_id))
             # special case for the dev container pictures
             dev_blob_name = azure_storage.build_blob_name(
                 folder_path=user_id, blob_name=blob_name
@@ -914,7 +914,7 @@ async def delete_picture_set_with_archive(
                 await azure_storage.move_blob(
                     blob_name,
                     dev_blob_name,
-                    dev_picture_set_id,
+                    str(dev_picture_set_id),
                     container_client,
                     dev_container_client,
                 )
@@ -929,7 +929,7 @@ async def delete_picture_set_with_archive(
             )
 
         # Delete the folder in the blob storage
-        await azure_storage.delete_folder(container_client, picture_set_id)
+        await azure_storage.delete_folder(container_client, str(picture_set_id))
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
 

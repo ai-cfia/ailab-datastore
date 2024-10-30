@@ -127,7 +127,7 @@ async def mount_container(
             conn_str=connection_string, credential=credentials
         )
         if blob_service_client:
-            container_name = build_container_name(container_uuid, tier)
+            container_name = build_container_name(str(container_uuid), tier)
             container_client = blob_service_client.get_container_client(container_name)
             if container_client.exists():
                 return container_client
@@ -160,7 +160,7 @@ async def get_blob(container_client, blob_name):
     gets the contents of a specified blob in the user's container
     """
     try:
-        blob_client = container_client.get_blob_client(blob_name)
+        blob_client = container_client.get_blob_client(str(blob_name))
         blob = blob_client.download_blob()
         blob_content = blob.readall()
         return blob_content
@@ -185,7 +185,7 @@ async def upload_image(
         if not await is_a_folder(container_client, folder_name):
             raise CreateDirectoryError(f"Folder:{folder_name} does not exist")
         else:
-            blob_name = build_blob_name(folder_name, image_uuid)
+            blob_name = build_blob_name(str(folder_name), str(image_uuid))
             metadata = {
                 "picture_uuid": f"{str(image_uuid)}",
                 "picture_set_uuid": f"{str(folder_uuid)}",
@@ -254,7 +254,7 @@ async def create_folder(container_client, folder_uuid=None, folder_name=None):
             # Those folder do not have a UUID and are used to store general data
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
-            file_name = build_blob_name(folder_name, folder_name, "json")
+            file_name = build_blob_name(str(folder_name), str(folder_name), "json")
             blob_client = container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
             )
@@ -311,7 +311,7 @@ async def create_dev_container_folder(
             if folder_uuid is not None:
                 folder_data["folder_uuid"] = str(folder_uuid)
             file_name = build_blob_name(
-                "{}/{}".format(user_id, folder_name), folder_name, "json"
+                "{}/{}".format(str(user_id), str(folder_name)), str(folder_name), "json"
             )  # file_name = "{}/{}/{}.json".format(user_id, folder_name, folder_name)
             blob_client = dev_container_client.upload_blob(
                 file_name, json.dumps(folder_data), overwrite=True
@@ -340,7 +340,7 @@ async def upload_inference_result(container_client, folder_name, result, hash_va
     try:
         folder_uuid = await get_folder_uuid(container_client, folder_name)
         if folder_uuid:
-            json_name = build_blob_name(folder_name, hash_value, "json")
+            json_name = build_blob_name(str(folder_name), hash_value, "json")
             container_client.upload_blob(json_name, result, overwrite=True)
             return True
 
@@ -457,7 +457,7 @@ async def download_container(container_client, container_name, local_dir):
                 container=container_name, blob=blob
             )
             # Download the blob
-            local_file_path = build_blob_name(local_dir, blob.name)
+            local_file_path = build_blob_name(str(local_dir), str(blob.name))
             os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
 
             with open(local_file_path, "wb") as file:
