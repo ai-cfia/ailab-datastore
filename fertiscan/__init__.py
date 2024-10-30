@@ -54,23 +54,23 @@ async def register_analysis(
         )
 
         # Create picture set for this analysis
-        picture_set_metadata = data_picture_set.build_picture_set(
-            str(user_id), len(hashed_pictures)
-        )
-        picture_set_id = picture.new_picture_set(cursor, picture_set_metadata, user_id)
+    picture_set_metadata = data_picture_set.build_picture_set(
+        str(user_id), len(hashed_pictures)
+    )
+    picture_set_id = picture.new_picture_set(cursor, picture_set_metadata, user_id)
 
-        await datastore.create_picture_set(
-            cursor, container_client, len(hashed_pictures), str(user_id), str(picture_set_id)
-        )
+    await datastore.create_picture_set(
+        cursor, container_client, len(hashed_pictures), str(user_id), str(picture_set_id)
+    )
 
         # Upload pictures to storage
-        await datastore.upload_pictures(
-            cursor=cursor,
-            user_id=str(user_id),
-            container_client=container_client,
-            picture_set_id=str(picture_set_id),
-            hashed_pictures=hashed_pictures,
-        )
+    await datastore.upload_pictures(
+        cursor=cursor,
+        user_id=str(user_id),
+        container_client=container_client,
+        picture_set_id=str(picture_set_id),
+        hashed_pictures=hashed_pictures,
+    )
 
     # Register analysis in the database
     formatted_analysis = data_inspection.build_inspection_import(analysis_dict)
