@@ -875,12 +875,12 @@ async def delete_picture_set_with_archive(
         if not await azure_storage.is_a_folder(dev_container_client, str(user_id)):
             await azure_storage.create_folder(dev_container_client, str(user_id))
 
-        picture_set = data_picture_set.build_picture_set(
+        picture_set = data_picture_set.build_picture_set_metadata(
             dev_user_id, len(validated_pictures)
         )
         dev_picture_set_id = picture.new_picture_set(
             cursor=cursor,
-            picture_set=picture_set,
+            picture_set_metadata=picture_set,
             user_id=dev_user_id,
             folder_name=folder_name,
         )

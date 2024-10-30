@@ -29,7 +29,7 @@ class test_inspection(unittest.TestCase):
         self.user_email = "testessr@email"
         self.user_id = user.register_user(self.cursor, self.user_email)
         self.folder_name = "test-folder"
-        self.picture_set = picture_set.build_picture_set(self.user_id, 1)
+        self.picture_set = picture_set.build_picture_set_metadata(self.user_id, 1)
         self.picture_set_id = picture.new_picture_set(
             self.cursor, self.picture_set, self.user_id, self.folder_name
         )

@@ -91,7 +91,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
             )
 
         # Link the container to the user in the database
-        pic_set_metadata = data_picture_set.build_picture_set(
+        pic_set_metadata = data_picture_set.build_picture_set_metadata(
             user_id=user_uuid, nb_picture=0
         )
         pic_set_id = picture.new_picture_set(
@@ -158,10 +158,10 @@ async def create_picture_set(
                 f"User not found based on the given id: {user_id}"
             )
 
-        picture_set = data_picture_set.build_picture_set(user_id, nb_pictures)
+        picture_set_metadata = data_picture_set.build_picture_set_metadata(user_id, nb_pictures)
         picture_set_id = picture.new_picture_set(
             cursor=cursor,
-            picture_set=picture_set,
+            picture_set_metadata=picture_set_metadata,
             user_id=user_id,
             folder_name=folder_name,
         )
@@ -343,7 +343,7 @@ async def upload_pictures(
                 f"User not found based on the given id: {user_id}"
             )
 
-        empty_picture = data_picture_set.build_picture_set(
+        empty_picture = data_picture_set.build_picture_set_metadata(
             user_id, len(hashed_pictures)
         )
 

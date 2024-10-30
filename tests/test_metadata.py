@@ -89,7 +89,7 @@ class test_picture_set_functions(unittest.TestCase):
         """
         This test checks if the build_picture_set function returns a valid JSON object
         """
-        picture_set = picture_set_data.build_picture_set(self.user_id, self.nb_pictures)
+        picture_set = picture_set_data.build_picture_set_metadata(self.user_id, self.nb_pictures)
         data = json.loads(picture_set)
         self.assertEqual(data["image_data_picture_set"]["number_of_images"], 1)
         self.assertEqual(data["audit_trail"]["upload_date"], str(date.today()))

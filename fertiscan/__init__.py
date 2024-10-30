@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from psycopg import Cursor
 
 import datastore
-import datastore.db.metadata.picture_set as data_picture_set
 import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
 import fertiscan.db.metadata.inspection as data_inspection
@@ -53,14 +52,8 @@ async def register_analysis(
             f"Container not found based on the given user_id: {user_id}"
         )
 
-        # Create picture set for this analysis
-    picture_set_metadata = data_picture_set.build_picture_set(
-        str(user_id), len(hashed_pictures)
-    )
-    picture_set_id = picture.new_picture_set(cursor, picture_set_metadata, user_id)
-
-    await datastore.create_picture_set(
-        cursor, container_client, len(hashed_pictures), str(user_id), str(picture_set_id)
+    picture_set_id = await datastore.create_picture_set(
+        cursor, container_client, len(hashed_pictures), user_id
     )
 
         # Upload pictures to storage
