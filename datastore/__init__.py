@@ -81,10 +81,14 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
         blob_service_client = BlobServiceClient.from_connection_string(
             connection_string
         )
-        container_client = blob_service_client.create_container(f"{tier}-{user_uuid}")
+        container_client = blob_service_client.create_container(
+            azure_storage.build_container_name(str(user_uuid), "user")
+        )
 
         if not container_client.exists():
-            raise ContainerCreationError("Error creating the user container: container does not exists")
+            raise ContainerCreationError(
+                "Error creating the user container: container does not exists"
+            )
 
         # Link the container to the user in the database
         pic_set_metadata = data_picture_set.build_picture_set(
@@ -102,7 +106,7 @@ async def new_user(cursor, email, connection_string, tier="user") -> User:
             raise FolderCreationError("Error creating the user folder")
         return User(email, user_uuid)
     except azure_storage.CreateDirectoryError as e:
-        raise FolderCreationError("Error creating the user folder:"+ str(e))
+        raise FolderCreationError("Error creating the user folder:" + str(e))
     except UserAlreadyExistsError:
         raise
     except ContainerCreationError:
@@ -124,7 +128,7 @@ async def get_user_container_client(user_id, storage_url, account, key, tier="us
     sas = blob.get_account_sas(account, key)
     # Get the container client
     container_client = await azure_storage.mount_container(
-        storage_url, user_id, True, tier, sas
+        storage_url, str(user_id), True, tier, sas
     )
     if isinstance(container_client, ContainerClient):
         return container_client
@@ -180,7 +184,9 @@ async def create_picture_set(
     ) as e:
         raise e
     except Exception as e:
-        raise BlobUploadError("An error occured during the upload of the picture set: "+str(e))
+        raise BlobUploadError(
+            "An error occured during the upload of the picture set: " + str(e)
+        )
 
 
 async def get_picture_sets_info(cursor, user_id: str):
@@ -232,7 +238,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
         if len(pictures) == 0:
             return result
         elif len(pictures) != await azure_storage.get_image_count(
-            container_client, picture_set_name
+            container_client, str(picture_set_name)
         ):
             raise Warning(
                 "The number of pictures in the database '"
@@ -246,7 +252,9 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
             if "link" in pic_metadata:
                 blob_link = pic_metadata["link"]
             else:
-                blob_link = f"{picture_set_name}/{pic_id}"
+                blob_link = azure_storage.build_blob_name(
+                    str(picture_set_name), str(pic_id), None
+                )
             blob_obj = azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
             pic_metadata["blob"] = blob_obj
@@ -299,7 +307,7 @@ async def delete_picture_set_permanently(
             )
 
         # Delete the folder in the blob storage
-        await azure_storage.delete_folder(container_client, picture_set_id)
+        await azure_storage.delete_folder(container_client, str(picture_set_id))
         # Delete the picture set
         picture.delete_picture_set(cursor, picture_set_id)
 
@@ -346,7 +354,7 @@ async def upload_pictures(
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
-                folder_name = picture_set_id
+                folder_name = str(picture_set_id)
         pic_ids = []
         for picture_hash in hashed_pictures:
             # Create picture instance in DB
@@ -360,13 +368,13 @@ async def upload_pictures(
             response = await azure_storage.upload_image(
                 container_client,
                 str(folder_name),
-                picture_set_id,
+                str(picture_set_id),
                 picture_hash,
-                picture_id,
+                str(picture_id),
             )
             # Update the picture metadata in the DB
             data = {
-                "link": f"{folder_name}/" + str(picture_id),
+                "link": azure_storage.build_blob_name(folder_name, str(picture_id), None),
                 "description": "Uploaded through the API",
             }
 
@@ -374,7 +382,7 @@ async def upload_pictures(
                 raise BlobUploadError("Error uploading the picture")
 
             picture.update_picture_metadata(
-                cursor, picture_id, json.dumps(data), len(hashed_pictures)
+                cursor, str(picture_id), json.dumps(data), len(hashed_pictures)
             )
             pic_ids.append(picture_id)
         return pic_ids

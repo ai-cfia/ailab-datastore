@@ -9,7 +9,6 @@ import json
 import os
 import unittest
 
-from azure.storage.blob import ContainerClient
 from PIL import Image
 
 import datastore
@@ -24,7 +23,7 @@ BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_STORAGE_URL_TESTING is not set")
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -84,9 +83,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
             )
         )
-        self.container_client = ContainerClient.from_connection_string(
-            conn_str=BLOB_CONNECTION_STRING,
-            container_name=f"{self.tier}-{self.user.id}",
+        self.container_client = asyncio.run(
+            datastore.get_user_container_client(
+                self.user.id,
+                BLOB_CONNECTION_STRING,
+                BLOB_ACCOUNT,
+                BLOB_KEY,
+                self.tier,
+            )
         )
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -148,6 +152,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             print(e)
 
     def test_register_analysis(self):
+        print(self.user.id)
         self.assertTrue(self.container_client.exists())
         analysis = asyncio.run(
             fertiscan.register_analysis(

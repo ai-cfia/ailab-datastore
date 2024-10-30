@@ -14,7 +14,7 @@ from fertiscan.db.metadata.errors import (
 from fertiscan.db.queries import inspection
 from fertiscan.db.queries.errors import QueryError
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
