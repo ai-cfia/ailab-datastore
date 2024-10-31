@@ -52,12 +52,12 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
@@ -90,12 +90,12 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
@@ -120,12 +120,12 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
@@ -150,12 +150,12 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
@@ -177,12 +177,12 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
@@ -209,13 +209,13 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
 
         data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id), label_information_id
+            self.cursor, str(inspection_id)
         )
         data = json.loads(data)
 
@@ -338,13 +338,13 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
         # print(inspection_dict)
-        label_information_id = inspection_dict["product"]["label_id"]
+        # label_information_id = inspection_dict["product"]["label_id"]
 
         if inspection_id is None:
             self.fail("Inspection not created")
         data = json.loads(
             metadata.build_inspection_export(
-                self.cursor, str(inspection_id), str(label_information_id)
+                self.cursor, str(inspection_id)
             )
         )
 
@@ -425,11 +425,11 @@ class TestInspectionExport(unittest.TestCase):
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
-        label_id = inspection_dict["product"]["label_id"]
+        # label_id = inspection_dict["product"]["label_id"]
 
         # Get inspection data using the inspection_id and label_id
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
 
@@ -470,11 +470,11 @@ class TestInspectionExport(unittest.TestCase):
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
-        label_id = inspection_dict["product"]["label_id"]
+        # label_id = inspection_dict["product"]["label_id"]
 
         # Get inspection data using the inspection_id and label_id
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
 
@@ -511,11 +511,11 @@ class TestInspectionExport(unittest.TestCase):
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
-        label_id = inspection_dict["product"]["label_id"]
+        # label_id = inspection_dict["product"]["label_id"]
 
         # Get inspection data using the inspection_id and label_id
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
 
@@ -551,11 +551,11 @@ class TestInspectionExport(unittest.TestCase):
         )
         inspection_id = inspection_dict["inspection_id"]
 
-        label_id = inspection_dict["product"]["label_id"]
+        # label_id = inspection_dict["product"]["label_id"]
 
         # Get inspection data using the inspection_id and label_id
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
 
@@ -566,31 +566,29 @@ class TestInspectionExport(unittest.TestCase):
         self.assertEqual(inspection_data["manufacturer"]["name"], test_str)
         self.assertEqual(inspection_data["company"]["website"], test_str)
 
-    @patch("fertiscan.db.queries.label.get_label_information_json")
-    def test_query_error(self, mock_get_label_info):
+    @patch("fertiscan.db.queries.inspection.get_inspection")
+    def test_query_error(self, mock_get_inspection):
         # Simulate QueryError being raised
-        mock_get_label_info.side_effect = QueryError("Simulated query error")
+        mock_get_inspection.side_effect = QueryError("Simulated query error")
 
         cursor = Mock()
         inspection_id = 1
-        label_info_id = 2
 
         with self.assertRaises(BuildInspectionExportError) as context:
-            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+            metadata.build_inspection_export(cursor, inspection_id)
 
         self.assertIn("Error fetching data", str(context.exception))
         self.assertIn("Simulated query error", str(context.exception))
 
-    @patch("fertiscan.db.queries.label.get_label_information_json")
-    def test_unexpected_error(self, mock_get_label_info):
-        mock_get_label_info.side_effect = TypeError("Simulated unexpected error")
+    @patch("fertiscan.db.queries.inspection.get_inspection")
+    def test_unexpected_error(self, mock_get_inspection):
+        mock_get_inspection.side_effect = TypeError("Simulated unexpected error")
 
         cursor = Mock()
         inspection_id = 1
-        label_info_id = 2
 
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+            metadata.build_inspection_export(cursor, inspection_id)
 
         self.assertIn("Unexpected error", str(context.exception))
         self.assertIn("Simulated unexpected error", str(context.exception))
@@ -638,11 +636,11 @@ class TestInspectionImport(unittest.TestCase):
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
-        label_id = inspection_dict["product"]["label_id"]
+        # label_id = inspection_dict["product"]["label_id"]
 
         # Get inspection data using the inspection_id and label_id
         inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id, label_id
+            self.cursor, inspection_id
         )
         inspection_data = json.loads(inspection_data)
 
