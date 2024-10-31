@@ -573,7 +573,6 @@ class TestInspectionExport(unittest.TestCase):
 
         cursor = Mock()
         inspection_id = 1
-        label_info_id = 2
 
         with self.assertRaises(BuildInspectionExportError) as context:
             metadata.build_inspection_export(cursor, inspection_id)
