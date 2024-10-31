@@ -566,31 +566,30 @@ class TestInspectionExport(unittest.TestCase):
         self.assertEqual(inspection_data["manufacturer"]["name"], test_str)
         self.assertEqual(inspection_data["company"]["website"], test_str)
 
-    @patch("fertiscan.db.queries.label.get_label_information_json")
-    def test_query_error(self, mock_get_label_info):
+    @patch("fertiscan.db.queries.inspection.get_inspection")
+    def test_query_error(self, mock_get_inspection):
         # Simulate QueryError being raised
-        mock_get_label_info.side_effect = QueryError("Simulated query error")
+        mock_get_inspection.side_effect = QueryError("Simulated query error")
 
         cursor = Mock()
         inspection_id = 1
         label_info_id = 2
 
         with self.assertRaises(BuildInspectionExportError) as context:
-            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+            metadata.build_inspection_export(cursor, inspection_id)
 
         self.assertIn("Error fetching data", str(context.exception))
         self.assertIn("Simulated query error", str(context.exception))
 
-    @patch("fertiscan.db.queries.label.get_label_information_json")
-    def test_unexpected_error(self, mock_get_label_info):
-        mock_get_label_info.side_effect = TypeError("Simulated unexpected error")
+    @patch("fertiscan.db.queries.inspection.get_inspection")
+    def test_unexpected_error(self, mock_get_inspection):
+        mock_get_inspection.side_effect = TypeError("Simulated unexpected error")
 
         cursor = Mock()
         inspection_id = 1
-        label_info_id = 2
 
         with self.assertRaises(BuildInspectionImportError) as context:
-            metadata.build_inspection_export(cursor, inspection_id, label_info_id)
+            metadata.build_inspection_export(cursor, inspection_id)
 
         self.assertIn("Unexpected error", str(context.exception))
         self.assertIn("Simulated unexpected error", str(context.exception))
