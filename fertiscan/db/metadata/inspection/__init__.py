@@ -94,6 +94,7 @@ class ProductInformation(ValidatedModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
+    record_keeping: Optional[bool] = None
 
 
 class Specification(ValidatedModel):
@@ -211,6 +212,7 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
+        # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
             name=analysis_form.get("fertiliser_name"),
             registration_number=analysis_form.get("registration_number"),
@@ -222,7 +224,9 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             p=npk[1],
             k=npk[2],
             verified=False,
+            record_keeping=None,
         )
+
 
         cautions = SubLabel(
             en=analysis_form.get("cautions_en", []),
@@ -369,9 +373,13 @@ def build_inspection_export(cursor, inspection_id) -> str:
         instructions = SubLabel.model_validate(sub_labels.get("instructions"))
 
         # Get the guaranteed analysis
-        guaranteed_analysis = nutrients.get_guaranteed_analysis_json(
-            cursor, label_info_id
-        )
+        if product_info.record_keeping != True:
+            guaranteed_analysis = nutrients.get_guaranteed_analysis_json(
+                cursor, label_info_id
+            )
+        else:
+            print("Record keeping is true")
+            raise BuildInspectionExportError("Record keeping is true")
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
         # Get the inspection information
