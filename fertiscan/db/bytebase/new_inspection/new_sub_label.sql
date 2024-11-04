@@ -1,6 +1,6 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".new_sub_label(
-content_fr TEXT,
-content_en TEXT,
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".new_sub_label(
+content_fr TEXT default null,
+content_en TEXT default null,
 label_id UUID,
 sub_type_id UUID,
 edited BOOLEAN = FALSE
