@@ -595,7 +595,8 @@ BEGIN
     guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
     title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
-    "manufacturer_info_id" = manufacturer_info_id
+    "manufacturer_info_id" = manufacturer_info_id,
+    record_keeping = p_input_json->>'record_keeping',
     WHERE id = label_info_id_value;
 
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));

@@ -105,6 +105,7 @@ BEGIN
 		(input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
 		company_id,
 		manufacturer_id
+		Null -- record_keeping not handled yet
 	);
 		
 	-- Update input_json with company_id

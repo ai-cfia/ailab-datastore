@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".new_label_information(
     guaranteed_title_fr TEXT,
     is_minimal boolean,
     company_id UUID DEFAULT Null,
-    manufacturer_id UUID DEFAULT Null
+    manufacturer_id UUID DEFAULT Null,
+    record_keeping BOOLEAN DEFAULT NULL,
     )
 RETURNS uuid 
 LANGUAGE plpgsql
