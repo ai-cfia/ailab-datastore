@@ -383,10 +383,9 @@ def build_inspection_export(cursor, inspection_id) -> str:
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
         # Get the ingredients but if the fertilizer is record keeping, the ingredients are not displayed
-        if product_info.record_keeping != True:
+        if not product_info.record_keeping:
             ingredients = ingredient.get_ingredient_json(cursor, label_info_id)
         else:
-            print("Record keeping is true")
             ingredients = ValuesObjects(en=[], fr=[])
 
         # Get the inspection information
