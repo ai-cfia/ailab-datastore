@@ -205,38 +205,37 @@ BEGIN
 --	END LOOP;
 -- SPECIFICATION END
 
--- INGREDIENTS
---
---	-- Loop through each language ('en' and 'fr')
---    FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'ingredients')
---	LOOP
---        -- Loop through each ingredient in the current language
---        FOR record IN SELECT * FROM jsonb_array_elements(input_json->'ingredients'->ingredient_language )
---        LOOP
--- -- Extract values from the current ingredient record
---	        read_value := record->> 'value';
--- 			read_unit := record ->> 'unit';
---			-- Check if ANY field is not null
---			IF COALESCE(record->>'name', 
---				read_value, 
---				read_unit,
---				'') <> '' 
---			THEN
---				-- Insert the new ingredient
---				ingredient_id := "fertiscan_0.0.16".new_ingredient(
---					record->>'name',
---					read_value::float,
---					read_unit,
---					label_info_id,
---					ingredient_language::"fertiscan_0.0.16".language,
---					NULL, --We cant tell atm
---					NULL,  --We cant tell atm
---					FALSE  --preset
---				);
---			END IF;
---		END LOOP;
---	END LOOP;
---INGREDIENTS ENDS
+-- --INGREDIENTS
+ 	-- Loop through each language ('en' and 'fr')
+ 	FOR ingredient_language  IN SELECT * FROM jsonb_object_keys(input_json->'ingredients')
+ 	LOOP
+        -- Loop through each ingredient in the current language
+        FOR record IN SELECT * FROM jsonb_array_elements(input_json->'ingredients'->ingredient_language )
+        LOOP
+			-- Extract values from the current ingredient record
+			read_value := record->> 'value';
+				read_unit := record ->> 'unit';
+			-- Check if ANY field is not null
+			IF COALESCE(record->>'name', 
+				read_value, 
+				read_unit,
+				'') <> '' 
+			THEN
+				-- Insert the new ingredient
+				ingredient_id := "fertiscan_0.0.15".new_ingredient(
+					record->>'name',
+					read_value::float,
+					read_unit,
+					label_info_id,
+					ingredient_language::"fertiscan_0.0.15".language,
+					NULL, --We cant tell atm
+					NULL,  --We cant tell atm
+					FALSE  --preset
+				);
+			END IF;
+    	END LOOP;
+ 	END LOOP;
+-- INGREDIENTS ENDS
 
 -- SUB LABELS
 	-- Loop through each sub_type

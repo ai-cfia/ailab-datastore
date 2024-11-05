@@ -608,7 +608,7 @@ BEGIN
     -- PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    -- PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
+     PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
     -- PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');
