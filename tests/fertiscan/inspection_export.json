@@ -50,6 +50,84 @@
         "p": 20.0,
         "k": 20.0
     },
+    "ingredients": {
+        "en" : [
+            {
+              "nutrient":"Bone meal",
+              "value":5.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Seaweed extract",
+              "value":3.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Humic acid",
+              "value":2.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Clay",
+              "value": null,
+              "unit": null,
+              "edited": false
+            },
+            {
+              "nutrient":"Sand",
+              "value": null,
+              "unit": null,
+              "edited": false
+            },
+            {
+              "nutrient":"Perlite",
+              "value": null,
+              "unit": null,
+              "edited": false
+            }
+         ],
+        "fr": [
+            {
+              "nutrient":"Farine d'os",
+              "value":5.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Extrait d'algues",
+              "value":3.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Acide humique",
+              "value":2.0,
+              "unit":"%",
+              "edited": false
+            },
+            {
+              "nutrient":"Argile",
+              "value": null,
+              "unit": null,
+              "edited": false
+            },
+            {
+              "nutrient":"Sable",
+              "value": null,
+              "unit": null,
+              "edited": false
+            },
+            {
+              "nutrient":"Perlite",
+              "value": null,
+              "unit": null,
+              "edited": false
+            }
+        ]
+    },
     "cautions": {
         "en": [
             "Avoid contact with skin and eyes.",
