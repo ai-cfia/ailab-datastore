@@ -10,7 +10,7 @@ import datastore.db as db
 from datastore.db.metadata import validator
 from fertiscan.db.queries import ingredient, label
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -32,10 +32,6 @@ class test_ingredient(unittest.TestCase):
         self.n = 10.0
         self.p = 20.0
         self.k = 30.0
-        self.weight = None
-        self.density = None
-        self.volume = None
-        self.warranty = "warranty"
         self.label_id = label.new_label_information(
             self.cursor,
             self.product_name,
@@ -45,7 +41,9 @@ class test_ingredient(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
             None,
             None,
         )
