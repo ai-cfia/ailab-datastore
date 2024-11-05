@@ -49,7 +49,7 @@ BEGIN
         'lot_number', record.lot_number,
         'registration_number', record.registration_number,
         'verified', verified_bool,
-        'record_keeping', record.record_keeping,
+        'record_keeping', record.record_keeping
     );
 END;
 $function$;

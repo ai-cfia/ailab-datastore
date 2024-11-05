@@ -17,7 +17,7 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label
+from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -178,6 +178,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
+
+        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis["product"]["label_id"]))
+        print(ingredients)
 
         # specifications = specification.get_all_specifications(
         # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
