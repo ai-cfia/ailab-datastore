@@ -161,11 +161,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "unit_id" uuid REFERENCES "fertiscan_0.0.15".unit(id),
     "metric_type" "fertiscan_0.0.15".metric_type,
     "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE
+    );
 
     CREATE TABLE "fertiscan_0.0.15"."sub_type" (
         "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
         "type_fr" text Unique NOT NULL,
-        "type_en" text unique NOT NULL,
+        "type_en" text unique NOT NULL
     );
 
 
@@ -207,7 +208,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "language" "fertiscan_0.0.15".LANGUAGE,
     "element_id" int REFERENCES "fertiscan_0.0.15".element_compound(id),
     "label_id" uuid REFERENCES "fertiscan_0.0.15".label_information(id) ON DELETE CASCADE,
-    "edited" boolean,
+    "edited" boolean
     );
 
     CREATE TABLE "fertiscan_0.0.15"."ingredient" (
