@@ -133,9 +133,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             self.analysis_json.get("guaranteed_analysis_en").get("nutrients")
         ) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
-        # self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-        # self.analysis_json.get("ingredients_fr")
-        # )
+        self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
+        self.analysis_json.get("ingredients_fr")
+        )
 
         # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
         # self.analysis_json.get("micronutrients_fr")
@@ -236,7 +236,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # self.assertEqual(len(label_dimension[7]), self.nb_first_aid)
 
         # self.assertEqual(len(label_dimension[9]), self.nb_specifications)
-        # self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
+        self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
         # self.assertEqual(len(label_dimension[11]), self.nb_micronutrients)
         self.assertEqual(len(label_dimension[12]), self.nb_guaranteed)
         self.assertEqual(len(label_dimension[13]), self.nb_weight)
