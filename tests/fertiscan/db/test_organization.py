@@ -296,6 +296,7 @@ class test_organization_information(unittest.TestCase):
             False,
             company_id,
             manufacturer_id,
+            None,
         )
         data = organization.get_organizations_info_json(self.cursor, label_id)
         self.assertEqual(data["company"]["id"], str(company_id))
@@ -314,6 +315,7 @@ class test_organization_information(unittest.TestCase):
             "title_en",
             "title_fr",
             False,
+            None,
             None,
             None,
         )

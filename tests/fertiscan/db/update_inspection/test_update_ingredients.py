@@ -81,6 +81,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             False,
             self.company_info_id,
             self.company_info_id,
+            None,
         )
 
     def tearDown(self):
@@ -143,6 +144,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             expected_updated_data,
             "Updated data should match the new values",
         )
+
 
 
 if __name__ == "__main__":
