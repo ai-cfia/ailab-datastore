@@ -2,7 +2,7 @@ import os
 import datastore.db as db
 from psycopg import sql
 
-DB_URL = os.environ.get("FERTISCAN_DB_URL")
+DB_URL = os.environ.get("FERTISCAN_DB_URL_TESTING")
 SCHEMA = os.environ.get("FERTISCAN_SCHEMA_TESTING")
 
 def create_db(DB_URL, SCHEMA : str):

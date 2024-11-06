@@ -1,7 +1,7 @@
-SET search_path TO "fertiscan_0.0.15";
+SET search_path TO "fertiscan_0.0.16";
 
 -- Function to upsert location information based on location_id and address
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_location(location_id uuid, address text)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".upsert_location(location_id uuid, address text)
 RETURNS uuid AS $$
 DECLARE
     new_location_id uuid;
@@ -23,7 +23,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert organization information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_organization_info(input_org_info jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".upsert_organization_info(input_org_info jsonb)
 RETURNS uuid AS $$
 DECLARE
     organization_info_id uuid;
@@ -31,50 +31,58 @@ DECLARE
     address_str text;
 BEGIN
     -- Skip processing if the input JSON object is empty or null
-    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) THEN
+    IF jsonb_typeof(input_org_info) = 'null' OR NOT EXISTS (SELECT 1 FROM jsonb_object_keys(input_org_info)) or
+    COALESCE(input_org_info->>'name', 
+		input_org_info->>'website', 
+		input_org_info->>'phone_number', 
+		input_org_info->>'address',
+		 '') = ''  THEN
+         RAISE WARNING 'Organization information is empty or null';
         RETURN NULL;
-    END IF;
-    address_str := input_org_info->>'address';
+    ELSE
+        
+        address_str := input_org_info->>'address';
 
-    -- CHECK IF ADRESS IS NULL
-    IF address_str IS NULL THEN
-        RAISE WARNING 'Address cannot be null';
-    ELSE 
-        -- Check if organization location exists by address
-        SELECT id INTO location_id
-        FROM location
-        WHERE location.address ILIKE address_str
-        LIMIT 1;
-            -- Use upsert_location to insert or update the location
-        location_id := upsert_location(location_id, address_str);
-    END IF;
+        -- CHECK IF ADRESS IS NULL
+        IF address_str IS NULL THEN
+            RAISE WARNING 'Address cannot be null';
+        ELSE 
+            -- Check if organization location exists by address
+            SELECT id INTO location_id
+            FROM location
+            WHERE location.address ILIKE address_str
+            LIMIT 1;
+                -- Use upsert_location to insert or update the location
+            location_id := upsert_location(location_id, address_str);
+        END IF;
 
-    -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
-    organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
+        -- Extract the organization info ID from the input JSON or generate a new UUID if not provided
+        organization_info_id := COALESCE(NULLIF(input_org_info->>'id', '')::uuid, public.uuid_generate_v4());
 
-    -- Upsert organization information
-    INSERT INTO organization_information (id, name, website, phone_number, location_id)
-    VALUES (
-        organization_info_id,
-        input_org_info->>'name',
-        input_org_info->>'website',
-        input_org_info->>'phone_number',
-        location_id
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET name = EXCLUDED.name,
-        website = EXCLUDED.website,
-        phone_number = EXCLUDED.phone_number,
-        location_id = EXCLUDED.location_id
-    RETURNING id INTO organization_info_id;
+        -- Upsert organization information
+        INSERT INTO organization_information (id, name, website, phone_number, location_id)
+        VALUES (
+            organization_info_id,
+            input_org_info->>'name',
+            input_org_info->>'website',
+            input_org_info->>'phone_number',
+            location_id
+        )
+        ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            website = EXCLUDED.website,
+            phone_number = EXCLUDED.phone_number,
+            location_id = EXCLUDED.location_id
+        RETURNING id INTO organization_info_id;
 
-    RETURN organization_info_id;
+        RETURN organization_info_id;
+    end if;
 END;
 $$ LANGUAGE plpgsql;
 
 
 -- Function to update metrics: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_metrics(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_metrics(
     p_label_id uuid,
     metrics jsonb
 )
@@ -149,7 +157,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update specifications: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_specifications(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_specifications(
     p_label_id uuid,
     new_specifications jsonb
 )
@@ -195,7 +203,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update ingredients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_ingredients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_ingredients(
     p_label_id uuid,
     new_ingredients jsonb
 )
@@ -243,7 +251,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update micronutrients: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_micronutrients(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_micronutrients(
     p_label_id uuid,
     new_micronutrients jsonb
 )
@@ -287,9 +295,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-drop FUNCTION IF EXISTS "fertiscan_0.0.15".update_guaranteed;
+drop FUNCTION IF EXISTS "fertiscan_0.0.16".update_guaranteed;
 -- Function to update guaranteed analysis: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_guaranteed(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_guaranteed(
     p_label_id uuid,
     new_guaranteed jsonb
 )
@@ -303,7 +311,7 @@ BEGIN
     DELETE FROM guaranteed WHERE label_id = p_label_id;
 
 	-- Loop through each language ('en' and 'fr')
-    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.15".LANGUAGE))
+    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.16".LANGUAGE))
 	LOOP
 		FOR guaranteed_record IN SELECT * FROM jsonb_array_elements(new_guaranteed->guaranteed_analysis_language)
 		LOOP
@@ -336,7 +344,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to check if both text_content_fr and text_content_en are NULL or empty, and skip insertion if true
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label()
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".check_null_or_empty_sub_label()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Check if both text_content_fr and text_content_en are NULL or empty
@@ -363,15 +371,15 @@ $$ LANGUAGE plpgsql;
 
 
 -- Trigger to call check_null_or_empty_sub_label() before inserting into sub_label
-DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.15".sub_label;
+DROP TRIGGER IF EXISTS before_insert_sub_label ON "fertiscan_0.0.16".sub_label;
 CREATE TRIGGER before_insert_sub_label
-BEFORE INSERT ON "fertiscan_0.0.15".sub_label
+BEFORE INSERT ON "fertiscan_0.0.16".sub_label
 FOR EACH ROW
-EXECUTE FUNCTION "fertiscan_0.0.15".check_null_or_empty_sub_label();
+EXECUTE FUNCTION "fertiscan_0.0.16".check_null_or_empty_sub_label();
 
 
 -- Function to update sub labels: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_sub_labels(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_sub_labels(
     p_label_id uuid,
     new_sub_labels jsonb
 )
@@ -430,9 +438,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-Drop FUNCTION IF EXISTS "fertiscan_0.0.15".upsert_inspection;
+Drop FUNCTION IF EXISTS "fertiscan_0.0.16".upsert_inspection;
 -- Function to upsert inspection information
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".upsert_inspection(
     p_inspection_id uuid,
     p_label_info_id uuid,
     p_inspector_id uuid,
@@ -482,7 +490,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to upsert fertilizer information based on unique fertilizer name
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".upsert_fertilizer(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".upsert_fertilizer(
     p_name text,
     p_registration_number text,
     p_owner_id uuid,
@@ -518,7 +526,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Function to update inspection data and related entities, returning an updated JSON
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.15".update_inspection(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".update_inspection(
     p_inspection_id uuid,
     p_inspector_id uuid,
     p_input_json jsonb
