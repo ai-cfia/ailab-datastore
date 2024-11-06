@@ -173,6 +173,6 @@ class test_ingredient(unittest.TestCase):
             self.cursor, label_id_record_keeping
         )
         # check that the upload worked on not record keeping label
-        self.assertEqual(len(ingredient_obj.get("ingredients").get("en")),1)
+        self.assertEqual(len(ingredient_obj.get("ingredients").get("fr")),1)
         # make sure that the record keeping label does not display any ingredients
-        self.assertEqual(len(ingredient_empty.get("ingredients").get("en")),0)
+        self.assertEqual(len(ingredient_empty.get("ingredients").get("fr")),0)

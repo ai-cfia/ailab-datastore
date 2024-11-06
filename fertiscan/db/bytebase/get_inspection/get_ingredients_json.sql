@@ -16,7 +16,7 @@ BEGIN
     WHERE id = label_info_id;
    
     IF record_keeping_option THEN
-        RETURN '[]'::jsonb;
+        RETURN jsonb_build_object('ingredients',jsonb_build_object('en', '[]'::jsonb, 'fr', '[]'::jsonb));
     END IF;
 
     SELECT jsonb_build_object(
