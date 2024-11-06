@@ -32,6 +32,9 @@ def create_db(DB_URL, SCHEMA : str):
         path = "fertiscan/db/bytebase/update_inspection_function.sql"
         execute_sql_file(cur, path)
 
+        path = "fertiscan/db/bytebase/update_inspection"
+        loop_for_sql_files(cur, path)
+
         path = "fertiscan/db/bytebase/delete_inspection_function.sql"
         execute_sql_file(cur, path)
 

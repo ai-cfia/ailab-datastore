@@ -1,9 +1,9 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".new_guaranteed_analysis(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".new_guaranteed_analysis(
 name TEXT,
 value FLOAT,
 unit TEXT,
 label_id UUID,
-language "fertiscan_0.0.16".language,
+language "fertiscan_0.0.17".language,
 edited BOOLEAN = FALSE,
 element_id int = NULL
 )

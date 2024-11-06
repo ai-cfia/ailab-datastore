@@ -1,12 +1,11 @@
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".new_sub_label(
-content_fr TEXT default null,
-content_en TEXT default null,
-label_id UUID default null,
-sub_type_id UUID default null,
-edited BOOLEAN = FALSE
-)
-RETURNS uuid 
-LANGUAGE plpgsql
+	content_fr text DEFAULT NULL::text, 
+	content_en text DEFAULT NULL::text, 
+	label_id uuid DEFAULT NULL::uuid, 
+	sub_type_id uuid DEFAULT NULL::uuid, 
+	edited boolean DEFAULT false)
+ RETURNS uuid
+ LANGUAGE plpgsql
 AS $function$
 DECLARE
     sub_label_id uuid;
