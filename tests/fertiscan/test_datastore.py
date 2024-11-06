@@ -535,7 +535,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(label_info_data[8], new_title)
         self.assertNotEqual(label_info_data[8], old_title)
         self.assertEqual(label_info_data[9], old_title)
-        self.assertEqual(label_info_data[12], new_record_keeping)
+        self.assertEqual(label_info_data[13], new_record_keeping)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:
