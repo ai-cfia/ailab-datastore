@@ -22,6 +22,7 @@ from fertiscan.db.queries import (
     nutrients,
     organization,
     sub_label,
+    registration_number,
     ingredient,
 )
 from fertiscan.db.queries.errors import QueryError
@@ -87,7 +88,6 @@ class Metrics(ValidatedModel):
 class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
-    registration_number: str | None = None
     lot_number: str | None = None
     metrics: Metrics | None = Metrics()
     npk: str | None = None
@@ -97,6 +97,10 @@ class ProductInformation(ValidatedModel):
     k: float | None = None
     record_keeping: Optional[bool] = None
 
+class RegistrationNumber(ValidatedModel):
+    registration_number: str | None = None
+    is_an_ingredient: bool | None = None
+    edited: Optional[bool] = False
 
 class Specification(ValidatedModel):
     humidity: float | None = None
@@ -135,6 +139,7 @@ class Inspection(ValidatedModel):
     cautions: SubLabel
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
+    registration_numbers: Optional[List[RegistrationNumber]] = []
     ingredients: ValuesObjects
 
 
@@ -218,7 +223,6 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
         # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
             name=analysis_form.get("fertiliser_name"),
-            registration_number=analysis_form.get("registration_number"),
             lot_number=analysis_form.get("lot_number"),
             metrics=metrics,
             npk=analysis_form.get("npk"),
@@ -329,6 +333,14 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             fr=guaranteed_fr,
         )
 
+        reg_numbers = []
+        for reg_number in analysis_form.get("registration_number", []):
+            reg_numbers.append(RegistrationNumber(
+                registration_number=reg_number.get("identifier"),
+                is_an_ingredient= (reg_number.get("type") == "Ingredient")
+                )
+            )
+
         inspection_formatted = Inspection(
             inspector_id=str(user_id),
             company=company,
@@ -337,6 +349,7 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             cautions=cautions,
             instructions=instructions,
             guaranteed_analysis=guaranteed,
+            registration_numbers=reg_numbers,
             ingredients=ingredients,
         )
         Inspection(**inspection_formatted.model_dump())
@@ -382,6 +395,11 @@ def build_inspection_export(cursor, inspection_id) -> str:
         )
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
+        # Retrieve the registration numbers
+        reg_numbers = registration_number.get_registration_numbers_json(cursor, label_info_id)
+        reg_numbers = RegistrationNumber.model_validate(reg_numbers)
+
+
         # Get the ingredients but if the fertilizer is record keeping, the ingredients are not displayed
         if not product_info.record_keeping:
             ingredients = ingredient.get_ingredient_json(cursor, label_info_id)
@@ -403,6 +421,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             manufacturer=manufacturer,
             product=product_info,
             verified=db_inspection.verified,
+            registration_numbers=reg_numbers,
             ingredients=ingredients,
         )
 

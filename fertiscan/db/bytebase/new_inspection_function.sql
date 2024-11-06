@@ -343,7 +343,7 @@ BEGIN
 			registration_number_id := "fertiscan_0.0.17".new_registration_number(
 				record->>'identifier',
 				label_info_id,
-				(record->>'type' = 'Ingredient')::BOOLEAN,
+				(record->>'is_an_ingredient')::BOOLEAN,
 				null,
 				FALSE
 			);
