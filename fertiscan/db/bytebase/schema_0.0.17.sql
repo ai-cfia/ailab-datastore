@@ -100,7 +100,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.17"."label_information" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "product_name" tefertiscan/db/bytebase/schema_0.0.17.sqlxt,
+    "product_name" text,
     "lot_number" text,
     "npk" text,
     "n" float,
@@ -178,10 +178,12 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     );
 
     CREATE TABLE "fertiscan_0.0.17"."registration_number_information" (
-        "id" UUID PRIMARY KEY uuid_generate_v4(),
+        "id" UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
         "identifier" text NOT NULL,
         "name" text,
-        "is_an_ingredient" BOOLEAN
+        "is_an_ingredient" BOOLEAN,
+        "label_id" uuid REFERENCES "fertiscan_0.0.17".label_information(id) ON DELETE CASCADE,
+        "edited" BOOLEAN DEFAULT FALSE
     );
 
     CREATE TABLE "fertiscan_0.0.17"."specification" (
