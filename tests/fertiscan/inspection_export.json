@@ -48,7 +48,8 @@
         "npk": "20-20-20",
         "n": 20.0,
         "p": 20.0,
-        "k": 20.0
+        "k": 20.0,
+        "record_keeping": null
     },
     "ingredients": {
         "en" : [
