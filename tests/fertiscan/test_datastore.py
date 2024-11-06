@@ -439,6 +439,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
         user_feedback = "This is a feedback"
+        new_record_keeping= True
         # new_specification_en = [
         #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         # ]
@@ -485,6 +486,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["product"]["metrics"]["weight"][0]["edited"] = True
         analysis["product"]["metrics"]["density"]["value"] = new_density
         analysis["product"]["metrics"]["density"]["edited"] = True
+        analysis["product"]["record_keeping"] = new_record_keeping
         analysis["product"]["npk"] = new_npk
         analysis["instructions"]["en"] = new_instruction_en
         analysis["instructions"]["fr"] = new_instruction_fr
@@ -533,6 +535,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(label_info_data[8], new_title)
         self.assertNotEqual(label_info_data[8], old_title)
         self.assertEqual(label_info_data[9], old_title)
+        self.assertEqual(label_info_data[12], new_record_keeping)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:

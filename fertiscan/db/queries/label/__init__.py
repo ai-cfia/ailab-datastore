@@ -115,7 +115,8 @@ def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
             guaranteed_title_fr,
             title_is_minimal,
             company_info_id,
-            manufacturer_info_id
+            manufacturer_info_id,
+            record_keeping
         FROM 
             label_information
         WHERE 
