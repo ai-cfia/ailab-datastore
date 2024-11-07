@@ -4,7 +4,7 @@ This module represent the function for the registration_number_information table
 """
 
 from psycopg import Cursor, sql
-
+from fertiscan.db.metadata.inspection import RegistrationNumber
 from uuid import UUID
 
 from fertiscan.db.queries.errors import (
@@ -71,4 +71,40 @@ def get_registration_numbers_json(cursor: Cursor, label_id: UUID):
         return result[0]
     raise RegistrationNumberRetrievalError(
         "Failed to get Registration Numbers with the given label_id. No data returned."
+    )
+
+
+@handle_query_errors(RegistrationNumberQueryError)
+def update_registration_number(
+    cursor: Cursor,
+    registration_numbers: RegistrationNumber,
+    label_id: UUID,
+):
+    """
+    This function updates the registration number in the database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - registration_number_id (uuid): The UUID of the registration number.
+    - registration_number (str): The registration number of the product.
+    - is_an_ingredient (bool): The status of the registration number.
+    - edited (bool): The edited status of the registration number.
+    Returns:
+    - The UUID of the updated registration number.
+    """
+    query = sql.SQL(
+        """
+        SELECT update_registration_number(%s, %s);
+    """
+    )
+    cursor.execute(
+        query,
+        (
+            label_id,
+            registration_numbers.model_dump_json(),
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise RegistrationNumberQueryError(
+        "Failed to update Registration Number. No data returned."
     )

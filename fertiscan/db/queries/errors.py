@@ -585,6 +585,25 @@ class SubTypeDeleteError(SubTypeQueryError):
 
     pass
 
+class RegistrationNumberQueryError(QueryError):
+    """Base exception for all registration number-related query errors."""
+
+    pass
+
+class RegistrationNumberCreationError(RegistrationNumberQueryError):
+    """Raised when an error occurs during the creation of a registration number."""
+
+    pass
+
+class RegistrationNumberRetrievalError(RegistrationNumberQueryError):
+    """Raised when an error occurs during the retrieval of a registration number."""
+    
+    pass
+
+class RegistrationNumberNotFoundError(RegistrationNumberQueryError):
+    """Raised when a registration number is not found."""
+    
+    pass
 
 def handle_query_errors(error_cls=QueryError):
     """Decorator for handling query errors."""
