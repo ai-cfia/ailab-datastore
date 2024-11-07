@@ -333,7 +333,7 @@ BEGIN
 -- REGISTRATION NUMBER
 
 	-- Loop through each registration number in the JSON array
-	FOR record IN SELECT * FROM jsonb_array_elements(input_json->'registration_number')
+	FOR record IN SELECT * FROM jsonb_array_elements(input_json-> 'product'-> 'registration_number')
 	LOOP
 		-- Check make sure we dont create an empty registration number
 		IF COALESCE(record->>'identifier', 

@@ -85,6 +85,11 @@ class Metrics(ValidatedModel):
     density: Optional[Metric] = Metric()
 
 
+class RegistrationNumber(ValidatedModel):
+    registration_number: str | None = None
+    is_an_ingredient: bool | None = None
+    edited: Optional[bool] = False
+
 class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
@@ -95,12 +100,10 @@ class ProductInformation(ValidatedModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
+    verified: Optional[bool] = False
+    registration_numbers: List[RegistrationNumber] | None = []
     record_keeping: Optional[bool] = None
 
-class RegistrationNumber(ValidatedModel):
-    registration_number: str | None = None
-    is_an_ingredient: bool | None = None
-    edited: Optional[bool] = False
 
 class Specification(ValidatedModel):
     humidity: float | None = None
@@ -220,11 +223,21 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
+        
+        reg_numbers = []
+        for reg_number in analysis_form.get("registration_number", []):
+            reg_numbers.append(RegistrationNumber(
+                registration_number=reg_number.get("identifier"),
+                is_an_ingredient= (reg_number.get("type") == "Ingredient")
+                )
+            )
+
         # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
             name=analysis_form.get("fertiliser_name"),
             lot_number=analysis_form.get("lot_number"),
             metrics=metrics,
+            registration_numbers=reg_numbers,
             npk=analysis_form.get("npk"),
             warranty=analysis_form.get("warranty"),
             n=npk[0],
@@ -333,14 +346,6 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             fr=guaranteed_fr,
         )
 
-        reg_numbers = []
-        for reg_number in analysis_form.get("registration_number", []):
-            reg_numbers.append(RegistrationNumber(
-                registration_number=reg_number.get("identifier"),
-                is_an_ingredient= (reg_number.get("type") == "Ingredient")
-                )
-            )
-
         inspection_formatted = Inspection(
             inspector_id=str(user_id),
             company=company,
@@ -378,6 +383,11 @@ def build_inspection_export(cursor, inspection_id) -> str:
         metrics.volume = metrics.volume or Metric()
         metrics.density = metrics.density or Metric()
         product_info.metrics = metrics
+        
+        # Retrieve the registration numbers
+        reg_numbers = registration_number.get_registration_numbers_json(cursor, label_info_id)
+        reg_numbers = RegistrationNumber.model_validate(reg_numbers)
+        product_info.registration_numbers = reg_numbers
 
         # get the organizations information (Company and Manufacturer)
         org = organization.get_organizations_info_json(cursor, label_info_id)
@@ -394,11 +404,6 @@ def build_inspection_export(cursor, inspection_id) -> str:
             cursor, label_info_id
         )
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
-
-        # Retrieve the registration numbers
-        reg_numbers = registration_number.get_registration_numbers_json(cursor, label_info_id)
-        reg_numbers = RegistrationNumber.model_validate(reg_numbers)
-
 
         # Get the ingredients but if the fertilizer is record keeping, the ingredients are not displayed
         if not product_info.record_keeping:

@@ -11,7 +11,7 @@ BEGIN
                 'registration_numbers', 
                     COALESCE(jsonb_agg(
                         jsonb_build_object(
-                            'identifier', COALESCE(registration_number_information.identifier,Null),
+                            'registration_number', COALESCE(registration_number_information.identifier,Null),
                             'is_an_ingredient', COALESCE(registration_number_information.is_an_ingredient,Null),
                             'edited', COALESCE(registration_number_information.edited,Null)
                         )
