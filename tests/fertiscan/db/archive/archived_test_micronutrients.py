@@ -52,7 +52,6 @@ class test_micronutrient(unittest.TestCase):
             self.product_name,
             self.lot_number,
             self.npk,
-            self.registration_number,
             self.n,
             self.p,
             self.k,

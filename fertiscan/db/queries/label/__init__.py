@@ -20,7 +20,6 @@ def new_label_information(
     name: str,
     lot_number: str,
     npk: str,
-    registration_number: str,
     n: float,
     p: float,
     k: float,
@@ -38,7 +37,6 @@ def new_label_information(
     - cursor (cursor): The cursor of the database.
     - lot_number (str): The lot number of the label_information.
     - npk (str): The npk of the label_information.
-    - registration_number (str): The registration number of the label_information.
     - n (float): The n of the label_information.
     - p (float): The p of the label_information.
     - k (float): The k of the label_information.
@@ -52,7 +50,7 @@ def new_label_information(
     - str: The UUID of the label_information
     """
     query = """
-    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s);
+    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s);
         """
     cursor.execute(
         query,
@@ -60,7 +58,6 @@ def new_label_information(
             name,
             lot_number,
             npk,
-            registration_number,
             n,
             p,
             k,
@@ -107,7 +104,6 @@ def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
             product_name,
             lot_number, 
             npk, 
-            registration_number, 
             n, 
             p, 
             k, 

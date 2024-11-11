@@ -1,9 +1,8 @@
-
+drOp FUNCTION IF EXISTS "fertiscan_0.0.17".new_label_information(TEXT, TEXT, TEXT,  FLOAT, FLOAT, FLOAT, TEXT, TEXT, BOOLEAN, UUID, UUID);
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".new_label_information(
     name TEXT,
     lot_number TEXT,
     npk TEXT,
-    registration_number TEXT,
     n FLOAt,
     p FLOAT,
     k FLOAT,
@@ -29,7 +28,6 @@ BEGIN
 		name,
         lot_number,
         npk,
-        registration_number,
         n,
         p,
         k,

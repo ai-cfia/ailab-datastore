@@ -85,7 +85,6 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             None,
             None,
             None,
-            None,
             self.company_info_id,
             self.company_info_id,
             None,

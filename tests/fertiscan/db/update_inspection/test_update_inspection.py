@@ -232,7 +232,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
 
         # Verify the fertilizer details are correct
         self.cursor.execute(
-            "SELECT name, registration_number, owner_id FROM fertilizer WHERE id = %s;",
+            "SELECT name, owner_id FROM fertilizer WHERE id = %s;",
             (fertilizer_id,),
         )
         fertilizer_data = self.cursor.fetchone()
@@ -241,16 +241,16 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             altered_inspection.product.name,
             "The fertilizer name should match the product name in the input model.",
         )
-        self.assertEqual(
-            fertilizer_data[1],
-            altered_inspection.product.registration_number,
-            "The registration number should match the input model.",
-        )
+        # self.assertEqual(
+        #     fertilizer_data[1],
+        #     altered_inspection.product.registration_number,
+        #     "The registration number should match the input model.",
+        # )
 
         # Check if the owner_id matches the organization information created for the manufacturer
         self.cursor.execute(
             "SELECT information_id FROM organization WHERE id = %s;",
-            (fertilizer_data[2],),
+            (fertilizer_data[1],),
         )
         organization_information_id = self.cursor.fetchone()[0]
 

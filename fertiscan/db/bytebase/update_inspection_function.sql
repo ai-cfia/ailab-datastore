@@ -545,6 +545,7 @@ DECLARE
     registration_number text;
     verified_bool boolean;
     existing_inspector_id uuid;
+    registration_number_json jsonb;
 BEGIN
     -- Check if the provided inspection_id matches the one in the input JSON
     json_inspection_id := (p_input_json->>'inspection_id')::uuid;
@@ -587,7 +588,6 @@ BEGIN
     product_name = p_input_json->'product'->>'name', 
     lot_number = p_input_json->'product'->>'lot_number',
     npk = p_input_json->'product'->>'npk',
-    registration_number = p_input_json->'product'->>'registration_number',
     n = (NULLIF(p_input_json->'product'->>'n', '')::float),
     p = (NULLIF(p_input_json->'product'->>'p', '')::float),
     k = (NULLIF(p_input_json->'product'->>'k', '')::float),
@@ -645,7 +645,14 @@ BEGIN
     -- Check if the verified field is true, and upsert fertilizer if so
     IF verified_bool THEN
         fertilizer_name := p_input_json->'product'->>'name';
-        registration_number := p_input_json->'product'->>'registration_number';
+        registration_number := NULL;
+        -- loop through registration numbers to find the one to use
+        for registration_number_json in SELECT jsonb_array_elements_text(p_input_json->'product'->'registration_numbers')
+        LOOP
+            if (registration_number_json->>'is_an_ingredient')::boolean THEN
+                registration_number := registration_number_json->>'registration_number';
+            END IF;
+        END LOOP;
 
         -- Insert organization and get the organization_id
         IF manufacturer_info_id IS NOT NULL THEN

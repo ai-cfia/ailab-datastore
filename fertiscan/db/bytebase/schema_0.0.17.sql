@@ -204,7 +204,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "edited" boolean, --this is because with the current upsert we can not determine if it was edited or not
         "sub_type_id" uuid NOT NULL REFERENCES "fertiscan_0.0.17"."sub_type" ("id"),
         CONSTRAINT check_not_all_null CHECK (
-            (COALESCE(sub_label.text_content_en, '') <> '') AND
+            (COALESCE(sub_label.text_content_en, '') <> '') OR
             (COALESCE(sub_label.text_content_fr, '') <> '')
         )
     );

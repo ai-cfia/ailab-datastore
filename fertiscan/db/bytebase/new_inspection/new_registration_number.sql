@@ -1,9 +1,9 @@
 
-DROP FUNCTION IF EXISTS "fertiscan_0.0.17".new_registration_number(TEXT, BOOLEAN, UUID, TEXT, BOOLEAN);
+DROP FUNCTION IF EXISTS "fertiscan_0.0.17".new_registration_number(TEXT, UUID,BOOLEAN, TEXT, BOOLEAN);
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".new_registration_number(
     identifier TEXT,
     label_info_id UUID,
-    is_an_ingredient BOOLEAN DEFAULT NULL,
+    is_an_ingredient_val BOOLEAN DEFAULT NULL,
     read_name TEXT DEFAULT NULL,
     edited BOOLEAN DEFAULT FALSE
 )
@@ -13,15 +13,9 @@ AS $function$
 DECLARE
     reg_num_id uuid;
 BEGIN
-    INSERT INTO "fertiscan_0.0.17".registration_number_information (
-        identifier, 
-        is_an_ingredient, 
-        name,
-        label_id,
-        edited
-    )
+    INSERT INTO registration_number_information ("identifier", "is_an_ingredient", "name","label_id","edited")
     VALUES (
-        reg_num, 
+        identifier, 
         is_an_ingredient_val, 
         read_name,
         label_info_id,

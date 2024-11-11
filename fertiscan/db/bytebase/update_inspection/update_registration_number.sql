@@ -21,10 +21,10 @@ BEGIN
                 edited
             )
             VALUES (
-                reg_num_record->>'identifier',
-                reg_num_record->>'is_an_ingredient',
+                reg_num_record->>'registration_number',
+                (reg_num_record->>'is_an_ingredient')::boolean,
                 p_label_id,
-                reg_num_record->>'edited'
+                (reg_num_record->>'edited')::boolean
             );
         END LOOP;
 END;

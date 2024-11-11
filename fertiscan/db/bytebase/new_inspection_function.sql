@@ -333,15 +333,15 @@ BEGIN
 -- REGISTRATION NUMBER
 
 	-- Loop through each registration number in the JSON array
-	FOR record IN SELECT * FROM jsonb_array_elements(input_json-> 'product'-> 'registration_number')
+	FOR record IN SELECT * FROM jsonb_array_elements(input_json-> 'product'-> 'registration_numbers')
 	LOOP
 		-- Check make sure we dont create an empty registration number
-		IF COALESCE(record->>'identifier', 
+		IF COALESCE(record->>'registration_number', 
 					'') <> '' 
 		THEN
 			-- Insert the new registration number
 			registration_number_id := "fertiscan_0.0.17".new_registration_number(
-				record->>'identifier',
+				record->>'registration_number',
 				label_info_id,
 				(record->>'is_an_ingredient')::BOOLEAN,
 				null,

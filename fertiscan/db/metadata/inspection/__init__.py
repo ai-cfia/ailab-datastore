@@ -90,6 +90,7 @@ class RegistrationNumber(ValidatedModel):
     is_an_ingredient: bool | None = None
     edited: Optional[bool] = False
 
+
 class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
@@ -146,7 +147,7 @@ class Inspection(ValidatedModel):
     ingredients: ValuesObjects
 
 
-def build_inspection_import(analysis_form: dict,user_id) -> str:
+def build_inspection_import(analysis_form: dict, user_id) -> str:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
@@ -223,12 +224,12 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
-        
         reg_numbers = []
         for reg_number in analysis_form.get("registration_number", []):
-            reg_numbers.append(RegistrationNumber(
-                registration_number=reg_number.get("identifier"),
-                is_an_ingredient= (reg_number.get("type") == "Ingredient")
+            reg_numbers.append(
+                RegistrationNumber(
+                    registration_number=reg_number.get("identifier"),
+                    is_an_ingredient=(reg_number.get("type") == "Ingredient"),
                 )
             )
 
@@ -372,7 +373,9 @@ def build_inspection_export(cursor, inspection_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
-        label_info_id = inspection.get_inspection(cursor,inspection_id)[inspection.LABEL_INFO_ID]
+        label_info_id = inspection.get_inspection(cursor, inspection_id)[
+            inspection.LABEL_INFO_ID
+        ]
         # get the label information
         product_info = label.get_label_information_json(cursor, label_info_id)
         product_info = ProductInformation(**product_info)
@@ -383,11 +386,16 @@ def build_inspection_export(cursor, inspection_id) -> str:
         metrics.volume = metrics.volume or Metric()
         metrics.density = metrics.density or Metric()
         product_info.metrics = metrics
-        
+
         # Retrieve the registration numbers
-        reg_numbers = registration_number.get_registration_numbers_json(cursor, label_info_id)
-        reg_numbers = RegistrationNumber.model_validate(reg_numbers)
-        product_info.registration_numbers = reg_numbers
+        reg_numbers = registration_number.get_registration_numbers_json(
+            cursor, label_info_id
+        )
+        reg_number_model_list = []
+        for reg_number in reg_numbers["registration_numbers"]:
+            
+            reg_number_model_list.append(RegistrationNumber.model_validate(reg_number))
+        product_info.registration_numbers = reg_number_model_list
 
         # get the organizations information (Company and Manufacturer)
         org = organization.get_organizations_info_json(cursor, label_info_id)

@@ -60,10 +60,14 @@ class TestInspectionExport(unittest.TestCase):
             self.cursor, str(inspection_id)
         )
         data = json.loads(data)
+        self.maxDiff = None
         self.assertIsNotNone(data["inspection_id"])
         self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
+        print(data["product"])
+        
+        self.assertListEqual(inspection_dict["product"]["registration_numbers"], data["product"]["registration_numbers"])
         self.assertDictEqual(inspection_dict["product"], data["product"])
         self.assertDictEqual(inspection_dict["manufacturer"], data["manufacturer"])
         self.assertDictEqual(inspection_dict["company"], data["company"])

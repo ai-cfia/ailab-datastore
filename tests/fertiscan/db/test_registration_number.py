@@ -5,6 +5,7 @@ It tests the functions in the registration number modules.
 
 import os
 import unittest
+import json
 
 import datastore.db as db
 from datastore.db.metadata import validator
@@ -42,7 +43,6 @@ class test_registration_number(unittest.TestCase):
             self.product_name,
             self.lot_number,
             self.npk,
-            self.registration_number,
             self.n,
             self.p,
             self.k,
@@ -92,20 +92,31 @@ class test_registration_number(unittest.TestCase):
             self.cursor, self.label_id
         )
         RegistrationNumber.model_validate(registration_numbers)
-        self.assertEqual(len(registration_numbers), 0) 
+        print(registration_numbers)
+        self.assertEqual(len(registration_numbers["registration_numbers"]), 0) 
 
     def test_update_registration_number(self):
-        olg_data = RegistrationNumber.model_validate(registration_number.get_registration_numbers_json(self.cursor, self.label_id))
+        registration_number.new_registration_number(
+            self.cursor,
+            self.registration_number,
+            self.label_id,
+            self.is_an_ingredient,
+            self.read_name,
+            self.edited,
+        )
+        old_data = registration_number.get_registration_numbers_json(self.cursor, self.label_id)        
+        self.assertEqual(old_data["registration_numbers"][0]["registration_number"], self.registration_number)
         new_reg_number = "654321"
-        self.sample_registration_number.registration_number = new_reg_numbe
+        new_dict = old_data["registration_numbers"]
+        new_dict[0]["registration_number"] = new_reg_number
+        
         registration_number.update_registration_number(
             self.cursor,
-            self.sample_registration_number,
+            json.dumps(new_dict),
             self.label_id,
         )
-        new_data = RegistrationNumber.model_validate(registration_number.get_registration_numbers_json(self.cursor, self.label_id))
+        new_data = registration_number.get_registration_numbers_json(self.cursor, self.label_id)
         
-        self.assertEqual(olg_data.registration_number, self.registration_number)
-        self.assertEqual(new_data.registration_number, new_reg_number)
-        self.assertNotEqual(olg_data.registration_number, new_data.registration_number)
+        self.assertEqual(new_data["registration_numbers"][0]["registration_number"], new_reg_number)
+        self.assertNotEqual(new_data["registration_numbers"][0]["registration_number"], self.registration_number)
 
