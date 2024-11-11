@@ -132,4 +132,5 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     result = cursor.fetchall()
     if result:
         return result
+    raise RegistrationNumberNotFoundError(f"Failed to get Registration Numbers with the given label_id {label_id}. No data returned.")
    
