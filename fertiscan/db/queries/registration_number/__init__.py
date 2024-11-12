@@ -108,6 +108,7 @@ def update_registration_number(
         "Failed to update Registration Number. No data returned."
     )
 
+
 def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     """
     This function gets the registration numbers from the database.
@@ -132,5 +133,6 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     result = cursor.fetchall()
     if result:
         return result
-    raise RegistrationNumberNotFoundError(f"Failed to get Registration Numbers with the given label_id {label_id}. No data returned.")
-   
+    raise RegistrationNumberNotFoundError(
+        f"Failed to get Registration Numbers with the given label_id {label_id}. No data returned."
+    )
