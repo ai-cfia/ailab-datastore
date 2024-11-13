@@ -434,7 +434,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             manufacturer=manufacturer,
             product=product_info,
             verified=db_inspection.verified,
-            registration_numbers=reg_numbers,
+            registration_numbers=reg_number_model_list,
             ingredients=ingredients,
         )
 

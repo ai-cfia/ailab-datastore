@@ -77,7 +77,6 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             None,
             None,
             None,
-            None,
             False,
             self.company_info_id,
             self.company_info_id,
