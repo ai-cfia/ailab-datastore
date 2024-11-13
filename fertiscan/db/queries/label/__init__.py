@@ -29,6 +29,7 @@ def new_label_information(
     is_minimal: bool,
     company_info_id,
     manufacturer_info_id,
+    record_keeping,
 ):
     """
     This function create a new label_information in the database.
@@ -51,7 +52,7 @@ def new_label_information(
     - str: The UUID of the label_information
     """
     query = """
-    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s);
         """
     cursor.execute(
         query,
@@ -68,6 +69,7 @@ def new_label_information(
             is_minimal,
             company_info_id,
             manufacturer_info_id,
+            record_keeping,
         ),
     )
     if result := cursor.fetchone():
@@ -113,7 +115,8 @@ def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
             guaranteed_title_fr,
             title_is_minimal,
             company_info_id,
-            manufacturer_info_id
+            manufacturer_info_id,
+            record_keeping
         FROM 
             label_information
         WHERE 

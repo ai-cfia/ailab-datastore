@@ -29,6 +29,58 @@
     "unit":"L"
   },
   "npk":"20-20-20",
+  "ingredients_en":[
+    {
+      "nutrient":"Bone meal",
+      "value":5,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Seaweed extract",
+      "value":3,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Humic acid",
+      "value":2,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Clay"
+    },
+    {
+      "nutrient":"Sand"
+    },
+    {
+      "nutrient":"Perlite"
+    }
+  ],
+  "ingredients_fr":[
+    {
+      "nutrient":"Farine d'os",
+      "value":5,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Extrait d'algues",
+      "value":3,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Acide humique",
+      "value":2,
+      "unit":"%"
+    },
+    {
+      "nutrient":"Argile"
+    },
+    {
+      "nutrient":"Sable"
+    },
+    {
+      "nutrient":"Perlite"
+    }
+  ],
   "cautions_en":[
     "Keep out of reach of children.",
     "Avoid contact with skin and eyes."

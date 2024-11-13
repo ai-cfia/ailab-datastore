@@ -67,6 +67,7 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             None,
             self.company_info_id,
             self.company_info_id,
+            None,
         )
 
     def tearDown(self):

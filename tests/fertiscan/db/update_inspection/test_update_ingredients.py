@@ -10,7 +10,7 @@ import fertiscan.db.queries.label as label
 load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -76,9 +76,12 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             None,
             None,
             None,
-            "test-warranty",
+            None,
+            None,
+            False,
             self.company_info_id,
             self.company_info_id,
+            None,
         )
 
     def tearDown(self):
@@ -141,6 +144,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
             expected_updated_data,
             "Updated data should match the new values",
         )
+
 
 
 if __name__ == "__main__":

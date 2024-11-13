@@ -10,7 +10,7 @@ import datastore.db as db
 from datastore.db.metadata import validator
 from fertiscan.db.queries import ingredient, label
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -32,10 +32,6 @@ class test_ingredient(unittest.TestCase):
         self.n = 10.0
         self.p = 20.0
         self.k = 30.0
-        self.weight = None
-        self.density = None
-        self.volume = None
-        self.warranty = "warranty"
         self.label_id = label.new_label_information(
             self.cursor,
             self.product_name,
@@ -45,7 +41,10 @@ class test_ingredient(unittest.TestCase):
             self.n,
             self.p,
             self.k,
-            self.warranty,
+            None,
+            None,
+            False,
+            None,
             None,
             None,
         )
@@ -124,3 +123,56 @@ class test_ingredient(unittest.TestCase):
         self.assertIsNotNone(ingredient_obj.get("ingredients").get("fr"))
         self.assertEqual(len(ingredient_obj.get("ingredients").get("en")), 0)
         self.assertEqual(len(ingredient_obj.get("ingredients").get("fr")), 0)
+
+    def test_get_ingredient_json_record_keeping(self):
+        label_id_record_keeping = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.registration_number,
+            self.n,
+            self.p,
+            self.k,
+            None,
+            None,
+            False,
+            None,
+            None,
+            True,
+        )
+
+        ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            label_id_record_keeping,
+            self.language,
+            False,
+            False,
+            False,
+        )
+
+        ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            self.language,
+            False,
+            False,
+            False,
+        )
+
+        ingredient_obj = ingredient.get_ingredient_json(
+            self.cursor, self.label_id
+        )
+        ingredient_empty = ingredient.get_ingredient_json(
+            self.cursor, label_id_record_keeping
+        )
+        # check that the upload worked on not record keeping label
+        self.assertEqual(len(ingredient_obj.get("ingredients").get("fr")),1)
+        # make sure that the record keeping label does not display any ingredients
+        self.assertEqual(len(ingredient_empty.get("ingredients").get("fr")),0)

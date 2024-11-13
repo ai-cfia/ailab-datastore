@@ -17,7 +17,7 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label
+from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -133,9 +133,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             self.analysis_json.get("guaranteed_analysis_en").get("nutrients")
         ) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
-        # self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-        # self.analysis_json.get("ingredients_fr")
-        # )
+        self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
+        self.analysis_json.get("ingredients_fr")
+        )
 
         # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
         # self.analysis_json.get("micronutrients_fr")
@@ -178,6 +178,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
+
+        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis["product"]["label_id"]))
+        print(ingredients)
 
         # specifications = specification.get_all_specifications(
         # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
@@ -236,7 +239,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # self.assertEqual(len(label_dimension[7]), self.nb_first_aid)
 
         # self.assertEqual(len(label_dimension[9]), self.nb_specifications)
-        # self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
+        self.assertEqual(len(label_dimension[10]), self.nb_ingredients)
         # self.assertEqual(len(label_dimension[11]), self.nb_micronutrients)
         self.assertEqual(len(label_dimension[12]), self.nb_guaranteed)
         self.assertEqual(len(label_dimension[13]), self.nb_weight)
@@ -436,6 +439,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
         user_feedback = "This is a feedback"
+        new_record_keeping= True
         # new_specification_en = [
         #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         # ]
@@ -482,6 +486,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["product"]["metrics"]["weight"][0]["edited"] = True
         analysis["product"]["metrics"]["density"]["value"] = new_density
         analysis["product"]["metrics"]["density"]["edited"] = True
+        analysis["product"]["record_keeping"] = new_record_keeping
         analysis["product"]["npk"] = new_npk
         analysis["instructions"]["en"] = new_instruction_en
         analysis["instructions"]["fr"] = new_instruction_fr
@@ -530,6 +535,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(label_info_data[8], new_title)
         self.assertNotEqual(label_info_data[8], old_title)
         self.assertEqual(label_info_data[9], old_title)
+        self.assertEqual(label_info_data[13], new_record_keeping)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:

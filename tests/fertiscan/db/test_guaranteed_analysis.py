@@ -150,6 +150,7 @@ class test_guaranteed_analysis(unittest.TestCase):
             self.is_minimal,
             None,
             None,
+            None,
         )
         self.language = "fr"
 

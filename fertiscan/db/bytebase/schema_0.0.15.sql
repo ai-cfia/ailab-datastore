@@ -106,7 +106,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "guaranteed_title_fr" text,
     "title_is_minimal" boolean,
     "company_info_id" uuid REFERENCES "fertiscan_0.0.15".organization_information(id),
-    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.15".organization_information(id)
+    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.15".organization_information(id),
+    "record_keeping" boolean default null
     );
     
     CREATE TABLE "fertiscan_0.0.15"."label_dimension" (
