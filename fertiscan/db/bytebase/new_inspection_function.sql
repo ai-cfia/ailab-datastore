@@ -222,12 +222,12 @@ BEGIN
 				'') <> '' 
 			THEN
 				-- Insert the new ingredient
-				ingredient_id := "fertiscan_0.0.16".new_ingredient(
+				ingredient_id := "fertiscan_0.0.17".new_ingredient(
 					record->>'name',
 					read_value::float,
 					read_unit,
 					label_info_id,
-					ingredient_language::"fertiscan_0.0.16".language,
+					ingredient_language::"fertiscan_0.0.17".language,
 					NULL, --We cant tell atm
 					NULL,  --We cant tell atm
 					FALSE  --preset
