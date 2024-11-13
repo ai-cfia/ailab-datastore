@@ -50,7 +50,7 @@ def new_label_information(
     - str: The UUID of the label_information
     """
     query = """
-    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s);
+    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """
     cursor.execute(
         query,

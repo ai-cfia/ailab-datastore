@@ -23,7 +23,7 @@ BEGIN
     SET SEARCH_PATH TO "fertiscan_0.0.17";
 	-- LABEL INFORMATION
     INSERT INTO label_information (
-        product_name,lot_number, npk, registration_number, n, p, k, guaranteed_title_en, guaranteed_title_fr, title_is_minimal, company_info_id, manufacturer_info_id, record_keeping
+        product_name,lot_number, npk, n, p, k, guaranteed_title_en, guaranteed_title_fr, title_is_minimal, company_info_id, manufacturer_info_id, record_keeping
     ) VALUES (
 		name,
         lot_number,
