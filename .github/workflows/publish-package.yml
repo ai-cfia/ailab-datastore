@@ -58,42 +58,41 @@ jobs:
           git tag -a v${{ env.version }}-${{ inputs.package-name }}-datastore -m "Release ${{ env.version }}"
           git push origin v${{ env.version }}-${{ inputs.package-name }}-datastore
 
-      - name: Generate changelog from PRs
+      - name: Generate changelog from PRs since last tag
         id: generate_changelog
         run: |
-          pr_list=$(gh pr list --repo $GITHUB_REPOSITORY --state merged --json number,title,url --jq '.[] | .number')
+          # Fetch the latest tag as a reference. We are comparing changelogs from latest tag to current one.
+          latest_tag=$(git describe --tags --abbrev=0)
+
+          # Format date for jq comparison
+          latest_tag_date=$(git log -1 --format=%ai "$latest_tag" | sed 's/.*/"&"/')
 
           datastore_changelog=""
           nachet_changelog=""
           fertiscan_changelog=""
 
+          # Fetch merged PRs since the latest tag
+          pr_list=$(gh pr list --repo $GITHUB_REPOSITORY --state merged --json number,title,url,mergedAt --jq ".[] | select(.mergedAt > $latest_tag_date) | .number")
+
           for pr in $pr_list; do
             files=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json files --jq '.files[].path')
 
-            # Check for changes in the datastore folder
             if echo "$files" | grep -q "^datastore/"; then
               pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
               datastore_changelog="$datastore_changelog\n$pr_info"
             fi
 
-            # Check for changes in the nachet folder
-            if [ "${{ inputs.package-name }}" = "nachet" ]; then
-              if echo "$files" | grep -q "^nachet/"; then
-                pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
-                nachet_changelog="$nachet_changelog\n$pr_info"
-              fi
+            if echo "$files" | grep -q "^nachet/" && [ "${{ inputs.package-name }}" = "nachet" ]; then
+              pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
+              nachet_changelog="$nachet_changelog\n$pr_info"
             fi
 
-            # Check for changes in the fertiscan folder
-            if [ "${{ inputs.package-name }}" = "fertiscan" ]; then
-              if echo "$files" | grep -q "^fertiscan/"; then
-                pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
-                fertiscan_changelog="$fertiscan_changelog\n$pr_info"
-              fi
+            if echo "$files" | grep -q "^fertiscan/" && [ "${{ inputs.package-name }}" = "fertiscan" ]; then
+              pr_info=$(gh pr view "$pr" --repo $GITHUB_REPOSITORY --json title,url | jq -r '"- \(.title) (\(.url))"')
+              fertiscan_changelog="$fertiscan_changelog\n$pr_info"
             fi
           done
 
-          # Generate final changelog
           changelog="Changelog:\n"
 
           if [ -n "$datastore_changelog" ]; then
