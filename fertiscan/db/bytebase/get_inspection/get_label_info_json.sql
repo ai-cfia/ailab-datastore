@@ -17,7 +17,8 @@ BEGIN
         p, 
         k,
         company_info_id,
-        manufacturer_info_id
+        manufacturer_info_id,
+        record_keeping
     INTO 
         record
     FROM 
@@ -47,7 +48,8 @@ BEGIN
         'npk', record.npk,
         'lot_number', record.lot_number,
         'registration_number', record.registration_number,
-        'verified', verified_bool
+        'verified', verified_bool,
+        'record_keeping', record.record_keeping
     );
 END;
 $function$;

@@ -595,7 +595,8 @@ BEGIN
     guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
     title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
     "company_info_id" = company_info_id, 
-    "manufacturer_info_id" = manufacturer_info_id
+    "manufacturer_info_id" = manufacturer_info_id,
+    record_keeping = (p_input_json->'product'->>'record_keeping')::boolean
     WHERE id = label_info_id_value;
 
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
@@ -607,7 +608,7 @@ BEGIN
     -- PERFORM update_specifications(label_info_id_value, p_input_json->'specifications');
 
     -- Update ingredients related to the label
-    -- PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
+     PERFORM update_ingredients(label_info_id_value, p_input_json->'ingredients');
 
     -- Update micronutrients related to the label
     -- PERFORM update_micronutrients(label_info_id_value, p_input_json->'micronutrients');

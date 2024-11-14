@@ -22,6 +22,7 @@ from fertiscan.db.queries import (
     nutrients,
     organization,
     sub_label,
+    ingredient,
 )
 from fertiscan.db.queries.errors import QueryError
 
@@ -94,6 +95,7 @@ class ProductInformation(ValidatedModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
+    record_keeping: Optional[bool] = None
 
 
 class Specification(ValidatedModel):
@@ -108,7 +110,8 @@ class Specifications(ValidatedModel):
     fr: List[Specification]
 
 
-# Awkwardly named so to avoid name conflict
+# Awkwardly named so to avoid name conflict this represents the inspection object in the database 
+# and not the inspection object used as a form on the application 
 class DBInspection(ValidatedModel):
     id: UUID4
     verified: bool = False
@@ -132,6 +135,7 @@ class Inspection(ValidatedModel):
     cautions: SubLabel
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
+    ingredients: ValuesObjects
 
 
 def build_inspection_import(analysis_form: dict,user_id) -> str:
@@ -211,6 +215,7 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
+        # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
             name=analysis_form.get("fertiliser_name"),
             registration_number=analysis_form.get("registration_number"),
@@ -222,7 +227,9 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             p=npk[1],
             k=npk[2],
             verified=False,
+            record_keeping=None,
         )
+
 
         cautions = SubLabel(
             en=analysis_form.get("cautions_en", []),
@@ -253,23 +260,23 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
         # ]
         # micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
 
-        # ingredients_en: list[Value] = [
-        #     Value(
-        #         unit=ingredient.get("unit") or None,
-        #         value=ingredient.get("value") or None,
-        #         name=ingredient.get("nutrient"),
-        #     )
-        #     for ingredient in analysis_form.get("ingredients_en", [])
-        # ]
-        # ingredients_fr: list[Value] = [
-        #     Value(
-        #         unit=ingredient.get("unit") or None,
-        #         value=ingredient.get("value") or None,
-        #         name=ingredient.get("nutrient"),
-        #     )
-        #     for ingredient in analysis_form.get("ingredients_fr", [])
-        # ]
-        # ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
+        ingredients_en: list[Value] = [
+            Value(
+                unit=ingredient.get("unit") or None,
+                value=ingredient.get("value") or None,
+                name=ingredient.get("nutrient"),
+            )
+            for ingredient in analysis_form.get("ingredients_en", [])
+        ]
+        ingredients_fr: list[Value] = [
+            Value(
+                unit=ingredient.get("unit") or None,
+                value=ingredient.get("value") or None,
+                name=ingredient.get("nutrient"),
+            )
+            for ingredient in analysis_form.get("ingredients_fr", [])
+        ]
+        ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
 
         # specifications = Specifications(
         #     en=[
@@ -330,6 +337,7 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             cautions=cautions,
             instructions=instructions,
             guaranteed_analysis=guaranteed,
+            ingredients=ingredients,
         )
         Inspection(**inspection_formatted.model_dump())
         return inspection_formatted.model_dump_json()
@@ -374,6 +382,12 @@ def build_inspection_export(cursor, inspection_id) -> str:
         )
         guaranteed_analysis = GuaranteedAnalysis.model_validate(guaranteed_analysis)
 
+        # Get the ingredients but if the fertilizer is record keeping, the ingredients are not displayed
+        if not product_info.record_keeping:
+            ingredients = ingredient.get_ingredient_json(cursor, label_info_id)
+        else:
+            ingredients = ValuesObjects(en=[], fr=[])
+
         # Get the inspection information
         db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
         db_inspection = DBInspection.model_validate(db_inspection)
@@ -389,6 +403,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             manufacturer=manufacturer,
             product=product_info,
             verified=db_inspection.verified,
+            ingredients=ingredients,
         )
 
         return inspection_formatted.model_dump_json()

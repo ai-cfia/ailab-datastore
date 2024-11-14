@@ -54,6 +54,7 @@ class test_label(unittest.TestCase):
             self.guaranteed_is_minimal,
             self.company_info_id,
             self.manufacturer_info_id,
+            None,
         )
         self.assertTrue(validator.is_valid_uuid(label_information_id))
 
@@ -72,6 +73,7 @@ class test_label(unittest.TestCase):
             self.guaranteed_is_minimal,
             self.company_info_id,
             self.manufacturer_info_id,
+            None,
         )
         label_data = label.get_label_information(self.cursor, label_information_id)
 
@@ -102,6 +104,7 @@ class test_label(unittest.TestCase):
             self.guaranteed_analysis_title_en,
             self.guaranteed_analysis_title_fr,
             self.guaranteed_is_minimal,
+            None,
             None,
             None,
         )

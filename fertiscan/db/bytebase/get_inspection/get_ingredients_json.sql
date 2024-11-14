@@ -6,7 +6,19 @@ LANGUAGE plpgsql
 AS $function$
 DECLARE
     result_json jsonb;
+    record_keeping_option boolean;
 BEGIN
+
+    -- Fetch the record_keeping value
+    SELECT record_keeping
+    INTO record_keeping_option
+    FROM label_information
+    WHERE id = label_info_id;
+   
+    IF record_keeping_option THEN
+        RETURN jsonb_build_object('ingredients',jsonb_build_object('en', '[]'::jsonb, 'fr', '[]'::jsonb));
+    END IF;
+
     SELECT jsonb_build_object(
         'ingredients', jsonb_build_object(
             'en',COALESCE(jsonb_agg(

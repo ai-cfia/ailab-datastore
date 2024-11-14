@@ -16,26 +16,26 @@ def create_db(DB_URL, SCHEMA : str):
     # Create the tables
     schema_number = SCHEMA.removeprefix("fertiscan_")
     try:
-        path = "datastore/db/bytebase/FertiScan/schema_" + schema_number + ".sql"
+        path = "fertiscan/db/bytebase/schema_" + schema_number + ".sql"
         #execute_sql_file(cur, path)
 
         # Create the functions
-        path = "datastore/db/bytebase/FertiScan/new_inspection"
+        path = "fertiscan/db/bytebase/new_inspection"
         loop_for_sql_files(cur, path)
 
-        path = "datastore/db/bytebase/FertiScan/new_inspection_function.sql"
+        path = "fertiscan/db/bytebase/new_inspection_function.sql"
         execute_sql_file(cur, path)
 
-        path = "datastore/db/bytebase/FertiScan/get_inspection"
+        path = "fertiscan/db/bytebase/get_inspection"
         loop_for_sql_files(cur, path)
 
-        path = "datastore/db/bytebase/FertiScan/update_inspection_function.sql"
+        path = "fertiscan/db/bytebase/update_inspection_function.sql"
         execute_sql_file(cur, path)
 
-        path = "datastore/db/bytebase/FertiScan/delete_inspection_function.sql"
+        path = "fertiscan/db/bytebase/delete_inspection_function.sql"
         execute_sql_file(cur, path)
 
-        path = "datastore/db/bytebase/FertiScan/OLAP"
+        path = "fertiscan/db/bytebase/OLAP"
         loop_for_sql_files(cur, path)
     except Exception as e:
         conn.rollback()
