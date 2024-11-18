@@ -54,30 +54,6 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "address" text NOT NULL,
     "region_id" uuid REFERENCES "fertiscan_0.0.17".region(id)
     );    
-    
-    CREATE TABLE "fertiscan_0.0.17"."organization_information" (
-        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-        "name" text,
-        "website" text,
-        "phone_number" text,
-        "location_id" uuid REFERENCES "fertiscan_0.0.17".location(id),
-        "edited" boolean DEFAULT false,
-        "label_id" uuid REFERENCES "fertiscan_0.0.17".label_information(id),
-        CONSTRAINT check_not_all_null CHECK (
-            (name IS NOT NULL)::integer +
-            (website IS NOT NULL)::integer +
-            (phone_number IS NOT NULL)::integer +
-            (location_id is not null)::integer >= 1)
-    );
-
-    CREATE TABLE "fertiscan_0.0.17"."organization" (
-    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "information_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id),
-    "main_location_id" uuid REFERENCES "fertiscan_0.0.17".location(id)
-    );
-
-
-    Alter table "fertiscan_0.0.17".location ADD "owner_id" uuid REFERENCES "fertiscan_0.0.17".organization(id);
 
     CREATE TABLE "fertiscan_0.0.17"."sample" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -157,6 +133,28 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "original_dataset" json
     );
 
+    CREATE TABLE "fertiscan_0.0.17"."organization_information" (
+        "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+        "name" text,
+        "website" text,
+        "phone_number" text,
+        "location_id" uuid REFERENCES "fertiscan_0.0.17".location(id),
+        "edited" boolean DEFAULT false,
+        "label_id" uuid REFERENCES "fertiscan_0.0.17".label_information(id),
+        CONSTRAINT check_not_all_null CHECK (
+            (name IS NOT NULL)::integer +
+            (website IS NOT NULL)::integer +
+            (phone_number IS NOT NULL)::integer +
+            (location_id is not null)::integer >= 1)
+    );
+
+    CREATE TABLE "fertiscan_0.0.17"."organization" (
+    "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    "information_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id),
+    "main_location_id" uuid REFERENCES "fertiscan_0.0.17".location(id)
+    );
+
+    Alter table "fertiscan_0.0.17".location ADD "owner_id" uuid REFERENCES "fertiscan_0.0.17".organization(id);
 
     CREATE TYPE "fertiscan_0.0.17".metric_type as ENUM ('volume', 'weight','density');
 

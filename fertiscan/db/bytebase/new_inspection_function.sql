@@ -10,14 +10,12 @@ DECLARE
     en_values jsonb;
     record jsonb;
     inspection_id_value uuid;
-    company_id uuid;
+    organization_id uuid;
     location_id uuid;
 	weight_id uuid;
 	density_id uuid;
 	volume_id uuid;
 	micronutrient_id uuid;
-    manufacturer_location_id uuid;
-    manufacturer_id uuid;
 	ingredient_id uuid;
 	guaranteed_analysis_id uuid;
 	registration_number_id uuid;
@@ -103,12 +101,10 @@ BEGIN
 		input_json->'guaranteed_analysis'->'title'->>'en',
 		input_json->'guaranteed_analysis'->'title'->>'fr',
 		(input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
-		company_id,
-		manufacturer_id,
 		Null -- record_keeping not handled yet
 	);
 		
-	-- Update input_json with company_id
+	-- Update input_json with label_id
 	input_json := jsonb_set(input_json, '{product,label_id}', to_jsonb(label_info_id));
 
 --LABEL END
@@ -369,7 +365,8 @@ BEGIN
 				record->>'address',
 				record->>'website',
 				record->>'phone_number',
-				FALSE
+				FALSE,
+				label_info_id
 			);
 		END IF;
 	END LOOP;
@@ -387,7 +384,7 @@ BEGIN
     )
     RETURNING id INTO inspection_id_value;
    
-	-- Update input_json with company_id
+	-- Update input_json with inspection data
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
 	input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(''::text));
 

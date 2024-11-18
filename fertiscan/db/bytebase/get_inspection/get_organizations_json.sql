@@ -18,7 +18,7 @@ BEGIN
     ))
     INTO result_json
     FROM organization_information as org
-    WHERE org.label_id = label_id
+    WHERE org.label_id = label_id;
     RETURN result_json;
 END;
 $function$;
