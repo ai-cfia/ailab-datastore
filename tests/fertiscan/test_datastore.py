@@ -17,7 +17,7 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient
+from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient, organization
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -248,14 +248,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_register_analysis_empty(self):
         empty_analysis = {
-            "company_name": None,
-            "company_address": None,
-            "company_website": None,
-            "company_phone_number": None,
-            "manufacturer_name": None,
-            "manufacturer_address": None,
-            "manufacturer_website": "test-website-to-trigger-adress-not-null-test-case",
-            "manufacturer_phone_number": None,
+            "organizations": [],
             "fertiliser_name": None,
             "registration_number": [],
             "lot_number": None,
@@ -480,6 +473,17 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         }
 
         new_guaranteed_nb = 2
+
+        old_organizations = analysis["organizations"]
+        new_organizations = [
+            {
+                "name": "New Organization",
+                "address": "New Address",
+                "phone": "New Phone",
+                "email": "New Email",
+                "website": "New Website",
+            }
+        ]
         # update the dataset
         analysis["product"]["name"] = new_product_name
         analysis["product"]["metrics"]["weight"][0]["value"] = new_weight
@@ -494,7 +498,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["cautions"]["en"] = new_cautions_en
         analysis["cautions"]["fr"] = new_cautions_fr
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
-
+        analysis["organizations"] = new_organizations
         analysis["inspection_comment"] = user_feedback
 
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
@@ -547,6 +551,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Verify user's comment are saved
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[8], user_feedback)
+
+        # Verify organizations are saved
+        orgs = organization.get_organizations_info_label(self.cursor, label_id)
+        self.assertEqual(len(orgs), 1)
+        self.assertNotEqual(len(orgs), len(old_organizations))
+        self.assertEqual(orgs[0][0], new_organizations[0]["name"])
+        self.assertNotEqual(new_organizations[0]["name"], old_organizations[0]["name"])
+
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)

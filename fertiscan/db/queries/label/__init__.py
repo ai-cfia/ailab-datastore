@@ -26,8 +26,6 @@ def new_label_information(
     title_en: str,
     title_fr: str,
     is_minimal: bool,
-    company_info_id,
-    manufacturer_info_id,
     record_keeping,
 ):
     """
@@ -43,14 +41,13 @@ def new_label_information(
     - title_en (str): The english title of the guaranteed analysis.
     - title_fr (str): The french title of the guaranteed analysis.
     - is_minimal (bool): if the tital is minimal for the guaranteed analysis.
-    - company_info_id (str): The UUID of the company.
-    - manufacturer_info_id (str): The UUID of the manufacturer.
+    - record_keeping (bool): if the label is a record keeping.
 
     Returns:
     - str: The UUID of the label_information
     """
     query = """
-    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+    SELECT new_label_information(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         """
     cursor.execute(
         query,
@@ -64,8 +61,6 @@ def new_label_information(
             title_en,
             title_fr,
             is_minimal,
-            company_info_id,
-            manufacturer_info_id,
             record_keeping,
         ),
     )
@@ -110,8 +105,6 @@ def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
             guaranteed_title_en,
             guaranteed_title_fr,
             title_is_minimal,
-            company_info_id,
-            manufacturer_info_id,
             record_keeping
         FROM 
             label_information

@@ -69,8 +69,7 @@ class TestInspectionExport(unittest.TestCase):
         
         self.assertListEqual(inspection_dict["product"]["registration_numbers"], data["product"]["registration_numbers"])
         self.assertDictEqual(inspection_dict["product"], data["product"])
-        self.assertDictEqual(inspection_dict["manufacturer"], data["manufacturer"])
-        self.assertDictEqual(inspection_dict["company"], data["company"])
+        self.assertListEqual(inspection_dict["organizations"], data["organizations"])
         ## self.assertDictEqual(inspection_dict["micronutrients"], data["micronutrients"])
         ## self.assertDictEqual(inspection_dict["ingredients"], data["ingredients"])
         ## self.assertDictEqual(inspection_dict["specifications"], data["specifications"])
@@ -80,11 +79,8 @@ class TestInspectionExport(unittest.TestCase):
             data["guaranteed_analysis"]["en"],
         )
 
-    def test_no_manufacturer(self):
-        self.analyse["manufacturer_name"] = None
-        self.analyse["manufacturer_website"] = None
-        self.analyse["manufacturer_phone_number"] = None
-        self.analyse["manufacturer_address"] = None
+    def test_no_organization(self):
+        self.analyse["organizations"] = []
 
         formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
@@ -106,8 +102,7 @@ class TestInspectionExport(unittest.TestCase):
         self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
-        self.assertDictEqual(inspection_dict["company"], data["company"])
-        self.assertIsNotNone(data["manufacturer"])
+        self.assertListEqual(inspection_dict["organizations"], data["organizations"])
         self.assertIsNone(data["manufacturer"]["id"])
         self.assertIsNone(data["manufacturer"]["name"])
         self.assertIsNone(data["manufacturer"]["address"])
@@ -559,17 +554,13 @@ class TestInspectionExport(unittest.TestCase):
             formatted_analysis_dict["cautions"]["fr"],
         )
 
-    def test_organization_not_located(self):
+    def test_organizations_not_located(self):
         # Modify analyse data to have empty addresses
         test_str = "Test string"
-        self.analyse["manufacturer_address"] = None
-        self.analyse["manufacturer_name"] = test_str
-        self.analyse["manufacturer_phone_number"] = None
-        self.analyse["manufacturer_website"] = None
-        self.analyse["company_address"] = None
-        self.analyse["company_name"] = None
-        self.analyse["company_phone_number"] = None
-        self.analyse["company_website"] = test_str
+        self.analyse["organizations"] = [
+            metadata.OrganizationInformation(name=test_str).model_dump_json(), 
+            metadata.OrganizationInformation(website=test_str).model_dump_json()
+            ]
 
         formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 
@@ -588,11 +579,12 @@ class TestInspectionExport(unittest.TestCase):
         inspection_data = json.loads(inspection_data)
 
         # Assert that organization address is empty
-        self.assertIsNotNone(inspection_data["manufacturer"])
-        self.assertIsNone(inspection_data["manufacturer"]["address"])
-        self.assertIsNone(inspection_data["company"]["address"])
-        self.assertEqual(inspection_data["manufacturer"]["name"], test_str)
-        self.assertEqual(inspection_data["company"]["website"], test_str)
+        self.assertIsNotNone(inspection_data["organizations"])
+        self.assertEqual(len(inspection_data["organizations"]), 2)
+        self.assertIsNone(inspection_data["organizations"][0]["address"])
+        self.assertIsNone(inspection_data["organizations"][1]["address"])
+        self.assertEqual(inspection_data["organizations"][0]["name"], test_str)
+        self.assertEqual(inspection_data["organizations"][1]["website"], test_str)
 
     @patch("fertiscan.db.queries.inspection.get_inspection")
     def test_query_error(self, mock_get_inspection):
@@ -679,8 +671,8 @@ class TestInspectionImport(unittest.TestCase):
 
     def test_missing_keys(self):
         analysis_form = {
-            "company_name": "Test Company",
-            "fertiliser_name": "Test Fertilizer",
+            "lot_number": "lot number",
+            "registration_number": "Reg number",
             # intentionally leaving out other required keys
         }
         with self.assertRaises(BuildInspectionImportError) as context:

@@ -83,8 +83,6 @@ class test_metric(unittest.TestCase):
             None,
             False,
             None,
-            None,
-            None,
         )
         self.language = "fr"
 

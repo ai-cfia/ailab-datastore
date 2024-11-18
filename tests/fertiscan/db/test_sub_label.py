@@ -83,8 +83,6 @@ class test_sub_label(unittest.TestCase):
             None,
             False,
             None,
-            None,
-            None,
         )
         self.language = "fr"
 

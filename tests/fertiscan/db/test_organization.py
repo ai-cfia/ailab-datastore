@@ -9,6 +9,7 @@ import uuid
 
 import datastore.db as db
 from datastore.db.metadata import validator
+from fertiscan.db.metadata.inspection import OrganizationInformation
 from fertiscan.db.queries import label, organization
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
@@ -179,43 +180,66 @@ class test_organization_information(unittest.TestCase):
             self.cursor, self.location_name, self.location_address, self.region_id
         )
 
+        
+        self.lot_number = "lot_number"
+        self.product_name = "product_name"
+        self.npk = "npk"
+        self.registration_number = "registration_number"
+        self.n = 10.0
+        self.p = 20.0
+        self.k = 30.0
+        self.weight = None
+        self.density = None
+        self.volume = None
+        self.warranty = "warranty"
+
+        self.label_information_id = label.new_label_information(
+            self.cursor,
+            self.product_name,
+            self.lot_number,
+            self.npk,
+            self.n,
+            self.p,
+            self.k,
+            self.title_en,
+            self.title_fr,
+            self.is_minimal,
+            None,
+            None,
+            None,
+        )
+
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_organization_info(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_located(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone
-        )
-        self.assertTrue(validator.is_valid_uuid(id))
-
-    def test_new_organization_located_no_location(self):
-        id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_info_no_location(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, None
+            self.cursor, self.name, self.website, self.phone, None, self.label_information_id
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_located_empty(self):
         with self.assertRaises(organization.OrganizationInformationCreationError):
             organization.new_organization_info_located(
-                self.cursor, None, None, None, None
+                self.cursor, None, None, None, None, None
             )
 
     def test_new_organization_located_no_address(self):
         org_id = organization.new_organization_info_located(
-            self.cursor, None, self.name, self.website, self.phone
+            self.cursor, None, self.name, self.website, self.phone, self.label_information_id
         )
         # Making sure that a location is not created
         query = "SELECT location_id FROM organization_information WHERE id = %s"
@@ -237,12 +261,22 @@ class test_organization_information(unittest.TestCase):
         with self.assertRaises(organization.OrganizationInformationNotFoundError):
             organization.get_organization_info(self.cursor, str(uuid.uuid4()))
 
+    def test_get_organization_info_label(self):
+        id = organization.new_organization_info(
+            self.cursor, self.name, self.website, self.phone, self.location_id, label_id=self.label_information_id
+        )
+        data = organization.get_organizations_info_label(self.cursor, self.label_id)
+        self.assertEqual(data[0], self.name)
+        self.assertEqual(data[1], self.website)
+        self.assertEqual(data[2], self.phone)
+        self.assertEqual(data[3], self.location_id)
+
     def test_update_organization_info(self):
         new_name = "new-name"
         new_website = "www.new.com"
         new_phone = "987654321"
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
@@ -264,6 +298,7 @@ class test_organization_information(unittest.TestCase):
             name=self.location_name,
             website=self.website,
             phone_number=self.phone,
+            label_id=self.label_information_id
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
@@ -274,6 +309,7 @@ class test_organization_information(unittest.TestCase):
             name=self.location_name,
             website=self.website,
             phone_number=self.phone,
+            label_id=self.label_information_id
         )
         manufacturer_id = organization.new_organization_info_located(
             self.cursor,
@@ -281,44 +317,54 @@ class test_organization_information(unittest.TestCase):
             name=self.location_name,
             website=self.website,
             phone_number=self.phone,
+            label_id=self.label_information_id
         )
-        label_id = label.new_label_information(
-            self.cursor,
-            "label_name",
-            "lot_number",
-            "10-10-10",
-            10,
-            10,
-            10,
-            "title_en",
-            "title_fr",
-            False,
-            company_id,
-            manufacturer_id,
-            None,
-        )
-        data = organization.get_organizations_info_json(self.cursor, label_id)
-        self.assertEqual(data["company"]["id"], str(company_id))
-        self.assertEqual(data["manufacturer"]["id"], str(manufacturer_id))
+        data = organization.get_organizations_info_json(self.cursor, self.label_information_id)
+        self.assertEqual(len(data["organization"]), 2)
+        self.assertEqual(data["organization"][0]["id"], str(company_id))
+        self.assertEqual(data["organization"][1]["id"], str(manufacturer_id))
 
     def test_get_organizations_info_json_not_found(self):
-        label_id = label.new_label_information(
-            self.cursor,
-            "label_name",
-            "lot_number",
-            "10-10-10",
-            10,
-            10,
-            10,
-            "title_en",
-            "title_fr",
-            False,
-            None,
-            None,
-            None,
-        )
-        data = organization.get_organizations_info_json(self.cursor, label_id)
-        self.assertDictEqual(data, {})
+        data = organization.get_organizations_info_json(self.cursor, self.label_information_id)
+        self.assertDictEqual(data, {"organization": []})
+
+    def test_upsert_organizations_info(self):
+        new_name = "new-name"
+        new_website = "www.new.com"
+        new_phone = "987654321"
+        new_address = "new-address"
+
+        old_org = OrganizationInformation(
+            name=self.name,
+            website=self.website,
+            phone_number=self.phone,
+            address=self.location_address
+        ).model_dump_json()
+
+        # Test inserting a new organization information
+        initial_data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        self.assertIsNone(initial_data)
+        organization.upsert_organization_info(self.cursor, old_org, self.label_information_id)
+        upserted_data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        self.assertIsNotNone(upserted_data)
+        self.assertEqual(len(upserted_data), 1)
+        self.assertEqual(upserted_data[0], self.name)
+
+        # Test updating an existing organization information
+        old_org["name"] = new_name
+        old_org["website"] = new_website
+        old_org["phone_number"] = new_phone
+        old_org["address"] = new_address
+
+        organization.upsert_organization_info(self.cursor, old_org, self.label_information_id)
+        new_data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        self.assertIsNotNone(new_data)
+        self.assertEqual(len(new_data), 1)
+        self.assertEqual(new_data[0], new_name)
+        self.assertEqual(new_data[1], new_website)
+        self.assertEqual(new_data[2], new_phone)
+        self.assertNotEqual(new_data[3], upserted_data[3]) # Address should be updated therefore the id must have changed
+
 
 
 class test_organization(unittest.TestCase):

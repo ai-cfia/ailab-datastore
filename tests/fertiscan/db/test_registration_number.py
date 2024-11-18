@@ -51,8 +51,6 @@ class test_registration_number(unittest.TestCase):
             None,
             False,
             None,
-            None,
-            None,
         )
 
         self.is_an_ingredient = False

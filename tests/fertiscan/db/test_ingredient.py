@@ -44,8 +44,6 @@ class test_ingredient(unittest.TestCase):
             None,
             False,
             None,
-            None,
-            None,
         )
         self.language = "fr"
 
