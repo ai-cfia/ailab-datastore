@@ -352,6 +352,29 @@ BEGIN
 
 -- REGISTRATION NUMBER END
 
+-- ORGANIZATIONS INFO
+
+	FOR record in SELECT * FROM jsonb_array_elements(input_json->'organizations')
+	LOOP
+		-- Check if any of the fields are not null
+		IF COALESCE(record->>'name', 
+			record->>'address', 
+			record->>'website',
+			record->>'phone_number',
+			'') <> '' 
+		THEN
+			-- Insert the new organization info
+			organization_id := "fertiscan_0.0.17".new_organization_info_located(
+				record->>'name',
+				record->>'address',
+				record->>'website',
+				record->>'phone_number',
+				FALSE
+			);
+		END IF;
+	END LOOP;
+-- ORGANIZATIONS INFO END
+
 -- INSPECTION
     INSERT INTO "fertiscan_0.0.17".inspection (
         inspector_id, label_info_id, sample_id, picture_set_id, inspection_comment

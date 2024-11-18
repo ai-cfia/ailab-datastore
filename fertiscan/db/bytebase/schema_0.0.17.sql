@@ -1,3 +1,4 @@
+
 --Schema creation "fertiscan_0.0.17"
 DO
 $do$
@@ -61,6 +62,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "phone_number" text,
         "location_id" uuid REFERENCES "fertiscan_0.0.17".location(id),
         "edited" boolean DEFAULT false,
+        "label_id" uuid REFERENCES "fertiscan_0.0.17".label_information(id),
         CONSTRAINT check_not_all_null CHECK (
             (name IS NOT NULL)::integer +
             (website IS NOT NULL)::integer +
@@ -108,10 +110,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "k" float,
     "guaranteed_title_en" text,
     "guaranteed_title_fr" text,
-    "title_is_minimal" boolean,
-    "company_info_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id),
-    "manufacturer_info_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id),
-    "record_keeping" boolean default null
+    "title_is_minimal" boolean
     );
     
     CREATE TABLE "fertiscan_0.0.17"."label_dimension" (

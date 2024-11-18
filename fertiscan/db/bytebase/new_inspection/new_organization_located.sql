@@ -36,12 +36,13 @@ END IF;
             RETURNING id INTO location_id;
         END IF;
     END IF;   
-	INSERT INTO organization_information (name,website,phone_number,location_id)
+	INSERT INTO organization_information (name,website,phone_number,location_id,edited)
 	VALUES (
 	        name,
             website,
             phone_number,
-            location_id
+            location_id,
+            edited
 	)
 	RETURNING id INTO organization_id;
 
