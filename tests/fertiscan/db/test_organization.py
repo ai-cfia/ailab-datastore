@@ -262,7 +262,7 @@ class test_organization_information(unittest.TestCase):
             organization.get_organization_info(self.cursor, str(uuid.uuid4()))
 
     def test_get_organization_info_label(self):
-        id = organization.new_organization_info(
+        organization.new_organization_info(
             self.cursor, self.name, self.website, self.phone, self.location_id, label_id=self.label_information_id
         )
         data = organization.get_organizations_info_label(self.cursor, self.label_id)
