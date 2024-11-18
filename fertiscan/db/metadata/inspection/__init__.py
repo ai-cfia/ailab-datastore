@@ -137,8 +137,7 @@ class Inspection(ValidatedModel):
     inspector_id: Optional[str] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
-    company: Optional[OrganizationInformation] = OrganizationInformation()
-    manufacturer: Optional[OrganizationInformation] = OrganizationInformation()
+    organizations: Optional[List[OrganizationInformation]] = []
     product: ProductInformation
     cautions: SubLabel
     instructions: SubLabel
@@ -160,14 +159,7 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
     """
     try:
         requiered_keys = [
-            "company_name",
-            "company_address",
-            "company_website",
-            "company_phone_number",
-            "manufacturer_name",
-            "manufacturer_address",
-            "manufacturer_website",
-            "manufacturer_phone_number",
+            "organizations",
             "fertiliser_name",
             "registration_number",
             "lot_number",
@@ -192,19 +184,18 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
             )
 
         npk = extract_npk(analysis_form.get("npk"))
-
-        company = OrganizationInformation(
-            name=analysis_form.get("company_name"),
-            address=analysis_form.get("company_address"),
-            website=analysis_form.get("company_website"),
-            phone_number=analysis_form.get("company_phone_number"),
-        )
-        manufacturer = OrganizationInformation(
-            name=analysis_form.get("manufacturer_name"),
-            address=analysis_form.get("manufacturer_address"),
-            website=analysis_form.get("manufacturer_website"),
-            phone_number=analysis_form.get("manufacturer_phone_number"),
-        )
+        organization_list = []
+        if len(analysis_form.get("organizations", [])) > 0:
+            for org in analysis_form.get("organizations", []):
+                # organization_list.append(OrganizationInformation(**org))
+                organization_list.append(
+                    OrganizationInformation(
+                        name=org.get("name"),
+                        address=org.get("address"),
+                        website=org.get("website"),
+                        phone_number=org.get("phone_number"),
+                    )
+                )
 
         weights: list[Metric] = [
             Metric(
@@ -349,8 +340,7 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
 
         inspection_formatted = Inspection(
             inspector_id=str(user_id),
-            company=company,
-            manufacturer=manufacturer,
+            organizations=organization_list,
             product=product,
             cautions=cautions,
             instructions=instructions,
@@ -398,9 +388,11 @@ def build_inspection_export(cursor, inspection_id) -> str:
         product_info.registration_numbers = reg_number_model_list
 
         # get the organizations information (Company and Manufacturer)
-        org = organization.get_organizations_info_json(cursor, label_info_id)
-        manufacturer = OrganizationInformation.model_validate(org.get("manufacturer"))
-        company = OrganizationInformation.model_validate(org.get("company"))
+        orgs = organization.get_organizations_info_json(cursor, label_info_id)
+        org_list = []
+        if len(orgs["organizations"])>0:
+            for org in orgs["organizations"]:
+                    org_list.append(OrganizationInformation.model_validate(org))
 
         # Get all the sub labels
         sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)
@@ -428,10 +420,9 @@ def build_inspection_export(cursor, inspection_id) -> str:
             inspector_id=str(db_inspection.inspector_id),
             inspection_comment=db_inspection.inspection_comment,
             cautions=cautions,
-            company=company,
+            organizations=orgs,
             guaranteed_analysis=guaranteed_analysis,
             instructions=instructions,
-            manufacturer=manufacturer,
             product=product_info,
             verified=db_inspection.verified,
             registration_numbers=reg_number_model_list,
