@@ -110,7 +110,8 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     "k" float,
     "guaranteed_title_en" text,
     "guaranteed_title_fr" text,
-    "title_is_minimal" boolean
+    "title_is_minimal" boolean,
+    "record_keeping" boolean
     );
     
     CREATE TABLE "fertiscan_0.0.17"."label_dimension" (
