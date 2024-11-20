@@ -15,8 +15,6 @@ BEGIN
         n, 
         p, 
         k,
-        company_info_id,
-        manufacturer_info_id,
         record_keeping
     INTO 
         record

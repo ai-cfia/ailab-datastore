@@ -465,7 +465,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+drop FUNCTION IF EXISTS "fertiscan_0.0.17".update_inspection;
 -- Function to update inspection data and related entities, returning an updated JSON
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".update_inspection(
     p_inspection_id uuid,
@@ -477,8 +477,9 @@ RETURNS jsonb AS $$
 DECLARE
     inspection_id uuid := p_inspection_id;
     json_inspection_id uuid;
-    company_info_id uuid;
-    manufacturer_info_id uuid;
+    org_info_id uuid;
+    location_id_value uuid;
+    org_record record;
     label_info_id_value uuid;
     organization_id uuid;
     updated_json jsonb := p_input_json;
@@ -510,18 +511,6 @@ BEGIN
         RAISE EXCEPTION 'Label ID mismatch or inspection not found';
     END IF;
 
-    -- Upsert company information and get the ID
-    company_info_id := upsert_organization_info(p_input_json->'company');
-    IF company_info_id IS NOT NULL THEN
-        updated_json := jsonb_set(updated_json, '{company,id}', to_jsonb(company_info_id));
-    END IF;
-
-    -- Upsert manufacturer information and get the ID
-    manufacturer_info_id := upsert_organization_info(p_input_json->'manufacturer');
-    IF manufacturer_info_id IS NOT NULL THEN
-        updated_json := jsonb_set(updated_json, '{manufacturer,id}', to_jsonb(manufacturer_info_id));
-    END IF;
-
     -- update Label information
     UPDATE label_information
     SET
@@ -535,12 +524,13 @@ BEGIN
     guaranteed_title_en = p_input_json->'guaranteed_analysis'->'title'->>'en',
     guaranteed_title_fr = p_input_json->'guaranteed_analysis'->'title'->>'fr',
     title_is_minimal = (p_input_json->'guaranteed_analysis'->>'is_minimal')::boolean,
-    "company_info_id" = company_info_id, 
-    "manufacturer_info_id" = manufacturer_info_id,
     record_keeping = (p_input_json->'product'->>'record_keeping')::boolean
     WHERE id = label_info_id_value;
 
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
+
+    -- Update ORGANIZATIONS information
+    PERFORM upsert_organization_info( p_input_json->'organizations', label_info_id_value);
 
     -- Update metrics related to the label
     PERFORM update_metrics(label_info_id_value, p_input_json->'product'->'metrics');
@@ -596,13 +586,27 @@ BEGIN
         END LOOP;
 
         -- Insert organization and get the organization_id
-        IF manufacturer_info_id IS NOT NULL THEN
-            INSERT INTO organization (information_id, main_location_id)
-            VALUES (manufacturer_info_id, NULL) -- TODO: main_location_id not yet handled
-            RETURNING id INTO organization_id;
-        ELSE
-            organization_id := NULL;
+        if  (Select count(*) from organization_information where label_id = label_info_id_value) = 0 then
+            RAISE WARNING 'at least one Organization information is required for a verified inspection';
+        ELSIF (Select count(*) from organization_information where label_id = label_info_id_value) = 1 then
+            SELEct id,location_id into org_info_id,location_id_value from organization_information where label_id = label_info_id_value;
+        else
+            org_info_id := NULL;
+            for org_record in select * from "fertiscan_0.0.17".organization_information where label_id = label_info_id_value
+                loop
+                    if org_record.is_main_contact then
+                        org_info_id := org_record.id;
+                        location_id_value := org_record.location_id;
+                    end if;
+            end loop;
+        end if;
+        if org_info_id is null then
+            RAISE EXCEPTION 'Main contact organization information is required and was not found';
         END IF;
+
+        INSERT INTO organization (information_id, main_location_id)
+        VALUES (org_info_id, location_id_value) 
+        RETURNING id INTO organization_id;
 
         -- Upsert the fertilizer record
         PERFORM upsert_fertilizer(

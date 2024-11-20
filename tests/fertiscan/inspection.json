@@ -1,16 +1,20 @@
 {
-    "organization":[
+    "organizations":[
 {
             "name":"GreenGrow Fertilizers Inc.",
             "address":"123 Greenway Blvd, Springfield IL 62701 USA",
             "website":"www.greengrowfertilizers.com",
-            "phone_number":"+1 800 555 0199"
+            "phone_number":"+1 800 555 0199",
+            "edited":false,
+            "is_main_contact":true
         },
         {
             "name":"AgroTech Industries Ltd.",
             "address":"456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
             "website":"www.agrotechindustries.com",
-            "phone_number":"+1 416 555 0123"
+            "phone_number":"+1 416 555 0123",
+            "edited":false,
+            "is_main_contact":false
         }
     ],
     "product": {

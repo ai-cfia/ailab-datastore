@@ -2,7 +2,7 @@
 -- Function to upsert organization information
 DROP FUNCTION IF EXISTS "fertiscan_0.0.17".upsert_organization_info(jsonb, uuid);
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".upsert_organization_info(input_org_info jsonb, label_info_id uuid)
-RETURNS uuid AS $$
+RETURNS void AS $$
 DECLARE
     record jsonb;
     address_str TEXT;
@@ -19,7 +19,8 @@ BEGIN
                 record->>'website',
                 record->>'phone_number',
                 TRUE,
-                label_info_id
+                label_info_id,
+                (record->>'is_main_contact')::boolean
             );
         else
         -- UPDATE THE LOCATION
@@ -43,7 +44,8 @@ BEGIN
                 "website" = record->>'website',
                 "phone_number" = record->>'phone_number',
                 "location_id" = location_id,
-                "edited" = (record->>'edited')::boolean
+                "edited" = (record->>'edited')::boolean,
+                "is_main_contact" = (record->>'is_main_contact')::boolean
             WHERE "id" = record->>'id';
         end if;
     END LOOP;

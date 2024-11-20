@@ -13,7 +13,9 @@ BEGIN
                 'name',  COALESCE(org.name, Null),
                 'address',  COALESCE(location.address, Null),
                 'phone_number',  COALESCE(org.phone_number, Null),
-                'website',  COALESCE(org.website, Null)
+                'website',  COALESCE(org.website, Null),
+                'edited',  COALESCE(org.edited, Null),
+                'is_main_contact',  COALESCE(org.is_main_contact, Null)
         )
     ))
     INTO result_json

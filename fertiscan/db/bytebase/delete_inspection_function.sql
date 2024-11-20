@@ -88,34 +88,3 @@ CREATE TRIGGER after_inspection_delete_cleanup
 AFTER DELETE ON "fertiscan_0.0.17".inspection
 FOR EACH ROW
 EXECUTE FUNCTION "fertiscan_0.0.17".after_insp_delete_cleanup_trig();
-
--- Trigger function to handle after label_information delete for organization_information deletion
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".after_label_info_delete_org_info_trig()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    BEGIN
-        DELETE FROM "fertiscan_0.0.17".organization_information
-        WHERE id = OLD.company_info_id;
-    EXCEPTION WHEN foreign_key_violation THEN
-        RAISE NOTICE 'Company organization_information with ID % could not be deleted due to foreign key constraints.', OLD.company_info_id;
-    END;
-
-    BEGIN
-        DELETE FROM "fertiscan_0.0.17".organization_information
-        WHERE id = OLD.manufacturer_info_id;
-    EXCEPTION WHEN foreign_key_violation THEN
-        RAISE NOTICE 'Manufacturer organization_information with ID % could not be deleted due to foreign key constraints.', OLD.manufacturer_info_id;
-    END;
-
-    RETURN NULL;
-END;
-$$;
-
--- Trigger definition on label_information table for organization_information deletion
-DROP TRIGGER IF EXISTS after_label_information_delete_organization_information ON "fertiscan_0.0.17".label_information;
-CREATE TRIGGER after_label_information_delete_organization_information
-AFTER DELETE ON "fertiscan_0.0.17".label_information
-FOR EACH ROW
-EXECUTE FUNCTION "fertiscan_0.0.17".after_label_info_delete_org_info_trig();

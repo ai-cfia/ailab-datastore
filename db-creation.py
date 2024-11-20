@@ -65,4 +65,5 @@ def execute_sql_file(cursor,sql_file):
 
 
 if __name__ == "__main__":
+    print("Creating the database for schema: ", SCHEMA)
     create_db(DB_URL=DB_URL, SCHEMA=SCHEMA)

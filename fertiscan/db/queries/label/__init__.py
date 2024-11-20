@@ -26,7 +26,7 @@ def new_label_information(
     title_en: str,
     title_fr: str,
     is_minimal: bool,
-    record_keeping,
+    record_keeping:bool,
 ):
     """
     This function create a new label_information in the database.
@@ -181,3 +181,20 @@ def get_label_dimension(cursor, label_id):
             "Error: could not get the label dimension for label: " + str(label_id)
         )
     return data
+
+def delete_label_info(cursor:Cursor, label_id:str):
+    """
+    This function deletes a label information from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label information.
+
+    Returns:
+    - int: The number of rows affected by the query. (should be at least one)
+    """
+    query = """
+    DELETE FROM label_information WHERE id = %s CASCADE;
+    """
+    cursor.execute(query, (label_id,))
+    return cursor.rowcount

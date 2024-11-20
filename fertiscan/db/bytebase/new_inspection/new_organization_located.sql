@@ -1,12 +1,13 @@
 
-DROP FUNCTION IF EXISTS "fertiscan_0.0.17".new_organization_located(TEXT, TEXT, TEXT, TEXT, BOOLEAN, UUID);
+DROP FUNCTION IF EXISTS "fertiscan_0.0.17".new_organization_located(TEXT, TEXT, TEXT, TEXT, BOOLEAN, UUID, BOOLEAN);
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".new_organization_info_located(
     name TEXT,
     address_str TEXT,
     website TEXT,
     phone_number TEXT,
     edited BOOLEAN = FALSE,
-    label_id UUID = NULL
+    label_id UUID = NULL,
+    is_main_contact_val BOOLEAN = FALSE
     )
 RETURNS uuid 
 LANGUAGE plpgsql
@@ -41,14 +42,15 @@ END IF;
             RETURNING id INTO location_id;
         END IF;
     END IF;   
-	INSERT INTO organization_information ("name","website","phone_number","location_id","edited","label_id")
+	INSERT INTO organization_information ("name","website","phone_number","location_id","edited","label_id","is_main_contact")
 	VALUES (
 	        name,
             website,
             phone_number,
             location_id,
             edited,
-            label_id
+            label_id,
+            is_main_contact_val
 	)
 	RETURNING id INTO organization_id;
 

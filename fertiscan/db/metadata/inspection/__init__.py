@@ -42,6 +42,8 @@ class OrganizationInformation(ValidatedModel):
     address: Optional[str] = None
     website: Optional[str] = None
     phone_number: Optional[str] = None
+    edited: Optional[bool] = False
+    is_main_contact: Optional[bool] = False
 
 
 class Value(ValidatedModel):
@@ -194,6 +196,8 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
                         address=org.get("address"),
                         website=org.get("website"),
                         phone_number=org.get("phone_number"),
+                        edited=False,
+                        is_main_contact = False
                     )
                 )
 

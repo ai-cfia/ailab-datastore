@@ -92,10 +92,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
     
     CREATE TABLE "fertiscan_0.0.17"."label_dimension" (
     "label_id" uuid PRIMARY KEY,
-    "company_info_id" uuid ,
-    "company_location_id" uuid ,
-    "manufacturer_info_id" uuid,
-    "manufacturer_location_id" uuid ,
+    "organization_info_ids" uuid[] DEFAULT '{}',
     "instructions_ids" uuid[] DEFAULT '{}',
     "cautions_ids" uuid[] DEFAULT '{}',
     "first_aid_ids" uuid[] DEFAULT '{}',
@@ -141,6 +138,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
         "location_id" uuid REFERENCES "fertiscan_0.0.17".location(id),
         "edited" boolean DEFAULT false,
         "label_id" uuid REFERENCES "fertiscan_0.0.17".label_information(id),
+        "is_main_contact" boolean DEFAULT false NOT NULL,
         CONSTRAINT check_not_all_null CHECK (
             (name IS NOT NULL)::integer +
             (website IS NOT NULL)::integer +
@@ -150,7 +148,7 @@ IF (EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'ferti
 
     CREATE TABLE "fertiscan_0.0.17"."organization" (
     "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-    "information_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id),
+    "information_id" uuid REFERENCES "fertiscan_0.0.17".organization_information(id) ON DELETE CASCADE,
     "main_location_id" uuid REFERENCES "fertiscan_0.0.17".location(id)
     );
 

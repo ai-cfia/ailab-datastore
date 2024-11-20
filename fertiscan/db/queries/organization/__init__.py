@@ -30,7 +30,7 @@ from fertiscan.db.queries.errors import (
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization(cursor: Cursor, information_id, location_id=None):
     """
-    This function create a new organization in the database.
+    This function create a new organization in the database using a query.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
@@ -74,7 +74,7 @@ def new_organization_info_located(
     cursor: Cursor, address: str, name: str, website: str, phone_number: str, label_id: UUID
 ):
     """
-    This function create a new organization information in the database.
+    This function create a new organization information in the database using function.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
@@ -105,7 +105,7 @@ def new_organization_info_located(
 
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization_info(
-    cursor: Cursor, name, website, phone_number, location_id=None, label_id=None
+    cursor: Cursor, name, website, phone_number, location_id=None, label_id=None, is_main_contact=False
 ):
     """
     This function create a new organization information in the database.
@@ -129,13 +129,13 @@ def new_organization_info(
                 label_id
                 )
         VALUES 
-            (%s, %s, %s, %s, %s)
+            (%s, %s, %s, %s, %s, %s)
         RETURNING 
             id
         """
     cursor.execute(
         query,
-        (name, website, phone_number, location_id, label_id),
+        (name, website, phone_number, location_id, label_id, is_main_contact),
     )
     if result := cursor.fetchone():
         return result[0]
@@ -160,7 +160,9 @@ def get_organization_info(cursor: Cursor, information_id):
             website, 
             phone_number,
             location_id,
-            label_id
+            label_id,
+            edited,
+            is_main_contact
         FROM 
             organization_information
         WHERE 
@@ -190,14 +192,15 @@ def get_organizations_info_label(cursor: Cursor, label_id: UUID):
             website, 
             phone_number,
             location_id,
-            edited
+            edited,
+            is_main_contact
         FROM 
             organization_information
         WHERE 
             label_id = %s
         """
     cursor.execute(query, (label_id,))
-    if result := cursor.fetchone():
+    if result := cursor.fetchall():
         return result
     raise OrganizationInformationNotFoundError(
         "Organization information not found with label_id: " + label_id

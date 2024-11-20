@@ -192,6 +192,10 @@ class test_organization_information(unittest.TestCase):
         self.density = None
         self.volume = None
         self.warranty = "warranty"
+        self.title_en = "title_en"
+        self.title_fr = "title_fr"
+        self.is_minimal = False
+        self.record_keeping = False
 
         self.label_information_id = label.new_label_information(
             self.cursor,
@@ -204,9 +208,7 @@ class test_organization_information(unittest.TestCase):
             self.title_en,
             self.title_fr,
             self.is_minimal,
-            None,
-            None,
-            None,
+            self.record_keeping,
         )
 
     def tearDown(self):
@@ -215,19 +217,19 @@ class test_organization_information(unittest.TestCase):
 
     def test_new_organization_info(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_located(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_info_no_location(self):
         id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, None, self.label_information_id
+            self.cursor, self.name, self.website, self.phone, None, self.label_information_id, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
@@ -364,6 +366,57 @@ class test_organization_information(unittest.TestCase):
         self.assertEqual(new_data[1], new_website)
         self.assertEqual(new_data[2], new_phone)
         self.assertNotEqual(new_data[3], upserted_data[3]) # Address should be updated therefore the id must have changed
+
+    def test_delete_label_with_linked_manufacturer(self):
+        # create a organization information
+        organization_id = organization.new_organization_info(
+            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
+        )
+        label_info = label.get_label_info_json(self.cursor, self.label_information_id)
+        # Attempt to delete the inspection, which should raise a notice but not fail
+        self.cursor.execute(
+            "SELECT delete_inspection(%s, %s);",
+            (self.inspection_id, self.inspector_id),
+        )
+
+        # Ensure that the inspection and label were deleted
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM inspection WHERE id = %s;",
+            (self.inspection_id,),
+        )
+        inspection_count = self.cursor.fetchone()[0]
+        self.assertEqual(inspection_count, 0, "Inspection should be deleted.")
+
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM label_information WHERE id = %s;",
+            (self.label_info_id,),
+        )
+        label_count = self.cursor.fetchone()[0]
+        self.assertEqual(label_count, 0, "Label information should be deleted.")
+
+        # Ensure that the manufacturer info was not deleted due to foreign key constraints
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM organization_information WHERE id = %s;",
+            (self.manufacturer_info_id,),
+        )
+        manufacturer_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            manufacturer_count,
+            1,
+            "Manufacturer info should not be deleted due to foreign key constraint.",
+        )
+
+        # Ensure that the company info related to the deleted inspection is deleted
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM organization_information WHERE id = %s;",
+            (self.company_info_id,),
+        )
+        company_count = self.cursor.fetchone()[0]
+        self.assertEqual(
+            company_count,
+            0,
+            "Company info should be deleted since it's linked to the deleted inspection.",
+        )
 
 
 

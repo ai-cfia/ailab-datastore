@@ -40,6 +40,7 @@ DECLARE
 	max_length int;
     fr_value text;
     en_value text;
+	flag boolean;
 BEGIN
 	
 -- COMPANY
@@ -349,7 +350,7 @@ BEGIN
 -- REGISTRATION NUMBER END
 
 -- ORGANIZATIONS INFO
-
+	flag := TRUE;
 	FOR record in SELECT * FROM jsonb_array_elements(input_json->'organizations')
 	LOOP
 		-- Check if any of the fields are not null
@@ -366,8 +367,13 @@ BEGIN
 				record->>'website',
 				record->>'phone_number',
 				FALSE,
-				label_info_id
+				label_info_id,
+				flag
 			);
+			-- The flag is used to mark the first Org as the main contact
+			if flag THEN 
+				flag := FALSE;
+			END IF;
 		END IF;
 	END LOOP;
 -- ORGANIZATIONS INFO END
