@@ -74,7 +74,6 @@ async def upload_picture_unknown(
     try:
         print(f"User ID: {user_id}")
         print(f"Picture Set ID: {picture_set_id}")
-        print(f"Folder Name: {folder_name}")
 
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
@@ -82,11 +81,10 @@ async def upload_picture_unknown(
             )
 
         empty_picture = json.dumps([])
-
+        folder_name = "General"
         default_picture_set = str(user.get_default_picture_set(cursor, user_id))
         if picture_set_id is None or str(picture_set_id) == default_picture_set:
             picture_set_id = default_picture_set
-            folder_name = "General"
         else:
             folder_name = picture.get_picture_set_name(cursor, picture_set_id)
             if folder_name is None:
@@ -101,6 +99,7 @@ async def upload_picture_unknown(
         print(f"Picture ID: {picture_id}")
         print(f"Picture Set ID: {picture_set_id}")
         print(f"Folder Name: {folder_name}")
+        print(f"picture_hash: {picture_hash[0:10]}")
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
             container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
