@@ -163,24 +163,12 @@ class test_organization_information(unittest.TestCase):
         self.con = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
-        self.province_name = "a-test-province"
-        self.region_name = "test-region"
+
         self.name = "test-organization"
         self.website = "www.test.com"
         self.phone = "123456789"
-        self.location_name = "test-location"
-        self.location_address = "test-address"
-        self.province_id = organization.new_province(self.cursor, self.province_name)
+        self.address = "test-address"
 
-        self.region_id = organization.new_region(
-            self.cursor, self.region_name, self.province_id
-        )
-
-        self.location_id = organization.new_location(
-            self.cursor, self.location_name, self.location_address, self.region_id
-        )
-
-        
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -215,20 +203,20 @@ class test_organization_information(unittest.TestCase):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
-    def test_new_organization_info(self):
-        id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id, True
+    def test_new_organization_information(self):
+        id = organization.new_organization_information(
+            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_located(self):
-        id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id, True
+        id = organization.new_organization_information(
+            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_info_no_location(self):
-        id = organization.new_organization_info(
+        id = organization.new_organization_information(
             self.cursor, self.name, self.website, self.phone, None, self.label_information_id, True
         )
         self.assertTrue(validator.is_valid_uuid(id))
@@ -250,7 +238,7 @@ class test_organization_information(unittest.TestCase):
         self.assertIsNone(location_id)
 
     def test_get_organization_info(self):
-        id = organization.new_organization_info(
+        id = organization.new_organization_information(
             self.cursor, self.name, self.website, self.phone, self.location_id
         )
         data = organization.get_organization_info(self.cursor, id)
@@ -264,8 +252,8 @@ class test_organization_information(unittest.TestCase):
             organization.get_organization_info(self.cursor, str(uuid.uuid4()))
 
     def test_get_organization_info_label(self):
-        organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, label_id=self.label_information_id
+        organization.new_organization_information(
+            self.cursor, self.name, self.website, self.phone,  label_id=self.label_information_id
         )
         data = organization.get_organizations_info_label(self.cursor, self.label_id)
         self.assertEqual(data[0], self.name)
@@ -277,8 +265,8 @@ class test_organization_information(unittest.TestCase):
         new_name = "new-name"
         new_website = "www.new.com"
         new_phone = "987654321"
-        id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
+        id = organization.new_organization_information(
+            self.cursor, self.name, self.website, self.phone,  self.label_information_id
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
@@ -369,8 +357,8 @@ class test_organization_information(unittest.TestCase):
 
     def test_delete_label_with_linked_manufacturer(self):
         # create a organization information
-        organization_id = organization.new_organization_info(
-            self.cursor, self.name, self.website, self.phone, self.location_id, self.label_information_id
+        organization_id = organization.new_organization_information(
+            self.cursor, self.name, self.website, self.phone,  self.label_information_id
         )
         label_info = label.get_label_info_json(self.cursor, self.label_information_id)
         # Attempt to delete the inspection, which should raise a notice but not fail
@@ -440,7 +428,7 @@ class test_organization(unittest.TestCase):
         self.location_id = organization.new_location(
             self.cursor, self.location_name, self.location_address, self.region_id
         )
-        self.org_info_id = organization.new_organization_info(
+        self.org_info_id = organization.new_organization_information(
             self.cursor, self.name, self.website, self.phone, self.location_id
         )
 
