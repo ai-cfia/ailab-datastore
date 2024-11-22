@@ -72,6 +72,9 @@ async def upload_picture_unknown(
     - container_client: The container client of the user.
     """
     try:
+        print(f"User ID: {user_id}")
+        print(f"Picture Set ID: {picture_set_id}")
+        print(f"Folder Name: {folder_name}")
 
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
