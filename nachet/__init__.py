@@ -95,6 +95,9 @@ async def upload_picture_unknown(
             picture=empty_picture,
             picture_set_id=picture_set_id,
         )
+        print(f"Picture ID: {picture_id}")
+        print(f"Picture Set ID: {picture_set_id}")
+        print(f"Folder Name: {folder_name}")
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
             container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
