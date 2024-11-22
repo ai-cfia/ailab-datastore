@@ -72,6 +72,7 @@ async def upload_picture_unknown(
     - container_client: The container client of the user.
     """
     try:
+        raise BlobUploadError("entering upload_picture_unknown")
         print(f"User ID: {user_id}")
         print(f"Picture Set ID: {picture_set_id}")
         print(f"Folder Name: {folder_name}")
