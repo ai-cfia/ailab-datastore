@@ -190,6 +190,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         ingredients = ingredient.get_ingredient_json(
             self.cursor, str(analysis["product"]["label_id"])
         )
+        self.assertIsNotNone(ingredients)
         # print(ingredients)
 
         # specifications = specification.get_all_specifications(

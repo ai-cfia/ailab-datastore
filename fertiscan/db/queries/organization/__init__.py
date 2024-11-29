@@ -308,7 +308,9 @@ def upsert_organization(cursor: Cursor, organization_info_id: UUID):
         SELECT upsert_organization(%s);
         """
     cursor.execute(query, (str(organization_info_id),))
-    return cursor.fetchone()[0]
+    if result := cursor.fetchone():
+        return result[0]
+    raise OrganizationUpdateError("Failed to update Organization. No data returned.")
 
 
 @handle_query_errors(OrganizationRetrievalError)
