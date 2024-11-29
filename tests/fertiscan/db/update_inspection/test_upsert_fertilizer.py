@@ -1,7 +1,6 @@
 import os
 import unittest
 
-import psycopg
 from dotenv import load_dotenv
 
 import datastore.db.__init__ as db

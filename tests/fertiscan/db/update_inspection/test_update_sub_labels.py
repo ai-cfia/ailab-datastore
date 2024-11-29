@@ -2,7 +2,6 @@ import json
 import os
 import unittest
 
-import psycopg
 from dotenv import load_dotenv
 
 import datastore.db.__init__ as db
@@ -10,7 +9,6 @@ import fertiscan.db.queries.sub_label as sub_label
 import fertiscan.db.queries.label as label
 from fertiscan.db.metadata.inspection import (
     Inspection,
-    OrganizationInformation,
     SubLabel,
 )
 

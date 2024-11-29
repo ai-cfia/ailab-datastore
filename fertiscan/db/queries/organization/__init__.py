@@ -217,38 +217,6 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
     else:
         return {}
 
-
-@handle_query_errors(OrganizationUpdateError)
-def upsert_organization(cursor: Cursor, information_id):
-    """
-    This function update a organization in the database.
-
-    Parameters:
-    - cursor (cursor): The cursor of the database.
-    - organization_id (str): The UUID of the organization.
-    - name (str): The name of the organization.
-    - website (str): The website of the organization.
-    - phone_number (str): The phone number of the organization.
-    - location_id (str): The UUID of the location.
-
-    Returns:
-    - str: The UUID of the organization
-    """
-    query = """
-        SELECT upsert_organization(%s)
-        """
-    cursor.execute(
-        query,
-        (
-            information_id,
-        ),
-    )
-    if result := cursor.fetchone():
-        return result[0]
-    raise OrganizationUpdateError("Failed to update Organization. No data returned.")
-
-
-
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
     cursor: Cursor, information_id:UUID, name, website, phone_number

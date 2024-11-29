@@ -2,17 +2,15 @@ import json
 import os
 import unittest
 
-import psycopg
 from dotenv import load_dotenv
 
 import datastore.db.__init__ as db
-from datastore.db.metadata import picture_set, validator
+from datastore.db.metadata import picture_set
 from datastore.db.queries import user,picture
-from fertiscan.db.queries import label, inspection
+from fertiscan.db.queries import label
 from fertiscan.db.metadata.inspection import (
     DBInspection,
     Inspection,
-    OrganizationInformation,
 )
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
 from fertiscan.db.queries import organization
@@ -116,6 +114,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             self.inspector_id,
             altered_inspection.model_dump(),
         )
+        Inspection.model_validate(**update_inspection_result)
 
         # Verify the inspection record was updated in the database
         updated_inspection = get_inspection_dict(self.cursor, self.inspection_id)
@@ -269,6 +268,9 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             (altered_inspection.organizations[0].name,),
         )
         organization_id = self.cursor.fetchone()[0]
+        self.assertIsNotNone(
+            organization_id, "An organization record should have been created."
+        )
 
 
     def test_update_inspection_unauthorized_user(self):

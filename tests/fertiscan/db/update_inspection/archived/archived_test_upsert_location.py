@@ -4,7 +4,6 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
-from fertiscan.db.queries import organization
 
 load_dotenv()
 

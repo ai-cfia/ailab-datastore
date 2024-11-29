@@ -360,7 +360,7 @@ class test_organization_information(unittest.TestCase):
         organization_id = organization.new_organization_information(
             self.cursor,self.address, self.name, self.website, self.phone,  self.label_information_id,False,True
         )
-        label_info = label.get_label_information_json(self.cursor, self.label_information_id)
+        # label_info = label.get_label_information_json(self.cursor, self.label_information_id)
         # Attempt to delete the inspection, which should raise a notice but not fail
         deleted_rows = label.delete_label_info(self.cursor, self.label_information_id)
         self.assertGreaterEqual(deleted_rows,1)

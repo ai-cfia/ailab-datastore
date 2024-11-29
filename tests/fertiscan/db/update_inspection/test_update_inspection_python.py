@@ -4,7 +4,6 @@ import os
 import unittest
 
 from dotenv import load_dotenv
-from psycopg import connect
 
 from fertiscan import get_full_inspection_json
 from fertiscan.db.metadata.inspection import Inspection
