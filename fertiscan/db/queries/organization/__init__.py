@@ -63,7 +63,14 @@ def new_organization(cursor: Cursor, name, website, phone_number, address):
 
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization_information(
-    cursor: Cursor, address: str, name: str, website: str, phone_number: str, label_id: UUID, edited: bool = False, is_main_contact: bool = False
+    cursor: Cursor,
+    address: str,
+    name: str,
+    website: str,
+    phone_number: str,
+    label_id: UUID,
+    edited: bool = False,
+    is_main_contact: bool = False,
 ):
     """
     This function create a new organization information in the database using function.
@@ -81,7 +88,9 @@ def new_organization_information(
     - str: The UUID of the organization information
     """
     if label_id is None:
-        raise OrganizationInformationCreationError("Label ID is required for organization information creation.")
+        raise OrganizationInformationCreationError(
+            "Label ID is required for organization information creation."
+        )
     query = """
         SELECT new_organization_information(%s, %s, %s, %s, %s, %s, %s);
         """
@@ -100,6 +109,7 @@ def new_organization_information(
     if result := cursor.fetchone():
         return result[0]
     raise OrganizationCreationError("Failed to create Organization. No data returned.")
+
 
 @handle_query_errors(OrganizationInformationRetrievalError)
 def get_organization_info(cursor: Cursor, information_id):
@@ -133,6 +143,7 @@ def get_organization_info(cursor: Cursor, information_id):
     raise OrganizationInformationNotFoundError(
         "Organization information not found with information_id: " + information_id
     )
+
 
 def get_organizations_info_label(cursor: Cursor, label_id: UUID):
     """
@@ -188,7 +199,8 @@ def get_organizations_info_json(cursor: Cursor, label_id: UUID) -> dict:
     raise OrganizationInformationRetrievalError(
         "Failed to get Registration Numbers with the given label_id. No data returned."
     )
-    
+
+
 def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
     """
     This function get a organization information from the database.
@@ -217,9 +229,10 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
     else:
         return {}
 
+
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
-    cursor: Cursor, information_id:UUID, name, website, phone_number
+    cursor: Cursor, information_id: UUID, name, website, phone_number
 ):
     """
     This function update a organization information in the database.
@@ -255,6 +268,7 @@ def update_organization_info(
     )
     return information_id
 
+
 def upsert_organization_info(cursor: Cursor, organization_info, label_id: UUID):
     """
     This function upserts an organization information in the database.
@@ -269,8 +283,15 @@ def upsert_organization_info(cursor: Cursor, organization_info, label_id: UUID):
     query = """
         SELECT upsert_organization_info(%s, %s);
         """
-    cursor.execute(query, (organization_info, str(label_id),))
+    cursor.execute(
+        query,
+        (
+            organization_info,
+            str(label_id),
+        ),
+    )
     return cursor.fetchone()[0]
+
 
 def upsert_organization(cursor: Cursor, organization_info_id: UUID):
     """
@@ -286,12 +307,12 @@ def upsert_organization(cursor: Cursor, organization_info_id: UUID):
     query = """
         SELECT upsert_organization(%s);
         """
-    cursor.execute(query, ( str(organization_info_id),))
+    cursor.execute(query, (str(organization_info_id),))
     return cursor.fetchone()[0]
 
 
 @handle_query_errors(OrganizationRetrievalError)
-def get_organization(cursor: Cursor, organization_id:UUID):
+def get_organization(cursor: Cursor, organization_id: UUID):
     """
     This function get a organization from the database.
 

@@ -5,7 +5,7 @@ import unittest
 
 from dotenv import load_dotenv
 
-import datastore.db.__init__ as db 
+import datastore.db.__init__ as db
 from fertiscan import get_full_inspection_json
 from fertiscan.db.metadata.inspection import Inspection
 from fertiscan.db.queries.inspection import update_inspection

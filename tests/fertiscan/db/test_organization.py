@@ -105,7 +105,13 @@ class test_location(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
-        self.owner_id = organization.new_organization(cursor=self.cursor, name="test-owner", website="www.test.com", phone_number="123456789", address="test-address")
+        self.owner_id = organization.new_organization(
+            cursor=self.cursor,
+            name="test-owner",
+            website="www.test.com",
+            phone_number="123456789",
+            address="test-address",
+        )
 
         self.province_name = "test-province"
         self.region_name = "test-region"
@@ -122,13 +128,13 @@ class test_location(unittest.TestCase):
 
     def test_new_location(self):
         location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id,self.owner_id
+            self.cursor, self.name, self.address, self.region_id, self.owner_id
         )
         self.assertTrue(validator.is_valid_uuid(location_id))
 
     def test_get_location(self):
         location_id = organization.new_location(
-            self.cursor, self.name, self.address, self.region_id,self.owner_id
+            self.cursor, self.name, self.address, self.region_id, self.owner_id
         )
         location_data = organization.get_location(self.cursor, location_id)
 
@@ -203,32 +209,50 @@ class test_organization_information(unittest.TestCase):
             self.record_keeping,
         )
 
-
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
 
     def test_new_organization_information_with_address(self):
         id = organization.new_organization_information(
-            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_info_no_address(self):
         id = organization.new_organization_information(
-            cursor=self.cursor, address=None, name=self.name, website=self.website, phone_number=self.phone, label_id=self.label_information_id, edited=False,is_main_contact=True
+            cursor=self.cursor,
+            address=None,
+            name=self.name,
+            website=self.website,
+            phone_number=self.phone,
+            label_id=self.label_information_id,
+            edited=False,
+            is_main_contact=True,
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
     def test_new_organization_empty(self):
         with self.assertRaises(organization.OrganizationInformationCreationError):
-            organization.new_organization(
-                self.cursor, None, None, None, None
-            )
+            organization.new_organization(self.cursor, None, None, None, None)
 
     def test_get_organization_info(self):
         id = organization.new_organization_information(
-            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
         data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(data[0], self.name)
@@ -239,16 +263,24 @@ class test_organization_information(unittest.TestCase):
         self.assertEqual(data[5], False)
         self.assertEqual(data[6], True)
 
-
     def test_get_organization_info_not_found(self):
         with self.assertRaises(organization.OrganizationInformationNotFoundError):
             organization.get_organization_info(self.cursor, str(uuid.uuid4()))
 
     def test_get_organization_info_label(self):
         organization.new_organization_information(
-            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
-        data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        data = organization.get_organizations_info_label(
+            self.cursor, self.label_information_id
+        )
         self.assertEqual(data[0][0], self.name)
         self.assertEqual(data[0][1], self.website)
         self.assertEqual(data[0][2], self.phone)
@@ -259,7 +291,14 @@ class test_organization_information(unittest.TestCase):
         new_website = "www.new.com"
         new_phone = "987654321"
         id = organization.new_organization_information(
-            self.cursor, self.address, self.name, self.website, self.phone,  self.label_information_id, False, True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
@@ -281,7 +320,7 @@ class test_organization_information(unittest.TestCase):
             name=self.name,
             website=self.website,
             phone_number=self.phone,
-            label_id=self.label_information_id
+            label_id=self.label_information_id,
         )
         self.assertTrue(validator.is_valid_uuid(id))
 
@@ -292,7 +331,7 @@ class test_organization_information(unittest.TestCase):
             name=self.name,
             website=self.website,
             phone_number=self.phone,
-            label_id=self.label_information_id
+            label_id=self.label_information_id,
         )
         manufacturer_id = organization.new_organization_information(
             self.cursor,
@@ -300,15 +339,19 @@ class test_organization_information(unittest.TestCase):
             name=self.name,
             website=self.website,
             phone_number=self.phone,
-            label_id=self.label_information_id
+            label_id=self.label_information_id,
         )
-        data = organization.get_organizations_info_json(self.cursor, self.label_information_id)
+        data = organization.get_organizations_info_json(
+            self.cursor, self.label_information_id
+        )
         self.assertEqual(len(data["organizations"]), 2)
         self.assertEqual(data["organizations"][0]["id"], str(company_id))
         self.assertEqual(data["organizations"][1]["id"], str(manufacturer_id))
 
     def test_get_organizations_info_json_not_found(self):
-        data = organization.get_organizations_info_json(self.cursor, self.label_information_id)
+        data = organization.get_organizations_info_json(
+            self.cursor, self.label_information_id
+        )
         self.assertDictEqual(data, {"organizations": []})
 
     def test_upsert_organizations_info(self):
@@ -323,17 +366,39 @@ class test_organization_information(unittest.TestCase):
             phone_number=self.phone,
             address=self.address,
             edited=False,
-            is_main_contact=True
+            is_main_contact=True,
         ).model_dump_json()
 
         old_org = json.dumps([old_org])
 
-        organizations_dict = {"organizations": [{"name": self.name, "website": self.website, "phone_number": self.phone, "address": self.address,"edited": True,"is_main_contact": True}]}
+        organizations_dict = {
+            "organizations": [
+                {
+                    "name": self.name,
+                    "website": self.website,
+                    "phone_number": self.phone,
+                    "address": self.address,
+                    "edited": True,
+                    "is_main_contact": True,
+                }
+            ]
+        }
 
         # Test inserting a new organization information
-        self.assertRaises(organization.OrganizationInformationNotFoundError, organization.get_organizations_info_label, self.cursor, self.label_information_id)
-        received_data = organization.upsert_organization_info(self.cursor, json.dumps(organizations_dict["organizations"]), self.label_information_id)
-        upserted_data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        self.assertRaises(
+            organization.OrganizationInformationNotFoundError,
+            organization.get_organizations_info_label,
+            self.cursor,
+            self.label_information_id,
+        )
+        received_data = organization.upsert_organization_info(
+            self.cursor,
+            json.dumps(organizations_dict["organizations"]),
+            self.label_information_id,
+        )
+        upserted_data = organization.get_organizations_info_label(
+            self.cursor, self.label_information_id
+        )
         self.assertIsNotNone(upserted_data)
         self.assertIsNotNone(received_data[0]["name"])
         self.assertIsNotNone(received_data[0]["id"])
@@ -346,24 +411,37 @@ class test_organization_information(unittest.TestCase):
         received_data[0]["phone_number"] = new_phone
         received_data[0]["address"] = new_address
 
-        organization.upsert_organization_info(self.cursor, json.dumps(received_data), self.label_information_id)
-        new_data = organization.get_organizations_info_label(self.cursor, self.label_information_id)
+        organization.upsert_organization_info(
+            self.cursor, json.dumps(received_data), self.label_information_id
+        )
+        new_data = organization.get_organizations_info_label(
+            self.cursor, self.label_information_id
+        )
         self.assertIsNotNone(new_data)
         self.assertEqual(len(new_data), 1)
         self.assertEqual(new_data[0][0], new_name)
         self.assertEqual(new_data[0][1], new_website)
         self.assertEqual(new_data[0][2], new_phone)
-        self.assertNotEqual(new_data[0][3], upserted_data[0][3]) # Address should be updated therefore the id must have changed
+        self.assertNotEqual(
+            new_data[0][3], upserted_data[0][3]
+        )  # Address should be updated therefore the id must have changed
 
     def test_delete_label_with_linked_organization_information(self):
         # create a organization information
         organization_id = organization.new_organization_information(
-            self.cursor,self.address, self.name, self.website, self.phone,  self.label_information_id,False,True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
         # label_info = label.get_label_information_json(self.cursor, self.label_information_id)
         # Attempt to delete the inspection, which should raise a notice but not fail
         deleted_rows = label.delete_label_info(self.cursor, self.label_information_id)
-        self.assertGreaterEqual(deleted_rows,1)
+        self.assertGreaterEqual(deleted_rows, 1)
 
         self.cursor.execute(
             "SELECT COUNT(*) FROM organization_information WHERE id = %s;",
@@ -373,8 +451,8 @@ class test_organization_information(unittest.TestCase):
         self.assertEqual(
             org_count,
             0,
-            "Organization information should have been deleted when the label was deleted",)
-
+            "Organization information should have been deleted when the label was deleted",
+        )
 
 
 class test_organization(unittest.TestCase):
@@ -390,7 +468,7 @@ class test_organization(unittest.TestCase):
         self.phone = "123456789"
         self.location_name = "test-location"
         self.address = "test-address"
-        
+
         self.lot_number = "lot_number"
         self.product_name = "product_name"
         self.npk = "npk"
@@ -422,7 +500,14 @@ class test_organization(unittest.TestCase):
         )
 
         self.org_info_id = organization.new_organization_information(
-            self.cursor, self.address, self.name, self.website, self.phone, self.label_information_id, False, True
+            self.cursor,
+            self.address,
+            self.name,
+            self.website,
+            self.phone,
+            self.label_information_id,
+            False,
+            True,
         )
 
     def tearDown(self):
@@ -438,7 +523,7 @@ class test_organization(unittest.TestCase):
     def test_new_organization_no_location(self):
         organization_id = organization.new_organization(
             self.cursor, self.name, self.website, self.phone, None
-            )
+        )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
     def test_upsert_organization(self):
@@ -446,11 +531,11 @@ class test_organization(unittest.TestCase):
         organization_id = organization.new_organization(
             self.cursor, self.name, "wrong-website", "wrong-phone", "wrong-address"
         )
-        update_id = organization.upsert_organization(
-            self.cursor, str(self.org_info_id)
-        )
+        update_id = organization.upsert_organization(self.cursor, str(self.org_info_id))
         self.assertEqual(organization_id, update_id)
-        organization_data = organization.get_organization(self.cursor, str(organization_id))
+        organization_data = organization.get_organization(
+            self.cursor, str(organization_id)
+        )
         self.assertEqual(organization_data[0], self.name)
         self.assertEqual(organization_data[1], self.website)
         self.assertEqual(organization_data[2], self.phone)

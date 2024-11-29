@@ -20,14 +20,14 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 
 
 class TestUpdateMetricsFunction(unittest.TestCase):
-    def setUp(self):        
+    def setUp(self):
         # Connect to the PostgreSQL database with the specified schema
         self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.conn)
         db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
 
         self.label_id = label.new_label_information(
-            cursor=self.cursor, 
+            cursor=self.cursor,
             name="test-label",
             lot_number=None,
             npk=None,
@@ -37,7 +37,8 @@ class TestUpdateMetricsFunction(unittest.TestCase):
             title_en=None,
             title_fr=None,
             is_minimal=False,
-            record_keeping=False,)
+            record_keeping=False,
+        )
 
         # Set up test data for metrics using Pydantic models
         self.sample_metrics = Metrics(

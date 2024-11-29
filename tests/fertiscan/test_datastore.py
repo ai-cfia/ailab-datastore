@@ -17,7 +17,15 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient, organization
+from fertiscan.db.queries import (
+    inspection,
+    label,
+    metric,
+    nutrients,
+    sub_label,
+    ingredient,
+    organization,
+)
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -134,7 +142,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         ) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
         self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-        self.analysis_json.get("ingredients_fr")
+            self.analysis_json.get("ingredients_fr")
         )
 
         # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
@@ -152,7 +160,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             print(e)
 
     def test_register_analysis(self):
-        #print(self.user.id)
+        # print(self.user.id)
         self.assertTrue(self.container_client.exists())
         analysis = asyncio.run(
             fertiscan.register_analysis(
@@ -179,8 +187,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis["product"]["label_id"]))
-        #print(ingredients)
+        ingredients = ingredient.get_ingredient_json(
+            self.cursor, str(analysis["product"]["label_id"])
+        )
+        # print(ingredients)
 
         # specifications = specification.get_all_specifications(
         # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
@@ -227,8 +237,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         label_dimension = label.get_label_dimension(self.cursor, label_id)
 
-        self.assertEqual(str(label_dimension[1][0]), str(analysis["organizations"][0]["id"]))
-        self.assertEqual(str(label_dimension[1][1]), str(analysis["organizations"][1]["id"]))
+        self.assertEqual(
+            str(label_dimension[1][0]), str(analysis["organizations"][0]["id"])
+        )
+        self.assertEqual(
+            str(label_dimension[1][1]), str(analysis["organizations"][1]["id"])
+        )
 
         self.assertEqual(len(label_dimension[2]), self.nb_instructions)
 
@@ -262,7 +276,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "guaranteed_analysis_fr": {"title": None, "nutrients": []},
         }
 
-        formatted_analysis = metadata.build_inspection_import(empty_analysis,self.user.id)
+        formatted_analysis = metadata.build_inspection_import(
+            empty_analysis, self.user.id
+        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -280,9 +296,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(label_data[1])
 
         # Verify getters
-        inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id
-        )
+        inspection_data = metadata.build_inspection_export(self.cursor, inspection_id)
         inspection_data = json.loads(inspection_data)
         # TODO: investigate if this should pass and why it doesn't
         # Make sure the inspection data is either a empty array or None
@@ -314,7 +328,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
 
     def test_get_full_inspection_json(self):
-        formatted_analysis = metadata.build_inspection_import(self.analysis_json, self.user.id)
+        formatted_analysis = metadata.build_inspection_import(
+            self.analysis_json, self.user.id
+        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -429,7 +445,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
         user_feedback = "This is a feedback"
-        new_record_keeping= True
+        new_record_keeping = True
         # new_specification_en = [
         #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         # ]
@@ -551,10 +567,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         # Verify organizations are saved
         orgs = organization.get_organizations_info_label(self.cursor, label_id)
-    
-        self.assertEqual(len(orgs), 3) # 2 default + 1 new
-        self.assertEqual(len(orgs), len(old_organizations)+1)
 
+        self.assertEqual(len(orgs), 3)  # 2 default + 1 new
+        self.assertEqual(len(orgs), len(old_organizations) + 1)
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)

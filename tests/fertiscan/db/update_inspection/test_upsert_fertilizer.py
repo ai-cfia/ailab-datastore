@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import datastore.db.__init__ as db
 from datastore.db.queries import user, picture
 from datastore.db.metadata import picture_set
-from fertiscan.db.queries import inspection,organization,label
+from fertiscan.db.queries import inspection, organization, label
 
 load_dotenv()
 
@@ -21,11 +21,11 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 
 
 class TestUpsertFertilizerFunction(unittest.TestCase):
-    def setUp(self):       
+    def setUp(self):
         # Connect to the PostgreSQL database with the specified schema
         self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.conn)
-        db.create_search_path(self.conn, self.cursor, DB_SCHEMA)  
+        db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
 
         self.user_email = "test-update-inspection@email"
         self.inspector_id = user.register_user(self.cursor, self.user_email)
@@ -36,7 +36,7 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
         )
 
         self.label_info_id = label.new_label_information(
-            cursor=self.cursor, 
+            cursor=self.cursor,
             name="test-label",
             lot_number=None,
             npk=None,
@@ -46,7 +46,8 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
             title_en=None,
             title_fr=None,
             is_minimal=False,
-            record_keeping=False,)
+            record_keeping=False,
+        )
 
         # Insert an inspection record
         self.inspection_id = inspection.new_inspection(
@@ -57,8 +58,9 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
             cursor=self.cursor,
             name="Test Organization",
             address="123 Test St.",
-            website="www.test.com", 
-            phone_number="123-456-7890")
+            website="www.test.com",
+            phone_number="123-456-7890",
+        )
 
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test

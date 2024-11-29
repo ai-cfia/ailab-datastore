@@ -53,8 +53,8 @@ class TestDeleteInspectionFunction(unittest.TestCase):
 
         self.inspection_id = inspection_data["inspection_id"]
         self.label_info_id = inspection_data["product"]["label_id"]
-        #self.company_info_id = inspection_data["company"]["id"]
-        #self.manufacturer_info_id = inspection_data["manufacturer"]["id"]
+        # self.company_info_id = inspection_data["company"]["id"]
+        # self.manufacturer_info_id = inspection_data["manufacturer"]["id"]
 
         # Update the inspection to verified true
         inspection_data["verified"] = True

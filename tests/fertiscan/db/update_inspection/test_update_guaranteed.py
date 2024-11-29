@@ -29,7 +29,7 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
         db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
 
         self.label_id = label.new_label_information(
-            cursor=self.cursor, 
+            cursor=self.cursor,
             name="test-label",
             lot_number=None,
             npk=None,
@@ -39,7 +39,8 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             title_en=None,
             title_fr=None,
             is_minimal=False,
-            record_keeping=False,)
+            record_keeping=False,
+        )
 
         # Set up test data for guaranteed analysis
         with open("tests/fertiscan/inspection_export.json") as f:

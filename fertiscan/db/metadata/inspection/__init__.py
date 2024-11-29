@@ -120,8 +120,8 @@ class Specifications(ValidatedModel):
     fr: List[Specification]
 
 
-# Awkwardly named so to avoid name conflict this represents the inspection object in the database 
-# and not the inspection object used as a form on the application 
+# Awkwardly named so to avoid name conflict this represents the inspection object in the database
+# and not the inspection object used as a form on the application
 class DBInspection(ValidatedModel):
     id: UUID4
     verified: bool = False
@@ -197,7 +197,7 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
                         website=org.get("website"),
                         phone_number=org.get("phone_number"),
                         edited=False,
-                        is_main_contact = False
+                        is_main_contact=False,
                     )
                 )
 
@@ -242,7 +242,6 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
             verified=False,
             record_keeping=None,
         )
-
 
         cautions = SubLabel(
             en=analysis_form.get("cautions_en", []),
@@ -387,16 +386,16 @@ def build_inspection_export(cursor, inspection_id) -> str:
         )
         reg_number_model_list = []
         for reg_number in reg_numbers["registration_numbers"]:
-            
+
             reg_number_model_list.append(RegistrationNumber.model_validate(reg_number))
         product_info.registration_numbers = reg_number_model_list
 
         # get the organizations information (Company and Manufacturer)
         orgs = organization.get_organizations_info_json(cursor, label_info_id)
         org_list = []
-        if len(orgs["organizations"])>0:
+        if len(orgs["organizations"]) > 0:
             for org in orgs["organizations"]:
-                    org_list.append(OrganizationInformation.model_validate(org))
+                org_list.append(OrganizationInformation.model_validate(org))
 
         # Get all the sub labels
         sub_labels = sub_label.get_sub_label_json(cursor, label_info_id)

@@ -35,7 +35,7 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
         db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
 
         self.label_id = label.new_label_information(
-            cursor=self.cursor, 
+            cursor=self.cursor,
             name="test-label",
             lot_number=None,
             npk=None,
@@ -45,7 +45,8 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             title_en=None,
             title_fr=None,
             is_minimal=False,
-            record_keeping=False,)
+            record_keeping=False,
+        )
 
         # Load and validate the inspection data from the JSON file using the Inspection model
         with open(TEST_INPUT_JSON_PATH) as f:
@@ -111,7 +112,6 @@ class TestUpdateSubLabelsFunction(unittest.TestCase):
             "SELECT update_sub_labels(%s, %s);",
             (self.label_id, json.dumps(self.sample_sub_labels)),
         )
-        
 
         saved_data = sub_label.get_sub_label_json(self.cursor, self.label_id)
         nb_sub_labels = len(saved_data["instructions"]["en"]) + len(

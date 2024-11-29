@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 import datastore.db.__init__ as db
 from datastore.db.metadata import picture_set
-from datastore.db.queries import user,picture
+from datastore.db.queries import user, picture
 from fertiscan.db.queries import label
 from fertiscan.db.metadata.inspection import (
     DBInspection,
@@ -14,6 +14,7 @@ from fertiscan.db.metadata.inspection import (
 )
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
 from fertiscan.db.queries import organization
+
 load_dotenv()
 
 # Database connection and schema settings
@@ -30,11 +31,11 @@ INPUT_JSON_PATH = "tests/fertiscan/inspection.json"
 
 class TestUpdateInspectionFunction(unittest.TestCase):
     def setUp(self):
-                # Connect to the PostgreSQL database with the specified schema
+        # Connect to the PostgreSQL database with the specified schema
         self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
         self.cursor = db.cursor(self.conn)
         db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
-        
+
         self.user_email = "test-update-inspection@email"
         self.inspector_id = user.register_user(self.cursor, self.user_email)
         self.folder_name = "test-folder"
@@ -44,7 +45,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         )
 
         self.F = label.new_label_information(
-            cursor=self.cursor, 
+            cursor=self.cursor,
             name="test-label",
             lot_number=None,
             npk=None,
@@ -54,7 +55,8 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             title_en=None,
             title_fr=None,
             is_minimal=False,
-            record_keeping=False,)
+            record_keeping=False,
+        )
 
         self.cursor.execute(
             "INSERT INTO users (email) VALUES ('other_user@example.com') RETURNING id;"
@@ -78,7 +80,9 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         print(self.created_data["organizations"])
         self.created_inspection = Inspection.model_validate(self.created_data)
 
-        foo = organization.get_organizations_info_label(self.cursor,self.created_data["product"]["label_id"])
+        foo = organization.get_organizations_info_label(
+            self.cursor, self.created_data["product"]["label_id"]
+        )
         print("=========")
         print(foo)
         print("=========")
@@ -272,7 +276,6 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             organization_id, "An organization record should have been created."
         )
 
-
     def test_update_inspection_unauthorized_user(self):
         # Update the inspection model for testing the update function
         altered_inspection = self.created_inspection.model_copy()
@@ -331,6 +334,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             0,
             "No organization record should be created when organizations is empty.",
         )
+
 
 if __name__ == "__main__":
     unittest.main()

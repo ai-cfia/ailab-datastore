@@ -26,7 +26,7 @@ def new_label_information(
     title_en: str,
     title_fr: str,
     is_minimal: bool,
-    record_keeping:bool,
+    record_keeping: bool,
 ):
     """
     This function create a new label_information in the database.
@@ -179,7 +179,8 @@ def get_label_dimension(cursor, label_id):
         )
     return data
 
-def delete_label_info(cursor:Cursor, label_id:str):
+
+def delete_label_info(cursor: Cursor, label_id: str):
     """
     This function deletes a label information from the database.
 

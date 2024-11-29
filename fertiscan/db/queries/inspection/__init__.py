@@ -131,6 +131,7 @@ def is_inspection_verified(cursor: Cursor, inspection_id):
         "Failed to check inspection verification status. No data returned."
     )
 
+
 VERIFIED = 0
 UPLOAD_DATE = 1
 UPDATED_AT = 2
