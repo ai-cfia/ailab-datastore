@@ -68,7 +68,7 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             create_input_json = json.load(file)
 
         create_input_json_str = json.dumps(create_input_json)
-        print(create_input_json["organizations"])
+        #print(create_input_json["organizations"])
 
         # Create initial inspection data in the database
         self.picture_set_id = None  # No picture set ID for this test case
@@ -77,15 +77,15 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             (self.inspector_id, self.picture_set_id, create_input_json_str),
         )
         self.created_data = self.cursor.fetchone()[0]
-        print(self.created_data["organizations"])
+        #print(self.created_data["organizations"])
         self.created_inspection = Inspection.model_validate(self.created_data)
 
         foo = organization.get_organizations_info_label(
             self.cursor, self.created_data["product"]["label_id"]
         )
-        print("=========")
-        print(foo)
-        print("=========")
+        #print("=========")
+        #print(foo)
+        #print("=========")
         # Store the inspection ID for later use
         self.inspection_id = self.created_data.get("inspection_id")
 
@@ -118,7 +118,8 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             self.inspector_id,
             altered_inspection.model_dump(),
         )
-        Inspection.model_validate(**update_inspection_result)
+        print(update_inspection_result)
+        Inspection.model_validate(update_inspection_result)
 
         # Verify the inspection record was updated in the database
         updated_inspection = get_inspection_dict(self.cursor, self.inspection_id)
@@ -195,9 +196,9 @@ class TestUpdateInspectionFunction(unittest.TestCase):
             "SELECT value FROM guaranteed WHERE label_id = %s AND read_name = %s;",
             (self.created_data["product"]["label_id"], "Total Nitrogen (N)"),
         )
-        print(self.created_data["product"]["label_id"])
+        #print(self.created_data["product"]["label_id"])
         updated_nitrogen_value = self.cursor.fetchone()[0]
-        print(updated_nitrogen_value)
+        #print(updated_nitrogen_value)
         self.assertEqual(
             updated_nitrogen_value,
             new_value,

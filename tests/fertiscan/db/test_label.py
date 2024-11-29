@@ -72,14 +72,13 @@ class test_label(unittest.TestCase):
         self.assertEqual(label_data[1], self.product_name)
         self.assertEqual(label_data[2], self.lot_number)
         self.assertEqual(label_data[3], self.npk)
-        self.assertEqual(label_data[4], self.registration_number)
-        self.assertEqual(label_data[5], self.n)
-        self.assertEqual(label_data[6], self.p)
-        self.assertEqual(label_data[7], self.k)
-        self.assertEqual(label_data[8], self.guaranteed_analysis_title_en)
-        self.assertEqual(label_data[9], self.guaranteed_analysis_title_fr)
-        self.assertEqual(label_data[10], self.guaranteed_is_minimal)
-        self.assertIsNone(label_data[12])
+        self.assertEqual(label_data[4], self.n)
+        self.assertEqual(label_data[5], self.p)
+        self.assertEqual(label_data[6], self.k)
+        self.assertEqual(label_data[7], self.guaranteed_analysis_title_en)
+        self.assertEqual(label_data[8], self.guaranteed_analysis_title_fr)
+        self.assertEqual(label_data[9], self.guaranteed_is_minimal)
+        self.assertIsNone(label_data[10])
 
     def test_get_label_information_json(self):
         label_information_id = label.new_label_information(

@@ -74,34 +74,6 @@ class TestUpdateGuaranteedFunction(unittest.TestCase):
             }
         }
 
-        # Insert test data to obtain a valid label_id
-        sample_org_info = json.dumps(
-            {
-                "name": "Test Company",
-                "address": "123 Test Address",
-                "website": "http://www.testcompany.com",
-                "phone_number": "+1 800 555 0123",
-            }
-        )
-        self.cursor.execute("SELECT upsert_organization_info(%s);", (sample_org_info,))
-        self.company_info_id = self.cursor.fetchone()[0]
-
-        self.label_id = label.new_label_information(
-            self.cursor,
-            "test-label",
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            self.company_info_id,
-            self.company_info_id,
-            None,
-        )
-
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test
         self.conn.rollback()
