@@ -154,10 +154,7 @@ def get_label_dimension(cursor, label_id):
     query = """
         SELECT 
             "label_id",
-            "company_info_id",
-            "company_location_id",
-            "manufacturer_info_id",
-            "manufacturer_location_id",
+            "organization_info_ids",
             "instructions_ids",
             "cautions_ids",
             "first_aid_ids",
@@ -194,7 +191,7 @@ def delete_label_info(cursor:Cursor, label_id:str):
     - int: The number of rows affected by the query. (should be at least one)
     """
     query = """
-    DELETE FROM label_information WHERE id = %s CASCADE;
+    DELETE FROM label_information WHERE id = %s;
     """
     cursor.execute(query, (label_id,))
     return cursor.rowcount

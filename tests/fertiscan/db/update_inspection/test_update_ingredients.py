@@ -5,12 +5,13 @@ import unittest
 import psycopg
 from dotenv import load_dotenv
 
+import datastore.db.__init__ as db
 import fertiscan.db.queries.label as label
 
 load_dotenv()
 
 # Fetch database connection URL and schema from environment variables
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -21,12 +22,23 @@ if DB_SCHEMA is None or DB_SCHEMA == "":
 
 class TestUpdateIngredientsFunction(unittest.TestCase):
     def setUp(self):
-        # Connect to the PostgreSQL database with the specified schema
-        self.conn = psycopg.connect(
-            DB_CONNECTION_STRING, options=f"-c search_path={DB_SCHEMA},public"
-        )
-        self.conn.autocommit = False  # Ensure transaction is managed manually
-        self.cursor = self.conn.cursor()
+               # Connect to the PostgreSQL database with the specified schema
+        self.conn = db.connect_db(DB_CONNECTION_STRING, DB_SCHEMA)
+        self.cursor = db.cursor(self.conn)
+        db.create_search_path(self.conn, self.cursor, DB_SCHEMA)
+
+        self.label_id = label.new_label_information(
+            cursor=self.cursor, 
+            name="test-label",
+            lot_number=None,
+            npk=None,
+            n=None,
+            p=None,
+            k=None,
+            title_en=None,
+            title_fr=None,
+            is_minimal=False,
+            record_keeping=False,)
 
         # Set up test data for ingredients
         self.sample_organic_ingredients = json.dumps(
@@ -86,8 +98,7 @@ class TestUpdateIngredientsFunction(unittest.TestCase):
     def tearDown(self):
         # Rollback any changes to leave the database state as it was before the test
         self.conn.rollback()
-        self.cursor.close()
-        self.conn.close()
+        db.end_query(self.conn, self.cursor)
 
     def test_update_organic_ingredients(self):
         # Insert initial organic ingredients

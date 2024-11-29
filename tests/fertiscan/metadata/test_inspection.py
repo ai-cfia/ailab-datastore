@@ -14,7 +14,7 @@ from fertiscan.db.metadata.errors import (
 from fertiscan.db.queries import inspection
 from fertiscan.db.queries.errors import QueryError
 
-DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
+DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -69,6 +69,10 @@ class TestInspectionExport(unittest.TestCase):
         
         self.assertListEqual(inspection_dict["product"]["registration_numbers"], data["product"]["registration_numbers"])
         self.assertDictEqual(inspection_dict["product"], data["product"])
+        print("=====\n========\n")
+        print(inspection_dict["organizations"])
+        print("=====\n========\n")
+        print(data["organizations"])
         self.assertListEqual(inspection_dict["organizations"], data["organizations"])
         ## self.assertDictEqual(inspection_dict["micronutrients"], data["micronutrients"])
         ## self.assertDictEqual(inspection_dict["ingredients"], data["ingredients"])
@@ -103,11 +107,6 @@ class TestInspectionExport(unittest.TestCase):
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
         self.assertListEqual(inspection_dict["organizations"], data["organizations"])
-        self.assertIsNone(data["manufacturer"]["id"])
-        self.assertIsNone(data["manufacturer"]["name"])
-        self.assertIsNone(data["manufacturer"]["address"])
-        self.assertIsNone(data["manufacturer"]["phone_number"])
-        self.assertIsNone(data["manufacturer"]["website"])
 
     def test_no_volume(self):
         self.analyse["volume"] = None
@@ -557,10 +556,10 @@ class TestInspectionExport(unittest.TestCase):
     def test_organizations_not_located(self):
         # Modify analyse data to have empty addresses
         test_str = "Test string"
-        self.analyse["organizations"] = [
-            metadata.OrganizationInformation(name=test_str).model_dump_json(), 
-            metadata.OrganizationInformation(website=test_str).model_dump_json()
+        orgs = [metadata.OrganizationInformation(name=test_str).model_dump(), 
+                metadata.OrganizationInformation(website=test_str).model_dump()
             ]
+        self.analyse["organizations"] = orgs
 
         formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
 

@@ -136,8 +136,8 @@ create schema "fertiscan_0.0.18";
     "name" text,
     "address" text NOT NULL,
     "address_number" text,
-    "city" text NOT NULL,
-    "postal_code" text NOT NULL,
+    "city" text,
+    "postal_code" text,
     "region_id" uuid REFERENCES "fertiscan_0.0.18".region(id)
     );    
    
@@ -271,7 +271,7 @@ create schema "fertiscan_0.0.18";
     "upload_date" timestamp DEFAULT CURRENT_TIMESTAMP,
     "update_at" timestamp DEFAULT CURRENT_TIMESTAMP,
     "latest_inspection_id" uuid REFERENCES "fertiscan_0.0.18".inspection(id) ON DELETE SET NULL,
-    "main_contact" uuid REFERENCES "fertiscan_0.0.18".organization(id) ON DELETE SET NULL 
+    "main_contact_id" uuid REFERENCES "fertiscan_0.0.18".organization(id) ON DELETE SET NULL 
     );-- It should actually try to seek if there are any other organization that can be found under the latest_inspection organisation_information instead of setting it to null
 
     Alter table "fertiscan_0.0.18".inspection ADD "fertilizer_id" uuid REFERENCES "fertiscan_0.0.18".fertilizer(id);

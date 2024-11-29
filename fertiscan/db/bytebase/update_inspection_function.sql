@@ -318,67 +318,6 @@ BEFORE INSERT ON "fertiscan_0.0.18".sub_label
 FOR EACH ROW
 EXECUTE FUNCTION "fertiscan_0.0.18".check_null_or_empty_sub_label();
 
-
--- Function to update sub labels: delete old and insert new
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".update_sub_labels(
-    p_label_id uuid,
-    new_sub_labels jsonb
-)
-RETURNS void AS $$
-DECLARE
-    sub_type_rec RECORD;
-    fr_values jsonb;
-    en_values jsonb;
-    i int;
-    max_length int;
-    fr_value text;
-    en_value text;
-BEGIN
-    -- Delete existing sub labels for the given label_id
-    DELETE FROM sub_label WHERE label_id = p_label_id;
-
-    -- Loop through each sub_type
-    FOR sub_type_rec IN SELECT id, type_en FROM sub_type
-    LOOP
-        -- Extract the French and English arrays for the current sub_type
-        fr_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'fr', '[]'::jsonb);
-        en_values := COALESCE(new_sub_labels->sub_type_rec.type_en->'en', '[]'::jsonb);
-
-        -- Determine the maximum length of the arrays
-        max_length := GREATEST(
-            jsonb_array_length(fr_values),
-            jsonb_array_length(en_values)
-        );
-
-        -- Check if lengths are not equal, and raise a notice
-		IF jsonb_array_length(en_values) != jsonb_array_length(fr_values) THEN
-			RAISE NOTICE 'Array length mismatch for sub_type: %, EN length: %, FR length: %', 
-				sub_type_rec.type_en, jsonb_array_length(en_values), jsonb_array_length(fr_values);
-		END IF;
-
-        -- Loop through the indices up to the maximum length
-        FOR i IN 0..(max_length - 1)
-        LOOP
-            -- Extract values or set to empty string if not present
-            fr_value := fr_values->>i;
-            en_value := en_values->>i;
-
-            -- Insert sub label record
-            INSERT INTO sub_label (
-                text_content_fr, text_content_en, label_id, edited, sub_type_id
-            )
-            VALUES (
-                fr_value,
-                en_value,
-                p_label_id,
-                NULL,  -- not handled
-                sub_type_rec.id
-            );
-        END LOOP;
-    END LOOP;
-END;
-$$ LANGUAGE plpgsql;
-
 Drop FUNCTION IF EXISTS "fertiscan_0.0.18".upsert_inspection;
 -- Function to upsert inspection information
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".upsert_inspection(
@@ -443,7 +382,7 @@ DECLARE
 BEGIN
     -- Upsert fertilizer information
     INSERT INTO fertilizer (
-        name, registration_number, upload_date, update_at, owner_id, latest_inspection_id
+        name, registration_number, upload_date, update_at, main_contact_id, latest_inspection_id
     )
     VALUES (
         p_name,
@@ -457,7 +396,7 @@ BEGIN
     SET
         registration_number = EXCLUDED.registration_number,
         update_at = CURRENT_TIMESTAMP,  -- Update the update_at timestamp
-        owner_id = EXCLUDED.owner_id,
+        main_contact_id = EXCLUDED.main_contact_id,
         latest_inspection_id = EXCLUDED.latest_inspection_id
     RETURNING id INTO fertilizer_id;
 
@@ -488,6 +427,7 @@ DECLARE
     verified_bool boolean;
     existing_inspector_id uuid;
     registration_number_json jsonb;
+    organization_jsob jsonb;
 BEGIN
     -- Check if the provided inspection_id matches the one in the input JSON
     json_inspection_id := (p_input_json->>'inspection_id')::uuid;
@@ -514,7 +454,6 @@ BEGIN
     -- update Label information
     UPDATE label_information
     SET
-    id = label_info_id_value,
     product_name = p_input_json->'product'->>'name', 
     lot_number = p_input_json->'product'->>'lot_number',
     npk = p_input_json->'product'->>'npk',
@@ -528,10 +467,12 @@ BEGIN
     WHERE id = label_info_id_value;
 
     updated_json := jsonb_set(updated_json, '{product,label_id}', to_jsonb(label_info_id_value));
-
+    
     -- Update ORGANIZATIONS information
-    PERFORM upsert_organization_info( p_input_json->'organizations', label_info_id_value);
-
+    --PERFORM upsert_organization_info(p_input_json->'organizations', label_info_id_value);
+    organization_jsob := upsert_organization_info( p_input_json->'organizations', label_info_id_value);
+    updated_json := jsonb_set(updated_json, '{organizations}', organization_jsob);
+    
     -- Update metrics related to the label
     PERFORM update_metrics(label_info_id_value, p_input_json->'product'->'metrics');
 
@@ -555,11 +496,14 @@ BEGIN
 
     -- Update the inspection record
     verified_bool := (p_input_json->>'verified')::boolean;
-
+    if verified_bool is null then
+        verified_bool := False;
+        p_input_json := jsonb_set(p_input_json,'{verified}',to_jsonb(False));
+    END IF;
+    --raise exception 'test';
     UPDATE 
         inspection
     SET 
-        id = inspection_id,
         label_info_id = label_info_id_value,
         inspector_id = p_inspector_id,
         sample_id = COALESCE(p_input_json->>'sample_id', NULL)::uuid,
@@ -568,11 +512,11 @@ BEGIN
         updated_at = CURRENT_TIMESTAMP,  -- Update timestamp on conflict
         inspection_comment = p_input_json->>'inspection_comment'
     WHERE 
-        id = p_inspection_id;
+        id = inspection_id;
 
     -- Update the inspection ID in the output JSON
-    updated_json := jsonb_set(updated_json, '{inspection_id}', to_jsonb(inspection_id));
-
+    --updated_json := jsonb_set(updated_json, '{inspection_id}', to_jsonb(p_inspection_id));
+    
     -- Check if the verified field is true, and upsert fertilizer if so
     IF verified_bool THEN
         fertilizer_name := p_input_json->'product'->>'name';
@@ -589,14 +533,13 @@ BEGIN
         if  (Select count(*) from organization_information where label_id = label_info_id_value) = 0 then
             RAISE WARNING 'at least one Organization information is required for a verified inspection';
         ELSIF (Select count(*) from organization_information where label_id = label_info_id_value) = 1 then
-            SELEct id,location_id into org_info_id,location_id_value from organization_information where label_id = label_info_id_value;
+            SELEct id into org_info_id from organization_information where label_id = label_info_id_value;
         else
             org_info_id := NULL;
             for org_record in select * from "fertiscan_0.0.18".organization_information where label_id = label_info_id_value
                 loop
                     if org_record.is_main_contact then
                         org_info_id := org_record.id;
-                        location_id_value := org_record.location_id;
                     end if;
             end loop;
         end if;
@@ -607,6 +550,7 @@ BEGIN
             organization_id := upsert_organization(
                 org_info_id
             );
+        --organizations_jsob := get_organizations_json(label_info_id_value);
         END IF;
 
         -- Upsert the fertilizer record

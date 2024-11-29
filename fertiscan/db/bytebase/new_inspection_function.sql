@@ -41,6 +41,8 @@ DECLARE
     fr_value text;
     en_value text;
 	flag boolean;
+	counter int;
+	orgs_ids uuid[];
 BEGIN
 	
 -- COMPANY
@@ -351,6 +353,7 @@ BEGIN
 
 -- ORGANIZATIONS INFO
 	flag := TRUE;
+	counter := 0;
 	FOR record in SELECT * FROM jsonb_array_elements(input_json->'organizations')
 	LOOP
 		-- Check if any of the fields are not null
@@ -372,8 +375,15 @@ BEGIN
 			);
 			-- The flag is used to mark the first Org as the main contact
 			if flag THEN 
+				-- Update the first organization as the main contact in the form
+				input_json := jsonb_set(input_json,ARRAY['organizations',counter::text,'is_main_contact'],to_jsonb(TRUE));
 				flag := FALSE;
 			END IF;
+			--array_append(orgs_ids,organization_id)
+			if organization_id is not null then
+				input_json := jsonb_set(input_json,ARRAY['organizations',counter::text,'id'],to_jsonb(organization_id));
+			end if;
+			counter := counter + 1;
 		END IF;
 	END LOOP;
 -- ORGANIZATIONS INFO END

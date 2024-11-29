@@ -51,7 +51,7 @@ def new_organization(cursor: Cursor, name, website, phone_number, address):
                 address 
                 )
         VALUES 
-            (%s, %s)
+            (%s, %s, %s, %s)
         RETURNING 
             id
         """
@@ -83,7 +83,7 @@ def new_organization_information(
     if label_id is None:
         raise OrganizationInformationCreationError("Label ID is required for organization information creation.")
     query = """
-        SELECT new_organization_info_located(%s, %s, %s, %s);
+        SELECT new_organization_information(%s, %s, %s, %s, %s, %s, %s);
         """
     cursor.execute(
         query,
@@ -118,7 +118,7 @@ def get_organization_info(cursor: Cursor, information_id):
             name, 
             website, 
             phone_number,
-            location_id,
+            address,
             label_id,
             edited,
             is_main_contact
@@ -150,7 +150,7 @@ def get_organizations_info_label(cursor: Cursor, label_id: UUID):
             name, 
             website, 
             phone_number,
-            location_id,
+            address,
             edited,
             is_main_contact
         FROM 
@@ -158,11 +158,11 @@ def get_organizations_info_label(cursor: Cursor, label_id: UUID):
         WHERE 
             label_id = %s
         """
-    cursor.execute(query, (label_id,))
+    cursor.execute(query, (str(label_id),))
     if result := cursor.fetchall():
         return result
     raise OrganizationInformationNotFoundError(
-        "Organization information not found with label_id: " + label_id
+        "Organization information not found with label_id: " + str(label_id)
     )
 
 
@@ -183,17 +183,11 @@ def get_organizations_info_json(cursor: Cursor, label_id: UUID) -> dict:
         """
     cursor.execute(query, (str(label_id),))
 
-    res = cursor.fetchone()
-    if res is None or res[0] is None:
-        # raise OrganizationNotFoundError
-        # There might not be any organization information
-        return {}
-    if len(res[0]) == 2:
-        return {**res[0][0], **res[0][1]}
-    elif len(res[0]) == 1:
-        return res[0][0]
-    else:
-        return {}
+    if res := cursor.fetchone():
+        return res[0]
+    raise OrganizationInformationRetrievalError(
+        "Failed to get Registration Numbers with the given label_id. No data returned."
+    )
     
 def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
     """
@@ -225,7 +219,7 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
 
 
 @handle_query_errors(OrganizationUpdateError)
-def update_organization(cursor: Cursor, organization_id, information_id, location_id):
+def upsert_organization(cursor: Cursor, information_id):
     """
     This function update a organization in the database.
 
@@ -241,28 +235,23 @@ def update_organization(cursor: Cursor, organization_id, information_id, locatio
     - str: The UUID of the organization
     """
     query = """
-        UPDATE 
-            organization
-        SET 
-            information_id = COALESCE(%s,information_id),
-            main_location_id = COALESCE(%s,main_location_id)
-        WHERE 
-            id = %s
+        SELECT upsert_organization(%s)
         """
     cursor.execute(
         query,
         (
             information_id,
-            location_id,
-            organization_id,
         ),
     )
-    return organization_id
+    if result := cursor.fetchone():
+        return result[0]
+    raise OrganizationUpdateError("Failed to update Organization. No data returned.")
+
 
 
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
-    cursor: Cursor, information_id, name, website, phone_number
+    cursor: Cursor, information_id:UUID, name, website, phone_number
 ):
     """
     This function update a organization information in the database.
@@ -293,7 +282,7 @@ def update_organization_info(
             name,
             website,
             phone_number,
-            information_id,
+            str(information_id),
         ),
     )
     return information_id
@@ -307,12 +296,12 @@ def upsert_organization_info(cursor: Cursor, organization_info, label_id: UUID):
     - organization_info (JSON: string): The organization information in a json.
 
     Returns:
-    - str: The UUID of the organization information
+    - json: The array of the organization information
     """
     query = """
         SELECT upsert_organization_info(%s, %s);
         """
-    cursor.execute(query, (organization_info, label_id,))
+    cursor.execute(query, (organization_info, str(label_id),))
     return cursor.fetchone()[0]
 
 def upsert_organization(cursor: Cursor, organization_info_id: UUID):
@@ -327,14 +316,14 @@ def upsert_organization(cursor: Cursor, organization_info_id: UUID):
     - str: The UUID of the organization information
     """
     query = """
-        SELECT upsert_organization(%s, %s);
+        SELECT upsert_organization(%s);
         """
-    cursor.execute(query, ( organization_info_id,))
+    cursor.execute(query, ( str(organization_info_id),))
     return cursor.fetchone()[0]
 
 
 @handle_query_errors(OrganizationRetrievalError)
-def get_organization(cursor: Cursor, organization_id):
+def get_organization(cursor: Cursor, organization_id:UUID):
     """
     This function get a organization from the database.
 
@@ -350,13 +339,13 @@ def get_organization(cursor: Cursor, organization_id):
             name,
             website,
             phone_number,
-            address, 
+            address 
         FROM 
             organization
         WHERE 
             id = %s
         """
-    cursor.execute(query, (organization_id,))
+    cursor.execute(query, (str(organization_id),))
     if result := cursor.fetchone():
         return result
     raise OrganizationNotFoundError(
@@ -436,7 +425,7 @@ def new_location(cursor: Cursor, name, address, region_id, org_id=None):
                 name, 
                 address, 
                 region_id,
-                owner_id 
+                organization_id 
                 )
         VALUES 
             (%s, %s, %s, %s)
@@ -474,7 +463,7 @@ def get_location(cursor: Cursor, location_id):
             name, 
             address, 
             region_id,
-            owner_id 
+            organization_id 
         FROM 
             location
         WHERE 

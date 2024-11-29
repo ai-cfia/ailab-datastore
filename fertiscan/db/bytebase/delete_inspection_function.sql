@@ -2,17 +2,19 @@
 SET search_path TO "fertiscan_0.0.18";
 
 -- Trigger function to handle after organization_information delete for location deletion
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".after_org_info_delete_location_trig()
+DROP TRIGGER IF EXISTS after_organization_delete_main_location ON "fertiscan_0.0.18".organization;
+drop FUNCTION IF EXISTS "fertiscan_0.0.18".after_org_delete_location_trig();
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".after_org_delete_location_trig()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    IF OLD.location_id IS NOT NULL THEN
+    IF OLD.main_location_id IS NOT NULL THEN
         BEGIN
             DELETE FROM "fertiscan_0.0.18".location
-            WHERE id = OLD.location_id;
+            WHERE id = OLD.main_location_id;
         EXCEPTION WHEN foreign_key_violation THEN
-            RAISE NOTICE 'Location % is still referenced by another record and cannot be deleted.', OLD.location_id;
+            RAISE NOTICE 'Location % is still referenced by another record and cannot be deleted.', OLD.main_location_id;
         END;
     END IF;
 
@@ -21,11 +23,10 @@ END;
 $$;
 
 -- Trigger definition on organization_information table for location deletion
-DROP TRIGGER IF EXISTS after_organization_information_delete_location ON "fertiscan_0.0.18".organization_information;
-CREATE TRIGGER after_organization_information_delete_location
-AFTER DELETE ON "fertiscan_0.0.18".organization_information
+CREATE TRIGGER after_organization_delete_main_location
+AFTER DELETE ON "fertiscan_0.0.18".organization
 FOR EACH ROW
-EXECUTE FUNCTION "fertiscan_0.0.18".after_org_info_delete_location_trig();
+EXECUTE FUNCTION "fertiscan_0.0.18".after_org_delete_location_trig();
 
 -- Function to delete an inspection and related data
 CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".delete_inspection(
@@ -96,6 +97,7 @@ BEGIN
         --This was the only inspection for the fertilizer so we delete it
             DELETE FROM "fertiscan_0.0.18".fertilizer
             WHERE id = OLD.fertilizer_id;
+        end if;
     END IF;
 
     RETURN NULL;

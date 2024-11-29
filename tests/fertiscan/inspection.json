@@ -47,7 +47,7 @@
                 "edited": false
             }
         },
-        "label_id": "cdca3638-a3c0-45df-8c72-74e28a8740c6",
+        "label_id": null,
         "record_keeping": null,
         "lot_number": "L987654321",
         "registration_numbers": [
@@ -237,34 +237,34 @@
         "is_minimal" : false,
         "en" : [
             {
-              "nutrient": "Total Nitrogen (N)",
+              "name": "Total Nitrogen (N)",
               "value": "20",
               "unit": "%"
             },
             {
-              "nutrient": "Available Phosphate (P2O5)",
+              "name": "Available Phosphate (P2O5)",
               "value": "20",
               "unit": "%"
             },
             {
-              "nutrient": "Soluble Potash (K2O)",
+              "name": "Soluble Potash (K2O)",
               "value": "20",
               "unit": "%"
             }
           ],
         "fr" : [
             {
-              "nutrient": "Azote total (N)",
+              "name": "Azote total (N)",
               "value": "20",
               "unit": "%"
             },
             {
-              "nutrient": "Phosphate assimilable (P2O5)",
+              "name": "Phosphate assimilable (P2O5)",
               "value": "20",
               "unit": "%"
             },
             {
-              "nutrient": "Potasse soluble (K2O)",
+              "name": "Potasse soluble (K2O)",
               "value": "20",
               "unit": "%"
             }

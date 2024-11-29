@@ -424,7 +424,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             inspector_id=str(db_inspection.inspector_id),
             inspection_comment=db_inspection.inspection_comment,
             cautions=cautions,
-            organizations=orgs,
+            organizations=org_list,
             guaranteed_analysis=guaranteed_analysis,
             instructions=instructions,
             product=product_info,

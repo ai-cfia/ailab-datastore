@@ -13,7 +13,7 @@ from fertiscan.db.queries.inspection import update_inspection
 load_dotenv()
 
 # Constants for test configuration
-TEST_DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL_TESTING")
+TEST_DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if not TEST_DB_CONNECTION_STRING:
     raise ValueError("FERTISCAN_DB_URL is not set")
 
@@ -76,7 +76,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         new_value = 66.6
 
         # Update model fields instead of dictionary keys
-        altered_inspection.company.name = "Updated Company Name"
+        altered_inspection.organizations[0].name = "Updated Company Name"
         altered_inspection.product.metrics.weight[0].value = new_value
         altered_inspection.product.metrics.density.value = new_value
         altered_inspection.guaranteed_analysis.en[0].value = new_value
@@ -99,7 +99,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
 
         # Assertions using the Inspection model
         self.assertEqual(
-            updated_inspection.company.name,
+            updated_inspection.organizations[0].name,
             "Updated Company Name",
             "The company name should reflect the update.",
         )
