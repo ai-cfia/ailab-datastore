@@ -22,6 +22,7 @@ from fertiscan.db.queries import (
     nutrients,
     organization,
     sub_label,
+    registration_number,
     ingredient,
 )
 from fertiscan.db.queries.errors import QueryError
@@ -84,10 +85,15 @@ class Metrics(ValidatedModel):
     density: Optional[Metric] = Metric()
 
 
+class RegistrationNumber(ValidatedModel):
+    registration_number: str | None = None
+    is_an_ingredient: bool | None = None
+    edited: Optional[bool] = False
+
+
 class ProductInformation(ValidatedModel):
     name: str | None = None
     label_id: str | None = None
-    registration_number: str | None = None
     lot_number: str | None = None
     metrics: Metrics | None = Metrics()
     npk: str | None = None
@@ -95,6 +101,8 @@ class ProductInformation(ValidatedModel):
     n: float | None = None
     p: float | None = None
     k: float | None = None
+    verified: Optional[bool] = False
+    registration_numbers: List[RegistrationNumber] | None = []
     record_keeping: Optional[bool] = None
 
 
@@ -135,10 +143,11 @@ class Inspection(ValidatedModel):
     cautions: SubLabel
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
+    registration_numbers: Optional[List[RegistrationNumber]] = []
     ingredients: ValuesObjects
 
 
-def build_inspection_import(analysis_form: dict,user_id) -> str:
+def build_inspection_import(analysis_form: dict, user_id) -> str:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
@@ -215,12 +224,21 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
 
         metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
 
+        reg_numbers = []
+        for reg_number in analysis_form.get("registration_number", []):
+            reg_numbers.append(
+                RegistrationNumber(
+                    registration_number=reg_number.get("identifier"),
+                    is_an_ingredient=(reg_number.get("type") == "Ingredient"),
+                )
+            )
+
         # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
             name=analysis_form.get("fertiliser_name"),
-            registration_number=analysis_form.get("registration_number"),
             lot_number=analysis_form.get("lot_number"),
             metrics=metrics,
+            registration_numbers=reg_numbers,
             npk=analysis_form.get("npk"),
             warranty=analysis_form.get("warranty"),
             n=npk[0],
@@ -337,6 +355,7 @@ def build_inspection_import(analysis_form: dict,user_id) -> str:
             cautions=cautions,
             instructions=instructions,
             guaranteed_analysis=guaranteed,
+            registration_numbers=reg_numbers,
             ingredients=ingredients,
         )
         Inspection(**inspection_formatted.model_dump())
@@ -354,7 +373,9 @@ def build_inspection_export(cursor, inspection_id) -> str:
     This funtion build an inspection json object from the database.
     """
     try:
-        label_info_id = inspection.get_inspection(cursor,inspection_id)[inspection.LABEL_INFO_ID]
+        label_info_id = inspection.get_inspection(cursor, inspection_id)[
+            inspection.LABEL_INFO_ID
+        ]
         # get the label information
         product_info = label.get_label_information_json(cursor, label_info_id)
         product_info = ProductInformation(**product_info)
@@ -365,6 +386,16 @@ def build_inspection_export(cursor, inspection_id) -> str:
         metrics.volume = metrics.volume or Metric()
         metrics.density = metrics.density or Metric()
         product_info.metrics = metrics
+
+        # Retrieve the registration numbers
+        reg_numbers = registration_number.get_registration_numbers_json(
+            cursor, label_info_id
+        )
+        reg_number_model_list = []
+        for reg_number in reg_numbers["registration_numbers"]:
+            
+            reg_number_model_list.append(RegistrationNumber.model_validate(reg_number))
+        product_info.registration_numbers = reg_number_model_list
 
         # get the organizations information (Company and Manufacturer)
         org = organization.get_organizations_info_json(cursor, label_info_id)
@@ -403,6 +434,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             manufacturer=manufacturer,
             product=product_info,
             verified=db_inspection.verified,
+            registration_numbers=reg_number_model_list,
             ingredients=ingredients,
         )
 

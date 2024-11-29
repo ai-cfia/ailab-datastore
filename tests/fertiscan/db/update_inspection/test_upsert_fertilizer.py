@@ -63,9 +63,9 @@ class TestUpsertFertilizerFunction(unittest.TestCase):
 
         # Insert a label information record to link with inspection
         self.cursor.execute(
-            "INSERT INTO label_information (lot_number, npk, registration_number, n, p, k) "
-            "VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-            ("L123456789", "10-20-30", "R123456", 10.0, 20.0, 30.0),
+            "INSERT INTO label_information (lot_number, npk, n, p, k) "
+            "VALUES ( %s, %s, %s, %s, %s) RETURNING id;",
+            ("L123456789", "10-20-30", 10.0, 20.0, 30.0),
         )
         self.label_info_id = self.cursor.fetchone()[0]
 

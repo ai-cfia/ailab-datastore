@@ -257,7 +257,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "manufacturer_website": "test-website-to-trigger-adress-not-null-test-case",
             "manufacturer_phone_number": None,
             "fertiliser_name": None,
-            "registration_number": None,
+            "registration_number": [],
             "lot_number": None,
             "weight": [],
             "density": None,
@@ -287,7 +287,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Make sure the manufacturer is created
         label_data = label.get_label_information(self.cursor, label_id)
         self.assertIsNotNone(label_data)
-        self.assertIsNotNone(label_data[12])
+        self.assertIsNotNone(label_data[11])
 
         # Verify getters
         inspection_data = metadata.build_inspection_export(
@@ -532,10 +532,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         label_info_data = label.get_label_information(self.cursor, label_id)
         self.assertEqual(label_info_data[3], new_npk)
         self.assertNotEqual(label_info_data[3], old_npk)
-        self.assertEqual(label_info_data[8], new_title)
-        self.assertNotEqual(label_info_data[8], old_title)
-        self.assertEqual(label_info_data[9], old_title)
-        self.assertEqual(label_info_data[13], new_record_keeping)
+        self.assertEqual(label_info_data[7], new_title)
+        self.assertNotEqual(label_info_data[7], old_title)
+        self.assertEqual(label_info_data[8], old_title)
+        self.assertEqual(label_info_data[12], new_record_keeping)
 
         guaranteed_data = nutrients.get_all_guaranteeds(self.cursor, label_id)
         for guaranteed in guaranteed_data:

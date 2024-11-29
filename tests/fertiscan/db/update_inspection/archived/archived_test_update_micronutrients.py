@@ -75,7 +75,6 @@ class TestUpdateMicronutrientsFunction(unittest.TestCase):
             None,
             None,
             None,
-            None,
             "test-warranty",
             self.company_info_id,
             self.company_info_id,

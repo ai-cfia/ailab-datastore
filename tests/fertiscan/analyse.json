@@ -8,7 +8,12 @@
   "manufacturer_website":"www.agrotechindustries.com",
   "manufacturer_phone_number":"+1 416 555 0123",
   "fertiliser_name":"SuperGrow 20-20-20",
-  "registration_number":"F12345678",
+  "registration_number":[
+    {
+      "identifier":"F12345678",
+      "type":"fertilizer_productf"
+    }
+  ],
   "lot_number":"L987654321",
   "weight":[
     {

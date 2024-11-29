@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.16".get_label_info_json(
+CREATE OR REPLACE FUNCTION "fertiscan_0.0.17".get_label_info_json(
 label_id uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
@@ -12,7 +12,6 @@ BEGIN
         product_name,
         lot_number, 
         npk, 
-        registration_number, 
         n, 
         p, 
         k,
@@ -47,7 +46,6 @@ BEGIN
         'p', record.p,
         'npk', record.npk,
         'lot_number', record.lot_number,
-        'registration_number', record.registration_number,
         'verified', verified_bool,
         'record_keeping', record.record_keeping
     );

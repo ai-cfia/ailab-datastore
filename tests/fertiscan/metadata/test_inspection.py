@@ -60,10 +60,14 @@ class TestInspectionExport(unittest.TestCase):
             self.cursor, str(inspection_id)
         )
         data = json.loads(data)
+        self.maxDiff = None
         self.assertIsNotNone(data["inspection_id"])
         self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
+        print(data["product"])
+        
+        self.assertListEqual(inspection_dict["product"]["registration_numbers"], data["product"]["registration_numbers"])
         self.assertDictEqual(inspection_dict["product"], data["product"])
         self.assertDictEqual(inspection_dict["manufacturer"], data["manufacturer"])
         self.assertDictEqual(inspection_dict["company"], data["company"])
@@ -195,6 +199,30 @@ class TestInspectionExport(unittest.TestCase):
         self.assertIsNotNone(data["instructions"]["fr"])
         self.assertListEqual(data["instructions"]["fr"], [])
         self.assertListEqual(data["instructions"]["en"], [])
+
+    def test_empty_registration_number(self):
+        self.analyse["registration_number"] = []
+        formatted_analysis = metadata.build_inspection_import(self.analyse,self.user_id)
+
+        # print(formatted_analysis)
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+
+        # label_information_id = inspection_dict["product"]["label_id"]
+
+        if inspection_id is None:
+            self.fail("Inspection not created")
+        data = metadata.build_inspection_export(
+            self.cursor, str(inspection_id)
+        )
+        data = json.loads(data)
+        self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspector_id"],data["inspector_id"])
+        self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
+        self.assertEqual(inspection_dict["verified"], data["verified"])
+        self.assertEqual(data["product"]["registration_numbers"], [])
 
     def test_unequal_sub_label_lengths_and_order(self):
         expected_instructions_en = ["one", ""]

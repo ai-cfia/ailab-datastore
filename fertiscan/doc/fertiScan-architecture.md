@@ -115,12 +115,17 @@ erDiagram
     uuid id PK
     string lot_number
     string npk
-    string registration_number
     float n
     float p
     float k
     uuid company_info_id FK
     uuid manufacturer_info_id FK
+  }
+  registration_number_information{
+    uuid id PK
+    string identifier
+    string name
+    boolean is_an_ingredient 
   }
   sub_label {
     uuid id PK
@@ -205,6 +210,7 @@ erDiagram
   label_information ||--|{ micronutrient: has
   label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
+  label_information ||--o{ registration_number_information: has
   label_information ||--o| organization_information: company
   label_information ||--o| organization_information: manufacturer
   organization_information ||--|| organization: defines

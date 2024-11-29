@@ -94,6 +94,7 @@ class TestInspectionUpdatePythonFunction(unittest.TestCase):
         task = get_full_inspection_json(self.cursor, self.inspection_id)
         updated_inspection = asyncio.run(task)
         updated_inspection = json.loads(updated_inspection)
+        print(updated_inspection)
         updated_inspection = Inspection.model_validate(updated_inspection)
 
         # Assertions using the Inspection model
