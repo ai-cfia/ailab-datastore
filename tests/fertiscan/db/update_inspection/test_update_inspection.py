@@ -80,12 +80,6 @@ class TestUpdateInspectionFunction(unittest.TestCase):
         #print(self.created_data["organizations"])
         self.created_inspection = Inspection.model_validate(self.created_data)
 
-        foo = organization.get_organizations_info_label(
-            self.cursor, self.created_data["product"]["label_id"]
-        )
-        #print("=========")
-        #print(foo)
-        #print("=========")
         # Store the inspection ID for later use
         self.inspection_id = self.created_data.get("inspection_id")
 
