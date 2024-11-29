@@ -37,4 +37,3 @@ END IF;
 RETURN org_id;
 END;
 $function$;
-

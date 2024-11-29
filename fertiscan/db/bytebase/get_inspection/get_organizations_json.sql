@@ -55,4 +55,3 @@ BEGIN
     RETURN result_json;
 END;
 $function$;
-
