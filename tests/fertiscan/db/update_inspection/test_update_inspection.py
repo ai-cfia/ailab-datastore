@@ -13,7 +13,6 @@ from fertiscan.db.metadata.inspection import (
     Inspection,
 )
 from fertiscan.db.queries.inspection import get_inspection_dict, update_inspection
-from fertiscan.db.queries import organization
 
 load_dotenv()
 
