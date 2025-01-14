@@ -81,7 +81,7 @@ def get_seed_id(cursor, seed_name: str) -> str:
         result = cursor.fetchone()[0]
         return result
     except TypeError:
-        raise SeedNotFoundError("Error: seed not found")
+        raise SeedNotFoundError(f"Error: seed not found seed name {seed_name}")
     except Exception:
         raise Exception("unhandled error")
 
@@ -108,7 +108,7 @@ def get_seed_name(cursor, seed_id:str) -> str :
         cursor.execute(query, (seed_id,))
         return cursor.fetchone()[0]
     except TypeError:
-        raise SeedNotFoundError("Error: seed not found")
+        raise SeedNotFoundError(f"Error: seed not found seed id {seed_id}")
     except Exception:
         raise Exception("unhandled error")
 
@@ -189,6 +189,6 @@ def get_seed_object_seed_id(cursor, seed_object_id: str) -> str:
         cursor.execute(query, (seed_object_id,))
         return cursor.fetchone()[0]
     except TypeError:
-        raise SeedNotFoundError("Error: seed not found")
+        raise SeedNotFoundError(f"Error: seed not found seed object id {seed_object_id}")
     except Exception:
         raise Exception("unhandled error")

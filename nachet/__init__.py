@@ -72,8 +72,8 @@ async def upload_picture_unknown(
     - container_client: The container client of the user.
     """
     try:
-        print(f"User ID: {user_id}")
-        print(f"Picture Set ID: {picture_set_id}")
+        # print(f"User ID: {user_id}")
+        # print(f"Picture Set ID: {picture_set_id}")
 
         if not user.is_a_user_id(cursor=cursor, user_id=user_id):
             raise user.UserNotFoundError(
@@ -96,10 +96,10 @@ async def upload_picture_unknown(
             picture=empty_picture,
             picture_set_id=picture_set_id,
         )
-        print(f"Picture ID: {picture_id}")
-        print(f"Picture Set ID: {picture_set_id}")
-        print(f"Folder Name: {folder_name}")
-        print(f"picture_hash: {picture_hash[0:10]}")
+        # print(f"Picture ID: {picture_id}")
+        # print(f"Picture Set ID: {picture_set_id}")
+        # print(f"Folder Name: {folder_name}")
+        # print(f"picture_hash: {picture_hash[0:10]}")
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
             container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
@@ -112,7 +112,7 @@ async def upload_picture_unknown(
 
         if not response:
             raise BlobUploadError("Error uploading the picture")
-
+        print(f"data: {data}")
         picture.update_picture_metadata(cursor, picture_id, json.dumps(data), 0)
 
         return picture_id
