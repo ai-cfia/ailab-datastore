@@ -151,9 +151,54 @@ def has_user_access_to_container(
             f"Error: user {user_id} not found in container {container_id}\n" + str(e)
         )
 
+def get_user_permission_to_container(
+    cursor: Cursor, user_id: UUID, container_id: UUID) -> int:
+    """
+    This function checks if a user has access to a container.
+    """
+
+    try:
+        query = """
+            SELECT 
+                permission_id
+            FROM
+                container_user
+            WHERE
+                user_id = %s AND container_id = %s;
+            """
+        cursor.execute(
+            query,
+            (user_id, container_id),
+        )
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise ContainerUserNotFoundError(
+            f"Error: user {user_id} not found in container {container_id}\n" + str(e)
+        )
+    
+def get_group_permission_to_container(
+    cursor: Cursor, group_id: UUID, container_id: UUID) -> int:
+    """
+    This function checks if a group has access to a container.
+    """
+    try:
+        query = """
+            SELECT 
+                permission_id
+            FROM
+                container_group
+            WHERE
+                group_id = %s AND container_id = %s;
+            """
+        cursor.execute(group_id, container_id)
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise ContainerUserNotFoundError(
+            f"Error: group {group_id} not found in container {container_id}\n" + str(e)
+        )
 
 def has_user_group_access_to_container(
-    cursor: Cursor, user_id: UUID, container_id: UUID
+    cursor: Cursor, user_id: UUID, container_id: UUID,
 ) -> bool:
     """
     This function checks if a user has access to a container through a group.
@@ -196,7 +241,7 @@ def has_user_group_access_to_container(
 
 
 def add_user_to_container(
-    cursor: Cursor, user_id: UUID, container_id: UUID, assigned_by_id: UUID
+    cursor: Cursor, user_id: UUID, container_id: UUID, assigned_by_id: UUID, permission_id: int
 ) -> None:
     """
     This function adds a user to a container in the database.
@@ -212,13 +257,15 @@ def add_user_to_container(
             assigned_by_id = user_id
         query = """
             INSERT INTO  
-                container_user (container_id,user_id, created_by_id,last_updated_by_id)
+                container_user (container_id,user_id, created_by_id,last_updated_by_id,permission_id)
             VALUES
-                (%s,%s,%s,%s);
+                (%s,%s,%s,%s,%s)
+            ON CONFLICT (container_id,user_id) 
+                DO UPDATE SET last_updated_by_id = %s, permission_id = %s;
             """
         cursor.execute(
             query,
-            (container_id, user_id, assigned_by_id, assigned_by_id),
+            (container_id, user_id, assigned_by_id, assigned_by_id, permission_id, assigned_by_id, permission_id),
         )
     except Exception as e:
         raise ContainerAssignmentError(
@@ -227,7 +274,7 @@ def add_user_to_container(
 
 
 def add_group_to_container(
-    cursor: Cursor, group_id: UUID, container_id: UUID, user_id: UUID
+    cursor: Cursor, group_id: UUID, container_id: UUID, user_id: UUID, permission_id: int
 ) -> None:
     """
     This function adds a group to a container in the database.
@@ -241,13 +288,15 @@ def add_group_to_container(
     try:
         query = """
             INSERT INTO  
-                container_group (container_id,group_id,created_by_id,last_updated_by_id)
+                container_group (container_id,group_id,created_by_id,last_updated_by_id,permission_id)
             VALUES
                 (%s,%s,%s,%s);
+            ON CONFLICT (container_id,group_id)
+                DO UPDATE SET last_updated_by_id = %s, permission_id = %s;
             """
         cursor.execute(
             query,
-            (container_id, group_id, user_id, user_id),
+            (container_id, group_id, user_id, user_id,),
         )
     except Exception as e:
         raise ContainerAssignmentError(

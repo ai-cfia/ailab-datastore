@@ -31,6 +31,7 @@ def is_user_registered(cursor : Cursor, email: str) -> bool:
     - True if the user is registered, False otherwise.
     """
     try:
+
         query = """
             SELECT EXISTS(
                 SELECT 
@@ -108,13 +109,14 @@ def get_user_id(cursor : Cursor, email: str) -> UUID:
         raise Exception("Unhandled Error")
 
 
-def register_user(cursor : Cursor, email: str) -> UUID:
+def register_user(cursor : Cursor, email: str, role_id:int) -> UUID:
     """
     This function registers a user in the database.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
     - email (str): Email of the user
+    - role_id (int): The role of the user
 
     Returns:
     - The UUID of the user.
@@ -122,14 +124,14 @@ def register_user(cursor : Cursor, email: str) -> UUID:
     try:
         query = """
             INSERT INTO  
-                users (email)
+                users (email,role_id)
             VALUES
-                (%s)
+                (%s,%s)
             RETURNING id
             """
         cursor.execute(
             query,
-            (email,),
+            (email,role_id),
         )
         return cursor.fetchone()[0]
     except Exception as e:
@@ -299,3 +301,17 @@ def delete_user(cursor : Cursor, user_id: UUID):
         cursor.execute(query, (user_id,))
     except Exception:
         raise Exception("Error: could not delete user")
+
+
+def is_a_user_admin(cursor:Cursor, user_id)->bool:
+    query = """
+        SELECT
+            role_id
+        FROM
+            users
+        WHERE
+            id = %s
+    """
+    cursor.execute(query,(user_id,))
+    res = cursor.fetchone()[0]
+    return res < 3
