@@ -172,6 +172,7 @@ erDiagram
         TEXT email
         TIMESTAMP registration_date
         TIMESTAMP updated_at
+        UUID role_id
     }
 
     GROUPS {
@@ -209,6 +210,7 @@ erDiagram
         UUID created_by_id FK
         UUID last_updated_by_id FK
         UUID container_id FK
+        int permission_id FK
     }
 
     CONTAINER_GROUP {
@@ -219,15 +221,29 @@ erDiagram
         UUID created_by_id FK
         UUID last_updated_by_id FK
         UUID container_id FK
+        int permission_id FK
     }
 
+    ROLE{
+        int id
+        text name
+    }
+
+    PERMISSION{
+        int id PK
+        text name
+    }    
+
     USERS ||--o{ GROUPS : "creates"
+    USERS ||--|| ROLE: is
     USERS ||--o{ USER_GROUP : "group access"
     GROUPS ||--o{ USER_GROUP : "members"
     USERS ||--o{ CONTAINER : "creates"
     USERS ||--o{ CONTAINER_USER : "individual access"
     CONTAINER ||--o{ CONTAINER_USER : "access to"
     GROUPS ||--o{ CONTAINER_GROUP : "access to"
+    PERMISSION ||--|| CONTAINER_GROUP: "allow operation"
+    PERMISSION ||--|| CONTAINER_USER: "allow operation"
 ```
 
   For more detail on each app database architecture go check [Nachet

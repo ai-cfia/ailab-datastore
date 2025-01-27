@@ -21,6 +21,8 @@ import datastore.__init__ as datastore
 import datastore.db.__init__ as db
 import datastore.db.metadata.validator as validator
 
+from datastore import Role, Permission
+
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
     raise ValueError("NACHET_DB_URL is not set")
@@ -229,7 +231,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(container_obj.container_client)
@@ -275,7 +280,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertTrue(self.container_client.exists())
@@ -315,7 +323,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(container_obj.container_client)
@@ -389,7 +400,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(container_obj.container_client)
@@ -446,7 +460,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(container_obj.container_client)
@@ -532,7 +549,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(self.container_client)
@@ -587,7 +607,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(self.container_client)
@@ -649,7 +672,10 @@ class test_container(unittest.TestCase):
             id=container_id, storage_prefix=self.prefix, name=container_name, public=False
         )
         container_obj = datastore.ContainerController(container_model)
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
+        container_obj.add_user(cursor=self.cursor, 
+                               user_id=self.user_id, 
+                               performed_by=self.user_id,
+                               permission=Permission.WRITE)
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertIsNotNone(container_obj.container_client)
@@ -716,6 +742,8 @@ class test_user(unittest.TestCase):
         self.prefix = "test-user"
         self.connection_str = BLOB_CONNECTION_STRING
 
+        self.user_role = Role.INSPECTOR
+
     def tearDown(self):
         self.con.rollback()
         if self.user_id is not None:
@@ -780,6 +808,7 @@ class test_user(unittest.TestCase):
                     email=self.user_email,
                     connection_string=self.connection_str,
                     tier=self.prefix,
+                    role=self.user_role
                 )
             )
 
@@ -995,11 +1024,15 @@ class test_group(unittest.TestCase):
         # We want to avoid creating a storage container for the user
         self.user_email = "tests-user-class@email"
         self.user_prefix = "test-user"
+        # We need the user to be a TL to create a group
+        self.user_role = Role.TEAM_LEADER
+
         self.user_id = user_db.register_user(self.cursor, self.user_email)
         self.user_obj = datastore.User(
             id=self.user_id, 
             email=self.user_email, 
-            tier=self.user_prefix
+            tier=self.user_prefix,
+            role=self.user_role
         )
 
         # Group data
@@ -1186,14 +1219,13 @@ class test_group(unittest.TestCase):
         ))
         # Check if the container is deleted in the storage
         self.assertTrue(container_controller.container_client.exists())
-        
-
-
 
 
     def test_add_user_to_group(self):
         # Create a second user
         user_email1 = "tests-user-class-1@email"
+        user_role = Role.INSPECTOR
+        team_leader_role = Role.TEAM_LEADER
         user_email2 = "tests-user-class-2@email"
         user_id1 = user_db.register_user(self.cursor, user_email1)
         user_id2 = user_db.register_user(self.cursor, user_email2)
@@ -1201,12 +1233,14 @@ class test_group(unittest.TestCase):
         user_obj1 = datastore.User(
             id=user_id1, 
             email=user_email1, 
-            tier=self.user_prefix
+            tier=self.user_prefix,
+            role=user_role
         )
         user_obj2 = datastore.User(
             id=user_id2, 
             email=user_email2, 
-            tier=self.user_prefix
+            tier=self.user_prefix,
+            role=team_leader_role
         )
         asyncio.run(user_obj1.fetch_all_containers(
             cursor=self.cursor, 

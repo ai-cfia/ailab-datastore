@@ -9,12 +9,33 @@ create schema "nachet_0.1.1";
 
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+    CREATE TABLE "nachet_0.1.1".roles (
+        "id" PRIMARY KEY,
+        "name" text NOT NULL
+    );
+
+    CREATE TABLE "nachet_0.1.1".permission (
+        "id" PRIMARY KEY,
+        "name" text NOT NULL
+    );
+
+    INSERT INTO "nachet_0.1.1".roles (id, name) VALUES
+    (1, 'dev'),
+    (2, 'admin'),
+    (3, 'team leader'),
+    (4, 'inspector');
+
+    INSERT INTO "nachet_0.1.1".permission (id, name) VALUES
+    (1, 'read'),
+    (2, 'write'),
+    (3, 'owner');
 
     CREATE TABLE "nachet_0.1.1"."users" (
     "id" uuid PRIMARY KEY DEFAULT uuid_.uuid_generate_v4(),
     "email" text NOT NULL UNIQUE,
     "registration_date" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" timestamp
+    "updated_at" timestamp,
+    "role_id" INT NOT NULL REFERENCES "nachet_0.1.1".role(id),
     );
 
     Create table "nachet_0.1.1"."groups" (
@@ -30,7 +51,10 @@ create schema "nachet_0.1.1";
         "user_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id) ON DELETE CASCADE,
         "group_id" uuid NOT NULL REFERENCES "nachet_0.1.1".groups(id) ON DELETE CASCADE,
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "assigned_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id)
+        "assigned_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id),
+        "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "permission_id" INT NOT NULL REFERENCES "nachet_0.1.1".permission(id),
+        UNIQUE ("user_id", "group_id")
     );
 
     CREATE TABLE "nachet_0.1.1"."container" (
@@ -51,7 +75,9 @@ create schema "nachet_0.1.1";
         "updated_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "created_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id) ON DELETE SET NULL,
         "last_updated_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id) ON DELETE SET NULL,
-        "container_id" uuid NOT NULL REFERENCES "nachet_0.1.1".container(id) ON DELETE CASCADE
+        "container_id" uuid NOT NULL REFERENCES "nachet_0.1.1".container(id) ON DELETE CASCADE,
+        "permission_id" INT NOT NULL REFERENCES "nachet_0.1.1".permission(id)
+        UNIQUE ("user_id", "container_id")
     );
 
     CREATE TABLE "nachet_0.1.1"."container_group" (
@@ -62,6 +88,8 @@ create schema "nachet_0.1.1";
         "created_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id) ON DELETE SET NULL,
         "last_updated_by_id" uuid NOT NULL REFERENCES "nachet_0.1.1".users(id) ON DELETE SET NULL,
         "container_id" uuid NOT NULL REFERENCES "nachet_0.1.1".container(id) ON DELETE CASCADE
+        "permission_id" INT NOT NULL REFERENCES "nachet_0.1.1".permission(id),
+        UNIQUE ("group_id", "container_id")
     );
 
     CREATE TABLE "nachet_0.1.1"."picture_set" (

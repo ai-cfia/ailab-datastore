@@ -49,7 +49,7 @@ def create_group(cursor: Cursor, name: str, user_id: UUID) -> str:
 
 
 def add_user_to_group(
-    cursor: Cursor, user_id: UUID, group_id: UUID, assigned_by_id: UUID
+    cursor: Cursor, user_id: UUID, group_id: UUID, assigned_by_id: UUID, permission_id: int
 ) -> None:
     """
     This function adds a user to a group in the database.
@@ -64,14 +64,16 @@ def add_user_to_group(
             assigned_by_id = user_id
         query = """
             INSERT INTO  
-                user_group (group_id,user_id,assigned_by_id)
+                user_group (group_id,user_id,assigned_by_id,permission_id)
             VALUES
                 (%s,%s,%s)
-            RETURNING id
+            ON CONFLICT (group_id,user_id)
+                DO UPDATE SET permission_id = %s
+            RETURNING id;
             """
         cursor.execute(
             query,
-            (group_id, user_id, assigned_by_id),
+            (group_id, user_id, assigned_by_id, permission_id,permission_id),
         )
         if cursor.fetchone() is None:
             raise GroupAssignmentError
@@ -288,3 +290,18 @@ def get_group_by_name(cursor: Cursor, group_name: str) -> dict:
         return cursor.fetchall()
     except Exception:
         raise GroupNotFoundError(f"Error: group {group_name} not found")
+    
+def is_user_group_creator(cursor: Cursor, user_id: UUID,group_id:UUID) -> bool:
+    query = """
+        SELECT
+            EXISTS(
+                SELECT
+                    1
+                FROM
+                    groups
+                WHERE
+                    id = %s AND created_by_id = %s
+            )
+        """
+    cursor.execute(query,(group_id,user_id))
+    return cursor.fetchone()[0]
