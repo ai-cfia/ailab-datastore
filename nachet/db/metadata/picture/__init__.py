@@ -4,9 +4,7 @@ This module contains the function to build the picture metadata needed for the d
 
 from datetime import date
 from datastore.db.metadata import validator
-from PIL import Image
-import io
-import base64
+
 
 
 class PictureCreationError(Exception):
