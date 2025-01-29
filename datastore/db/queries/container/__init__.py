@@ -290,13 +290,13 @@ def add_group_to_container(
             INSERT INTO  
                 container_group (container_id,group_id,created_by_id,last_updated_by_id,permission_id)
             VALUES
-                (%s,%s,%s,%s);
+                (%s,%s,%s,%s,%s)
             ON CONFLICT (container_id,group_id)
                 DO UPDATE SET last_updated_by_id = %s, permission_id = %s;
             """
         cursor.execute(
             query,
-            (container_id, group_id, user_id, user_id,),
+            (container_id, group_id, user_id, user_id,permission_id,user_id,permission_id),
         )
     except Exception as e:
         raise ContainerAssignmentError(
@@ -602,6 +602,36 @@ def is_a_container(cursor: Cursor, container_id: UUID):
                         container
                     WHERE
                         id = %s);
+            """
+        cursor.execute(
+            query,
+            (container_id,),
+        )
+        return cursor.fetchone()[0]
+    except Exception as e:
+        raise ContainerNotFoundError(
+            f"Error: container {container_id} not found\n" + str(e)
+        )
+
+def get_container_creator(cursor: Cursor, container_id: UUID):
+    """
+    This function gets the creator of a container.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - container_id (str): The UUID of the container.
+
+    Returns:
+    - The UUID of the creator.
+    """
+    try:
+        query = """
+            SELECT
+                created_by_id
+            FROM
+                container
+            WHERE
+                id = %s;
             """
         cursor.execute(
             query,

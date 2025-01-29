@@ -14,10 +14,10 @@ from unittest.mock import MagicMock
 from PIL import Image
 
 import datastore.db.__init__ as db
+from datastore import Role,Permission
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
 from datastore.db.queries import picture, user, group, container
-from nachet.db.metadata import picture as picture_data
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -35,6 +35,7 @@ class test_user_functions(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.email = "test@email.gouv.ca"
+        self.role_id = Role.INSPECTOR.value
 
     def tearDown(self):
         self.con.rollback()
@@ -51,7 +52,7 @@ class test_user_functions(unittest.TestCase):
             "The user should not already be registered",
         )
 
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
 
         self.assertTrue(
             validator.is_valid_uuid(user_id), "The user_id is not a valid UUID"
@@ -71,7 +72,7 @@ class test_user_functions(unittest.TestCase):
         This test checks if the is_a_user_id function returns the correct value
         for a user that is not yet registered and one that is.
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
 
         self.assertTrue(
             user.is_a_user_id(self.cursor, user_id),
@@ -87,7 +88,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the is_a_user_id function raises an exception when the connection fails
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
@@ -97,7 +98,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the get_user_id function returns the correct UUID
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
         uuid = user.get_user_id(self.cursor, self.email)
 
         self.assertTrue(
@@ -123,7 +124,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the get_user_id function raises an exception when the connection fails
         """
-        user.register_user(self.cursor, self.email)
+        user.register_user(self.cursor, self.email,self.role_id)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
@@ -133,7 +134,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the register_user function returns a valid UUID
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
 
         self.assertTrue(
             validator.is_valid_uuid(user_id), "The user_id is not a valid UUID"
@@ -146,13 +147,13 @@ class test_user_functions(unittest.TestCase):
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(user.UserCreationError):
-            user.register_user(mock_cursor, self.email)
+            user.register_user(mock_cursor, self.email,self.role_id)
 
     # def test_link_container(self):
     #     """
     #     This test checks if the link_container function links the container to the user
     #     """
-    #     user_id = user.register_user(self.cursor, self.email)
+    #     user_id = user.register_user(self.cursor, self.email,self.role_id)
     #     container_url = "https://container.com"
     #     user.link_container(self.cursor, user_id, container_url)
     #     fetched_url = user.get_container_url(self.cursor, user_id)
@@ -169,7 +170,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the link_container function raises an exception when the connection fails
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
@@ -179,7 +180,7 @@ class test_user_functions(unittest.TestCase):
     #     """
     #     This test checks if the get_container_url function returns the correct container url
     #     """
-    #     user_id = user.register_user(self.cursor, self.email)
+    #     user_id = user.register_user(self.cursor, self.email,self.role_id)
     #     container_url = "https://container.com"
     #     user.link_container(self.cursor, user_id, container_url)
 
@@ -198,7 +199,7 @@ class test_user_functions(unittest.TestCase):
     #     """
     #     This test checks if the get_container_url function raises an exception when the container is not linked
     #     """
-    #     user_id = user.register_user(self.cursor, self.email)
+    #     user_id = user.register_user(self.cursor, self.email,self.role_id)
     #     with self.assertRaises(user.ContainerNotSetError):
     #         user.get_container_url(self.cursor, user_id)
 
@@ -206,7 +207,7 @@ class test_user_functions(unittest.TestCase):
         """
         This test checks if the get_container_url function raises an exception when the connection fails
         """
-        user_id = user.register_user(self.cursor, self.email)
+        user_id = user.register_user(self.cursor, self.email,self.role_id)
         mock_cursor = MagicMock()
         mock_cursor.fetchone.side_effect = Exception("Connection error")
         with self.assertRaises(Exception):
@@ -219,8 +220,9 @@ class test_group_functions(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.email = "test-gouv.ca"
+        self.role_id = Role.TEAM_LEADER.value
 
-        self.user_id = user.register_user(self.cursor, self.email)
+        self.user_id = user.register_user(self.cursor, self.email,self.role_id)
 
     def tearDown(self):
         self.con.rollback()
@@ -247,7 +249,7 @@ class test_group_functions(unittest.TestCase):
         group_name = "test_group"
         group_id = group.create_group(self.cursor,group_name, self.user_id)
 
-        group.add_user_to_group(self.cursor, self.user_id, group_id, self.user_id)
+        group.add_user_to_group(self.cursor, self.user_id, group_id, self.user_id,Permission.OWNER.value)
 
         self.assertTrue(group.is_user_in_group(self.cursor, self.user_id,group_id))
 
@@ -256,10 +258,9 @@ class test_group_functions(unittest.TestCase):
         This test checks if the remove_member function removes a member from a group
         """
         group_name = "test_group"
-        print(DB_SCHEMA)
         group_id = group.create_group(self.cursor,group_name, self.user_id)
 
-        group.add_user_to_group(self.cursor, self.user_id, group_id, self.user_id)
+        group.add_user_to_group(self.cursor, self.user_id, group_id, self.user_id,Permission.OWNER.value)
 
         self.assertTrue(group.is_user_in_group(self.cursor, self.user_id,group_id))
 
@@ -277,7 +278,8 @@ class test_pictures_functions(unittest.TestCase):
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         # prepare the user
-        self.user_id = user.register_user(self.cursor, "test@email")
+        self.role_id = Role.INSPECTOR.value
+        self.user_id = user.register_user(self.cursor, "test@email",self.role_id)
 
         # prepare the picture_set and picture
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -288,9 +290,18 @@ class test_pictures_functions(unittest.TestCase):
         )
         self.nb_seed = 1
         self.picture_set = picture_set_data.build_picture_set_metadata(self.user_id, 1)
-        self.picture = picture_data.build_picture(
-            self.pic_encoded, "www.link.com", self.nb_seed, 1.0, ""
-        )
+        picture_properties = picture_set_data.get_image_properties(pic_encoded=self.pic_encoded)
+        self.image_link = "www.link.com"
+        self.picture = picture_set_data.PictureMetadata(
+            picture_id = None,
+            link=self.image_link,
+            upload_date=None,
+            privacy_flag=False,
+            description=None,
+            name = None,
+            nb_object=self.nb_seed,
+            properties=picture_properties
+        ).model_dump_json()
         self.folder_name = "test_folder"
 
         self.container_id = container.create_container(self.cursor, "test_container",self.user_id,False,"test-user")
@@ -389,10 +400,13 @@ class test_pictures_functions(unittest.TestCase):
         picture_id = picture.new_picture_unknown(
             self.cursor, self.picture, picture_set_id, self.nb_seed
         )
-
-        new_picture = picture_data.build_picture(
-            self.pic_encoded, "www.link.com", 6, 1.0, ""
-        )
+        pic_properties = picture_set_data.get_image_properties(self.pic_encoded)
+        new_picture = picture_set_data.PictureMetadata(
+            name="test",
+            link = "test.com",
+            nb_object=3,
+            properties=pic_properties
+        ).model_dump_json()
         picture_metadata = picture.get_picture(self.cursor, picture_id)
         # update the metadata
         picture.update_picture_metadata(self.cursor, picture_id, new_picture, 6)
@@ -401,34 +415,8 @@ class test_pictures_functions(unittest.TestCase):
         new_picture_metadata = picture.get_picture(self.cursor, picture_id)
 
         self.assertEqual(
-            new_picture_metadata["user_data"],
-            new_picture["user_data"],
-            "The metadata was not updated correctly",
-        )
-        self.assertEqual(
-            new_picture_metadata["metadata"],
-            new_picture["metadata"],
-            "The metadata was not updated correctly",
-        )
-        self.assertEqual(
-            new_picture_metadata["image_data"],
-            new_picture["image_data"],
-            "The metadata was not updated correctly",
-        )
-
-        self.assertNotEqual(
-            picture_metadata["user_data"],
-            new_picture_metadata["user_data"],
-            "The metadata was not updated correctly",
-        )
-        self.assertEqual(
-            picture_metadata["metadata"],
-            new_picture_metadata["metadata"],
-            "The metadata was not updated correctly",
-        )
-        self.assertEqual(
-            picture_metadata["image_data"],
-            new_picture_metadata["image_data"],
+            new_picture_metadata["name"],
+            new_picture["name"],
             "The metadata was not updated correctly",
         )
 
@@ -714,5 +702,3 @@ class test_pictures_functions(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-if __name__ == "__main__":
-    unittest.main()

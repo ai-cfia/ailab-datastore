@@ -50,12 +50,13 @@ class test_container(unittest.TestCase):
         self.cursor = self.con.cursor()
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.user_email = "test-email-container"
-
+        self.user_role = datastore.Role.TEAM_LEADER
         # We create directly from the db because some operation needs to keep track of a user in the db
-        self.user_id = user_db.register_user(self.cursor, self.user_email)
+        self.user_id = user_db.register_user(self.cursor, self.user_email,self.user_role.value)
         self.user_obj = datastore.User(
             id=self.user_id, 
-            email=self.user_email)
+            email=self.user_email,
+            role=self.user_role)
         self.prefix = "test-user"
         self.connection_str = BLOB_CONNECTION_STRING
 
@@ -92,22 +93,7 @@ class test_container(unittest.TestCase):
         self.assertTrue(container_obj.container_client.exists())
         # Check to make sure the user is not added to the storage
         self.assertListEqual(container_obj.model.user_ids, [])
-        folder_name = "General"
-        folder_id = next(iter(container_obj.model.folders.keys()))
-        # Check if the Default "Genereal" folder is created in the storage
-        # There is a blob created to index the folder path in the storage
-        # blob_name = General/<Folder_id>.json
-        blob_name = azure_storage.build_blob_name(
-            str(folder_name), str(folder_id), "json"
-        )
-        blob_name_list = self.container_client.list_blob_names()
-        # There should be only one blob in the container, but an ItemPage
-        # Is a pain to test, so I just loop through the list and collect its length
-        length = 0
-        for item in blob_name_list:
-            length += 1
-            self.assertTrue(item == blob_name)
-
+        
     def test_create_container_no_name(self):
         container_obj = asyncio.run(
             datastore.create_container(
@@ -148,6 +134,21 @@ class test_container(unittest.TestCase):
                 self.cursor, self.user_id, container_obj.id
             )
         )
+        folder_name = "General"
+        folder_id = next(iter(container_obj.model.folders.keys()))
+        # Check if the Default "Genereal" folder is created in the storage
+        # There is a blob created to index the folder path in the storage
+        # blob_name = General/<Folder_id>.json
+        blob_name = azure_storage.build_blob_name(
+            str(folder_name), str(folder_id), "json"
+        )
+        blob_name_list = self.container_client.list_blob_names()
+        # There should be only one blob in the container, but an ItemPage
+        # Is a pain to test, so I just loop through the list and collect its length
+        length = 0
+        for item in blob_name_list:
+            length += 1
+            self.assertTrue(item == blob_name)
 
     def test_add_user(self):
         """
@@ -572,8 +573,6 @@ class test_container(unittest.TestCase):
         image.save(image_byte_array, format="TIFF")
         pic_encoded = image.tobytes()
 
-        # Add the upload permission to the user and then Upload the picture
-        container_obj.add_user(self.cursor, self.user_id, self.user_id)
         picture_id = asyncio.run(
             container_obj.upload_pictures(
                 cursor=self.cursor,
@@ -765,6 +764,7 @@ class test_user(unittest.TestCase):
         """
         Test the new user function.
         """
+        print("Test new user")
         self.user_obj = asyncio.run(
             datastore.new_user(
                 cursor=self.cursor,
@@ -1027,7 +1027,7 @@ class test_group(unittest.TestCase):
         # We need the user to be a TL to create a group
         self.user_role = Role.TEAM_LEADER
 
-        self.user_id = user_db.register_user(self.cursor, self.user_email)
+        self.user_id = user_db.register_user(self.cursor, self.user_email,datastore.Role.TEAM_LEADER.value)
         self.user_obj = datastore.User(
             id=self.user_id, 
             email=self.user_email, 
@@ -1149,7 +1149,7 @@ class test_group(unittest.TestCase):
         Test the delete group function with a container.
         """
         user_email = "tests-user-class-delete-group@email"
-        user_id = user_db.register_user(self.cursor, user_email)
+        user_id = user_db.register_user(self.cursor, user_email,role_id=datastore.Role.INSPECTOR.value)
         user_obj = datastore.User(
             id=user_id, 
             email=user_email, 
@@ -1193,10 +1193,22 @@ class test_group(unittest.TestCase):
             user_id=user_id
         ))
         # delete the group
+        # THE VALIDATION AN INSPECTOR CANT DELETE A GROUP
+        with self.assertRaises(datastore.PermissionNotHighEnough):
+            asyncio.run(
+                datastore.delete_group(
+                    cursor=self.cursor,
+                    group_obj=self.group_obj,
+                    user_id= user_obj.model.id
+                )
+            )
+        
+        # VAlidation the TL can delete the group
         asyncio.run(
             datastore.delete_group(
                 cursor=self.cursor,
                 group_obj=self.group_obj,
+                user_id= self.user_obj.model.id
             )
         )
         self.assertIsNone(self.group_obj.model)
@@ -1227,8 +1239,8 @@ class test_group(unittest.TestCase):
         user_role = Role.INSPECTOR
         team_leader_role = Role.TEAM_LEADER
         user_email2 = "tests-user-class-2@email"
-        user_id1 = user_db.register_user(self.cursor, user_email1)
-        user_id2 = user_db.register_user(self.cursor, user_email2)
+        user_id1 = user_db.register_user(self.cursor, user_email1,datastore.Role.INSPECTOR.value)
+        user_id2 = user_db.register_user(self.cursor, user_email2,datastore.Role.INSPECTOR.value)
 
         user_obj1 = datastore.User(
             id=user_id1, 

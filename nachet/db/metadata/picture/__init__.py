@@ -66,17 +66,4 @@ def build_picture(
     return picture.model_dump_json()
 
 
-def get_image_properties(pic_encoded: str):
-    """
-    Function to retrieve an image's properties.
 
-    Parameters:
-    - pic_encoded (str): The image in a string format.
-
-    Returns:
-    - The image's width, height and format as a tuple.
-    """
-    img = Image.open(io.BytesIO(base64.b64decode(pic_encoded)))
-    width, height = img.size
-    img_format = img.format
-    return width, height, img_format
