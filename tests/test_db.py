@@ -439,7 +439,10 @@ class test_pictures_functions(unittest.TestCase):
         new_picture = json.loads(new_picture)
         # get the updated metadata
         new_picture_metadata = picture.get_picture(self.cursor, picture_id)
-
+        self.assertNotEqual(
+            new_picture["name"],
+            picture_metadata["name"]
+        )
         self.assertEqual(
             new_picture_metadata["name"],
             new_picture["name"],
