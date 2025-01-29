@@ -45,6 +45,7 @@ class ContainerCreationError(Exception):
 class FolderCreationError(Exception):
     pass
 
+
 class PermissionNotHighEnough(Exception):
     pass
 
@@ -57,35 +58,39 @@ class Folder(BaseModel):
     pictures: List[UUID]
     parent_id: Optional[UUID] = None
 
+
 class Container(BaseModel):
     id: UUID
     name: Optional[str] = None
-    is_public: Optional[bool]=False
-    storage_prefix: Optional[str]="user"
-    group_ids: Optional[List[UUID]]=[]
-    user_ids: Optional[List[UUID]]=[]
+    is_public: Optional[bool] = False
+    storage_prefix: Optional[str] = "user"
+    group_ids: Optional[List[UUID]] = []
+    user_ids: Optional[List[UUID]] = []
     folders: Optional[Dict[UUID, Folder]] = {}
     path: Optional[str] = None
 
+
 class Permission(Enum):
-    READ:int = 1
-    WRITE:int = 2
-    OWNER:int = 3
+    READ: int = 1
+    WRITE: int = 2
+    OWNER: int = 3
 
 
 class ContainerController:
     def __init__(self, container_model: Container):
-        container_model.path = azure_storage.build_container_name(str(container_model.id), container_model.storage_prefix)
+        container_model.path = azure_storage.build_container_name(
+            str(container_model.id), container_model.storage_prefix
+        )
         self.id = container_model.id
         self.model = container_model
         self.container_client: Optional[ContainerClient] = None
 
-    #def __init__(self, id: UUID):
+    # def __init__(self, id: UUID):
     #    self.id = id
     #    self.model: Optional[Container] = None
     #    self.container_client: Optional[ContainerClient] = None
 
-    def __verify_user_can_manage(self, cursor: Cursor, user_id: UUID) ->bool:
+    def __verify_user_can_manage(self, cursor: Cursor, user_id: UUID) -> bool:
         """
         This function verifies if the user can manage the container.
         Only the Owner of the container and the users with the Dev/Admin role can manage the container.
@@ -93,14 +98,16 @@ class ContainerController:
         if user.is_a_user_admin(cursor, user_id):
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(cursor, user_id, self.id)
+            perm = container_db.get_user_permission_to_container(
+                cursor, user_id, self.id
+            )
             return perm == Permission.OWNER.value
         elif container_db.get_container_creator(cursor, self.id) == user_id:
             # This is to allow the creator of the container to self set his owner permission
             return True
         return False
 
-    def __verify_user_can_write(self, cursor: Cursor, user_id: UUID) ->bool:
+    def __verify_user_can_write(self, cursor: Cursor, user_id: UUID) -> bool:
         """
         This function verifies if the user can write in the container.
         """
@@ -108,31 +115,39 @@ class ContainerController:
         if user.is_a_user_admin(cursor, user_id):
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(cursor, user_id, self.id) 
+            perm = container_db.get_user_permission_to_container(
+                cursor, user_id, self.id
+            )
             if Permission.WRITE.value <= perm:
                 return True
-        if container_db.has_user_group_access_to_container(cursor,user_id,self.id):
-            perm = container_db.get_group_permission_to_container(cursor, user_id, self.id)
+        if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+            perm = container_db.get_group_permission_to_container(
+                cursor, user_id, self.id
+            )
             if Permission.WRITE.value <= perm:
                 return True
         return False
-    
-    def __verify_user_can_read(self, cursor: Cursor, user_id: UUID) ->bool:
+
+    def __verify_user_can_read(self, cursor: Cursor, user_id: UUID) -> bool:
         """
         This function verifies if the user can read in the container.
         """
         if user.is_a_user_admin(cursor, user_id):
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(cursor, user_id, self.id) 
+            perm = container_db.get_user_permission_to_container(
+                cursor, user_id, self.id
+            )
             if perm >= Permission.READ.value:
                 return True
-        if container_db.has_user_group_access_to_container(cursor,user_id,self.id):
-            perm = container_db.get_group_permission_to_container(cursor, user_id, self.id)
+        if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+            perm = container_db.get_group_permission_to_container(
+                cursor, user_id, self.id
+            )
             if perm >= Permission.READ.value:
                 return True
         return False
-    
+
     # This could be achieved by fetching the storage and performing Azure API calls
     def fetch_all_folders_metadata(self, cursor: Cursor):
         """
@@ -173,7 +188,9 @@ class ContainerController:
         """
         folder = self.model.folders[folder_id]
         for child_id in folder.children:
-            self.model.folders[child_id].path = folder.path + "/" + self.model.folders[child_id].name
+            self.model.folders[child_id].path = (
+                folder.path + "/" + self.model.folders[child_id].name
+            )
             self.__build_children_path(child_id)
 
     def fetch_all_data(self, cursor: Cursor):
@@ -193,7 +210,7 @@ class ContainerController:
             group_ids=db_container[6],
             folders={},
         )
-        self.model=container_model
+        self.model = container_model
         self.fetch_all_folders_metadata(cursor)
 
     def __remove_folder_and_children(self, folder_id: UUID):
@@ -224,7 +241,13 @@ class ContainerController:
     def get_id(self):
         return self.id
 
-    def add_user(self, cursor: Cursor, user_id: UUID, performed_by: UUID, permission: Permission = Permission.READ):
+    def add_user(
+        self,
+        cursor: Cursor,
+        user_id: UUID,
+        performed_by: UUID,
+        permission: Permission = Permission.READ,
+    ):
         """
         This function adds a user to the container rights.
 
@@ -234,14 +257,16 @@ class ContainerController:
         """
         # Make sure the user has the permission to add a user to the container
         if not self.__verify_user_can_manage(cursor, performed_by):
-            raise ValueError("The user performing the action is not the owner of the container, they can't add other users to the container")
+            raise ValueError(
+                "The user performing the action is not the owner of the container, they can't add other users to the container"
+            )
         # Link the container to the user in the database
         container_db.add_user_to_container(
             cursor, user_id, self.id, performed_by, permission.value
         )
         self.model.user_ids.append(user_id)
 
-    def remove_user(self, cursor: Cursor, user_id: UUID,performed_by: UUID):
+    def remove_user(self, cursor: Cursor, user_id: UUID, performed_by: UUID):
         """
         This function removes a user from the container rights.
 
@@ -253,28 +278,42 @@ class ContainerController:
         if container_db.has_user_access_to_container(cursor, user_id, self.id):
             # Make sure the user has the permission to add a user to the container
             if not self.__verify_user_can_manage(cursor, performed_by):
-                raise ValueError("The user performing this action is not the owner of the container, they can't remove other users to the container")
+                raise ValueError(
+                    "The user performing this action is not the owner of the container, they can't remove other users to the container"
+                )
             # Unlink the container to the user in the database
             container_db.delete_user_from_container(cursor, user_id, self.id)
             if user_id in self.model.user_ids:
                 self.model.user_ids.remove(user_id)
 
-    def add_group(self, cursor: Cursor, group_id: UUID, performed_by: UUID, permission: Permission = Permission.READ):
+    def add_group(
+        self,
+        cursor: Cursor,
+        group_id: UUID,
+        performed_by: UUID,
+        permission: Permission = Permission.READ,
+    ):
         """
         Function to add a group to the container rights.
         """
         # Make sure the user has the permission to add a user to the container
         if not self.__verify_user_can_manage(cursor, performed_by):
-            raise ValueError("The user performing this action is not the owner of the container, they can't add groups to the container")
+            raise ValueError(
+                "The user performing this action is not the owner of the container, they can't add groups to the container"
+            )
         # Link the container to the user in the database
-        container_db.add_group_to_container(cursor, group_id, self.id, performed_by, permission.value)
+        container_db.add_group_to_container(
+            cursor, group_id, self.id, performed_by, permission.value
+        )
         self.model.group_ids.append(group_id)
 
     def remove_group(self, cursor: Cursor, group_id: UUID, performed_by: UUID):
         # Make sure the user has the permission to add a user to the container
         if not self.__verify_user_can_manage(cursor, performed_by):
-            raise ValueError("The user is not the owner of the container, they can't add other users to the container")
-        
+            raise ValueError(
+                "The user is not the owner of the container, they can't add other users to the container"
+            )
+
         # Unlink the container to the user in the database
         container_db.delete_group_from_container(cursor, group_id, self.id)
         if group_id in self.model.group_ids:
@@ -336,7 +375,10 @@ class ContainerController:
             )
         # TODO : Check the user container permission if he has at least write permission
         if not self.__verify_user_can_write(cursor, performed_by):
-            raise ValueError("The user does not have the permission to create a folder in the container: " + str(self.id))
+            raise ValueError(
+                "The user does not have the permission to create a folder in the container: "
+                + str(self.id)
+            )
         # Check if folder exists in the database in the container & parent folder
         if folder_name is not None:
             # This is also a trigger in the db to create the folder
@@ -360,7 +402,7 @@ class ContainerController:
             container_id=self.id,
             parent_id=parent_folder_id,
         )
-        #This is a trigger in the db to create the folder
+        # This is a trigger in the db to create the folder
         if folder_name is None:
             folder_name = str(pic_set_id)
         parent_path = None
@@ -415,7 +457,10 @@ class ContainerController:
                 "Error: container client does not exist or not set, please set the container client first"
             )
         if not self.__verify_user_can_write(cursor, user_id):
-            raise ValueError("The user does not have the permission to upload pictures in the container: " + str(self.id))
+            raise ValueError(
+                "The user does not have the permission to upload pictures in the container: "
+                + str(self.id)
+            )
         # Create a folder if not provided
         if folder_id is None:
             folder_id = await self.create_folder(
@@ -470,10 +515,10 @@ class ContainerController:
             picture_metadata.picture_id = picture_id
             picture_metadata.link = blob_name
             picture.update_picture_metadata(
-            cursor=cursor,
-            picture_id=picture_id,
-            metadata=picture_metadata.model_dump_json(),
-            nb_objects=nb_objects,
+                cursor=cursor,
+                picture_id=picture_id,
+                metadata=picture_metadata.model_dump_json(),
+                nb_objects=nb_objects,
             )
         self.model.folders[folder_id].pictures.extend(pic_ids)
         return pic_ids
@@ -500,12 +545,16 @@ class ContainerController:
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
-        if (folder_id not in list(self.model.folders.keys())):
+        if folder_id not in list(self.model.folders.keys()):
             raise FolderCreationError(
                 f"Folder does not exist in the container: {folder_id}"
             )
         # Check if user has access to the container
-        if user_id not in self.model.user_ids and not user.is_a_user_admin(cursor, user_id) and not self.model.is_public:
+        if (
+            user_id not in self.model.user_ids
+            and not user.is_a_user_admin(cursor, user_id)
+            and not self.model.is_public
+        ):
             raise UserNotOwnerError(
                 f"User can't access this Container, user uuid :{user_id}, Container id : {self.id}"
             )
@@ -554,9 +603,15 @@ class ContainerController:
             raise user.UserNotFoundError(
                 f"User not found based on the given id: {user_id}"
             )
-        #TODO: Check if user has access to the container
-        if not self.__verify_user_can_read(cursor, user_id) and not self.model.is_public:
-            raise ValueError("The user does not have the permission to download pictures in the container: " + str(self.id))
+        # TODO: Check if user has access to the container
+        if (
+            not self.__verify_user_can_read(cursor, user_id)
+            and not self.model.is_public
+        ):
+            raise ValueError(
+                "The user does not have the permission to download pictures in the container: "
+                + str(self.id)
+            )
         # Check if picture exists
         if not picture.is_a_picture_id(cursor, picture_id):
             raise picture.PictureNotFoundError(
@@ -597,9 +652,12 @@ class ContainerController:
             )
         # TODO : Check user is owner of the picture set
         if not self.__verify_user_can_write(cursor, user_id):
-            raise ValueError("The user does not have the permission to delete the folder in the container: " + str(self.id))
+            raise ValueError(
+                "The user does not have the permission to delete the folder in the container: "
+                + str(self.id)
+            )
         # if picture.get_picture_set_owner_id(cursor, folder_id) != user_id:
-       
+
         # Delete the folder in the blob storage
         # for child_folder in self.model.folders[folder_id].children:
         #    await self.delete_folder_permanently(cursor, user_id, child_folder)
@@ -615,7 +673,9 @@ class ContainerController:
         # remove folder from the object
         self.__remove_folder_and_children(folder_id)
 
-    async def delete_picture_permanently(self, cursor: Cursor, user_id: UUID, picture_id: UUID):
+    async def delete_picture_permanently(
+        self, cursor: Cursor, user_id: UUID, picture_id: UUID
+    ):
         """
         This function deletes a picture from the blob storage and the database.
         """
@@ -624,31 +684,38 @@ class ContainerController:
                 f"User not found based on the given id: {user_id}"
             )
         if not self.__verify_user_can_write(cursor, user_id):
-            raise ValueError("The user does not have the permission to delete the picture in the container: " + str(self.id))
+            raise ValueError(
+                "The user does not have the permission to delete the picture in the container: "
+                + str(self.id)
+            )
         # Get the picture set id
         picture_set_id = picture.get_picture_picture_set_id(cursor, picture_id)
-        
+
         folder = self.model.folders[picture_set_id]
 
         # Delete from the blob storage
         blob_path = azure_storage.build_blob_name(folder.path, str(picture_id), None)
-        await azure_storage.delete_blob(self.container_client,blob_path)
-        
+        await azure_storage.delete_blob(self.container_client, blob_path)
+
         # Delete from the database
         picture.delete_picture(cursor, picture_id)
 
         # Remove the picture from the folder
         folder.pictures.remove(picture_id)
 
+
 """
 Abstract Pydanctic model for the client object.
 """
+
+
 class Client(BaseModel):
     id: UUID
     name: str
     is_public: bool
     storage_prefix: str
-    containers: Dict[UUID,Container]
+    containers: Dict[UUID, Container]
+
 
 class ClientController(ABC):
     def __init__(self, client_model: Client):
@@ -657,10 +724,10 @@ class ClientController(ABC):
 
     def get_name(self):
         return self.model.name
-    
+
     def get_id(self):
         return self.model.id
-    
+
     def get_containers(self):
         return self.model.containers
 
@@ -691,14 +758,22 @@ class ClientController(ABC):
     def fetch_all_containers():
         pass
 
+
 class Role(Enum):
     DEV = 1
     ADMIN = 2
     TEAM_LEADER = 3
     INSPECTOR = 4
 
+
 class User(ClientController):
-    def __init__(self, email: str, id: UUID = None, tier: str = "user",role: Role = Role.INSPECTOR):
+    def __init__(
+        self,
+        email: str,
+        id: UUID = None,
+        tier: str = "user",
+        role: Role = Role.INSPECTOR,
+    ):
         if id is None:
             raise ValueError("The user id must be provided")
         client_model = Client(
@@ -727,14 +802,12 @@ class User(ClientController):
                 path=None,
             )
 
-            container_obj = ContainerController(
-                container_model = empty_model
-            )
+            container_obj = ContainerController(container_model=empty_model)
             container_obj.fetch_all_data(cursor)
-            #await container_obj.get_container_client(
+            # await container_obj.get_container_client(
             #    connection_str=connection_str, credentials=credentials
-            #)
-            #self.add_container(container_obj)
+            # )
+            # self.add_container(container_obj)
             self.model.containers[container_obj.model.id] = container_obj.model
         # Add the groups containers
         db_containers = container_db.get_user_group_containers(cursor, self.id)
@@ -750,15 +823,13 @@ class User(ClientController):
                 folders={},
                 path=None,
             )
-            container_obj = ContainerController(
-                container_model=empty_model
-            )
+            container_obj = ContainerController(container_model=empty_model)
             container_obj.fetch_all_data(cursor)
-            #await container_obj.get_container_client(
+            # await container_obj.get_container_client(
             #    connection_str=connection_str, credentials=credentials
-            #)
-            #self.add_container(container_obj)
-            self.model.containers[container_id]=container_obj.model
+            # )
+            # self.add_container(container_obj)
+            self.model.containers[container_id] = container_obj.model
 
 
 class Group(ClientController):
@@ -794,18 +865,22 @@ class Group(ClientController):
         )
         container_obj.add_group(cursor, self.id, user_id)
         return container_obj
-    
+
     def fetch_all_containers(self, cursor: Cursor):
         db_containers = container_db.get_group_containers(cursor, self.id)
         for container in db_containers:
             container_id = container[0]
-            container_obj = ContainerController(
-                id=container_id
-            )
+            container_obj = ContainerController(id=container_id)
             container_obj.fetch_all_data(cursor)
             self.model.containers[container_obj] = container_obj.model
 
-    def add_user(self, cursor: Cursor, user_id: UUID, performed_by: UUID,permission: Permission=Permission.READ):
+    def add_user(
+        self,
+        cursor: Cursor,
+        user_id: UUID,
+        performed_by: UUID,
+        permission: Permission = Permission.READ,
+    ):
         """
         This function adds a user to the group rights.
 
@@ -813,17 +888,25 @@ class Group(ClientController):
         - cursor: The cursor object to interact with the database.
         - user_id (str): The UUID of the user.
         """
-        
-        if not group.is_user_group_creator(cursor, performed_by, self.model.id) and not user.is_a_user_admin(cursor, performed_by):
-            raise ValueError("The user is not the creator of the group therefore does not have the right to manage its users")
+
+        if not group.is_user_group_creator(
+            cursor, performed_by, self.model.id
+        ) and not user.is_a_user_admin(cursor, performed_by):
+            raise ValueError(
+                "The user is not the creator of the group therefore does not have the right to manage its users"
+            )
         elif permission.value == Permission.OWNER.value and user_id == performed_by:
             # This should only be the case when it's the creator of the group which should be the owner
             pass
         elif permission.value == Permission.OWNER.value:
-            raise ValueError("The user does not have the right to assign the owner permission")
-        group.add_user_to_group(cursor, user_id, self.id, performed_by, permission.value)
+            raise ValueError(
+                "The user does not have the right to assign the owner permission"
+            )
+        group.add_user_to_group(
+            cursor, user_id, self.id, performed_by, permission.value
+        )
 
-    def remove_user(self, cursor: Cursor, user_id: UUID,performed_by: UUID):
+    def remove_user(self, cursor: Cursor, user_id: UUID, performed_by: UUID):
         """
         This function removes a user from the group rights.
 
@@ -831,8 +914,12 @@ class Group(ClientController):
         - cursor: The cursor object to interact with the database.
         - user_id (str): The UUID of the user.
         """
-        if not group.is_user_group_creator(cursor, performed_by, self.model.id) or not user.is_a_user_admin(cursor, performed_by):
-            raise ValueError("The user is not the creator of the group therefore does not have the right to manage its users")
+        if not group.is_user_group_creator(
+            cursor, performed_by, self.model.id
+        ) or not user.is_a_user_admin(cursor, performed_by):
+            raise ValueError(
+                "The user is not the creator of the group therefore does not have the right to manage its users"
+            )
         group.remove_user_from_group(cursor, user_id, self.id)
 
 
@@ -846,11 +933,17 @@ async def get_user(cursor: Cursor, email: str) -> User:
     """
     user_id = user.get_user_id(cursor, email)
     user_obj = User(email, user_id)
-    await user_obj.fetch_all_containers(cursor,None,None)
+    await user_obj.fetch_all_containers(cursor, None, None)
     return user_obj
 
 
-async def new_user(cursor: Cursor, email: str, connection_string, tier="user",role:Role = Role.INSPECTOR) -> User:
+async def new_user(
+    cursor: Cursor,
+    email: str,
+    connection_string,
+    tier="user",
+    role: Role = Role.INSPECTOR,
+) -> User:
     """
     Create a new user in the database and creates its personal container in the blob storage.
 
@@ -866,7 +959,7 @@ async def new_user(cursor: Cursor, email: str, connection_string, tier="user",ro
             raise UserAlreadyExistsError("User already exists")
         user_uuid = user.register_user(cursor, email, role.value)
         # Create the user object
-        user_obj = User(email = email, id=user_uuid, tier=tier,role=role)
+        user_obj = User(email=email, id=user_uuid, tier=tier, role=role)
         # Create the user container in the blob storage
         await user_obj.create_container(
             cursor=cursor,
@@ -885,7 +978,12 @@ async def new_user(cursor: Cursor, email: str, connection_string, tier="user",ro
         raise
 
 
-async def delete_user(cursor: Cursor, user_obj: User, connection_string: str= None, credentials: str = None):
+async def delete_user(
+    cursor: Cursor,
+    user_obj: User,
+    connection_string: str = None,
+    credentials: str = None,
+):
     """
     Delete a user from the database and the blob storage.
     If the user has containers, it will check if there wont be containers without owner.
@@ -900,7 +998,9 @@ async def delete_user(cursor: Cursor, user_obj: User, connection_string: str= No
     lonely_containers: List[Container] = []
     await user_obj.fetch_all_containers(cursor, connection_string, credentials)
     for container_model in user_obj.model.containers.values():
-        if container_db.has_user_sole_access_to_container(cursor, user_obj.id, container_model.id):
+        if container_db.has_user_sole_access_to_container(
+            cursor, user_obj.id, container_model.id
+        ):
             lonely_containers.append(container_model)
 
     if len(lonely_containers) > 0 and connection_string is not None:
@@ -911,7 +1011,7 @@ async def delete_user(cursor: Cursor, user_obj: User, connection_string: str= No
                 connection_str=connection_string, credentials=credentials
             )
             await delete_container(cursor, container_obj, user_obj.model)
-    elif len(lonely_containers) > 0 and connection_string is None :
+    elif len(lonely_containers) > 0 and connection_string is None:
         raise ValueError(
             "There are container that only this user has access to. Please provide the connection string and credentials to delete the containers"
         )
@@ -937,7 +1037,11 @@ async def get_group(cursor: Cursor, group_id: UUID) -> Group:
 
 
 async def create_group(
-    cursor: Cursor, group_name: str, user_id: UUID, connection_str: str, tier: str = "group"
+    cursor: Cursor,
+    group_name: str,
+    user_id: UUID,
+    connection_str: str,
+    tier: str = "group",
 ) -> Group:
     """
     Create a new group in the database
@@ -950,7 +1054,7 @@ async def create_group(
     """
     try:
         group_id = group.create_group(cursor, group_name, user_id)
-        group_obj = Group(name=group_name, id=group_id,tier=tier)
+        group_obj = Group(name=group_name, id=group_id, tier=tier)
         # Create the group container in the blob storage
         if connection_str is not None:
             await group_obj.create_container(
@@ -960,13 +1064,13 @@ async def create_group(
                 user_id=user_id,
                 is_public=False,
             )
-        group_obj.add_user(cursor, user_id, user_id,Permission.OWNER)
+        group_obj.add_user(cursor, user_id, user_id, Permission.OWNER)
         return group_obj
     except Exception as e:
         raise Exception("Datastore Unhandled Error " + str(e))
 
 
-async def delete_group(cursor: Cursor, group_obj: Group,user_id: UUID):
+async def delete_group(cursor: Cursor, group_obj: Group, user_id: UUID):
     """
     Delete a group from the database and the blob storage.
 
@@ -975,11 +1079,13 @@ async def delete_group(cursor: Cursor, group_obj: Group,user_id: UUID):
     - group_obj (Group): The group object to delete.
     """
     # We do not need to check if the group leaves containers without owner
-    # because the container owner is always a single user so even if the group is deleted, 
+    # because the container owner is always a single user so even if the group is deleted,
     # the user should still have access to the container
     if not user.is_a_user_admin(cursor, user_id):
         if not group.is_user_group_creator(cursor, user_id, group_obj.id):
-            raise PermissionNotHighEnough("The user is not the creator of the group therefore does not have the right to delete it")
+            raise PermissionNotHighEnough(
+                "The user is not the creator of the group therefore does not have the right to delete it"
+            )
     group.delete_group(cursor, group_obj.get_id())
     group_obj.model = None
     group_obj.id = None
@@ -1016,13 +1122,13 @@ async def create_container(
         storage_prefix=storage_prefix,
         group_ids=[],
         user_ids=[],
-        folders= {},
-        path=azure_storage.build_container_name(str(container_id), storage_prefix)
+        folders={},
+        path=azure_storage.build_container_name(str(container_id), storage_prefix),
     )
     container_obj = ContainerController(container_model=container_model)
     await container_obj.create_storage(connection_str=connection_str, credentials=None)
     if add_user_to_storage:
-        container_obj.add_user(cursor, user_id, user_id,Permission.OWNER)
+        container_obj.add_user(cursor, user_id, user_id, Permission.OWNER)
         await container_obj.create_folder(
             cursor=cursor, performed_by=user_id, folder_name="General", nb_pictures=0
         )
@@ -1039,9 +1145,9 @@ async def get_container_controller(
     if container_db.is_a_container(cursor, container_id):
         temp_model = Container(id=container_id)
         container_obj = ContainerController(temp_model)
-        
+
         container_obj.fetch_all_data(cursor)
-        
+
         await container_obj.get_container_client(
             connection_str=connection_str, credentials=credentials
         )
@@ -1050,7 +1156,9 @@ async def get_container_controller(
         raise ContainerCreationError("Error: container does not exist")
 
 
-async def delete_container(cursor: Cursor, container_controller: ContainerController, client_model: Client):
+async def delete_container(
+    cursor: Cursor, container_controller: ContainerController, client_model: Client
+):
     """
     This function deletes a container from the database and the blob storage.
 
@@ -1060,18 +1168,26 @@ async def delete_container(cursor: Cursor, container_controller: ContainerContro
     - client_obj (Client): The client object (Can be a User or Group) that is the owner of the container.
     """
     # Check if the container client is set
-    if container_controller.container_client is None or not container_controller.container_client.exists():
+    if (
+        container_controller.container_client is None
+        or not container_controller.container_client.exists()
+    ):
         raise ValueError(
             "The container client must be set before deleting a container.\n Use 'get_container_client()' to set the container client."
         )
-    #TODO : Check if the user is the owner of the container
+    # TODO : Check if the user is the owner of the container
     # Check if the user has access to the container
-    if not container_db.has_user_access_to_container(cursor, client_model.id, container_controller.id):
+    if not container_db.has_user_access_to_container(
+        cursor, client_model.id, container_controller.id
+    ):
         raise UserNotOwnerError(
             f"User can't access this Container, user uuid :{client_model.id}, Container id : {container_controller.id}"
         )
     # Delete the container
-    if container_controller.container_client is None or not container_controller.container_client.exists():
+    if (
+        container_controller.container_client is None
+        or not container_controller.container_client.exists()
+    ):
         raise ValueError(
             "The container client must be set before deleting a container.\n Use 'get_container_client()' to set the container client."
         )
