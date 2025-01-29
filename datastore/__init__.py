@@ -3,7 +3,6 @@ This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
-import datetime
 from enum import Enum
 import datastore.db.queries.user as user
 import datastore.db.queries.group as group
@@ -953,7 +952,6 @@ async def new_user(
     - connection_string: The connection string to connect with the Azure storage account
     """
     try:
-        start_time = datetime.datetime.now()
         # Register the user in the database
         if user.is_user_registered(cursor, email):
             raise UserAlreadyExistsError("User already exists")

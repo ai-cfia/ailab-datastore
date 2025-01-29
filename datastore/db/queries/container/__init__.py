@@ -194,7 +194,7 @@ def get_group_permission_to_container(
             WHERE
                 group_id = %s AND container_id = %s;
             """
-        cursor.execute(group_id, container_id)
+        cursor.execute(query,(group_id, container_id),)
         return cursor.fetchone()[0]
     except Exception as e:
         raise ContainerUserNotFoundError(
