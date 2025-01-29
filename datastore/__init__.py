@@ -3,6 +3,7 @@ This module is responsible for handling the user data in the database
 and the user container in the blob storage.
 """
 
+import datetime
 from enum import Enum
 import datastore.db.queries.user as user
 import datastore.db.queries.group as group
@@ -44,6 +45,9 @@ class ContainerCreationError(Exception):
 class FolderCreationError(Exception):
     pass
 
+class PermissionNotHighEnough(Exception):
+    pass
+
 
 class Folder(BaseModel):
     id: UUID
@@ -64,9 +68,9 @@ class Container(BaseModel):
     path: Optional[str] = None
 
 class Permission(Enum):
-    READ = 1
-    WRITE = 2
-    OWNER = 3
+    READ:int = 1
+    WRITE:int = 2
+    OWNER:int = 3
 
 
 class ContainerController:
@@ -89,7 +93,12 @@ class ContainerController:
         if user.is_a_user_admin(cursor, user_id):
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            return container_db.get_user_permission_to_container(cursor, user_id, self.id) == Permission.OWNER
+            perm = container_db.get_user_permission_to_container(cursor, user_id, self.id)
+            return perm == Permission.OWNER.value
+        elif container_db.get_container_creator(cursor, self.id) == user_id:
+            # This is to allow the creator of the container to self set his owner permission
+            return True
+        return False
 
     def __verify_user_can_write(self, cursor: Cursor, user_id: UUID) ->bool:
         """
@@ -100,11 +109,11 @@ class ContainerController:
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
             perm = container_db.get_user_permission_to_container(cursor, user_id, self.id) 
-            if perm >= Permission.WRITE:
+            if Permission.WRITE.value <= perm:
                 return True
         if container_db.has_user_group_access_to_container(cursor,user_id,self.id):
             perm = container_db.get_group_permission_to_container(cursor, user_id, self.id)
-            if perm >= Permission.WRITE:
+            if Permission.WRITE.value <= perm:
                 return True
         return False
     
@@ -116,11 +125,11 @@ class ContainerController:
             return True
         elif container_db.has_user_access_to_container(cursor, user_id, self.id):
             perm = container_db.get_user_permission_to_container(cursor, user_id, self.id) 
-            if perm >= Permission.READ:
+            if perm >= Permission.READ.value:
                 return True
         if container_db.has_user_group_access_to_container(cursor,user_id,self.id):
             perm = container_db.get_group_permission_to_container(cursor, user_id, self.id)
-            if perm >= Permission.READ:
+            if perm >= Permission.READ.value:
                 return True
         return False
     
@@ -405,7 +414,6 @@ class ContainerController:
             raise ContainerCreationError(
                 "Error: container client does not exist or not set, please set the container client first"
             )
-        # TODO : Check the user container permission if he has at least write permission
         if not self.__verify_user_can_write(cursor, user_id):
             raise ValueError("The user does not have the permission to upload pictures in the container: " + str(self.id))
         # Create a folder if not provided
@@ -805,14 +813,15 @@ class Group(ClientController):
         - cursor: The cursor object to interact with the database.
         - user_id (str): The UUID of the user.
         """
-        if not group.is_user_group_creator(cursor, performed_by, self.model.id) or not user.is_a_user_admin(cursor, performed_by):
+        
+        if not group.is_user_group_creator(cursor, performed_by, self.model.id) and not user.is_a_user_admin(cursor, performed_by):
             raise ValueError("The user is not the creator of the group therefore does not have the right to manage its users")
-        if permission == Permission.OWNER and user_id == performed_by:
+        elif permission.value == Permission.OWNER.value and user_id == performed_by:
             # This should only be the case when it's the creator of the group which should be the owner
             pass
-        elif permission == Permission.OWNER:
+        elif permission.value == Permission.OWNER.value:
             raise ValueError("The user does not have the right to assign the owner permission")
-        group.add_user_to_group(cursor, user_id, self.id, performed_by, permission)
+        group.add_user_to_group(cursor, user_id, self.id, performed_by, permission.value)
 
     def remove_user(self, cursor: Cursor, user_id: UUID,performed_by: UUID):
         """
@@ -851,6 +860,7 @@ async def new_user(cursor: Cursor, email: str, connection_string, tier="user",ro
     - connection_string: The connection string to connect with the Azure storage account
     """
     try:
+        start_time = datetime.datetime.now()
         # Register the user in the database
         if user.is_user_registered(cursor, email):
             raise UserAlreadyExistsError("User already exists")
@@ -956,7 +966,7 @@ async def create_group(
         raise Exception("Datastore Unhandled Error " + str(e))
 
 
-async def delete_group(cursor: Cursor, group_obj: Group):
+async def delete_group(cursor: Cursor, group_obj: Group,user_id: UUID):
     """
     Delete a group from the database and the blob storage.
 
@@ -967,6 +977,9 @@ async def delete_group(cursor: Cursor, group_obj: Group):
     # We do not need to check if the group leaves containers without owner
     # because the container owner is always a single user so even if the group is deleted, 
     # the user should still have access to the container
+    if not user.is_a_user_admin(cursor, user_id):
+        if not group.is_user_group_creator(cursor, user_id, group_obj.id):
+            raise PermissionNotHighEnough("The user is not the creator of the group therefore does not have the right to delete it")
     group.delete_group(cursor, group_obj.get_id())
     group_obj.model = None
     group_obj.id = None
@@ -1007,13 +1020,12 @@ async def create_container(
         path=azure_storage.build_container_name(str(container_id), storage_prefix)
     )
     container_obj = ContainerController(container_model=container_model)
-    
     await container_obj.create_storage(connection_str=connection_str, credentials=None)
     if add_user_to_storage:
         container_obj.add_user(cursor, user_id, user_id,Permission.OWNER)
-    await container_obj.create_folder(
-        cursor=cursor, performed_by=user_id, folder_name="General", nb_pictures=0
-    )
+        await container_obj.create_folder(
+            cursor=cursor, performed_by=user_id, folder_name="General", nb_pictures=0
+        )
     return container_obj
 
 

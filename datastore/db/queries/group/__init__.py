@@ -66,7 +66,7 @@ def add_user_to_group(
             INSERT INTO  
                 user_group (group_id,user_id,assigned_by_id,permission_id)
             VALUES
-                (%s,%s,%s)
+                (%s,%s,%s,%s)
             ON CONFLICT (group_id,user_id)
                 DO UPDATE SET permission_id = %s
             RETURNING id;
@@ -75,11 +75,9 @@ def add_user_to_group(
             query,
             (group_id, user_id, assigned_by_id, permission_id,permission_id),
         )
-        if cursor.fetchone() is None:
+        res = cursor.fetchone()[0]
+        if res is None:
             raise GroupAssignmentError
-        else:
-            if not is_valid_uuid(group_id):
-                raise GroupAssignmentError
     except GroupAssignmentError:
         raise GroupAssignmentError(
             f"Error: user {user_id} not added to group {group_id}"
