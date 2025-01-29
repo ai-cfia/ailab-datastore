@@ -34,9 +34,9 @@ def build_picture(
     )
 
     meta_data = validator.Metadata(upload_date=date.today())
-
-    pic_properties = get_image_properties(pic_encoded)
-
+    #TODO : Fix
+    #pic_properties = get_image_properties(pic_encoded)
+    pic_properties = [None,None,None]
     image_metadata = validator.ImageData(
         format=pic_properties[2],
         height=pic_properties[1],

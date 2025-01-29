@@ -868,6 +868,7 @@ async def delete_picture_set_with_archive(
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
+        dev_container_client = None
         # TODO: FIX
         # dev_container_client = await get_user_container_client(
         #    dev_user_id, NACHET_STORAGE_URL, NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY
