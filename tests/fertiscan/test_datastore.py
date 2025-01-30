@@ -9,6 +9,7 @@ import json
 import os
 import unittest
 
+from dotenv import load_dotenv
 from PIL import Image
 
 import datastore
@@ -17,7 +18,16 @@ import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
-from fertiscan.db.queries import inspection, label, metric, nutrients, sub_label,ingredient
+from fertiscan.db.queries import (
+    ingredient,
+    inspection,
+    label,
+    metric,
+    nutrients,
+    sub_label,
+)
+
+load_dotenv()
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
 if BLOB_CONNECTION_STRING is None or BLOB_CONNECTION_STRING == "":
@@ -92,6 +102,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.tier,
             )
         )
+        # blob_service_client = BlobServiceClient.from_connection_string(
+        #     BLOB_CONNECTION_STRING
+        # )
+        # self.container_client = blob_service_client.create_container(
+        #     build_container_name(str(self.user.id), self.tier)
+        # )
+
+        assert self.container_client.exists()
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
@@ -134,7 +152,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         ) + len(self.analysis_json.get("guaranteed_analysis_fr").get("nutrients"))
 
         self.nb_ingredients = len(self.analysis_json.get("ingredients_en")) + len(
-        self.analysis_json.get("ingredients_fr")
+            self.analysis_json.get("ingredients_fr")
         )
 
         # self.nb_micronutrients = len(self.analysis_json.get("micronutrients_en")) + len(
@@ -179,7 +197,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis["product"]["label_id"]))
+        ingredients = ingredient.get_ingredient_json(
+            self.cursor, str(analysis["product"]["label_id"])
+        )
         print(ingredients)
 
         # specifications = specification.get_all_specifications(
@@ -248,14 +268,22 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_register_analysis_empty(self):
         empty_analysis = {
-            "company_name": None,
-            "company_address": None,
-            "company_website": None,
-            "company_phone_number": None,
-            "manufacturer_name": None,
-            "manufacturer_address": None,
-            "manufacturer_website": "test-website-to-trigger-adress-not-null-test-case",
-            "manufacturer_phone_number": None,
+            "organizations": [
+            {
+                "name": None,
+                "address": None,
+                "website": None,
+                "phone_number": None,
+                "type": "company",
+            },
+            {
+                "name": None,
+                "address": None,
+                "website": "test-website-to-trigger-adress-not-null-test-case",
+                "phone_number": None,
+                "type": "manufacturer",
+            },
+            ],
             "fertiliser_name": None,
             "registration_number": [],
             "lot_number": None,
@@ -270,9 +298,13 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "guaranteed_analysis_is_minimal": False,
             "guaranteed_analysis_en": {"title": None, "nutrients": []},
             "guaranteed_analysis_fr": {"title": None, "nutrients": []},
+            "ingredients_en": [],
+            "ingredients_fr": [],
         }
 
-        formatted_analysis = metadata.build_inspection_import(empty_analysis,self.user.id)
+        formatted_analysis = metadata.build_inspection_import(
+            empty_analysis, self.user.id
+        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -290,9 +322,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(label_data[11])
 
         # Verify getters
-        inspection_data = metadata.build_inspection_export(
-            self.cursor, inspection_id
-        )
+        inspection_data = metadata.build_inspection_export(self.cursor, inspection_id)
         inspection_data = json.loads(inspection_data)
         # TODO: investigate if this should pass and why it doesn't
         # Make sure the inspection data is either a empty array or None
@@ -324,7 +354,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
 
     def test_get_full_inspection_json(self):
-        formatted_analysis = metadata.build_inspection_import(self.analysis_json, self.user.id)
+        formatted_analysis = metadata.build_inspection_import(
+            self.analysis_json, self.user.id
+        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
@@ -439,7 +471,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         old_name = analysis["guaranteed_analysis"]["fr"][0]["name"]
         new_name = "Nouveau nom"
         user_feedback = "This is a feedback"
-        new_record_keeping= True
+        new_record_keeping = True
         # new_specification_en = [
         #     {"humidity": new_value, "ph": 6.5, "solubility": 100, "edited": True}
         # ]

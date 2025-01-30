@@ -80,11 +80,11 @@ participant in as inspection_Table
 end
 
 links cli: {"instruction": "","caution": "","first_aid": "","warrantie": "","specification": "","ingredient": "","micronutrients": "","guaranteed_analysis": "","metrics": "","organization_information": ""}
-    
+
 box pink OLAP
 participant ld as label_Dimension
 participant if as inspection_Factual
-end 
+end
 c ->> db: update label_id children
 db ->> cli: call update f() of table
 activate cli
@@ -141,7 +141,7 @@ follows:
     },
     "warranty": "Guaranteed analysis of nutrients.",
     "lot_number": "L987654321",
-    "registration_number": "F12345678"
+    "registration_number": "1234567A"
   },
   "cautions": {
     "en": [

@@ -5,9 +5,17 @@ The metadata is generated in a json format and is used to store the metadata in 
 """
 
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
-from pydantic import UUID4, BaseModel, ValidationError, model_validator
+from pydantic import (
+    UUID4,
+    AliasChoices,
+    BaseModel,
+    Field,
+    ValidationError,
+    model_validator,
+)
 
 from fertiscan.db.metadata.errors import (
     BuildInspectionExportError,
@@ -16,14 +24,14 @@ from fertiscan.db.metadata.errors import (
     NPKError,
 )
 from fertiscan.db.queries import (
+    ingredient,
     inspection,
     label,
     metric,
     nutrients,
     organization,
-    sub_label,
     registration_number,
-    ingredient,
+    sub_label,
 )
 from fertiscan.db.queries.errors import QueryError
 
@@ -47,7 +55,7 @@ class OrganizationInformation(ValidatedModel):
 class Value(ValidatedModel):
     value: Optional[float] = None
     unit: Optional[str] = None
-    name: Optional[str] = None
+    name: str | None = Field(None, validation_alias=AliasChoices("name", "nutrient"))
     edited: Optional[bool] = False
 
 
@@ -118,8 +126,8 @@ class Specifications(ValidatedModel):
     fr: List[Specification]
 
 
-# Awkwardly named so to avoid name conflict this represents the inspection object in the database 
-# and not the inspection object used as a form on the application 
+# Awkwardly named so to avoid name conflict this represents the inspection object in the database
+# and not the inspection object used as a form on the application
 class DBInspection(ValidatedModel):
     id: UUID4
     verified: bool = False
@@ -147,6 +155,43 @@ class Inspection(ValidatedModel):
     ingredients: ValuesObjects
 
 
+class RegistrationType(str, Enum):
+    INGREDIENT = "ingredient_component"
+    FERTILIZER = "fertilizer_product"
+
+
+class PipelineRegistrationNumber(BaseModel):
+    identifier: str | None = Field(None, pattern=r"^\d{7}[A-Z]$")
+    type: RegistrationType | None = None
+
+
+class PipelineGuaranteedAnalysis(BaseModel):
+    title: str | None = None
+    nutrients: list[Value] | None = []
+    is_minimal: bool | None = None
+
+
+class LabelData(BaseModel):
+    organizations: list[OrganizationInformation] | None
+    fertilizer_name: str | None = Field(
+        ..., validation_alias=AliasChoices("fertilizer_name", "fertiliser_name")
+    )
+    registration_number: list[PipelineRegistrationNumber]
+    lot_number: str | None
+    weight: list[Metric] | None
+    density: Metric | None
+    volume: Metric | None
+    npk: str | None
+    guaranteed_analysis_en: PipelineGuaranteedAnalysis | None
+    guaranteed_analysis_fr: PipelineGuaranteedAnalysis | None
+    cautions_en: list[str] | None
+    cautions_fr: list[str] | None
+    instructions_en: list[str] | None
+    instructions_fr: list[str] | None
+    ingredients_en: list[Value] | None
+    ingredients_fr: list[Value] | None
+
+
 def build_inspection_import(analysis_form: dict, user_id) -> str:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
@@ -159,88 +204,33 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
     - The inspection db object in a string format.
     """
     try:
-        requiered_keys = [
-            "company_name",
-            "company_address",
-            "company_website",
-            "company_phone_number",
-            "manufacturer_name",
-            "manufacturer_address",
-            "manufacturer_website",
-            "manufacturer_phone_number",
-            "fertiliser_name",
-            "registration_number",
-            "lot_number",
-            "weight",
-            "density",
-            "volume",
-            "npk",
-            "cautions_en",
-            "instructions_en",
-            "cautions_fr",
-            "instructions_fr",
-            "guaranteed_analysis_fr",
-            "guaranteed_analysis_en",
-        ]
-        missing_keys = []
-        for key in requiered_keys:
-            if key not in analysis_form:
-                missing_keys.append(key)
-        if len(missing_keys) > 0:
-            raise BuildInspectionImportError(
-                f"The analysis form is missing keys: {missing_keys}"
-            )
+        labelData = LabelData.model_validate(analysis_form)
 
-        npk = extract_npk(analysis_form.get("npk"))
+        npk = extract_npk(labelData.npk)
 
-        company = OrganizationInformation(
-            name=analysis_form.get("company_name"),
-            address=analysis_form.get("company_address"),
-            website=analysis_form.get("company_website"),
-            phone_number=analysis_form.get("company_phone_number"),
-        )
-        manufacturer = OrganizationInformation(
-            name=analysis_form.get("manufacturer_name"),
-            address=analysis_form.get("manufacturer_address"),
-            website=analysis_form.get("manufacturer_website"),
-            phone_number=analysis_form.get("manufacturer_phone_number"),
+        company = labelData.organizations[0]
+        manufacturer = labelData.organizations[1]
+
+        metrics = Metrics(
+            weight=labelData.weight, volume=labelData.volume, density=labelData.density
         )
 
-        weights: list[Metric] = [
-            Metric(
-                unit=weight.get("unit"),
-                value=weight.get("value"),
+        reg_numbers = [
+            RegistrationNumber(
+                registration_number=r.identifier,
+                is_an_ingredient=(r.type == RegistrationType.INGREDIENT),
             )
-            for weight in analysis_form.get("weight", [])
+            for r in labelData.registration_number
         ]
-
-        volume_obj = Metric()
-        if volume := analysis_form.get("volume"):
-            volume_obj = Metric(unit=volume.get("unit"), value=volume.get("value"))
-
-        density_obj = Metric()
-        if density := analysis_form.get("density"):
-            density_obj = Metric(unit=density.get("unit"), value=density.get("value"))
-
-        metrics = Metrics(weight=weights, volume=volume_obj, density=density_obj)
-
-        reg_numbers = []
-        for reg_number in analysis_form.get("registration_number", []):
-            reg_numbers.append(
-                RegistrationNumber(
-                    registration_number=reg_number.get("identifier"),
-                    is_an_ingredient=(reg_number.get("type") == "Ingredient"),
-                )
-            )
 
         # record keeping is set as null since the pipeline cant output a value yet
         product = ProductInformation(
-            name=analysis_form.get("fertiliser_name"),
-            lot_number=analysis_form.get("lot_number"),
+            name=labelData.fertilizer_name,
+            lot_number=labelData.lot_number,
             metrics=metrics,
             registration_numbers=reg_numbers,
-            npk=analysis_form.get("npk"),
-            warranty=analysis_form.get("warranty"),
+            npk=labelData.npk,
+            warranty=None,
             n=npk[0],
             p=npk[1],
             k=npk[2],
@@ -248,15 +238,14 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
             record_keeping=None,
         )
 
-
         cautions = SubLabel(
-            en=analysis_form.get("cautions_en", []),
-            fr=analysis_form.get("cautions_fr", []),
+            en=labelData.cautions_en,
+            fr=labelData.cautions_fr,
         )
 
         instructions = SubLabel(
-            en=analysis_form.get("instructions_en", []),
-            fr=analysis_form.get("instructions_fr", []),
+            en=labelData.instructions_en,
+            fr=labelData.instructions_fr,
         )
 
         # Commented and kept as reference for future implementation, but not used at the moment
@@ -278,23 +267,9 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
         # ]
         # micronutrients = ValuesObjects(en=micro_en, fr=micro_fr)
 
-        ingredients_en: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_en", [])
-        ]
-        ingredients_fr: list[Value] = [
-            Value(
-                unit=ingredient.get("unit") or None,
-                value=ingredient.get("value") or None,
-                name=ingredient.get("nutrient"),
-            )
-            for ingredient in analysis_form.get("ingredients_fr", [])
-        ]
-        ingredients = ValuesObjects(en=ingredients_en, fr=ingredients_fr)
+        ingredients = ValuesObjects(
+            en=labelData.ingredients_en, fr=labelData.ingredients_fr
+        )
 
         # specifications = Specifications(
         #     en=[
@@ -314,37 +289,15 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
         #     fr=analysis_form.get("first_aid_fr", []),
         # )
 
-        guaranteed_fr: list[Value] = [
-            Value(
-                unit=item.get("unit") or None,
-                value=item.get("value") or None,
-                name=item.get("nutrient"),
-            )
-            for item in analysis_form.get("guaranteed_analysis_fr", []).get(
-                "nutrients", []
-            )
-        ]
-
-        guaranteed_en: list[Value] = [
-            Value(
-                unit=item.get("unit") or None,
-                value=item.get("value") or None,
-                name=item.get("nutrient"),
-            )
-            for item in analysis_form.get("guaranteed_analysis_en", []).get(
-                "nutrients", []
-            )
-        ]
-
         guaranteed = GuaranteedAnalysis(
             title=Title(
-                en=analysis_form.get("guaranteed_analysis_en", {}).get("title"),
-                fr=analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
+                en=labelData.guaranteed_analysis_en.title,
+                fr=labelData.guaranteed_analysis_fr.title,
             ),
-            # is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
-            is_minimal=None,  # Not processed yet by the pipeline
-            en=guaranteed_en,
-            fr=guaranteed_fr,
+            is_minimal=labelData.guaranteed_analysis_en.is_minimal
+            or labelData.guaranteed_analysis_fr.is_minimal,
+            en=labelData.guaranteed_analysis_en.nutrients,
+            fr=labelData.guaranteed_analysis_fr.nutrients,
         )
 
         inspection_formatted = Inspection(
@@ -393,7 +346,6 @@ def build_inspection_export(cursor, inspection_id) -> str:
         )
         reg_number_model_list = []
         for reg_number in reg_numbers["registration_numbers"]:
-            
             reg_number_model_list.append(RegistrationNumber.model_validate(reg_number))
         product_info.registration_numbers = reg_number_model_list
 
