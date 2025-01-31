@@ -80,7 +80,7 @@ class TestInspectionExport(unittest.TestCase):
         print(data["organizations"])
         self.assertListEqual(inspection_dict["organizations"], data["organizations"])
         ## self.assertDictEqual(inspection_dict["micronutrients"], data["micronutrients"])
-        ## self.assertDictEqual(inspection_dict["ingredients"], data["ingredients"])
+        self.assertDictEqual(inspection_dict["ingredients"], data["ingredients"])
         ## self.assertDictEqual(inspection_dict["specifications"], data["specifications"])
         ## self.assertDictEqual(inspection_dict["first_aid"], data["first_aid"])
         self.assertListEqual(
@@ -290,34 +290,28 @@ class TestInspectionExport(unittest.TestCase):
     # self.assertListEqual(data["specifications"]["fr"], [])
     # self.assertListEqual(data["specifications"]["en"], [])
 
-    # def test_missing_ingredients(self):
-    #     self.analyse["ingredients_en"] = []
-    #     self.analyse["ingredients_fr"] = []
-    #     formatted_analysis = metadata.build_inspection_import(self.analyse)
-
-    #     # print(formatted_analysis)
-    #     inspection_dict = inspection.new_inspection_with_label_info(
-    #         self.cursor, self.user_id, self.picture_set_id, formatted_analysis
-    #     )
-    #     inspection_id = inspection_dict["inspection_id"]
-
-    #     label_information_id = inspection_dict["product"]["label_id"]
-
-    #     if inspection_id is None:
-    #         self.fail("Inspection not created")
-    #     data = metadata.build_inspection_export(
-    #         self.cursor, str(inspection_id), label_information_id
-    #     )
-    #     data = json.loads(data)
-    #     self.assertIsNotNone(data["inspection_id"])
-    #     self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
-    #     self.assertEqual(inspection_dict["verified"], data["verified"])
-
-    #     self.assertIsNotNone(data["ingredients"])
-    #     self.assertIsNotNone(data["ingredients"]["en"])
-    #     self.assertIsNotNone(data["ingredients"]["fr"])
-    #     self.assertListEqual(data["ingredients"]["fr"], [])
-    #     self.assertListEqual(data["ingredients"]["en"], [])
+    def test_missing_ingredients(self):
+        self.analyse["ingredients_en"] = []
+        self.analyse["ingredients_fr"] = []
+        formatted_analysis = metadata.build_inspection_import(self.analyse, self.user_id)
+        inspection_dict = inspection.new_inspection_with_label_info(
+            self.cursor, self.user_id, self.picture_set_id, formatted_analysis
+        )
+        inspection_id = inspection_dict["inspection_id"]
+        if inspection_id is None:
+            self.fail("Inspection not created")
+        data = metadata.build_inspection_export(
+            self.cursor, str(inspection_id)
+        )
+        data = json.loads(data)
+        self.assertIsNotNone(data["inspection_id"])
+        self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
+        self.assertEqual(inspection_dict["verified"], data["verified"])
+        self.assertIsNotNone(data["ingredients"])
+        self.assertIsNotNone(data["ingredients"]["en"])
+        self.assertIsNotNone(data["ingredients"]["fr"])
+        self.assertListEqual(data["ingredients"]["fr"], [])
+        self.assertListEqual(data["ingredients"]["en"], [])
 
     # def test_missing_micronutrients(self):
     # self.analyse["micronutrients_en"] = []
