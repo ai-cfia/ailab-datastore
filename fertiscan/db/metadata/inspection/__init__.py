@@ -16,14 +16,14 @@ from fertiscan.db.metadata.errors import (
     NPKError,
 )
 from fertiscan.db.queries import (
+    ingredient,
     inspection,
     label,
     metric,
     nutrients,
     organization,
-    sub_label,
     registration_number,
-    ingredient,
+    sub_label,
 )
 from fertiscan.db.queries.errors import QueryError
 
@@ -144,7 +144,6 @@ class Inspection(ValidatedModel):
     cautions: SubLabel
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
-    registration_numbers: Optional[List[RegistrationNumber]] = []
     ingredients: ValuesObjects
 
 
@@ -386,7 +385,6 @@ def build_inspection_export(cursor, inspection_id) -> str:
         )
         reg_number_model_list = []
         for reg_number in reg_numbers["registration_numbers"]:
-
             reg_number_model_list.append(RegistrationNumber.model_validate(reg_number))
         product_info.registration_numbers = reg_number_model_list
 
@@ -411,6 +409,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
         # Get the ingredients but if the fertilizer is record keeping, the ingredients are not displayed
         if not product_info.record_keeping:
             ingredients = ingredient.get_ingredient_json(cursor, label_info_id)
+            ingredients = ValuesObjects.model_validate(ingredients["ingredients"])
         else:
             ingredients = ValuesObjects(en=[], fr=[])
 
@@ -428,7 +427,6 @@ def build_inspection_export(cursor, inspection_id) -> str:
             instructions=instructions,
             product=product_info,
             verified=db_inspection.verified,
-            registration_numbers=reg_number_model_list,
             ingredients=ingredients,
         )
 
