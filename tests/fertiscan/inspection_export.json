@@ -1,205 +1,207 @@
 {
-    "inspection_id": "61c93c2f-78ae-4f90-be3c-fc888087bfb9",
-    "inspection_comment": "",
-    "verified": false,
-    "organizations": [
+  "inspection_id": "61c93c2f-78ae-4f90-be3c-fc888087bfb9",
+  "inspection_comment": "",
+  "verified": false,
+  "organizations": [
+    {
+      "id": "dbd48ad7-3d3d-4b93-affc-55a427f11331",
+      "name": "GreenGrow Fertilizers Inc.",
+      "address": "123 Greenway Blvd, Springfield IL 62701 USA",
+      "website": "www.greengrowfertilizers.com",
+      "phone_number": "+1 800 555 0199",
+      "edited": false,
+      "is_main_contact": true
+    },
+    {
+      "id": "fb3b5366-0bc0-49a3-9f2b-1c860a337b8c",
+      "name": "AgroTech Industries Ltd.",
+      "address": "456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
+      "website": "www.agrotechindustries.com",
+      "phone_number": "+1 416 555 0123",
+      "edited": false,
+      "is_main_contact": false
+    }
+  ],
+  "product": {
+    "name": "SuperGrow 20-20-20",
+    "label_id": "cdca3638-a3c0-45df-8c72-74e28a8740c6",
+    "registration_numbers": [
       {
-          "id": "dbd48ad7-3d3d-4b93-affc-55a427f11331",
-          "name": "GreenGrow Fertilizers Inc.",
-          "address": "123 Greenway Blvd, Springfield IL 62701 USA",
-          "website": "www.greengrowfertilizers.com",
-          "phone_number": "+1 800 555 0199",
-          "edited": false,
-          "is_main_contact": true
-      },
-      {
-          "id": "fb3b5366-0bc0-49a3-9f2b-1c860a337b8c",
-          "name": "AgroTech Industries Ltd.",
-          "address": "456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
-          "website": "www.agrotechindustries.com",
-          "phone_number": "+1 416 555 0123",
-          "edited": false,
-          "is_main_contact": false
+        "registration_number": "F12345678",
+        "is_an_ingredient": false,
+        "edited": false
       }
     ],
-    "product": {
-        "name": "SuperGrow 20-20-20",
-        "label_id": "cdca3638-a3c0-45df-8c72-74e28a8740c6",
-        "registration_numbers": [{
-            "registration_number": "F12345678",
-            "is_an_ingredient": false,
-            "edited": false
-        }],
-        "lot_number": "L987654321",
-        "metrics": {
-            "weight": [
-                {
-                    "value": 25.0,
-                    "unit": "kg",
-                    "edited": false
-                },
-                {
-                    "value": 55.0,
-                    "unit": "lb",
-                    "edited": false
-                }
-            ],
-            "volume": {
-                "value": 20.8,
-                "unit": "L",
-                "edited": false
-            },
-            "density": {
-                "value": 1.2,
-                "unit": "g/cm",
-                "edited": false
-            }
+    "lot_number": "L987654321",
+    "metrics": {
+      "weight": [
+        {
+          "value": 25.0,
+          "unit": "kg",
+          "edited": false
         },
-        "npk": "20-20-20",
-        "n": 20.0,
-        "p": 20.0,
-        "k": 20.0,
-        "record_keeping": null
+        {
+          "value": 55.0,
+          "unit": "lb",
+          "edited": false
+        }
+      ],
+      "volume": {
+        "value": 20.8,
+        "unit": "L",
+        "edited": false
+      },
+      "density": {
+        "value": 1.2,
+        "unit": "g/cm",
+        "edited": false
+      }
     },
-    "ingredients": {
-        "en" : [
-            {
-              "nutrient":"Bone meal",
-              "value":5.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Seaweed extract",
-              "value":3.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Humic acid",
-              "value":2.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Clay",
-              "value": null,
-              "unit": null,
-              "edited": false
-            },
-            {
-              "nutrient":"Sand",
-              "value": null,
-              "unit": null,
-              "edited": false
-            },
-            {
-              "nutrient":"Perlite",
-              "value": null,
-              "unit": null,
-              "edited": false
-            }
-         ],
-        "fr": [
-            {
-              "nutrient":"Farine d'os",
-              "value":5.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Extrait d'algues",
-              "value":3.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Acide humique",
-              "value":2.0,
-              "unit":"%",
-              "edited": false
-            },
-            {
-              "nutrient":"Argile",
-              "value": null,
-              "unit": null,
-              "edited": false
-            },
-            {
-              "nutrient":"Sable",
-              "value": null,
-              "unit": null,
-              "edited": false
-            },
-            {
-              "nutrient":"Perlite",
-              "value": null,
-              "unit": null,
-              "edited": false
-            }
-        ]
+    "npk": "20-20-20",
+    "n": 20.0,
+    "p": 20.0,
+    "k": 20.0,
+    "record_keeping": null
+  },
+  "ingredients": {
+    "en": [
+      {
+        "nutrient": "Bone meal",
+        "value": 5.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Seaweed extract",
+        "value": 3.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Humic acid",
+        "value": 2.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Clay",
+        "value": null,
+        "unit": null,
+        "edited": false
+      },
+      {
+        "nutrient": "Sand",
+        "value": null,
+        "unit": null,
+        "edited": false
+      },
+      {
+        "nutrient": "Perlite",
+        "value": null,
+        "unit": null,
+        "edited": false
+      }
+    ],
+    "fr": [
+      {
+        "nutrient": "Farine d'os",
+        "value": 5.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Extrait d'algues",
+        "value": 3.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Acide humique",
+        "value": 2.0,
+        "unit": "%",
+        "edited": false
+      },
+      {
+        "nutrient": "Argile",
+        "value": null,
+        "unit": null,
+        "edited": false
+      },
+      {
+        "nutrient": "Sable",
+        "value": null,
+        "unit": null,
+        "edited": false
+      },
+      {
+        "nutrient": "Perlite",
+        "value": null,
+        "unit": null,
+        "edited": false
+      }
+    ]
+  },
+  "cautions": {
+    "en": [
+      "Avoid contact with skin and eyes.",
+      "Keep out of reach of children."
+    ],
+    "fr": [
+      "\u00c9viter le contact avec la peau et les yeux.",
+      "Tenir hors de port\u00e9e des enfants."
+    ]
+  },
+  "instructions": {
+    "en": [
+      "3. Store in a cool, dry place.",
+      "2. Apply every 2 weeks.",
+      "1. Dissolve 50g in 10L of water."
+    ],
+    "fr": [
+      "3. Conserver dans un endroit frais et sec.",
+      "2. Appliquer toutes les 2 semaines.",
+      "1. Dissoudre 50g dans 10L d'eau."
+    ]
+  },
+  "guaranteed_analysis": {
+    "title": {
+      "en": "Minimal Guaranteed Analysis",
+      "fr": "Analyse Garantie Minimale"
     },
-    "cautions": {
-        "en": [
-            "Avoid contact with skin and eyes.",
-            "Keep out of reach of children."
-        ],
-        "fr": [
-            "\u00c9viter le contact avec la peau et les yeux.",
-            "Tenir hors de port\u00e9e des enfants."
-        ]
-    },
-    "instructions": {
-        "en": [
-            "3. Store in a cool, dry place.",
-            "2. Apply every 2 weeks.",
-            "1. Dissolve 50g in 10L of water."
-        ],
-        "fr": [
-            "3. Conserver dans un endroit frais et sec.",
-            "2. Appliquer toutes les 2 semaines.",
-            "1. Dissoudre 50g dans 10L d'eau."
-        ]
-    },
-    "guaranteed_analysis" : {
-        "title": {
-            "en": "Guaranteed Analysis",
-            "fr": "Analyse Garantie"
-        },
-        "is_minimal" : false,
-        "en" : [
-            {
-              "name": "Total Nitrogen (N)",
-              "value": "20",
-              "unit": "%"
-            },
-            {
-              "name": "Available Phosphate (P2O5)",
-              "value": "20",
-              "unit": "%"
-            },
-            {
-              "name": "Soluble Potash (K2O)",
-              "value": "20",
-              "unit": "%"
-            }
-          ],
-        "fr" : [
-            {
-              "name": "Azote total (N)",
-              "value": "20",
-              "unit": "%"
-            },
-            {
-              "name": "Phosphate assimilable (P2O5)",
-              "value": "20",
-              "unit": "%"
-            },
-            {
-              "name": "Potasse soluble (K2O)",
-              "value": "20",
-              "unit": "%"
-            }
-        ]
-    }
+    "is_minimal": true,
+    "en": [
+      {
+        "name": "Total Nitrogen (N)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "name": "Available Phosphate (P2O5)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "name": "Soluble Potash (K2O)",
+        "value": "20",
+        "unit": "%"
+      }
+    ],
+    "fr": [
+      {
+        "name": "Azote total (N)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "name": "Phosphate assimilable (P2O5)",
+        "value": "20",
+        "unit": "%"
+      },
+      {
+        "name": "Potasse soluble (K2O)",
+        "value": "20",
+        "unit": "%"
+      }
+    ]
+  }
 }
