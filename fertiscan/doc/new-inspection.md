@@ -226,25 +226,20 @@ sequenceDiagram
     title FertiScan Submit Form
     actor C as Client
     participant FE as Frontend
-    participant BE as FertiScan
-    participant DS as DataStore
+    participant BE as Backend
+    participant FS as FertiScan.Inspection_Controller
+    participant DS as DataStore.Container_Controller
     participant DB as Database
     participant blob as BLOB Storage
 
     C ->> FE: Upload pictures
     FE ->> BE: Analysis label (user_id,[pictures])
     BE ->> BE: Digitalize label(pictures)
-    BE ->> DS: register_analysis(cursor,user_id,pictures,form.json)
+    BE ->> DS: Save images
+    DS ->> blob: Upload images in new folder
+    DS --> BE: folder_id UUID
     
-    DS ->> DB: new_picture_set(user_id)
-    activate DS
-    DB --> DS: picture_set_id
-    DS ->>blob: new_folder(picture_set_id)
-    DS ->> DS: upload_pictures(user_id,pictures,picture_set_id,container_client)
-    DS ->> DB: register all pictures
-    DB --> DS: picture_ids
-    DS ->> blob: container_client.upload_pictures(pictures,picture_set_id)
-    deactivate DS
+    BE ->> FS: register analysis
     DS ->> DS: formatted_form = build_inspection_import(form)
     DS ->> DB: new_inspection(user_id,picture_set_id,formatted_form.json)
     DB --> DS: formatted_form_with_ids.json
