@@ -9,7 +9,6 @@ import json
 import os
 import unittest
 
-from azure.storage.blob import BlobServiceClient
 from PIL import Image
 
 import datastore
@@ -17,7 +16,6 @@ import datastore.db as db
 import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
-from datastore.blob.azure_storage_api import build_container_name
 from datastore.db.queries import picture
 from fertiscan.db.queries import (
     ingredient,
