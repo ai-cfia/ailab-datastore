@@ -18,13 +18,13 @@ import fertiscan
 import fertiscan.db.metadata.inspection as metadata
 from datastore.db.queries import picture
 from fertiscan.db.queries import (
+    ingredient,
     inspection,
     label,
     metric,
     nutrients,
-    sub_label,
-    ingredient,
     organization,
+    sub_label,
 )
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -272,9 +272,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "instructions_en": [],
             "cautions_fr": [],
             "instructions_fr": [],
-            "guaranteed_analysis_is_minimal": False,
-            "guaranteed_analysis_en": {"title": None, "nutrients": []},
-            "guaranteed_analysis_fr": {"title": None, "nutrients": []},
+            "guaranteed_analysis_en": {"title": None, "is_minimal": False, "nutrients": []},
+            "guaranteed_analysis_fr": {"title": None, "is_minimal": False, "nutrients": []},
         }
 
         formatted_analysis = metadata.build_inspection_import(

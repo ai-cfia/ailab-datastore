@@ -67,17 +67,17 @@ class TestInspectionExport(unittest.TestCase):
         self.assertEqual(inspection_dict["inspector_id"], data["inspector_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
         self.assertEqual(inspection_dict["verified"], data["verified"])
-        print(data["product"])
+        # print(data["product"])
 
         self.assertListEqual(
             inspection_dict["product"]["registration_numbers"],
             data["product"]["registration_numbers"],
         )
         self.assertDictEqual(inspection_dict["product"], data["product"])
-        print("=====\n========\n")
-        print(inspection_dict["organizations"])
-        print("=====\n========\n")
-        print(data["organizations"])
+        # print("=====\n========\n")
+        # print(inspection_dict["organizations"])
+        # print("=====\n========\n")
+        # print(data["organizations"])
         self.assertListEqual(inspection_dict["organizations"], data["organizations"])
         ## self.assertDictEqual(inspection_dict["micronutrients"], data["micronutrients"])
         self.assertDictEqual(inspection_dict["ingredients"], data["ingredients"])
@@ -87,6 +87,7 @@ class TestInspectionExport(unittest.TestCase):
             inspection_dict["guaranteed_analysis"]["en"],
             data["guaranteed_analysis"]["en"],
         )
+        self.assertTrue(data["guaranteed_analysis"]["is_minimal"])
 
     def test_no_organization(self):
         self.analyse["organizations"] = []
@@ -293,16 +294,16 @@ class TestInspectionExport(unittest.TestCase):
     def test_missing_ingredients(self):
         self.analyse["ingredients_en"] = []
         self.analyse["ingredients_fr"] = []
-        formatted_analysis = metadata.build_inspection_import(self.analyse, self.user_id)
+        formatted_analysis = metadata.build_inspection_import(
+            self.analyse, self.user_id
+        )
         inspection_dict = inspection.new_inspection_with_label_info(
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
         if inspection_id is None:
             self.fail("Inspection not created")
-        data = metadata.build_inspection_export(
-            self.cursor, str(inspection_id)
-        )
+        data = metadata.build_inspection_export(self.cursor, str(inspection_id))
         data = json.loads(data)
         self.assertIsNotNone(data["inspection_id"])
         self.assertEqual(inspection_dict["inspection_id"], data["inspection_id"])
@@ -636,6 +637,8 @@ class TestInspectionImport(unittest.TestCase):
         formatted_analysis = metadata.build_inspection_import(
             self.analyse, self.user_id
         )
+        formatted_analysis_dict = json.loads(formatted_analysis)
+        self.assertTrue(formatted_analysis_dict["guaranteed_analysis"]["is_minimal"])
 
         inspection_dict = inspection.new_inspection_with_label_info(
             self.cursor, self.user_id, self.picture_set_id, formatted_analysis

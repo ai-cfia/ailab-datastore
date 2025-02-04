@@ -334,8 +334,8 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
                 en=analysis_form.get("guaranteed_analysis_en", {}).get("title"),
                 fr=analysis_form.get("guaranteed_analysis_fr", {}).get("title"),
             ),
-            # is_minimal=analysis_form.get("guaranteed_analysis_is_minimal"),
-            is_minimal=None,  # Not processed yet by the pipeline
+            is_minimal=analysis_form.get("guaranteed_analysis_en", {}).get("is_minimal")
+            or analysis_form.get("guaranteed_analysis_fr", {}).get("is_minimal"),
             en=guaranteed_en,
             fr=guaranteed_fr,
         )
