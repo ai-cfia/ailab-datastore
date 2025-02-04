@@ -135,8 +135,8 @@ class DBInspection(ValidatedModel):
 
 
 class Inspection(ValidatedModel):
-    inspection_id: Optional[str] = None
-    inspector_id: Optional[str] = None
+    inspection_id: Optional[UUID4] = None
+    inspector_id: Optional[UUID4] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
     organizations: Optional[List[OrganizationInformation]] = []
@@ -145,18 +145,13 @@ class Inspection(ValidatedModel):
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
     ingredients: ValuesObjects
+    picture_set_id: UUID4 | None = None
 
 
-def build_inspection_import(analysis_form: dict, user_id) -> str:
+def build_inspection_import(analysis_form: dict, user_id, picture_set_id: UUID4) -> str:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
-
-    Parameters:
-    - analysis_form: (dict) The digitalization of the label.
-
-    Returns:
-    - The inspection db object in a string format.
     """
     try:
         requiered_keys = [
@@ -349,6 +344,7 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
             guaranteed_analysis=guaranteed,
             registration_numbers=reg_numbers,
             ingredients=ingredients,
+            picture_set_id=picture_set_id,
         )
         Inspection(**inspection_formatted.model_dump())
         return inspection_formatted.model_dump_json()
@@ -428,6 +424,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             product=product_info,
             verified=db_inspection.verified,
             ingredients=ingredients,
+            picture_set_id=db_inspection.picture_set_id,
         )
 
         return inspection_formatted.model_dump_json()

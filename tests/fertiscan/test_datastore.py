@@ -9,6 +9,7 @@ import json
 import os
 import unittest
 
+from azure.storage.blob import BlobServiceClient
 from PIL import Image
 
 import datastore
@@ -16,6 +17,7 @@ import datastore.db as db
 import datastore.db.metadata.validator as validator
 import fertiscan
 import fertiscan.db.metadata.inspection as metadata
+from datastore.blob.azure_storage_api import build_container_name
 from datastore.db.queries import picture
 from fertiscan.db.queries import (
     ingredient,
@@ -91,15 +93,21 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
             )
         )
-        self.container_client = asyncio.run(
-            datastore.get_user_container_client(
-                self.user.id,
-                BLOB_CONNECTION_STRING,
-                BLOB_ACCOUNT,
-                BLOB_KEY,
-                self.tier,
-            )
+        # self.container_client = asyncio.run(
+        #     datastore.get_user_container_client(
+        #         self.user.id,
+        #         BLOB_CONNECTION_STRING,
+        #         BLOB_ACCOUNT,
+        #         BLOB_KEY,
+        #         self.tier,
+        #     )
+        # )
+
+        blobclient = BlobServiceClient.from_connection_string(BLOB_CONNECTION_STRING)
+        self.container_client = blobclient.create_container(
+            build_container_name(str(self.user.id), self.tier)
         )
+        assert self.container_client.exists()
 
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
@@ -272,19 +280,27 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "instructions_en": [],
             "cautions_fr": [],
             "instructions_fr": [],
-            "guaranteed_analysis_en": {"title": None, "is_minimal": False, "nutrients": []},
-            "guaranteed_analysis_fr": {"title": None, "is_minimal": False, "nutrients": []},
+            "guaranteed_analysis_en": {
+                "title": None,
+                "is_minimal": False,
+                "nutrients": [],
+            },
+            "guaranteed_analysis_fr": {
+                "title": None,
+                "is_minimal": False,
+                "nutrients": [],
+            },
         }
 
-        formatted_analysis = metadata.build_inspection_import(
-            empty_analysis, self.user.id
-        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
+        formatted_analysis = metadata.build_inspection_import(
+            empty_analysis, self.user.id, picture_set_id
+        )
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user.id, picture_set_id, formatted_analysis
+            self.cursor, self.user.id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
         label_id = inspection_dict["product"]["label_id"]
@@ -328,15 +344,15 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
 
     def test_get_full_inspection_json(self):
-        formatted_analysis = metadata.build_inspection_import(
-            self.analysis_json, self.user.id
-        )
         picture_set_id = picture.new_picture_set(
             self.cursor, json.dumps({}), self.user.id
         )
+        formatted_analysis = metadata.build_inspection_import(
+            self.analysis_json, self.user.id, picture_set_id
+        )
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user.id, picture_set_id, formatted_analysis
+            self.cursor, self.user.id, formatted_analysis
         )
         inspection_id = inspection_dict["inspection_id"]
 
@@ -357,9 +373,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.cursor, self.container_client, 0, self.user.id
             )
         )
+        input_json["picture_set_id"] = str(picture_set_id)
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user.id, picture_set_id, json.dumps(input_json)
+            self.cursor, self.user.id, json.dumps(input_json)
         )
         inspection_id = inspection_dict["inspection_id"]
 
@@ -497,6 +514,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 "website": "New Website",
             }
         ]
+
+        new_picture_set_id = str(
+            picture.new_picture_set(self.cursor, json.dumps({}), self.user.id)
+        )
         # update the dataset
         analysis["product"]["name"] = new_product_name
         analysis["product"]["metrics"]["weight"][0]["value"] = new_weight
@@ -513,6 +534,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         analysis["guaranteed_analysis"] = new_guaranteed_analysis
         analysis["organizations"] = new_organizations
         analysis["inspection_comment"] = user_feedback
+        analysis["picture_set_id"] = new_picture_set_id
 
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
 
@@ -564,6 +586,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Verify user's comment are saved
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[8], user_feedback)
+
+        # Verify picture_set_id is saved
+        self.assertEqual(str(inspection_data[6]), new_picture_set_id)
 
         # Verify organizations are saved
         orgs = organization.get_organizations_info_label(self.cursor, label_id)

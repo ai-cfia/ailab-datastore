@@ -54,14 +54,13 @@ def new_inspection(cursor: Cursor, user_id, picture_set_id, verified=False):
 
 
 @handle_query_errors(InspectionCreationError)
-def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, label_json):
+def new_inspection_with_label_info(cursor: Cursor, user_id, label_json):
     """
     This function calls the new_inspection function within the database and adds the label information to the inspection.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
     - user_id (str): The UUID of the user.
-    - picture_set_id (str): The UUID of the picture set.
     - label_json (str): The label information in a json format.
     - verified (boolean, optional): The value if the inspection has been verified by the user. Default is False.
 
@@ -69,9 +68,9 @@ def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, labe
     - The json with ids of the inspection and the label information.
     """
     query = """
-        SELECT new_inspection(%s, %s, %s)
+        SELECT new_inspection(%s, %s)
         """
-    cursor.execute(query, (user_id, picture_set_id, label_json))
+    cursor.execute(query, (user_id, label_json))
     return cursor.fetchone()[0]
 
 
