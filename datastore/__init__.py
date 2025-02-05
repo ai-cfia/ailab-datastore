@@ -94,59 +94,32 @@ class ContainerController:
         This function verifies if the user can manage the container.
         Only the Owner of the container and the users with the Dev/Admin role can manage the container.
         """
-        if user.is_a_user_admin(cursor, user_id):
-            return True
-        elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(
-                cursor, user_id, self.id
-            )
-            return perm == Permission.OWNER.value
-        elif container_db.get_container_creator(cursor, self.id) == user_id:
-            # This is to allow the creator of the container to self set his owner permission
-            return True
-        return False
+        return verify_user_can_manage(
+            cursor=cursor,
+            container_id=self.id,
+            user_id = user_id
+        )
 
     def __verify_user_can_write(self, cursor: Cursor, user_id: UUID) -> bool:
         """
         This function verifies if the user can write in the container.
         """
 
-        if user.is_a_user_admin(cursor, user_id):
-            return True
-        elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(
-                cursor, user_id, self.id
-            )
-            if Permission.WRITE.value <= perm:
-                return True
-        if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_group_permission_to_container(
-                cursor, user_id, self.id
-            )
-            if Permission.WRITE.value <= perm:
-                return True
-        return False
+        return verify_user_can_write(
+            cursor=cursor,
+            container_id=self.id,
+            user_id=user_id
+        )
 
     def __verify_user_can_read(self, cursor: Cursor, user_id: UUID) -> bool:
         """
         This function verifies if the user can read in the container.
         """
-        if user.is_a_user_admin(cursor, user_id):
-            return True
-        elif container_db.has_user_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_user_permission_to_container(
-                cursor, user_id, self.id
-            )
-            if perm >= Permission.READ.value:
-                return True
-        if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
-            perm = container_db.get_group_permission_to_container(
-                cursor, user_id, self.id
-            )
-            if perm >= Permission.READ.value:
-                return True
-        return False
-
+        return verify_user_can_read(
+            cursor=cursor,
+            container_id=self.id,
+            user_id=user_id
+        )
     # This could be achieved by fetching the storage and performing Azure API calls
     def fetch_all_folders_metadata(self, cursor: Cursor):
         """
@@ -351,7 +324,7 @@ class ContainerController:
         folder_name: str = None,
         nb_pictures=0,
         parent_folder_id: UUID = None,
-    ) -> UUID:
+    ) -> Folder:
         """
         Create a folder (picture_set) in the container
 
@@ -421,7 +394,7 @@ class ContainerController:
             path=folder_path,
         )
         self.model.folders[pic_set_id] = folder
-        return pic_set_id
+        return folder
 
     async def upload_pictures(
         self,
@@ -1195,3 +1168,60 @@ async def delete_container(
     container_db.delete_container(cursor, container_controller.id)
     # Remove the container from the user
     client_model.containers.pop(container_controller.id)
+
+def verify_user_can_manage(cursor: Cursor,container_id:UUID, user_id: UUID) -> bool:
+    """
+    This function verifies if the user can manage the container.
+    Only the Owner of the container and the users with the Dev/Admin role can manage the container.
+    """
+    if user.is_a_user_admin(cursor, user_id):
+        return True
+    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+        perm = container_db.get_user_permission_to_container(
+            cursor, user_id, container_id
+        )
+        return perm == Permission.OWNER.value
+    elif container_db.get_container_creator(cursor, container_id) == user_id:
+        # This is to allow the creator of the container to self set his owner permission
+        return True
+    return False
+
+def verify_user_can_write(cursor: Cursor,container_id:UUID, user_id: UUID) -> bool:
+    """
+    This function verifies if the user can write in the container.
+    """
+    if user.is_a_user_admin(cursor, user_id):
+        return True
+    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+        perm = container_db.get_user_permission_to_container(
+            cursor, user_id, container_id
+        )
+        if Permission.WRITE.value <= perm:
+            return True
+    if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+        perm = container_db.get_group_permission_to_container(
+            cursor, user_id, container_id
+        )
+        if Permission.WRITE.value <= perm:
+            return True
+    return False
+
+def verify_user_can_read(cursor: Cursor,container_id:UUID, user_id: UUID) -> bool:
+    """
+    This function verifies if the user can read in the container.
+    """
+    if user.is_a_user_admin(cursor, user_id):
+        return True
+    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+        perm = container_db.get_user_permission_to_container(
+            cursor, user_id, container_id
+        )
+        if perm >= Permission.READ.value:
+            return True
+    if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+        perm = container_db.get_group_permission_to_container(
+            cursor, user_id, container_id
+        )
+        if perm >= Permission.READ.value:
+            return True
+    return False

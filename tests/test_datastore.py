@@ -244,11 +244,14 @@ class test_container(unittest.TestCase):
         self.assertTrue(self.container_client.exists())
 
         folder_name = "test-folder"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        self.assertIsInstance(folder_obj,datastore.Folder)
+        folder_obj = datastore.Folder.model_validate(folder_obj)
+        folder_id = folder_obj.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id in container_obj.model.folders.keys())
         # Check if the folder is created in the storage
@@ -288,9 +291,10 @@ class test_container(unittest.TestCase):
         asyncio.run(container_obj.create_storage(self.connection_str, None))
         self.container_client = container_obj.container_client
         self.assertTrue(self.container_client.exists())
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(cursor=self.cursor, performed_by=self.user_id)
         )
+        folder_id = folder_obj.id
         # Check if the folder is created in the object
 
         self.assertTrue(folder_id in container_obj.model.folders.keys())
@@ -336,11 +340,12 @@ class test_container(unittest.TestCase):
         self.assertTrue(self.container_client.exists())
 
         folder_name = "test-folder-1"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id = folder_obj.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id in container_obj.model.folders.keys())
         # Check if the folder is created in the storage
@@ -362,7 +367,7 @@ class test_container(unittest.TestCase):
 
         # Create a folder within the folder
         folder_name = "test-folder-2"
-        folder_id2 = asyncio.run(
+        folder_obj2 = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor,
                 folder_name=folder_name,
@@ -370,6 +375,7 @@ class test_container(unittest.TestCase):
                 parent_folder_id=folder_id,
             )
         )
+        folder_id2=folder_obj2.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id2 in container_obj.model.folders.keys())
         self.assertEqual(1, len(container_obj.model.folders[folder_id].children))
@@ -413,11 +419,12 @@ class test_container(unittest.TestCase):
         self.assertTrue(self.container_client.exists())
 
         folder_name = "test-folder-1"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id= folder_obj.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id in container_obj.model.folders.keys())
         # Check if the folder is created in the storage
@@ -473,11 +480,12 @@ class test_container(unittest.TestCase):
         self.assertTrue(self.container_client.exists())
 
         folder_name = "test-folder-1"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id= folder_obj.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id in container_obj.model.folders.keys())
         # Check if the folder is created in the storage
@@ -499,7 +507,7 @@ class test_container(unittest.TestCase):
 
         # Create a folder within the folder
         folder_name = "test-folder-2"
-        folder_id2 = asyncio.run(
+        folder_obj2 = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor,
                 folder_name=folder_name,
@@ -507,6 +515,7 @@ class test_container(unittest.TestCase):
                 parent_folder_id=folder_id,
             )
         )
+        folder_id2= folder_obj2.id
         # Check if the folder is created in the object
         self.assertTrue(folder_id2 in container_obj.model.folders.keys())
         self.assertEqual(1, len(container_obj.model.folders[folder_id].children))
@@ -561,11 +570,12 @@ class test_container(unittest.TestCase):
 
         # Create the folder
         folder_name = "test-folder"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id= folder_obj.id
 
         # Create the picture to upload
         image = Image.new("RGB", (1980, 1080), "blue")
@@ -631,11 +641,12 @@ class test_container(unittest.TestCase):
         image.save(image_byte_array, format="TIFF")
         pic_encoded = image.tobytes()
         folder_name = "test-folder"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id= folder_obj.id
         picture_id = asyncio.run(
             container_obj.upload_pictures(
                 cursor=self.cursor,
@@ -683,11 +694,12 @@ class test_container(unittest.TestCase):
         self.assertTrue(self.container_client.exists())
 
         folder_name = "test-folder"
-        folder_id = asyncio.run(
+        folder_obj = asyncio.run(
             container_obj.create_folder(
                 cursor=self.cursor, folder_name=folder_name, performed_by=self.user_id
             )
         )
+        folder_id= folder_obj.id
         # folder_id2 = asyncio.run(container_obj.create_folder(cursor=self.cursor, folder_name="test-folder-2",performed_by=self.user_id))
         # Check if the folder is created in the object
         self.assertTrue(folder_id in container_obj.model.folders.keys())
