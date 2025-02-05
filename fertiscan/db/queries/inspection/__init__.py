@@ -284,7 +284,8 @@ def get_all_user_inspection_filter_verified(cursor: Cursor, user_id, verified: b
             label_info.id as label_info_id,
             label_info.product_name as product_name,
             company_info.id as company_info_id,
-            company_info.name as company_name
+            company_info.name as company_name,
+            inspection.verified as verified
         FROM 
             inspection
         LEFT JOIN 
@@ -298,13 +299,7 @@ def get_all_user_inspection_filter_verified(cursor: Cursor, user_id, verified: b
         WHERE 
             inspection.inspector_id = %s AND inspection.verified = %s
         """
-    cursor.execute(
-        query,
-        (
-            user_id,
-            verified,
-        ),
-    )
+    cursor.execute(query, (user_id, verified))
     return cursor.fetchall()
 
 
