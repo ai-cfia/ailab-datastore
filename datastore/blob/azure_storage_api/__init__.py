@@ -282,7 +282,7 @@ async def create_folder(
     except CreateDirectoryError as error:
         raise error
     except FolderListError as error:
-        raise CreateDirectoryError("could not create folder"+ error)
+        raise CreateDirectoryError("could not create folder "+ str(error))
     except Exception as error:
         print(error)
         raise Exception("Datastore unHandled Error")

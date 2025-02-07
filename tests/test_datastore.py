@@ -4,6 +4,7 @@ It tests the functions in the __init__.py files of the datastore packages.
 """
 
 import asyncio
+import base64
 import io
 import os
 import unittest
@@ -581,8 +582,8 @@ class test_container(unittest.TestCase):
         image = Image.new("RGB", (1980, 1080), "blue")
         image_byte_array = io.BytesIO()
         image.save(image_byte_array, format="TIFF")
-        pic_encoded = image.tobytes()
-
+        #pic_encoded = image.tobytes()
+        pic_encoded = base64.b64encode(image_byte_array.getvalue()).decode('utf-8')
         picture_id = asyncio.run(
             container_obj.upload_pictures(
                 cursor=self.cursor,
@@ -639,7 +640,7 @@ class test_container(unittest.TestCase):
         image = Image.new("RGB", (1980, 1080), "blue")
         image_byte_array = io.BytesIO()
         image.save(image_byte_array, format="TIFF")
-        pic_encoded = image.tobytes()
+        pic_encoded = base64.b64encode(image_byte_array.getvalue()).decode('utf-8')
         folder_name = "test-folder"
         folder_obj = asyncio.run(
             container_obj.create_folder(
@@ -776,7 +777,7 @@ class test_user(unittest.TestCase):
         """
         Test the new user function.
         """
-        print("Test new user")
+        #print("Test new user")
         self.user_obj = asyncio.run(
             datastore.new_user(
                 cursor=self.cursor,

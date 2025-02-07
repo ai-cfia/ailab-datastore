@@ -458,10 +458,10 @@ class ContainerController:
         folder_path = folder.path
         pic_ids: List[UUID] = []
         for picture_hash in hashed_pictures:
-
+            properties = data_picture_set.get_image_properties(pic_encoded=picture_hash)
             description = "Uploaded through the API"
             picture_metadata = data_picture_set.PictureMetadata(
-                link=folder_path + "/", description=description
+                link=folder_path + "/", description=description, properties=properties
             )
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(

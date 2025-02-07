@@ -450,7 +450,7 @@ class TestGetDirectories(unittest.TestCase):
 
 class TestMoveBlob(unittest.TestCase):
     def setUp(self):
-        self.storage_url = os.environ.get("NACHET_STORAGE_URL")
+        self.storage_url = BLOB_CONNECTION_STRING
         self.blob_service_client = blob.create_BlobServiceClient(self.storage_url)
         self.tier = "testuser"
 
