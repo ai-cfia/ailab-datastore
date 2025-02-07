@@ -56,7 +56,7 @@ async def register_analysis(
         cursor, container_client, len(hashed_pictures), user_id
     )
 
-        # Upload pictures to storage
+    # Upload pictures to storage
     await datastore.upload_pictures(
         cursor=cursor,
         user_id=str(user_id),
@@ -66,10 +66,12 @@ async def register_analysis(
     )
 
     # Register analysis in the database
-    formatted_analysis = data_inspection.build_inspection_import(analysis_dict,user_id)
+    formatted_analysis = data_inspection.build_inspection_import(
+        analysis_dict, user_id, picture_set_id
+    )
 
     analysis_db = inspection.new_inspection_with_label_info(
-        cursor, user_id, picture_set_id, formatted_analysis
+        cursor, user_id, formatted_analysis
     )
     return analysis_db
 
@@ -112,7 +114,7 @@ async def update_inspection(
         )
 
     updated_result = inspection.update_inspection(
-        cursor, inspection_id, user_id, updated_data.model_dump()
+        cursor, inspection_id, user_id, updated_data.model_dump(mode="json")
     )
     return data_inspection.Inspection.model_validate(updated_result)
 
@@ -202,9 +204,7 @@ async def get_full_inspection_json(
     # pictures_ids = picture.get_picture_in_picture_set(cursor, picture_set_id)
 
     # Retrieve label_info
-    inspection_metadata = data_inspection.build_inspection_export(
-        cursor, inspection_id
-    )
+    inspection_metadata = data_inspection.build_inspection_export(cursor, inspection_id)
 
     return inspection_metadata
 
