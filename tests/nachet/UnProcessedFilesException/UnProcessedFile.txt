@@ -1,1 +1,0 @@
-This file exists to show a case where a file is not processed by the mass_import process since it isn't a .tiff file.
