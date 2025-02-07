@@ -145,7 +145,7 @@ class Inspection(ValidatedModel):
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
     ingredients: ValuesObjects
-    picture_set_id: UUID4 | None = None
+    picture_set_id: UUID4
 
 
 def build_inspection_import(analysis_form: dict, user_id, picture_set_id: UUID4) -> str:
