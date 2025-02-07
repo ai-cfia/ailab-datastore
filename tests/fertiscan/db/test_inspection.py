@@ -90,8 +90,10 @@ class test_inspection(unittest.TestCase):
         )
         self.assertEqual(len(inspection_data), 1)
         self.assertEqual(inspection_data[0][0], inspection_id2)
+        self.assertTrue(inspection_data[0][9])  # Verified
         self.assertEqual(len(inspection_data2), 1)
         self.assertEqual(inspection_data2[0][0], inspection_id)
+        self.assertFalse(inspection_data2[0][9])  # Not verified
 
     # Deprecated function at the moment
     # def test_get_all_organization_inspection(self):

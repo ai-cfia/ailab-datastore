@@ -227,10 +227,9 @@ async def get_user_analysis_by_verified(cursor: Cursor, user_id, verified: bool)
         inspection.picture_set_id,
         label_info.id as label_info_id,
         label_info.product_name,
-        label_info.company_info_id,
-        label_info.manufacturer_info_id
         company_info.id as company_info_id,
-        company_info.company_name
+        company_info.name as company_name,
+        inspection.verified
     ]
     """
 
