@@ -1176,7 +1176,7 @@ def verify_user_can_manage(cursor: Cursor,container_id:UUID, user_id: UUID) -> b
     """
     if user.is_a_user_admin(cursor, user_id):
         return True
-    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+    elif container_db.has_user_access_to_container(cursor, user_id, container_id):
         perm = container_db.get_user_permission_to_container(
             cursor, user_id, container_id
         )
@@ -1192,13 +1192,13 @@ def verify_user_can_write(cursor: Cursor,container_id:UUID, user_id: UUID) -> bo
     """
     if user.is_a_user_admin(cursor, user_id):
         return True
-    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+    elif container_db.has_user_access_to_container(cursor, user_id, container_id):
         perm = container_db.get_user_permission_to_container(
             cursor, user_id, container_id
         )
         if Permission.WRITE.value <= perm:
             return True
-    if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+    if container_db.has_user_group_access_to_container(cursor, user_id, container_id):
         perm = container_db.get_group_permission_to_container(
             cursor, user_id, container_id
         )
@@ -1212,13 +1212,13 @@ def verify_user_can_read(cursor: Cursor,container_id:UUID, user_id: UUID) -> boo
     """
     if user.is_a_user_admin(cursor, user_id):
         return True
-    elif container_db.has_user_access_to_container(cursor, user_id, self.id):
+    elif container_db.has_user_access_to_container(cursor, user_id, container_id):
         perm = container_db.get_user_permission_to_container(
             cursor, user_id, container_id
         )
         if perm >= Permission.READ.value:
             return True
-    if container_db.has_user_group_access_to_container(cursor, user_id, self.id):
+    if container_db.has_user_group_access_to_container(cursor, user_id, container_id):
         perm = container_db.get_group_permission_to_container(
             cursor, user_id, container_id
         )
