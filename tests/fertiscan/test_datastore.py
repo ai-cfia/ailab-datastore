@@ -8,6 +8,7 @@ import io
 import json
 import os
 import unittest
+from uuid import UUID
 
 from PIL import Image
 
@@ -86,21 +87,32 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
         self.user_email = "testesss@email"
         self.tier = "test-user"
+        self.user_role = datastore.Role.INSPECTOR
         self.user = asyncio.run(
             datastore.new_user(
-                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier
+                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier, self.user_role
             )
         )
-        self.container_client = asyncio.run(
-            datastore.get_user_container_client(
-                self.user.id,
-                BLOB_CONNECTION_STRING,
-                BLOB_ACCOUNT,
-                BLOB_KEY,
-                self.tier,
+        self.container_model = next(iter(self.user.model.containers.values()))
+        self.container_controller = asyncio.run(
+            datastore.get_container_controller(
+                self.cursor,
+                self.container_model.id,
+                BLOB_CONNECTION_STRING,None
             )
         )
-
+        self.container_client = self.container_controller.container_client
+        # Assure the user Storage space exists
+        self.assertTrue(self.container_client.exists())
+        self.folder_id:UUID = self.container_controller.create_folder(
+            cursor=self.cursor,
+            performed_by=self.user.id,
+            folder_name="test-folder-fertiscan",
+            nb_pictures=0,
+            parent_folder_id=None
+        )
+        
+        
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
         self.image.save(self.image_byte_array, format="TIFF")
@@ -159,27 +171,29 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         except Exception as e:
             print(e)
 
-    def test_register_analysis(self):
-        # print(self.user.id)
-        self.assertTrue(self.container_client.exists())
-        analysis = asyncio.run(
-            fertiscan.register_analysis(
+    def test_new_inspection(self):
+        inspection_controller = asyncio.run(
+            fertiscan.new_inspection(
                 self.cursor,
-                self.container_client,
                 self.user.id,
-                [self.pic_encoded, self.pic_encoded],
                 self.analysis_json,
-            )
+                self.container_controller.id,
+                folder_id=self.folder_id)
         )
-        self.assertIsNotNone(analysis)
-        self.assertTrue(validator.is_valid_uuid(analysis["inspection_id"]))
-        inspection_id = analysis["inspection_id"]
+        self.assertIsNotNone(inspection_controller)
+        self.assertIsInstance(inspection_controller,fertiscan.InspectionController)
+        analysis = inspection_controller.model
+        self.assertTrue(validator.is_valid_uuid(inspection_controller.id))
+        self.assertIsInstance(analysis,fertiscan.data_inspection.Inspection)
+        analysis = fertiscan.data_inspection.Inspection.model_validate(analysis)
+        inspection_id = analysis.inspection_id
+        self.assertEqual(inspection_id,inspection_controller.id)
 
-        self.assertTrue(validator.is_valid_uuid(analysis["product"]["label_id"]))
-        label_id = analysis["product"]["label_id"]
+        self.assertTrue(validator.is_valid_uuid(analysis.product.label_id))
+        label_id = analysis.product.label_id
 
         metrics = metric.get_metric_by_label(
-            self.cursor, str(analysis["product"]["label_id"])
+            self.cursor, str(analysis.product.label_id)
         )
 
         self.assertIsNotNone(metrics)
@@ -187,11 +201,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        ingredients = ingredient.get_ingredient_json(
-            self.cursor, str(analysis["product"]["label_id"])
-        )
-        self.assertIsNotNone(ingredients)
-        # print(ingredients)
+        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis.product.label_id))
+        print(ingredients)
 
         # specifications = specification.get_all_specifications(
         # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
@@ -210,7 +221,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # len(nutrients_data), self.nb_micronutrients
         # )  # There are 2 nutrients in the analysis_json
         sub_labels = sub_label.get_sub_label_json(
-            self.cursor, str(analysis["product"]["label_id"])
+            self.cursor, str(analysis.product.label_id)
         )
         self.assertIsNotNone(sub_labels)
 
@@ -238,12 +249,11 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         label_dimension = label.get_label_dimension(self.cursor, label_id)
 
-        self.assertEqual(
-            str(label_dimension[1][0]), str(analysis["organizations"][0]["id"])
-        )
-        self.assertEqual(
-            str(label_dimension[1][1]), str(analysis["organizations"][1]["id"])
-        )
+        company_info_id = str(label_dimension[1])
+        manufacturer_info_id = str(label_dimension[3])
+
+        self.assertEqual(str(company_info_id), analysis.company.id)
+        self.assertEqual(str(manufacturer_info_id), analysis.manufacturer.id)
 
         self.assertEqual(len(label_dimension[2]), self.nb_instructions)
 

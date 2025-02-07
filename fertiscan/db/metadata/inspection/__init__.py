@@ -6,6 +6,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
@@ -145,9 +146,12 @@ class Inspection(ValidatedModel):
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
     ingredients: ValuesObjects
+    folder_id: UUID4 
+    container_id: UUID4
+    
 
 
-def build_inspection_import(analysis_form: dict, user_id) -> str:
+def build_inspection_import(analysis_form: dict, user_id:UUID,folder_id:UUID,container_id:UUID) -> Inspection:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
@@ -349,9 +353,10 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
             guaranteed_analysis=guaranteed,
             registration_numbers=reg_numbers,
             ingredients=ingredients,
+            folder_id=folder_id,
+            container_id=container_id
         )
-        Inspection(**inspection_formatted.model_dump())
-        return inspection_formatted.model_dump_json()
+        return inspection_formatted
     except MetadataError:
         raise
     except ValidationError as e:
@@ -360,7 +365,7 @@ def build_inspection_import(analysis_form: dict, user_id) -> str:
         raise BuildInspectionImportError(f"Unexpected error: {e}") from e
 
 
-def build_inspection_export(cursor, inspection_id) -> str:
+def build_inspection_export(cursor, inspection_id) -> Inspection:
     """
     This funtion build an inspection json object from the database.
     """
@@ -429,8 +434,7 @@ def build_inspection_export(cursor, inspection_id) -> str:
             verified=db_inspection.verified,
             ingredients=ingredients,
         )
-
-        return inspection_formatted.model_dump_json()
+        return inspection_formatted
     except QueryError as e:
         raise BuildInspectionExportError(f"Error fetching data: {e}") from e
     except Exception as e:
