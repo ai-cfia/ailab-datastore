@@ -1,7 +1,7 @@
 
 -- Function to update sub labels: delete old and insert new
-Drop FUNCTION IF EXISTS "fertiscan_0.0.18".update_sub_labels(uuid, jsonb);
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".update_sub_labels(
+Drop FUNCTION IF EXISTS "fertiscan_0.1.1".update_sub_labels(uuid, jsonb);
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".update_sub_labels(
     p_label_id uuid,
     new_sub_labels jsonb
 )

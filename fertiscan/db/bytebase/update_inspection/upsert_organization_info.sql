@@ -1,6 +1,6 @@
 -- Function to upsert organization information
-DROP FUNCTION IF EXISTS "fertiscan_0.0.18".upsert_organization_info(jsonb, uuid);
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".upsert_organization_info(input_org_info jsonb, label_info_id uuid)
+DROP FUNCTION IF EXISTS "fertiscan_0.1.1".upsert_organization_info(jsonb, uuid);
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".upsert_organization_info(input_org_info jsonb, label_info_id uuid)
 RETURNS jsonb AS $$
 DECLARE
     record jsonb;

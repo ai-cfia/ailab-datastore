@@ -1,6 +1,6 @@
 
-DROP FUNCTION IF EXISTS "fertiscan_0.0.18".new_organization_located(TEXT, TEXT, TEXT, TEXT, BOOLEAN, UUID, BOOLEAN);
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".new_organization_information(
+DROP FUNCTION IF EXISTS "fertiscan_0.1.1".new_organization_located(TEXT, TEXT, TEXT, TEXT, BOOLEAN, UUID, BOOLEAN);
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".new_organization_information(
     name TEXT,
     address_str TEXT,
     website TEXT,

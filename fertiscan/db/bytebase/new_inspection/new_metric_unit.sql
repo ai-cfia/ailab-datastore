@@ -1,8 +1,8 @@
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".new_metric_unit(
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".new_metric_unit(
     value FLOAT,
     read_unit TEXT,
     label_id UUID,
-    metric_type "fertiscan_0.0.18".metric_type,
+    metric_type "fertiscan_0.1.1".metric_type,
     edited BOOLEAN = FALSE
     )
 RETURNS UUID 
