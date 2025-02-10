@@ -1,5 +1,5 @@
 
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".new_inspection(user_id uuid, picture_set_id uuid, input_json jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
 AS $function$
@@ -56,7 +56,7 @@ BEGIN
 --		phone_number_string,
 --		 '') <> ''
 --	THEN
---		company_id := "fertiscan_0.0.18".new_organization_info_located(
+--		company_id := "fertiscan_0.1.1".new_organization_info_located(
 --			input_json->'company'->>'name',
 --			input_json->'company'->>'address',
 --			input_json->'company'->>'website',
@@ -81,7 +81,7 @@ BEGIN
 --		phone_number_string,
 --		 '') <> '' 
 --	THEN
---		manufacturer_id := "fertiscan_0.0.18".new_organization_info_located(
+--		manufacturer_id := "fertiscan_0.1.1".new_organization_info_located(
 --			input_json->'manufacturer'->>'name',
 --			input_json->'manufacturer'->>'address',
 --			input_json->'manufacturer'->>'website',
@@ -94,7 +94,7 @@ BEGIN
 	-- Manufacturer end
 
 -- LABEL INFORMATION
-	label_info_id := "fertiscan_0.0.18".new_label_information(
+	label_info_id := "fertiscan_0.1.1".new_label_information(
 		input_json->'product'->>'name',
 		input_json->'product'->>'lot_number',
 		input_json->'product'->>'npk',
@@ -124,11 +124,11 @@ BEGIN
 			'') <> '' 
 		THEN
 			-- Insert the new weight
-			weight_id = "fertiscan_0.0.18".new_metric_unit(
+			weight_id = "fertiscan_0.1.1".new_metric_unit(
 				read_value::float,
 				record->>'unit',
 				label_info_id,
-				'weight'::"fertiscan_0.0.18".metric_type,
+				'weight'::"fertiscan_0.1.1".metric_type,
 				FALSE
 			);
 		END IF;
@@ -145,11 +145,11 @@ BEGIN
 			read_unit,
 			'') <> ''
 		THEN
-			density_id := "fertiscan_0.0.18".new_metric_unit(
+			density_id := "fertiscan_0.1.1".new_metric_unit(
 				read_value::float,
 				read_unit,
 				label_info_id,
-				'density'::"fertiscan_0.0.18".metric_type,
+				'density'::"fertiscan_0.1.1".metric_type,
 				FALSE
 			);
 		END IF;
@@ -168,11 +168,11 @@ BEGIN
 			'') <> '' 
 		THEN
 			-- Insert the new volume
-			volume_id := "fertiscan_0.0.18".new_metric_unit(
+			volume_id := "fertiscan_0.1.1".new_metric_unit(
 				value_float,
 				read_unit,
 				label_info_id,
-				'volume'::"fertiscan_0.0.18".metric_type,
+				'volume'::"fertiscan_0.1.1".metric_type,
 				FALSE
 			);
 		END IF;
@@ -191,11 +191,11 @@ BEGIN
 --				'') <> '' 
 --			THEN
 --				-- Insert the new specification
---				specification_id := "fertiscan_0.0.18".new_specification(
+--				specification_id := "fertiscan_0.1.1".new_specification(
 --					(record->>'humidity')::float,
 --					(record->>'ph')::float,
 --					(record->>'solubility')::float,
---					ingredient_language::"fertiscan_0.0.18".language,
+--					ingredient_language::"fertiscan_0.1.1".language,
 --					label_info_id,
 --					FALSE
 --				);	
@@ -221,12 +221,12 @@ BEGIN
 				'') <> '' 
 			THEN
 				-- Insert the new ingredient
-				ingredient_id := "fertiscan_0.0.18".new_ingredient(
+				ingredient_id := "fertiscan_0.1.1".new_ingredient(
 					record->>'name',
 					read_value::float,
 					read_unit,
 					label_info_id,
-					ingredient_language::"fertiscan_0.0.18".language,
+					ingredient_language::"fertiscan_0.1.1".language,
 					NULL, --We cant tell atm
 					NULL,  --We cant tell atm
 					FALSE  --preset
@@ -265,7 +265,7 @@ BEGIN
 			en_value := en_values->>i;
 
 			-- Insert sub-label without deleting existing data
-			sub_label_id := "fertiscan_0.0.18".new_sub_label(
+			sub_label_id := "fertiscan_0.1.1".new_sub_label(
 				fr_value,
 				en_value,
 				label_info_id,
@@ -289,12 +289,12 @@ BEGIN
 --				'') <> '' 
 --			THEN
 --				-- Insert the new Micronutrient
---				micronutrient_id := "fertiscan_0.0.18".new_micronutrient(
+--				micronutrient_id := "fertiscan_0.1.1".new_micronutrient(
 --					record->> 'name',
 --					(record->> 'value')::float,
 --					record->> 'unit',
 --					label_info_id,
---					micronutrient_language::"fertiscan_0.0.18".language
+--					micronutrient_language::"fertiscan_0.1.1".language
 --				);
 --			END IF;
 --		END LOOP;
@@ -304,7 +304,7 @@ BEGIN
 -- GUARANTEED
 
 		-- Loop through each language ('en' and 'fr')
-    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.0.18".LANGUAGE))
+    FOR guaranteed_analysis_language  IN SELECT unnest(enum_range(NULL::"fertiscan_0.1.1".LANGUAGE))
 	LOOP
 		FOR record IN SELECT * FROM jsonb_array_elements(input_json->'guaranteed_analysis'->guaranteed_analysis_language)
 		LOOP
@@ -315,12 +315,12 @@ BEGIN
 				'') <> '' 
 			THEN
 				-- Insert the new guaranteed_analysis
-				guaranteed_analysis_id := "fertiscan_0.0.18".new_guaranteed_analysis(
+				guaranteed_analysis_id := "fertiscan_0.1.1".new_guaranteed_analysis(
 					record->>'name',
 					(record->>'value')::float,
 					record->>'unit',
 					label_info_id,
-					guaranteed_analysis_language::"fertiscan_0.0.18".language,
+					guaranteed_analysis_language::"fertiscan_0.1.1".language,
 					FALSE,
 					NULL -- We arent handeling element_id yet
 				);
@@ -339,7 +339,7 @@ BEGIN
 					'') <> '' 
 		THEN
 			-- Insert the new registration number
-			registration_number_id := "fertiscan_0.0.18".new_registration_number(
+			registration_number_id := "fertiscan_0.1.1".new_registration_number(
 				record->>'registration_number',
 				label_info_id,
 				(record->>'is_an_ingredient')::BOOLEAN,
@@ -364,7 +364,7 @@ BEGIN
 			'') <> '' 
 		THEN
 			-- Insert the new organization info
-			organization_id := "fertiscan_0.0.18".new_organization_information(
+			organization_id := "fertiscan_0.1.1".new_organization_information(
 				record->>'name',
 				record->>'address',
 				record->>'website',
@@ -389,24 +389,25 @@ BEGIN
 -- ORGANIZATIONS INFO END
 
 -- INSPECTION
-    INSERT INTO "fertiscan_0.0.18".inspection (
-        inspector_id, label_info_id, sample_id, picture_set_id, inspection_comment
+    INSERT INTO "fertiscan_0.1.1".inspection (
+        inspector_id, label_info_id, sample_id, picture_set_id, inspection_comment, container_id
     ) VALUES (
         user_id, -- Assuming inspector_id is handled separately
         label_info_id,
         NULL, -- NOT handled yet
         picture_set_id,  -- Assuming picture_set_id is handled separately
-		NULL
+		NULL,
+		(input_json ->> 'container_id')::UUID
     )
     RETURNING id INTO inspection_id_value;
    
 	-- Update input_json with inspection data
 	input_json := jsonb_set(input_json, '{inspection_id}', to_jsonb(inspection_id_value));
-	input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(''::text));
+	-- input_json := jsonb_set(input_json, '{inspection_comment}', to_jsonb(''::text));
 
 	-- TODO: remove olap transactions from Operational transactions
 	-- Update the Inspection_factual entry with the json
-	UPDATE "fertiscan_0.0.18".inspection_factual
+	UPDATE "fertiscan_0.1.1".inspection_factual
 	SET original_dataset = input_json
 	WHERE inspection_factual."inspection_id" = inspection_id_value;
 
