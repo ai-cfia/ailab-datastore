@@ -71,13 +71,6 @@ def new_label_information(
     )
 
 
-def new_label_information_complete(
-    cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume
-):
-    ##TODO: Implement this function
-    return None
-
-
 @handle_query_errors(LabelInformationRetrievalError)
 def get_label_information(cursor: Cursor, label_information_id: str) -> dict:
     """
