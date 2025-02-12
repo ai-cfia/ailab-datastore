@@ -1,11 +1,10 @@
 """ 
 This module contains the function to build the picture metadata needed for the database.
 """
+
 from datetime import date
 from datastore.db.metadata import validator
-from PIL import Image
-import io
-import base64
+
 
 
 class PictureCreationError(Exception):
@@ -33,9 +32,9 @@ def build_picture(
     )
 
     meta_data = validator.Metadata(upload_date=date.today())
-
-    pic_properties = get_image_properties(pic_encoded)
-
+    #TODO : Fix
+    #pic_properties = get_image_properties(pic_encoded)
+    pic_properties = [None,None,None]
     image_metadata = validator.ImageData(
         format=pic_properties[2],
         height=pic_properties[1],
@@ -62,21 +61,5 @@ def build_picture(
     try:
         validator.ProcessedPicture(**picture.model_dump())
     except validator.ValidationError as e:
-        raise PictureCreationError("Error, Picture not created:"+str(e)) from None
+        raise PictureCreationError("Error, Picture not created:" + str(e)) from None
     return picture.model_dump_json()
-
-
-def get_image_properties(pic_encoded: str):
-    """
-    Function to retrieve an image's properties.
-
-    Parameters:
-    - pic_encoded (str): The image in a string format.
-
-    Returns:
-    - The image's width, height and format as a tuple.
-    """
-    img = Image.open(io.BytesIO(base64.b64decode(pic_encoded)))
-    width, height = img.size
-    img_format = img.format
-    return width, height, img_format

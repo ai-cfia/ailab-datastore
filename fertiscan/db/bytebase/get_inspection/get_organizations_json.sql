@@ -1,7 +1,7 @@
 
 --Unverified organization data
-DROP FUNCTION IF EXISTS "fertiscan_0.0.18".get_organizations_information_json(label_id_value uuid);
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".get_organizations_information_json(
+DROP FUNCTION IF EXISTS "fertiscan_0.1.1".get_organizations_information_json(label_id_value uuid);
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".get_organizations_information_json(
 label_id_value uuid)
 RETURNS jsonb 
 LANGUAGE plpgsql
@@ -31,8 +31,8 @@ END;
 $function$;
 
 -- verified organization 
-DROP FUNCTION IF EXISTS "fertiscan_0.0.18".get_organizations_json();
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".get_organizations_json()
+DROP FUNCTION IF EXISTS "fertiscan_0.1.1".get_organizations_json();
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".get_organizations_json()
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $function$

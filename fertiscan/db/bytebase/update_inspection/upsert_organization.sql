@@ -1,6 +1,6 @@
 
-DROP FUNCTION IF EXISTS "fertiscan_0.0.18".upsert_organization();
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".upsert_organization(org_info_id uuid)
+DROP FUNCTION IF EXISTS "fertiscan_0.1.1".upsert_organization();
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".upsert_organization(org_info_id uuid)
 RETURNS uuid 
 LANGUAGE plpgsql
 AS $function$

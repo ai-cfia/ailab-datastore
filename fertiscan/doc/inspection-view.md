@@ -8,6 +8,8 @@ object representing it.
 ```JSON
 {
     "inspection_id": "inspection uuid",
+    "container_id": "container_uuid",
+    "folder_id": "folder_uuid",
     "owner_id": "Organization uuid",
     "organizations": [
       {

@@ -1,5 +1,5 @@
-drOp FUNCTION IF EXISTS "fertiscan_0.0.18".new_label_information(TEXT, TEXT, TEXT,  FLOAT, FLOAT, FLOAT, TEXT, TEXT, BOOLEAN, UUID, UUID);
-CREATE OR REPLACE FUNCTION "fertiscan_0.0.18".new_label_information(
+drOp FUNCTION IF EXISTS "fertiscan_0.1.1".new_label_information(TEXT, TEXT, TEXT,  FLOAT, FLOAT, FLOAT, TEXT, TEXT, BOOLEAN, UUID, UUID);
+CREATE OR REPLACE FUNCTION "fertiscan_0.1.1".new_label_information(
     name TEXT,
     lot_number TEXT,
     npk TEXT,
@@ -18,7 +18,7 @@ DECLARE
     label_id uuid;
     record RECORD;
 BEGIN
-    SET SEARCH_PATH TO "fertiscan_0.0.18";
+    SET SEARCH_PATH TO "fertiscan_0.1.1";
 	-- LABEL INFORMATION
     INSERT INTO label_information (
         product_name,lot_number, npk, n, p, k, guaranteed_title_en, guaranteed_title_fr, title_is_minimal, record_keeping
