@@ -1,14 +1,15 @@
 """
 This is a test script for the database packages.
-It tests the functions in the inspection.
+It tests the functions in the inspection module.
 """
 
 import os
 import unittest
 
 import datastore.db as db
+from datastore import Role
 from datastore.db.metadata import picture_set, validator
-from datastore.db.queries import picture, user
+from datastore.db.queries import picture, user,container
 from fertiscan.db.queries import inspection
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -27,11 +28,12 @@ class test_inspection(unittest.TestCase):
         db.create_search_path(self.con, self.cursor, DB_SCHEMA)
 
         self.user_email = "testessr@email"
-        self.user_id = user.register_user(self.cursor, self.user_email)
+        self.user_id = user.register_user(self.cursor, self.user_email,Role.INSPECTOR.value)
         self.folder_name = "test-folder"
         self.picture_set = picture_set.build_picture_set_metadata(self.user_id, 1)
+        self.container_id = container.create_container(self.cursor,'test-container',self.user_id,False,"test-fertiscan-user")
         self.picture_set_id = picture.new_picture_set(
-            self.cursor, self.picture_set, self.user_id, self.folder_name
+            self.cursor, self.picture_set, self.user_id, self.folder_name,container_id=self.container_id,parent_id=None
         )
 
     def tearDown(self):
