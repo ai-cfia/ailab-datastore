@@ -9,7 +9,7 @@ import datastore
 import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
 import fertiscan.db.metadata.inspection as data_inspection
-import fertiscan.db.queries.inspection as inspection
+from fertiscan.db.queries import ingredient,inspection,label,metric,nutrients,organization,registration_number,specification,sub_label
 
 from datastore import ContainerController, ClientController, User
 
@@ -161,11 +161,190 @@ def new_inspection(cursor:Cursor, user_id:UUID, analysis_dict, container_id:UUID
         user_id=user_id,
         folder_id=folder_id,
         container_id=container_id)
-    
-    analysis_db = inspection.new_inspection_with_label_info(
-            cursor, user_id, folder_id, formatted_analysis.model_dump_json()
+    # ----------
+    # Label info
+    label_info_id = label.new_label_information(
+        cursor=cursor,
+        name=formatted_analysis.product.name,
+        lot_number=formatted_analysis.product.lot_number,
+        npk=formatted_analysis.product.npk,
+        n=formatted_analysis.product.n,
+        p=formatted_analysis.product.p,
+        k=formatted_analysis.product.k,
+        title_en=formatted_analysis.guaranteed_analysis.title.en,
+        title_fr=formatted_analysis.guaranteed_analysis.title.fr,
+        is_minimal=formatted_analysis.guaranteed_analysis.is_minimal,
+        record_keeping=formatted_analysis.product.record_keeping
+    )
+    formatted_analysis.product.label_id = label_info_id 
+    # Metrics
+    # Weight
+    for record in formatted_analysis.product.metrics.weight:
+        metric.new_metric(
+            cursor=cursor,
+            value= record.value,
+            read_unit=record.unit,
+            label_id=label_info_id,
+            metric_type='weight',
+            edited=False
         )
-    analysis_db = data_inspection.Inspection.model_validate(analysis_db)
+    # Density
+    metric.new_metric(
+        cursor=cursor,
+        value= formatted_analysis.product.metrics.density.value,
+        read_unit=formatted_analysis.product.metrics.density.unit,
+        label_id=label_info_id,
+        metric_type='density',
+        edited=False
+    )
+    # Volume
+    metric.new_metric(
+        cursor=cursor,
+        value= formatted_analysis.product.metrics.volume.value,
+        read_unit=formatted_analysis.product.metrics.volume.unit,
+        label_id=label_info_id,
+        metric_type='volume',
+        edited=False
+    )
+    
+    #Ingredients
+    for ingredient_en in formatted_analysis.ingredients.en:
+        ingredient.new_ingredient(
+            cursor=cursor,
+            name = ingredient_en.name,
+            value= ingredient_en.value,
+            read_unit= ingredient_en.unit,
+            label_id=label_info_id,
+            language="en",
+            organic=None,
+            active=None,
+            edited=False,
+        )
+    for ingredient_fr in formatted_analysis.ingredients.fr:
+        ingredient.new_ingredient(
+            cursor=cursor,
+            name = ingredient_fr.name,
+            value= ingredient_fr.value,
+            read_unit= ingredient_fr.unit,
+            label_id=label_info_id,
+            language="fr",
+            organic=None,
+            active=None,
+            edited=False,
+        )
+        
+    # Sub Label
+    instruction_id = sub_label.get_sub_type_id(cursor,"instructions")
+    caution_id = sub_label.get_sub_type_id(cursor,"cautions")
+    max_instruction = max(len(formatted_analysis.instructions.en),len(formatted_analysis.instructions.fr))
+    max_caution = max(len(formatted_analysis.cautions.en),len(formatted_analysis.cautions.fr))
+    for i in range(0,max_instruction):
+        if i >= len(formatted_analysis.instructions.fr):
+            fr = None
+            en = formatted_analysis.instructions.en[i]
+        elif i >= len(formatted_analysis.instructions.en):
+            fr = formatted_analysis.instructions.fr[i]
+            en = None
+        else:
+            fr = formatted_analysis.instructions.fr[i]
+            en = formatted_analysis.instructions.en[i]
+        sub_label.new_sub_label(
+            cursor=cursor,
+            text_fr=fr,
+            text_en=en,
+            label_id=label_info_id,
+            sub_type_id=str(instruction_id),
+            edited=False,
+        )
+        
+    for i in range(0,max_caution):
+        if i >= len(formatted_analysis.cautions.fr):
+            fr = None
+            en = formatted_analysis.cautions.en[i]
+        elif i >= len(formatted_analysis.cautions.en):
+            fr = formatted_analysis.cautions.fr[i]
+            en = None
+        else:
+            fr = formatted_analysis.cautions.fr[i]
+            en = formatted_analysis.cautions.en[i]
+        sub_label.new_sub_label(
+            cursor=cursor,
+            text_fr=formatted_analysis.cautions.fr[i],
+            text_en=formatted_analysis.cautions.en[i],
+            label_id=label_info_id,
+            sub_type_id=str(caution_id),
+            edited=False,
+        )
+    
+    # Guaranteed Analysis
+    for record in formatted_analysis.guaranteed_analysis.en:
+       nutrients.new_guaranteed_analysis(
+           cursor=cursor,
+           read_name=record.name,
+           value=record.value,
+           unit = record.unit,
+           label_id=label_info_id,
+           language="en",
+           element_id=None,
+           edited= False
+       ) 
+    for record in formatted_analysis.guaranteed_analysis.fr:
+       nutrients.new_guaranteed_analysis(
+           cursor=cursor,
+           read_name=record.name,
+           value=record.value,
+           unit = record.unit,
+           label_id=label_info_id,
+           language="fr",
+           element_id=None,
+           edited= False
+       ) 
+       
+    # Reg numbers
+    for record in formatted_analysis.product.registration_numbers:
+        registration_number.new_registration_number(
+            cursor=cursor,
+            registration_number=record.registration_number,
+            label_id=label_info_id,
+            is_an_ingredient=record.is_an_ingredient,
+            read_name=None,
+            edited=False
+        )
+        
+    # Organization
+    flag = True
+    for record in formatted_analysis.organizations:
+        record.id=organization.new_organization_information(
+            cursor=cursor,
+            address=record.address,
+            name=record.name,
+            website=record.website,
+            phone_number=record.phone_number,
+            label_id=label_info_id,
+            edited=False,
+            is_main_contact=flag,
+        )
+        if flag==True:
+            # We do this since we have no way of knowing who is the main contact
+            flag=False
+    
+    # Inspection
+    formatted_analysis.inspection_id = inspection.new_inspection(
+        cursor=cursor,
+        user_id=user_id,
+        picture_set_id=folder_id,
+        verified=False,
+        label_id=label_info_id,
+        container_id=container_id
+    )
+    analysis_db = data_inspection.Inspection.model_validate(formatted_analysis)
+    inspection.save_inspection_original_dataset(
+        cursor=cursor,
+        inspection_id=formatted_analysis.inspection_id,
+        og_data=analysis_db.model_dump_json(),
+    )
+    
+    # ------------
     inspection_controller = InspectionController(analysis_db)
         
     return inspection_controller
