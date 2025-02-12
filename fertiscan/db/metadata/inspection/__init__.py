@@ -354,7 +354,8 @@ def build_inspection_import(analysis_form: dict, user_id:UUID,folder_id:UUID,con
             registration_numbers=reg_numbers,
             ingredients=ingredients,
             folder_id=folder_id,
-            container_id=container_id
+            container_id=container_id,
+            inspection_comment= None
         )
         return inspection_formatted
     except MetadataError:
@@ -421,6 +422,12 @@ def build_inspection_export(cursor, inspection_id) -> Inspection:
         # Get the inspection information
         db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
         db_inspection = DBInspection.model_validate(db_inspection)
+        
+        inspection_fk = inspection.get_inspection_fk(
+            cursor=cursor,
+            inspection_id=inspection_id)
+        container_id = inspection_fk[3]
+        folder_id = inspection_fk[2]
 
         inspection_formatted = Inspection(
             inspection_id=str(inspection_id),
@@ -433,6 +440,8 @@ def build_inspection_export(cursor, inspection_id) -> Inspection:
             product=product_info,
             verified=db_inspection.verified,
             ingredients=ingredients,
+            folder_id=folder_id,
+            container_id=container_id
         )
         return inspection_formatted
     except QueryError as e:
