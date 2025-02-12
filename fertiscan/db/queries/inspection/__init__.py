@@ -234,8 +234,7 @@ def get_inspection_fk(cursor: Cursor, inspection_id):
         label_info_id,
         inspector_id,
         picture_set_id,
-        company_info_id,
-        manufacturer_info_id,
+        container_id,
         fertilizer_id,
         sample_id
     ]
@@ -246,14 +245,11 @@ def get_inspection_fk(cursor: Cursor, inspection_id):
             inspection.label_info_id,
             inspection.inspector_id,
             inspection.picture_set_id,
+            inspection.container_id,
             inspection.fertilizer_id,
             inspection.sample_id
         FROM 
             inspection
-        LEFT JOIN
-            label_information as label_info
-        ON
-            inspection.label_info_id = label_info.id
         WHERE 
             inspection.id = %s
         """
@@ -374,7 +370,7 @@ def update_inspection(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,
-    updated_data_dict: dict,
+    updated_data_dict
 ) -> dict:
     """
     Update inspection data in the database.
@@ -393,7 +389,7 @@ def update_inspection(
     """
     # Prepare and execute the SQL function call
     query = SQL("SELECT update_inspection(%s, %s, %s)")
-    cursor.execute(query, (inspection_id, user_id, json.dumps(updated_data_dict)))
+    cursor.execute(query, (inspection_id, user_id, updated_data_dict))
 
     if result := cursor.fetchone():
         return result[0]

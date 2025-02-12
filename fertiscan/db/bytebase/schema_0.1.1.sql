@@ -331,6 +331,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     "inspector_id" uuid NOT NULL REFERENCES "fertiscan_0.1.1".users(id),
     "label_info_id" uuid REFERENCES "fertiscan_0.1.1".label_information(id) ON DELETE CASCADE,
     "sample_id" uuid REFERENCES "fertiscan_0.1.1".sample(id),
+    "container_id" uuid REFERENCES "fertiscan_0.1.1".container(id),
     "picture_set_id" uuid REFERENCES "fertiscan_0.1.1".picture_set(id),
     "inspection_comment" text,
     "verified_date" timestamp default null
