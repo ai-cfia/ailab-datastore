@@ -4,6 +4,8 @@ This module represent the function for the table label_information
 
 from psycopg import Cursor
 
+from uuid import UUID
+
 from fertiscan.db.queries.errors import (
     LabelDimensionNotFoundError,
     LabelDimensionQueryError,
@@ -189,3 +191,66 @@ def delete_label_info(cursor: Cursor, label_id: str):
     """
     cursor.execute(query, (label_id,))
     return cursor.rowcount
+
+@handle_query_errors(LabelInformationCreationError)
+def update_label_info(
+    cursor: Cursor,
+    label_id: str,
+    name: str | None = None,
+    lot_number: str | None = None,
+    npk: str | None = None,
+    n: float | None = None,
+    p: float | None = None,
+    k: float | None = None,
+    title_en: str | None = None,
+    title_fr: str | None = None,
+    is_minimal: bool | None = None,
+    record_keeping: bool | None = None,
+) -> dict:
+    """
+    Updates an existing label_information record in the database.
+
+    Parameters:
+    - cursor (Cursor): The database cursor
+    - label_id (str): UUID of the label to update
+    - name (str, optional): Product name
+    - lot_number (str, optional): Lot number
+    - npk (str, optional): NPK value
+    - n (float, optional): Nitrogen value
+    - p (float, optional): Phosphorus value
+    - k (float, optional): Potassium value
+    - title_en (str, optional): English title
+    - title_fr (str, optional): French title
+    - is_minimal (bool, optional): Minimal title flag
+    - record_keeping (bool, optional): Record keeping flag
+
+    Returns:
+    - dict: Updated label information
+
+    Raises:
+    - LabelInformationCreationError: If update fails
+    """
+    query = """
+        UPDATE 
+            label_information 
+        SET
+            product_name = %s,
+            lot_number = %s,
+            npk = %s,
+            n = %s,
+            p = %s,
+            k = %s,
+            guaranteed_title_en = %s,
+            guaranteed_title_fr = %s,
+            title_is_minimal = %s,
+            record_keeping = %s;
+        WHERE id = %s;
+    """
+    
+    cursor.execute(query, (name,lot_number,npk,n,p,k,title_en,title_fr,is_minimal,record_keeping,label_id))
+    if result := cursor.fetchone():
+        return result
+    
+    raise LabelInformationCreationError(
+        f"Failed to update label information for ID: {label_id}"
+    )

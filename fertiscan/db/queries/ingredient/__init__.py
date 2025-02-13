@@ -1,4 +1,5 @@
 from psycopg import Cursor, Error
+from uuid import UUID
 
 """
 This module represent the function for the Ingredient table
@@ -69,3 +70,40 @@ def get_ingredient_json(cursor: Cursor, label_id) -> dict:
         raise IngredientCreationError(f"Database error: {db_error}") from db_error
     except Exception as e:
         raise IngredientCreationError(f"Unexpected error: {e}") from e
+
+def delete_ingredient_label(cursor:Cursor, label_id:UUID):
+    query = """
+        DELETE FROM ingredient
+        WHERE label_id = %s;
+    """
+    try:
+        cursor.execute(query, (label_id,))
+    except Error as db_error:
+        raise IngredientQueryError(f"Database error: {db_error}") from db_error
+    except Exception as e:
+        raise IngredientQueryError(f"Unexpected error: {e}") from e
+
+def upsert_ingredient(cursor: Cursor,label_id:UUID,ingredients:dict):
+    delete_ingredient_label(cursor=cursor,label_id=label_id)
+    for ingredient_en in ingredients["en"]:
+        new_ingredient(
+            cursor=cursor,
+            name=ingredient_en["name"],
+            value=ingredient_en["value"],
+            read_unit=ingredient_en["unit"],
+            label_id=label_id,
+            language="en",
+            organic=None,
+            active=None,
+            edited=True)
+    for ingredient_fr in ingredients["fr"]:
+        new_ingredient(
+            cursor=cursor,
+            name=ingredient_fr["name"],
+            value=ingredient_fr["value"],
+            read_unit=ingredient_fr["unit"],
+            label_id=label_id,
+            language="fr",
+            organic=None,
+            active=None,
+            edited=True)

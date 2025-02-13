@@ -9,7 +9,7 @@ import datastore
 import datastore.db.queries.picture as picture
 import datastore.db.queries.user as user
 import fertiscan.db.metadata.inspection as data_inspection
-from fertiscan.db.queries import ingredient,inspection,label,metric,nutrients,organization,registration_number,specification,sub_label
+from fertiscan.db.queries import ingredient,inspection,label,metric,nutrients,organization,registration_number,sub_label, fertilizer
 
 from datastore import ContainerController, ClientController, User
 
@@ -102,6 +102,109 @@ class InspectionController:
         updated_result = inspection.update_inspection(
             cursor, self.model.inspection_id, user_id, updated_data.model_dump_json()
         )
+        # --------
+        label_to_update = updated_data.product
+        label_id = updated_data.product.label_id
+        # Label Information
+        label.update_label_info(
+            cursor=cursor,
+            label_id=label_to_update.label_id,
+            name=label_to_update.name,
+            lot_number=label_to_update.lot_number,
+            npk=label_to_update.npk,
+            n=label_to_update.n,
+            p=label_to_update.p,
+            k=label_to_update.k,
+            title_en=self.model.guaranteed_analysis.title.en,
+            title_fr=self.model.guaranteed_analysis.title.fr,
+            is_minimal=self.model.guaranteed_analysis.is_minimal,
+            record_keeping=label_to_update.record_keeping
+        )
+        
+        # Organization Information
+        for org in updated_data.organizations:
+            organization.update_organization_info(
+                cursor=cursor,
+                information_id=org.id,
+                name=org.name,
+                website=org.website,
+                phone_number=org.phone_number,
+            )
+            
+        # Metrics (Weigth - Density - Volume)
+        metric.upsert_metric(
+            cursor=cursor,
+            label_id=label_id,
+            metrics=updated_data.product.metrics.model_dump())
+            
+        # Ingredient
+        ingredient.upsert_ingredient(
+            cursor=cursor,
+            label_id=label_id,
+            ingredients=updated_data.ingredients.model_dump())
+        
+        # GA
+        nutrients.upsert_guaranteed_analysis(
+            cursor=cursor,
+            label_id=label_id,
+            GA=updated_data.guaranteed_analysis.model_dump())
+        
+        # Sublabel
+        # This use the whole dict as parameter since we fetch and loop for all the Sub_label_types
+        sub_label.upsert_sub_label(
+            cursor=cursor,
+            label_id=label_id,
+            inspection_dict=updated_data,
+        )
+        
+        #Reg numbers
+        registration_number.update_registration_number(
+            cursor=cursor,
+            label_id=label_id,
+            registration_numbers=updated_data.product.registration_numbers.model_dump()
+        )
+        
+        # Verified
+        if updated_data.verified:
+            fertilizer_name = updated_data.product.name
+            
+            # Check If there is a Reg Number for this fertilizer :(if there are only one)
+            registration_number_value = None
+            for reg_number in updated_data.product.registration_numbers:
+                if not reg_number.is_an_ingredient:
+                    registration_number_value = reg_number.registration_number
+                    
+            # Insert Organization
+            main_org = None
+            if len(updated_data.organizations) == 0:
+                raise Warning("at least one Organization information is required for a verified inspection")
+            elif len(updated_data.organizations) == 1:
+                main_org = updated_data.organizations[0]
+            else:
+                for org in updated_data.organizations:
+                    if org.is_main_contact:
+                        main_org = org
+            if main_org is None:
+                raise Warning("'Main contact organization information is required and was not found'")
+            else:
+                organization.upsert_organization(
+                    cursor=cursor,
+                    name = main_org.name,
+                    website= main_org.website,
+                    phone_number= main_org.phone_number,
+                    address = main_org.address,
+                )
+            # Since it it verified, we upsert the Fertilizer inspected
+            fertilizer.upsert_fertilizer(
+                cursor=cursor,
+                name=fertilizer_name,
+                reg_number=registration_number_value,
+                org_owner_id=main_org.id,
+                latest_inspection_id=updated_data.inspection_id
+            )
+        else:
+            updated_data.verified = False
+        # ------------
         return data_inspection.Inspection.model_validate(updated_result)
     
     async def delete_inspection(

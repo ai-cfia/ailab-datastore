@@ -3,6 +3,7 @@ Query exceptions hierarchy:
 
     Exception
     |__QueryError
+       |__FertilizerQueryError
        |__InspectionQueryError
        |__LabelInformationQueryError
        |__LabelDimensionQueryError
@@ -30,6 +31,16 @@ from psycopg import Error
 
 class QueryError(Exception):
     """Base exception for all query errors."""
+
+    pass
+
+class FertilizerQueryError(QueryError):
+    """Base exception for all fertilizer-related query errors."""
+
+    pass
+
+class FertilizerUpsertError(FertilizerQueryError):
+    """Raised when an error occurs during the upserting of a Fertilizer."""
 
     pass
 
