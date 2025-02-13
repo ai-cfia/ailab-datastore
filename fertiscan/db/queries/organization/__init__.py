@@ -61,6 +61,54 @@ def new_organization(cursor: Cursor, name, website, phone_number, address):
     raise OrganizationCreationError("Failed to create Organization. No data returned.")
 
 
+def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str, address:str):
+    """
+    This function serves as an upsert when an organization is verified through an inspection
+    Therefor, we are looking for similar organizations with the same naming scheme to update their information or we insert a new Organization
+    
+    Parameters:
+        - cursor (Cursor): The database cursor to execute queries.
+        - name (str): The name of the organization.
+        - website (str): The website of the organization.
+        - phone_number (str): The phone number of the organization.
+        - address (str): The address of the organization.
+    Returns:
+        - None
+    
+    """
+    query ="""
+        Select 
+            "id" 
+        FROM 
+            organization 
+        WHERE
+            name 
+        ILIKE %s;
+    """
+    cursor.execute(query, (name))
+    res = cursor.fetchone()
+    if res[0] is None:
+        new_organization(
+            cursor=cursor,
+            name=name,
+            website=website,
+            phone_number=phone_number,
+            address=address,
+        )
+    else:
+        query = """
+            UPDATE 
+                organization 
+            SET
+                "website" = %s,
+                "phone_number" = %s,
+                "address" = %s,
+                "main_location_id" = Null
+            WHERE id = %s;
+        """
+        cursor.execute(query,(website,phone_number,address,res[0]))
+
+
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization_information(
     cursor: Cursor,
@@ -293,7 +341,7 @@ def upsert_organization_info(cursor: Cursor, organization_info, label_id: UUID):
     return cursor.fetchone()[0]
 
 
-def upsert_organization(cursor: Cursor, organization_info_id: UUID):
+def upsert_organization_function(cursor: Cursor, organization_info_id: UUID):
     """
     This function upserts an organization information in the database.
 
