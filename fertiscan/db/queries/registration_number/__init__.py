@@ -136,3 +136,45 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     raise RegistrationNumberNotFoundError(
         f"Failed to get Registration Numbers with the given label_id {label_id}. No data returned."
     )
+
+def delete_registration_numbers(cursor: Cursor, label_id : UUID):
+    """
+    This function deletes the registration numbers from the database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+    """
+    query = sql.SQL(
+        """
+        DELETE FROM registration_number_information
+        WHERE label_id = %s;
+    """
+    )
+    cursor.execute(query, (label_id,))
+    if cursor.rowcount == 0:
+        raise RegistrationNumberQueryError(
+            f"Failed to delete Registration Numbers with the given label_id {label_id}. No rows affected."
+        )
+    else:
+        return cursor.rowcount
+    
+def upsert_registration_numbers(cursor: Cursor, label_id: UUID, reg_numbers:dict):
+    """
+    Replaces all entries for a label by deleting existing ones and inserting new ones.
+    
+    Parameters:
+    - cursor: Database cursor
+    - label_id: UUID of the label to update
+    - reg_numbers: Dictionary containing the new values to insert
+    """
+    delete_registration_numbers(cursor=cursor,label_id=label_id)
+    
+    for record in reg_numbers:
+        new_registration_number(
+            cursor=cursor,
+            registration_number=record.registration_number,
+            label_id=label_id,
+            is_an_ingredient=record.is_an_ingredient,
+            read_name=None,
+            edited=True
+        )

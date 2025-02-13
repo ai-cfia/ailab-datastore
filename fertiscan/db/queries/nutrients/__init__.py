@@ -4,6 +4,7 @@ This module represent the function for the table micronutrient, guaranteed and i
 """
 
 from psycopg import Cursor
+from uuid import UUID
 
 from fertiscan.db.queries.errors import (
     ElementCompoundCreationError,
@@ -11,6 +12,8 @@ from fertiscan.db.queries.errors import (
     ElementCompoundQueryError,
     GuaranteedAnalysisCreationError,
     GuaranteedAnalysisRetrievalError,
+    GuaranteedAnalysisDeleteError,
+    GuaranteedAnalysisUpdateError,
     MicronutrientCreationError,
     MicronutrientRetrievalError,
     handle_query_errors,
@@ -392,6 +395,64 @@ def get_guaranteed_analysis_json(cursor: Cursor, label_id) -> dict:
         "Failed to retrieve guaranteed analysis json. No data returned for: "
         + str(label_id)
     )
+@handle_query_errors(GuaranteedAnalysisDeleteError)
+def delete_guaranteed_analysis(cursor:Cursor, label_id:UUID):
+    """
+    This function deletes guaranteed analysis records from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (UUID): The UUID of the label.
+
+    Returns:
+    - int: The number of rows deleted.
+    """
+    query = """
+        DELETE FROM guaranteed
+        WHERE label_id = %s
+        RETURNING id;
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.rowcount
+
+@handle_query_errors(GuaranteedAnalysisUpdateError)
+def upsert_guaranteed_analysis(cursor:Cursor,label_id: UUID, GA:dict):
+    """
+    Replaces all entries for a label by deleting existing ones and inserting new ones.
+    
+    Parameters:
+    - cursor: Database cursor
+    - label_id: UUID of the label to update
+    - GA: Dictionary containing the new values to insert
+    """
+    delete_guaranteed_analysis(
+        cursor=cursor,
+        label_id= label_id,
+    )
+    
+    for record in GA["en"]:
+        new_guaranteed_analysis(
+            cursor=cursor,
+            read_name=record["name"],
+            value=record["value"],
+            unit = record["unit"],
+            label_id=label_id,
+            language="en",
+            element_id=None,
+            edited= True
+        ) 
+    for record in GA["fr"]:
+        new_guaranteed_analysis(
+            cursor=cursor,
+            read_name=record["name"],
+            value=record["value"],
+            unit = record["unit"],
+            label_id=label_id,
+            language="fr",
+            element_id=None,
+            edited= True
+        ) 
+    
 
 
 @handle_query_errors(GuaranteedAnalysisRetrievalError)

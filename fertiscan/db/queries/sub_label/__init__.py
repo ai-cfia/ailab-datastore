@@ -4,12 +4,14 @@ This module represent the function for the sub table of label_information
 """
 
 from psycopg import Cursor
+from uuid import UUID
 
 from fertiscan.db.queries.errors import (
     SubLabelCreationError,
     SubLabelNotFoundError,
     SubLabelQueryError,
     SubLabelRetrievalError,
+    SubLabelDeleteError,
     SubLabelUpdateError,
     SubTypeCreationError,
     SubTypeQueryError,
@@ -225,24 +227,67 @@ def update_sub_label(cursor: Cursor, sub_label_id, text_fr, text_en, edited=True
     """
     cursor.execute(query, (text_fr, text_en, edited, sub_label_id))
 
-def update_sub_label_function(cursor: Cursor, sub_label_id, text_fr, text_en, edited=True):
+handle_query_errors(SubLabelUpdateError)
+def upsert_sub_label(cursor: Cursor, label_id: UUID, inspection_dict: dict):
     """
-    This function updates the sub label in the database.
+    Replaces all entries for a label by deleting existing ones and inserting new ones.
+    
+    Parameters:
+    - cursor: Database cursor
+    - label_id: UUID of the label to update
+    - inspection_dict: Dictionary containing the new values to insert
+    """
+    # get the all the active sub_types
+    sub_types = get_sub_types(cursor=cursor)
+
+    delete_sub_label(cursor=cursor, label_id=label_id)
+
+    for id, sub_type in sub_types:
+        sub_label = inspection_dict[sub_type]
+        fr_list = sub_label["fr"]
+        en_list = sub_label["en"]
+        max_length = max(len(fr_list), len(en_list))
+        for i in range(0, max_length):
+            if i >= len(fr_list):
+                fr = None
+                en = en_list[i]
+            elif i >= len(en_list):
+                fr = fr_list[i]
+                en = None
+            else:
+                fr = fr_list[i]
+                en = en_list[i]
+            new_sub_label(
+                cursor=cursor,
+                text_fr=fr,
+                text_en=en,
+                label_id=label_id,
+                sub_type_id=id,
+                edited=True,
+            )
+
+
+handle_query_errors(SubLabelDeleteError)
+def delete_sub_label(cursor: Cursor, label_id: UUID):
+    """
+    This function deletes all sub labels associated with a given label_id.
 
     Parameters:
     - cursor (cursor): The cursor of the database.
-    - sub_label_id (uuid): The UUID of the sub label.
-    - text_fr (str): The text in french.
-    - text_en (str): The text in english.
-    - edited (bool): The edited status of the sub label.
+    - label_id (uuid): The UUID of the label_information.
 
     Returns:
     - None
     """
     query = """
-        SELECT update_sub_label(%s, %s, %s, %s);
+        DELETE FROM 
+            sub_label
+        WHERE 
+            label_id = %s
+        RETURNING ID;
     """
-    cursor.execute(query, (sub_label_id, text_fr, text_en, edited))
+    cursor.execute(query, (label_id,))
+    return cursor.rowcount
 
 
 @handle_query_errors(SubTypeCreationError)
@@ -302,3 +347,23 @@ def get_sub_type_id(cursor: Cursor, type_name):
     if result := cursor.fetchone():
         return result[0]
     raise SubTypeQueryError("Failed to get the sub type id. No data returned.")
+
+
+def get_sub_types(cursor: Cursor) -> list:
+    """
+    This function fetches all sub types names from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+
+    Returns:
+    - A list of Tuple of sub type names and ids (id,name_en).
+    """
+    query = """
+        SELECT 
+            id, type_en
+        FROM 
+            sub_type
+    """
+    cursor.execute(query)
+    return cursor.fetchall()

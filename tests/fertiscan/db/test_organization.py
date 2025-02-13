@@ -526,12 +526,12 @@ class test_organization(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
-    def test_upsert_organization(self):
+    def test_upsert_organization_function(self):
 
         organization_id = organization.new_organization(
             self.cursor, self.name, "wrong-website", "wrong-phone", "wrong-address"
         )
-        update_id = organization.upsert_organization(self.cursor, str(self.org_info_id))
+        update_id = organization.upsert_organization_function(self.cursor, str(self.org_info_id))
         self.assertEqual(organization_id, update_id)
         organization_data = organization.get_organization(
             self.cursor, str(organization_id)
