@@ -282,7 +282,6 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(label_dimension[12]), 1)
 
     def test_new_inspection_empty(self):
-        print("start")
         empty_analysis = {
             "organizations": [],
             "fertiliser_name": None,
@@ -377,6 +376,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         inspection_dict = inspection_controller.model
         inspection_id = inspection_dict.inspection_id
+        self.assertEqual(inspection_controller.id,inspection_id)
 
         # Verify the inspection was created by directly querying the database
         self.assertTrue(inspection.is_a_inspection_id(cursor=self.cursor,inspection_id=inspection_id))
@@ -392,7 +392,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         # Verify that the inspection ID matches the one we deleted
         self.assertIsInstance(deleted_inspection, metadata.DBInspection)
-        self.assertEqual(str(deleted_inspection.id), inspection_id)
+        self.assertEqual(deleted_inspection.id, inspection_id)
 
         # Ensure that the inspection no longer exists in the database
         self.assertFalse(inspection.is_a_inspection_id(self.cursor,inspection_id))
@@ -484,9 +484,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             {
                 "name": "New Organization",
                 "address": "New Address",
-                "phone": "New Phone",
+                "phone_number": "New Phone",
                 "email": "New Email",
                 "website": "New Website",
+                "is_main_contact": True
             }
         ]
         # update the dataset
@@ -506,7 +507,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         to_update["guaranteed_analysis"] = new_guaranteed_analysis
         to_update["organizations"] = new_organizations
         to_update["inspection_comment"] = user_feedback
-
+        
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
         
         inspection_to_update = metadata.Inspection.model_validate(to_update)
@@ -562,9 +563,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         # Verify organizations are saved
         orgs = organization.get_organizations_info_label(self.cursor, label_id)
-
-        self.assertEqual(len(orgs), 3)  # 2 default + 1 new
-        self.assertEqual(len(orgs), len(old_organizations) + 1)
+        self.assertEqual(len(orgs), 1)  # There is only 1 new
 
         # VERIFY OLAP
         new_label_dimension = label.get_label_dimension(self.cursor, label_id)

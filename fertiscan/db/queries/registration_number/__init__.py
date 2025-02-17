@@ -71,10 +71,30 @@ def get_registration_numbers_json(cursor: Cursor, label_id: UUID):
     raise RegistrationNumberRetrievalError(
         "Failed to get Registration Numbers with the given label_id. No data returned."
     )
+    
+handle_query_errors(RegistrationNumberQueryError)
+def update_registration_number(
+    cursor:Cursor,
+    label_id :UUID,
+    registration_numbers:list | None,
+    ):
+    delete_registration_numbers(cursor=cursor,label_id=label_id)
+    
+    if registration_numbers is not None:
+        for reg_number in registration_numbers:
+            new_registration_number(
+                cursor=cursor,
+                registration_number=reg_number.registration_number,
+                is_an_ingredient=reg_number.is_an_ingredient,
+                label_id=label_id,
+                read_name=None,
+                edited=True,
+            )
+        
 
 
 @handle_query_errors(RegistrationNumberQueryError)
-def update_registration_number(
+def update_registration_number_function(
     cursor: Cursor,
     registration_numbers,
     label_id: UUID,
