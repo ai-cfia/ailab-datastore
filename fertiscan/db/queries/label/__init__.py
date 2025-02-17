@@ -243,14 +243,8 @@ def update_label_info(
             guaranteed_title_en = %s,
             guaranteed_title_fr = %s,
             title_is_minimal = %s,
-            record_keeping = %s;
+            record_keeping = %s
         WHERE id = %s;
-    """
-    
+        """
     cursor.execute(query, (name,lot_number,npk,n,p,k,title_en,title_fr,is_minimal,record_keeping,label_id))
-    if result := cursor.fetchone():
-        return result
-    
-    raise LabelInformationCreationError(
-        f"Failed to update label information for ID: {label_id}"
-    )
+

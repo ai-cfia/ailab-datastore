@@ -105,7 +105,7 @@ class InspectionController:
         # --------
         label_to_update = updated_data.product
         label_id = updated_data.product.label_id
-        # Label Information
+        # Label Information 
         label.update_label_info(
             cursor=cursor,
             label_id=label_to_update.label_id,
@@ -115,21 +115,45 @@ class InspectionController:
             n=label_to_update.n,
             p=label_to_update.p,
             k=label_to_update.k,
-            title_en=self.model.guaranteed_analysis.title.en,
-            title_fr=self.model.guaranteed_analysis.title.fr,
-            is_minimal=self.model.guaranteed_analysis.is_minimal,
+            title_en=updated_data.guaranteed_analysis.title.en,
+            title_fr=updated_data.guaranteed_analysis.title.fr,
+            is_minimal=updated_data.guaranteed_analysis.is_minimal,
             record_keeping=label_to_update.record_keeping
         )
         
         # Organization Information
+        org_ids = []
         for org in updated_data.organizations:
-            organization.update_organization_info(
-                cursor=cursor,
-                information_id=org.id,
-                name=org.name,
-                website=org.website,
-                phone_number=org.phone_number,
-            )
+            if org.id is not None:
+                org_ids.append(org.id)
+        # delete any orgs that have been removed from the list
+        organization.delete_absent_organisation_information_from_label(
+            cursor=cursor,
+            label_id=label_id,
+            org_ids=org_ids
+        )
+        for org in updated_data.organizations:
+            if org.id is not None:
+                organization.update_organization_info(
+                    cursor=cursor,
+                    information_id=org.id,
+                    name=org.name,
+                    website=org.website,
+                    phone_number=org.phone_number,
+                    is_main_contact = org.is_main_contact,
+                )
+            # An org was added by the user and not detected by the pipeline
+            else:
+                organization.new_organization_information(
+                    cursor=cursor,
+                    address=org.address,
+                    name=org.name,
+                    website=org.website,
+                    phone_number=org.phone_number,
+                    label_id=label_to_update.label_id,
+                    edited=True,
+                    is_main_contact=org.is_main_contact
+                )
             
         # Metrics (Weigth - Density - Volume)
         metric.upsert_metric(
@@ -154,14 +178,14 @@ class InspectionController:
         sub_label.upsert_sub_label(
             cursor=cursor,
             label_id=label_id,
-            inspection_dict=updated_data,
+            inspection_dict=updated_data.model_dump(),
         )
         
         #Reg numbers
         registration_number.update_registration_number(
             cursor=cursor,
             label_id=label_id,
-            registration_numbers=updated_data.product.registration_numbers.model_dump()
+            registration_numbers=updated_data.product.registration_numbers
         )
         
         # Verified

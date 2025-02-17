@@ -329,7 +329,7 @@ def upsert_metric(cursor: Cursor, label_id:UUID,metrics:dict):
             read_unit=record["unit"],
             label_id=label_id,
             metric_type='weight',
-            edited=False
+            edited=record["edited"]
         )
     # Density
     new_metric(
@@ -338,7 +338,7 @@ def upsert_metric(cursor: Cursor, label_id:UUID,metrics:dict):
         read_unit=metrics["density"]["unit"],
         label_id=label_id,
         metric_type='density',
-        edited=False
+        edited=metrics["density"]["edited"]
     )
     # Volume
     new_metric(
@@ -347,6 +347,6 @@ def upsert_metric(cursor: Cursor, label_id:UUID,metrics:dict):
         read_unit=metrics["volume"]["unit"],
         label_id=label_id,
         metric_type='volume',
-        edited=False
+        edited=metrics["volume"]["edited"]
     )
     

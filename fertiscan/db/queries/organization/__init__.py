@@ -280,7 +280,7 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
 
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
-    cursor: Cursor, information_id: UUID, name, website, phone_number
+    cursor: Cursor, information_id: UUID, name, website, phone_number,is_main_contact
 ):
     """
     This function update a organization information in the database.
@@ -301,7 +301,8 @@ def update_organization_info(
         SET 
             name = COALESCE(%s,name),
             website = COALESCE(%s,website),
-            phone_number = COALESCE(%s,phone_number)
+            phone_number = COALESCE(%s,phone_number),
+            is_main_contact = COALESCE(%s,is_main_contact)
         WHERE 
             id = %s
         """
@@ -311,6 +312,7 @@ def update_organization_info(
             name,
             website,
             phone_number,
+            is_main_contact,
             str(information_id),
         ),
     )
@@ -390,6 +392,30 @@ def get_organization(cursor: Cursor, organization_id: UUID):
     raise OrganizationNotFoundError(
         "Organization not found with organization_id: " + organization_id
     )
+
+
+def delete_absent_organisation_information_from_label(cursor:Cursor,label_id:UUID,org_ids:list[UUID]):
+    """
+    Deletes organization information entries that have the specified label_id 
+    but whose IDs are not in the provided org_ids list.
+
+    Parameters:
+    - cursor (Cursor): The database cursor
+    - label_id (UUID): The label ID to match
+    - org_ids (list[UUID]): List of organization IDs to keep
+
+    Returns:
+    - int: Number of rows deleted
+    """
+    query = """
+        DELETE FROM 
+            organization_information
+        WHERE 
+            label_id = %s 
+            AND id != ALL(%s)
+    """
+    cursor.execute(query, (label_id, org_ids))
+    return cursor.rowcount
 
 
 @handle_query_errors(OrganizationRetrievalError)
