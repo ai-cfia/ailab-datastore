@@ -616,6 +616,32 @@ class RegistrationNumberNotFoundError(RegistrationNumberQueryError):
     
     pass
 
+class IngredientQueryError(QueryError):
+    """Base exception for all Ingredients related query error"""
+    
+    pass
+
+class IngredientCreationError(IngredientQueryError):
+    """Raised when an error occurs during the creation of an Ingredient."""
+
+    pass
+
+class IngredientRetrievalError(IngredientQueryError):
+    """Raised when an error occurs during the retrieval of an Ingredient."""
+    
+    pass
+
+class IngredientNotFoundError(IngredientQueryError):
+    """Raised when an Ingredient was not found."""
+    
+    pass
+
+class IngredientDeleteError(IngredientQueryError):
+    """Raised when an error occurs during the delete of an Ingredient"""
+    
+    pass
+
+
 def handle_query_errors(error_cls=QueryError):
     """Decorator for handling query errors."""
 
