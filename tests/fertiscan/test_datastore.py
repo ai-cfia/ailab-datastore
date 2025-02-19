@@ -684,3 +684,27 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(new_label_dimension[9]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[9]), len(old_label_dimension[12]))
         self.assertNotEqual(len(new_label_dimension[9]), old_guaranteed_nb)
+
+    def test_get_picture_set_pictures(self):
+        picture_set_id = asyncio.run(
+            datastore.create_picture_set(
+                self.cursor, self.container_client, 3, self.user.id, "test_folder"
+            )
+        )
+        picture_ids = asyncio.run(
+            datastore.upload_pictures(
+                self.cursor,
+                self.user.id,
+                [self.pic_encoded, self.pic_encoded, self.pic_encoded],
+                self.container_client,
+                picture_set_id,
+            )
+        )
+        pictures = asyncio.run(
+            datastore.get_picture_set_pictures(
+                self.cursor, self.user.id, picture_set_id, self.container_client
+            )
+        )
+        self.assertEqual(len(pictures), 3)
+        for p in pictures:
+            self.assertTrue(p["id"] in picture_ids)

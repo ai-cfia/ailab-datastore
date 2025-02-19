@@ -190,8 +190,9 @@ class test_metric(unittest.TestCase):
         metric_data = metric.get_metrics_json(self.cursor, self.label_id)
 
         self.assertEqual(metric_data["volume"]["unit"], volume_unit)
-        self.assertEqual(metric_data["weight"][0]["unit"], weight_unit_imperial)
-        self.assertEqual(metric_data["weight"][1]["unit"], weight_unit_metric)
+        weight_units = {entry["unit"] for entry in metric_data["weight"]}
+        self.assertIn(weight_unit_imperial, weight_units)
+        self.assertIn(weight_unit_metric, weight_units)
         self.assertEqual(metric_data["density"]["unit"], density_unit)
 
     def test_get_metrics_json_empty(self):

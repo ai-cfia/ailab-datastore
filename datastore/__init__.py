@@ -255,7 +255,7 @@ async def get_picture_set_pictures(cursor, user_id, picture_set_id, container_cl
                 blob_link = azure_storage.build_blob_name(
                     str(picture_set_name), str(pic_id), None
                 )
-            blob_obj = azure_storage.get_blob(container_client, blob_link)
+            blob_obj = await azure_storage.get_blob(container_client, blob_link)
             pic_metadata.pop("link", None)
             pic_metadata["blob"] = blob_obj
             result.append(pic_metadata)
