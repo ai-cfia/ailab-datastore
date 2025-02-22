@@ -22,7 +22,7 @@ from fertiscan.db.queries.errors import (
 
 
 @handle_query_errors(InspectionCreationError)
-def new_inspection(cursor: Cursor, user_id, picture_set_id, verified=False):
+def new_inspection(cursor: Cursor, user_id, picture_set_id, label_id,container_id,verified=False):
     """
     This function uploads a new inspection to the database.
 
@@ -40,18 +40,30 @@ def new_inspection(cursor: Cursor, user_id, picture_set_id, verified=False):
         INSERT INTO inspection (
             inspector_id,
             picture_set_id,
-            verified
+            verified,
+            label_info_id,
+            container_id
             )
         VALUES 
-            (%s, %s, %s)
+            (%s, %s, %s,%s,%s)
         RETURNING 
             id
         """
-    cursor.execute(query, (user_id, picture_set_id, verified))
+    cursor.execute(query, (user_id, picture_set_id, verified,label_id,container_id))
     if result := cursor.fetchone():
         return result[0]
     raise InspectionCreationError("Failed to create inspection. No data returned.")
 
+def save_inspection_original_dataset(cursor: Cursor, inspection_id:UUID,og_data):
+    query = """
+        UPDATE 
+            "fertiscan_0.1.1".inspection_factual
+	    SET 
+            original_dataset = %s
+	    WHERE 
+            inspection_factual."inspection_id" = %s;
+    """
+    cursor.execute(query,(og_data,inspection_id))
 
 @handle_query_errors(InspectionCreationError)
 def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, label_json):
@@ -364,9 +376,40 @@ def get_all_organization_inspection(cursor: Cursor, org_id):
     cursor.execute(query, (org_id, org_id))
     return cursor.fetchall()
 
+def update_inspection(
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    verified: bool,
+    inspection_comment:str
+):
+    if verified:
+        query = """
+            UPDATE
+                inspection
+            SET
+                verified = %s,
+                updated_at = CURRENT_TIMESTAMP,
+                inspection_comment = %s,
+                verified_date = CURRENT_TIMESTAMP
+            WHERE
+                id = %s;
+        """
+    else:
+            query = """
+            UPDATE
+                inspection
+            SET
+                verified = %s,
+                updated_at = CURRENT_TIMESTAMP,
+                inspection_comment = %s
+            WHERE
+                id = %s;
+        """
+    cursor.execute(query, (verified,inspection_comment,inspection_id))
+
 
 @handle_query_errors(InspectionUpdateError)
-def update_inspection(
+def update_inspection_function(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,

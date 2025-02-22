@@ -4,6 +4,8 @@ This module represent the function for the table label_information
 
 from psycopg import Cursor
 
+from uuid import UUID
+
 from fertiscan.db.queries.errors import (
     LabelDimensionNotFoundError,
     LabelDimensionQueryError,
@@ -13,9 +15,88 @@ from fertiscan.db.queries.errors import (
     handle_query_errors,
 )
 
-
 @handle_query_errors(LabelInformationCreationError)
 def new_label_information(
+    cursor,
+    name: str,
+    lot_number: str,
+    npk: str,
+    n: float,
+    p: float,
+    k: float,
+    title_en: str,
+    title_fr: str,
+    is_minimal: bool,
+    record_keeping: bool,
+):
+    """
+    This function create a new label_information in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - lot_number (str): The lot number of the label_information.
+    - npk (str): The npk of the label_information.
+    - n (float): The n of the label_information.
+    - p (float): The p of the label_information.
+    - k (float): The k of the label_information.
+    - title_en (str): The english title of the guaranteed analysis.
+    - title_fr (str): The french title of the guaranteed analysis.
+    - is_minimal (bool): if the tital is minimal for the guaranteed analysis.
+    - record_keeping (bool): if the label is a record keeping.
+
+    Returns:
+    - str: The UUID of the label_information
+    """
+    query = """
+        INSERT INTO 
+            label_information (
+                product_name,    
+                lot_number, 
+                npk, 
+                n, 
+                p, 
+                k, 
+                guaranteed_title_en, 
+                guaranteed_title_fr, 
+                title_is_minimal, 
+                record_keeping
+        ) VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        RETURNING id;
+        """
+    cursor.execute(
+        query,
+        (
+            name,
+            lot_number,
+            npk,
+            n,
+            p,
+            k,
+            title_en,
+            title_fr,
+            is_minimal,
+            record_keeping,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise LabelInformationCreationError(
+        "Failed to create label information. No data returned."
+    )
+
+@handle_query_errors(LabelInformationCreationError)
+def new_label_information_function(
     cursor,
     name: str,
     lot_number: str,
@@ -69,13 +150,6 @@ def new_label_information(
     raise LabelInformationCreationError(
         "Failed to create label information. No data returned."
     )
-
-
-def new_label_information_complete(
-    cursor, lot_number, npk, registration_number, n, p, k, weight, density, volume
-):
-    ##TODO: Implement this function
-    return None
 
 
 @handle_query_errors(LabelInformationRetrievalError)
@@ -196,3 +270,60 @@ def delete_label_info(cursor: Cursor, label_id: str):
     """
     cursor.execute(query, (label_id,))
     return cursor.rowcount
+
+@handle_query_errors(LabelInformationCreationError)
+def update_label_info(
+    cursor: Cursor,
+    label_id: str,
+    name: str | None = None,
+    lot_number: str | None = None,
+    npk: str | None = None,
+    n: float | None = None,
+    p: float | None = None,
+    k: float | None = None,
+    title_en: str | None = None,
+    title_fr: str | None = None,
+    is_minimal: bool | None = None,
+    record_keeping: bool | None = None,
+) -> dict:
+    """
+    Updates an existing label_information record in the database.
+
+    Parameters:
+    - cursor (Cursor): The database cursor
+    - label_id (str): UUID of the label to update
+    - name (str, optional): Product name
+    - lot_number (str, optional): Lot number
+    - npk (str, optional): NPK value
+    - n (float, optional): Nitrogen value
+    - p (float, optional): Phosphorus value
+    - k (float, optional): Potassium value
+    - title_en (str, optional): English title
+    - title_fr (str, optional): French title
+    - is_minimal (bool, optional): Minimal title flag
+    - record_keeping (bool, optional): Record keeping flag
+
+    Returns:
+    - dict: Updated label information
+
+    Raises:
+    - LabelInformationCreationError: If update fails
+    """
+    query = """
+        UPDATE 
+            label_information 
+        SET
+            product_name = %s,
+            lot_number = %s,
+            npk = %s,
+            n = %s,
+            p = %s,
+            k = %s,
+            guaranteed_title_en = %s,
+            guaranteed_title_fr = %s,
+            title_is_minimal = %s,
+            record_keeping = %s
+        WHERE id = %s;
+        """
+    cursor.execute(query, (name,lot_number,npk,n,p,k,title_en,title_fr,is_minimal,record_keeping,label_id))
+
