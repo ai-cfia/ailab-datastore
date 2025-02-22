@@ -653,3 +653,34 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(new_label_dimension[9]), new_guaranteed_nb)
         self.assertNotEqual(len(new_label_dimension[9]), len(old_label_dimension[12]))
         self.assertNotEqual(len(new_label_dimension[9]), old_guaranteed_nb)
+
+    def test_update_inspection_already_verified(self):
+        inspection_controller:fertiscan.InspectionController = fertiscan.new_inspection(
+            self.cursor,
+            self.user.id,
+            self.analysis_json,
+            self.container_controller.id,
+            folder_id=self.folder_id
+        )
+        inspection_to_update = inspection_controller.model.model_copy()
+        self.assertFalse(inspection_to_update.verified)
+        inspection_to_update.verified = True
+        self.assertTrue(inspection_to_update.verified)
+        inspection_to_update.product.name = "verified_product"
+        print(inspection_to_update.organizations)
+        updated_inspection = inspection_controller.update_inspection(
+            self.cursor,
+            self.user.id,
+            inspection_to_update,
+        )
+        self.assertTrue(updated_inspection.verified)
+        updated_inspection.product.name="blocked to be updated"
+        self.assertRaises(
+            inspection_controller.update_inspection(
+                self.cursor,
+                self.user.id,
+                updated_inspection,
+            ),
+            inspection.InspectionUpdateError
+        )
+        

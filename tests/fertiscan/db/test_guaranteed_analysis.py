@@ -316,3 +316,79 @@ class test_guaranteed_analysis(unittest.TestCase):
         self.assertIn(guaranteed_analysis_id_2, guaranteed_analysis_dict)
         guaranteed_item = guaranteed_analysis_dict[guaranteed_analysis_id_2]
         self.assertEqual(guaranteed_item[1], other_name)
+
+    def test_delete_guaranteed_analysis(self):
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
+            self.cursor,
+            self.guaranteed_analysis_name,
+            self.guaranteed_analysis_value,
+            self.guaranteed_analysis_unit,
+            self.label_information_id,
+            self.language,
+            self.element_id,
+            False,
+        )
+        self.assertTrue(validator.is_valid_uuid(guaranteed_analysis_id))
+        guaranteeds = nutrients.get_all_guaranteeds(cursor=self.cursor,label_id=self.label_information_id)
+        self.assertEqual(len(guaranteeds),1)
+        
+        nutrients.delete_guaranteed_analysis(cursor=self.cursor,label_id=self.label_information_id)
+
+        guaranteeds = nutrients.get_all_guaranteeds(cursor=self.cursor,label_id=self.label_information_id)        
+        self.assertEqual(len(guaranteeds),0)
+
+    def test_upsert_guaranteed_analysis(self):
+        default_value = metadata.Value(
+            value=self.guaranteed_analysis_value,
+            unit=self.guaranteed_analysis_unit,
+            name=self.guaranteed_analysis_name,
+            edited=False
+        )
+        
+        en = [default_value]
+        fr = [default_value]
+        og_model = metadata.GuaranteedAnalysis(
+            title=None,
+            is_minimal=None,
+            en = en,
+            fr = fr
+        )
+        
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
+            self.cursor,
+            self.guaranteed_analysis_name,
+            self.guaranteed_analysis_value,
+            self.guaranteed_analysis_unit,
+            self.label_information_id,
+            "en",
+            self.element_id,
+            False,
+        )
+        guaranteed_analysis_id = nutrients.new_guaranteed_analysis(
+            self.cursor,
+            self.guaranteed_analysis_name,
+            self.guaranteed_analysis_value,
+            self.guaranteed_analysis_unit,
+            self.label_information_id,
+            "fr",
+            self.element_id,
+            False,
+        )
+        
+        get_ga = nutrients.get_all_guaranteeds(cursor=self.cursor,label_id=self.label_information_id)
+        self.assertEqual(len(get_ga),2)
+        
+        en.append(default_value)
+        fr.append(default_value)
+        
+        updated_ga = metadata.GuaranteedAnalysis(
+            title=None,
+            is_minimal=None,
+            en = en,
+            fr = fr
+        )
+        
+        nutrients.upsert_guaranteed_analysis(self.cursor,label_id=self.label_information_id,GA=updated_ga.model_dump())
+        updated_ga = nutrients.get_guaranteed_by_label(cursor=self.cursor,label_id=self.label_information_id)
+        self.assertEqual(len(updated_ga),len(en)+len(fr))
+        self.assertNotEqual(len(get_ga),updated_ga)

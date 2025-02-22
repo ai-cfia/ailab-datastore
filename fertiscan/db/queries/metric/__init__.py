@@ -290,7 +290,7 @@ def get_unit_id(cursor: Cursor, unit):
     raise UnitQueryError("Failed to retrieve unit id. No data returned.")
 
 @handle_query_errors(MetricDeleteError)
-def delete_metric_by_type(cursor:Cursor, label_id:UUID, metric_type:str):
+def delete_metric_by_type(cursor:Cursor, label_id:UUID, metric_type:str)->int:
     """
     This function deletes a metric from the database based on label_id and metric_type.
 
@@ -300,7 +300,7 @@ def delete_metric_by_type(cursor:Cursor, label_id:UUID, metric_type:str):
     - metric_type (str): The type of the metric.
 
     Returns:
-    - None
+    - number of deleted rows. (int)
     """
     query = """
         DELETE FROM
@@ -311,11 +311,28 @@ def delete_metric_by_type(cursor:Cursor, label_id:UUID, metric_type:str):
         RETURNING ID;
         """
     cursor.execute(query, (label_id, metric_type))
+    return cursor.rowcount
     
 @handle_query_errors(MetricDeleteError)
-def delete_metric(cursor:Cursor, label_id:UUID):
+def delete_metric(cursor:Cursor, label_id:UUID)->int:
+    """
+    This function deletes a metric from the database based on label_id and metric_type.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (UUID): The UUID of the label.
+    
+    Returns:
+    - number of deleted rows. (int)
+    """
+    rowcount=0
     for type in ["density", "weight", "volume"]:
-        delete_metric_by_type(cursor=cursor,label_id=label_id,metric_type=type)
+        rowcount += delete_metric_by_type(
+            cursor=cursor,
+            label_id=label_id,
+            metric_type=type
+        )
+    return rowcount
 
 @handle_query_errors(MetricUpdateError)
 def upsert_metric(cursor: Cursor, label_id:UUID,metrics:dict):

@@ -88,7 +88,7 @@ class InspectionController:
         if not isinstance(updated_data, data_inspection.Inspection):
                 updated_data = data_inspection.Inspection.model_validate(updated_data)        
         # The inspection record must exist before updating it
-        if not inspection.is_a_inspection_id(cursor, str(self.model.inspection_id)):
+        if not inspection.is_a_inspection_id(cursor, str(updated_data.inspection_id)):
                 raise inspection.InspectionNotFoundError(
                     f"Inspection not found based on the given id: {self.model.inspection_id}"
                 ) 
@@ -99,9 +99,19 @@ class InspectionController:
         # Make sure the user can verify this inspection
         if not datastore.verify_user_can_write(cursor=cursor,container_id=updated_data.container_id,user_id=user_id):
             raise datastore.PermissionNotHighEnough(f"The user {user_id} does not have the write permission or higher which mean he cannot upload an inspection in the container {self.id}")
-        updated_result = inspection.update_inspection(
-            cursor, self.model.inspection_id, user_id, updated_data.model_dump_json()
-        )
+        # A completed inspection cannot be updated
+        if inspection.is_inspection_verified(
+            cursor=cursor,
+            inspection_id=updated_data.inspection_id
+        ):
+            raise inspection.InspectionUpdateError("The inspection you are trying to update is already verified")
+        else:
+            inspection.update_inspection(
+                cursor=cursor,
+                inspection_id=updated_data.inspection_id,
+                verified=updated_data.verified,
+                inspection_comment=updated_data.inspection_comment
+            )
         # --------
         label_to_update = updated_data.product
         label_id = updated_data.product.label_id
@@ -140,11 +150,12 @@ class InspectionController:
                     name=org.name,
                     website=org.website,
                     phone_number=org.phone_number,
+                    address=org.address,
                     is_main_contact = org.is_main_contact,
                 )
             # An org was added by the user and not detected by the pipeline
             else:
-                organization.new_organization_information(
+                org.id = organization.new_organization_information(
                     cursor=cursor,
                     address=org.address,
                     name=org.name,
@@ -182,10 +193,13 @@ class InspectionController:
         )
         
         #Reg numbers
+        reg_numbers = []
+        for entry in updated_data.product.registration_numbers:
+            reg_numbers.append(entry.model_dump())
         registration_number.update_registration_number(
             cursor=cursor,
             label_id=label_id,
-            registration_numbers=updated_data.product.registration_numbers
+            registration_numbers=reg_numbers
         )
         
         # Verified
@@ -229,7 +243,7 @@ class InspectionController:
         else:
             updated_data.verified = False
         # ------------
-        return data_inspection.Inspection.model_validate(updated_result)
+        return data_inspection.Inspection.model_validate(updated_data)
     
     async def delete_inspection(
         self,

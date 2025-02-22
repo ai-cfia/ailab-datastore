@@ -376,9 +376,40 @@ def get_all_organization_inspection(cursor: Cursor, org_id):
     cursor.execute(query, (org_id, org_id))
     return cursor.fetchall()
 
+def update_inspection(
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    verified: bool,
+    inspection_comment:str
+):
+    if verified:
+        query = """
+            UPDATE
+                inspection
+            SET
+                verified = %s,
+                updated_at = CURRENT_TIMESTAMP,
+                inspection_comment = %s,
+                verified_date = CURRENT_TIMESTAMP
+            WHERE
+                id = %s;
+        """
+    else:
+            query = """
+            UPDATE
+                inspection
+            SET
+                verified = %s,
+                updated_at = CURRENT_TIMESTAMP,
+                inspection_comment = %s
+            WHERE
+                id = %s;
+        """
+    cursor.execute(query, (verified,inspection_comment,inspection_id))
+
 
 @handle_query_errors(InspectionUpdateError)
-def update_inspection(
+def update_inspection_function(
     cursor: Cursor,
     inspection_id: str | UUID,
     user_id: str | UUID,

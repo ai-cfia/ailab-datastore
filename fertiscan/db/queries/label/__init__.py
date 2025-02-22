@@ -15,9 +15,88 @@ from fertiscan.db.queries.errors import (
     handle_query_errors,
 )
 
-
 @handle_query_errors(LabelInformationCreationError)
 def new_label_information(
+    cursor,
+    name: str,
+    lot_number: str,
+    npk: str,
+    n: float,
+    p: float,
+    k: float,
+    title_en: str,
+    title_fr: str,
+    is_minimal: bool,
+    record_keeping: bool,
+):
+    """
+    This function create a new label_information in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - lot_number (str): The lot number of the label_information.
+    - npk (str): The npk of the label_information.
+    - n (float): The n of the label_information.
+    - p (float): The p of the label_information.
+    - k (float): The k of the label_information.
+    - title_en (str): The english title of the guaranteed analysis.
+    - title_fr (str): The french title of the guaranteed analysis.
+    - is_minimal (bool): if the tital is minimal for the guaranteed analysis.
+    - record_keeping (bool): if the label is a record keeping.
+
+    Returns:
+    - str: The UUID of the label_information
+    """
+    query = """
+        INSERT INTO 
+            label_information (
+                product_name,    
+                lot_number, 
+                npk, 
+                n, 
+                p, 
+                k, 
+                guaranteed_title_en, 
+                guaranteed_title_fr, 
+                title_is_minimal, 
+                record_keeping
+        ) VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        RETURNING id;
+        """
+    cursor.execute(
+        query,
+        (
+            name,
+            lot_number,
+            npk,
+            n,
+            p,
+            k,
+            title_en,
+            title_fr,
+            is_minimal,
+            record_keeping,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise LabelInformationCreationError(
+        "Failed to create label information. No data returned."
+    )
+
+@handle_query_errors(LabelInformationCreationError)
+def new_label_information_function(
     cursor,
     name: str,
     lot_number: str,
