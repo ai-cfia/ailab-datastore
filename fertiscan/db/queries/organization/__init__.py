@@ -85,10 +85,10 @@ def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str
             name 
         ILIKE %s;
     """
-    cursor.execute(query, (name))
+    cursor.execute(query, (name,))
     res = cursor.fetchone()
     if res[0] is None:
-        new_organization(
+        id =new_organization(
             cursor=cursor,
             name=name,
             website=website,
@@ -96,6 +96,7 @@ def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str
             address=address,
         )
     else:
+        id = res[0]
         query = """
             UPDATE 
                 organization 
@@ -106,11 +107,80 @@ def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str
                 "main_location_id" = Null
             WHERE id = %s;
         """
-        cursor.execute(query,(website,phone_number,address,res[0]))
-
+        cursor.execute(query,(website,phone_number,address,id))
+        return id
 
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization_information(
+    
+    cursor: Cursor,
+    address: str,
+    name: str,
+    website: str,
+    phone_number: str,
+    label_id: UUID,
+    edited: bool = False,
+    is_main_contact: bool = False,
+):
+    """
+    This function create a new organization information in the database using function.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+    - website (str): The website of the organization.
+    - phone_number (str): The phone number of the organization.
+    - label_id (str): The UUID of the label.
+    - edited (bool): The edited status of the organization information.
+    - is_main_contact (bool): The main contact status of the organization information.
+
+    Returns:
+    - str: The UUID of the organization information
+    """
+    if label_id is None:
+        raise OrganizationInformationCreationError(
+            "Label ID is required for organization information creation."
+        )
+    query = """
+            INSERT INTO 
+                organization_information (
+                    "name",
+                    "address",
+                    "website",
+                    "phone_number",
+                    "edited",
+                    "label_id",
+                    "is_main_contact"
+                )
+            VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+            )
+            RETURNING id;
+        """
+    cursor.execute(
+        query,
+        (
+            name,
+            address,
+            website,
+            phone_number,
+            edited,
+            label_id,
+            is_main_contact,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise OrganizationCreationError("Failed to create Organization. No data returned.")
+
+@handle_query_errors(OrganizationInformationCreationError)
+def new_organization_information_function(
     cursor: Cursor,
     address: str,
     name: str,
@@ -280,7 +350,13 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
 
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
-    cursor: Cursor, information_id: UUID, name, website, phone_number,is_main_contact
+    cursor: Cursor, 
+    information_id: UUID, 
+    name:str, 
+    website:str, 
+    phone_number:str,
+    address:str,
+    is_main_contact:bool
 ):
     """
     This function update a organization information in the database.
@@ -302,7 +378,8 @@ def update_organization_info(
             name = COALESCE(%s,name),
             website = COALESCE(%s,website),
             phone_number = COALESCE(%s,phone_number),
-            is_main_contact = COALESCE(%s,is_main_contact)
+            is_main_contact = COALESCE(%s,is_main_contact),
+            address = COALESCE(%s,address)
         WHERE 
             id = %s
         """
@@ -313,6 +390,7 @@ def update_organization_info(
             website,
             phone_number,
             is_main_contact,
+            address,
             str(information_id),
         ),
     )

@@ -12,7 +12,9 @@ from fertiscan.db.queries.errors import (
 
 handle_query_errors(FertilizerUpsertError)
 def upsert_fertilizer(cursor: Cursor, name: str, reg_number:str, org_owner_id:UUID,latest_inspection_id: UUID):
-    """_summary_
+    """
+    This function Inserts data for a Fertilizer based on its name.
+    If a Fertilizer is already named as such we update the latest inspection FK.
 
     Parameters:
         cursor (Cursor): 
@@ -20,6 +22,9 @@ def upsert_fertilizer(cursor: Cursor, name: str, reg_number:str, org_owner_id:UU
         reg_number (str): 
         org_owner_id (UUID): 
         latest_inspection_id (UUID): 
+    
+    Returns:
+        - Fertilizer id (uuid)
     """
     query = """
     INSERT INTO 

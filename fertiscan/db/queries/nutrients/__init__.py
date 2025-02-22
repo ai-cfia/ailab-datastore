@@ -291,9 +291,70 @@ def get_all_micronutrients(cursor: Cursor, label_id):
     cursor.execute(query, (label_id,))
     return cursor.fetchall()
 
+def new_guaranteed_analysis(
+    cursor: Cursor,
+    read_name,
+    value,
+    unit,
+    label_id,
+    language: str,
+    element_id: int = None,
+    edited: bool = False, 
+):
+    """
+    This function add a new guaranteed in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - read_name (str): The name of the guaranteed.
+    - value (float): The value of the guaranteed.
+    - unit (str): The unit of the guaranteed.
+    - element_id (int): The element of the guaranteed.
+    - label_id (str): The label of the guaranteed.
+
+    Returns:
+    - str: The UUID of the guaranteed.
+    """
+    if language.lower() not in ["fr", "en"]:
+        raise GuaranteedAnalysisCreationError("Language not supported")
+    if (
+        (read_name is None or read_name == "")
+        and (value is None or value == "")
+        and (unit is None or unit == "")
+    ):
+        raise GuaranteedAnalysisCreationError("Read name and value cannot be empty")
+    query = """
+        INSERT INTO guaranteed (
+            read_name, 
+            value, 
+            unit, 
+            edited, 
+            label_id, 
+            element_id, 
+            language)
+	    VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        RETURNING id;
+        """
+    cursor.execute(
+        query, (read_name, value, unit, edited,label_id, element_id, language)
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise GuaranteedAnalysisCreationError(
+        "Failed to create guaranteed analysis. No data returned."
+    )
+
 
 @handle_query_errors(GuaranteedAnalysisCreationError)
-def new_guaranteed_analysis(
+def new_guaranteed_analysis_function(
     cursor: Cursor,
     read_name,
     value,
@@ -519,6 +580,35 @@ def get_all_guaranteeds(cursor: Cursor, label_id):
             element_compound ec ON g.element_id = ec.id
         WHERE 
             g.label_id = %s
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.fetchall()
+
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_guaranteed_by_label(cursor:Cursor,label_id:UUID):
+    """
+    This function get all the guaranteed in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - str: The UUID of the guaranteed.
+    """
+
+    query = """
+        SELECT 
+            g.id,
+            g.read_name,
+            g.value,
+            g.unit,
+            g.edited,
+            CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
+        FROM 
+            guaranteed g
+        WHERE 
+            g.label_id = %s;
         """
     cursor.execute(query, (label_id,))
     return cursor.fetchall()

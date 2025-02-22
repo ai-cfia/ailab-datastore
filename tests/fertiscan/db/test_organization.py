@@ -290,6 +290,8 @@ class test_organization_information(unittest.TestCase):
         new_name = "new-name"
         new_website = "www.new.com"
         new_phone = "987654321"
+        is_main_contact= False
+        updated_address = "1223 street"
         id = organization.new_organization_information(
             self.cursor,
             self.address,
@@ -298,20 +300,29 @@ class test_organization_information(unittest.TestCase):
             self.phone,
             self.label_information_id,
             False,
-            True,
+            is_main_contact,
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
         self.assertEqual(old_data[1], self.website)
         self.assertEqual(old_data[2], self.phone)
         self.assertEqual(old_data[3], self.address)
+        self.assertEqual(old_data[6], is_main_contact)
         organization.update_organization_info(
-            self.cursor, id, new_name, new_website, new_phone
+            cursor=self.cursor, 
+            information_id=id, 
+            name=new_name, 
+            website=new_website, 
+            phone_number=new_phone,
+            is_main_contact=not is_main_contact,
+            address=updated_address
         )
         data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(data[0], new_name)
         self.assertEqual(data[1], new_website)
         self.assertEqual(data[2], new_phone)
+        self.assertEqual(data[3], updated_address)
+        self.assertEqual(data[6], not is_main_contact)
 
     def test_new_organization_information(self):
         id = organization.new_organization_information(
@@ -540,7 +551,31 @@ class test_organization(unittest.TestCase):
         self.assertEqual(organization_data[1], self.website)
         self.assertEqual(organization_data[2], self.phone)
         self.assertEqual(organization_data[3], self.address)
-
+        
+    def test_upsert_organization(self):
+        organization_id = organization.new_organization(
+            cursor=self.cursor,
+            name=self.name, 
+            website="wrong-website", 
+            phone_number="wrong-phone",
+            address="wrong-address"
+        )
+        update_id = organization.upsert_organization(
+            cursor=self.cursor, 
+            name=self.name,
+            website=self.website,
+            phone_number=self.phone,
+            address=self.address, 
+        )
+        self.assertEqual(organization_id, update_id)
+        organization_data = organization.get_organization(
+            self.cursor, str(organization_id)
+        )
+        self.assertEqual(organization_data[0], self.name)
+        self.assertEqual(organization_data[1], self.website)
+        self.assertEqual(organization_data[2], self.phone)
+        self.assertEqual(organization_data[3], self.address)
+        
     def test_get_organization(self):
         organization_id = organization.new_organization(
             self.cursor, self.name, self.website, self.phone, self.address
