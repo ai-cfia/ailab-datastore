@@ -5,6 +5,7 @@ This module represent the function for the table inspection:
 
 import json
 from uuid import UUID
+from datetime import date as Date
 
 from psycopg import Cursor
 from psycopg.rows import dict_row
@@ -498,3 +499,126 @@ def get_inspection_factual(cursor: Cursor, inspection_id):
         """
     cursor.execute(query, (inspection_id,))
     return cursor.fetchone()
+
+def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Date, upper_bound_date: Date, lot_number:str, label_ids:list[UUID]) -> list:
+    """
+    Find all inspections where the organization is listed as main contact.
+
+    Parameters:
+    - cursor (Cursor): Database cursor
+    - fertilizer_name (str): The name of the fertilizer
+    - lower_bound_date (Date): The lower bound date of the inspection
+    - upper_bound_date (Date): The upper bound date of the inspection
+    - lot_number (str): The lot number of the fertilizer
+    - label_ids (list[UUID]): The list of label IDs to search also search for regarless of other parameters
+    
+    Returns:
+    - list: List of tuples containing inspection data
+    """
+    query = """
+        SELECT 
+            i.id as inspection_id,
+            i.verified as verified,
+            i.upload_date as upload_date,
+            i.updated_at as last_updated_at,
+            i.inspector_id as inspector_id,
+            i.label_info_id as label_info_id,
+            i.container_id as container_id,
+            i.picture_set_id as foldeer_id,
+            i.inspection_comment as inspection_comment,
+            i.verified_date as verified_date,
+            l.product_name as fertilizer_name,
+            o.id as organization_info_id,
+            o.name as organization_name,
+            o.phone_number as organization_phone_number,
+            o.address as organization_email,
+            l.lot_number as lot_number,
+            l.title_is_minimal as is_minimal_guaranteed_analysis,
+            l.record_keeping as is_record_keeping,
+            r.identifier as registration_number
+        FROM 
+            inspection i
+        JOIN
+            label_information l ON i.label_info_id = l.id
+        JOIN
+            organization_information o ON l.id = o.label_id AND o.is_main_contact = TRUE
+        JOIN
+            registration_number_information r ON l.id = r.label_id 
+    """
+    first = True
+    params = ()
+    # check if all parameters are not none
+    if ((fertilizer_name is None or fertilizer_name.strip() == "") and
+        (lower_bound_date is None) and
+        (upper_bound_date is None) and
+        (lot_number is None or lot_number.strip() == "") and
+        (label_ids is None or len(label_ids) < 1)
+    ):
+        raise InspectionQueryError("No search parameters provided, please provide at least one search parameter.")
+    if fertilizer_name is not None and fertilizer_name.strip() != "":
+        if first:
+            query += "WHERE "
+        else:
+            query += "AND "
+        query += "l.product_name = %s "
+        first = False
+        params += (fertilizer_name,)
+    if lower_bound_date is not None:
+        if first:
+            query += "WHERE "
+        else:
+            query += "AND "
+        query += "i.upload_date >= %s "
+        first = False
+        params += (lower_bound_date,)
+    if upper_bound_date is not None:
+        if first:
+            query += "WHERE "
+        else:
+            query += "AND "
+        query += "i.upload_date <= %s "
+        first = False
+        params += (upper_bound_date,)
+    if lot_number is not None and lot_number.strip() != "":
+        if first:
+            query += "WHERE "
+        else:
+            query += "AND "
+        query += "l.lot_number = %s "
+        first = False
+        params += (lot_number,)
+    if label_ids is not None and len(label_ids) > 0:
+        if first:
+            query += "WHERE " # This is a list for previous conditions that were met
+        else:
+            query += "OR "
+        query += "l.id = ANY(%s) "
+        first = False
+        params += (label_ids,)
+        
+    # Aggregate the Registration Numbers
+    query += """ 
+        GROUP BY 
+            i.id,
+            i.verified,
+            i.upload_date,
+            i.updated_at,
+            i.inspector_id,
+            i.label_info_id,
+            i.container_id,
+            i.picture_set_id,
+            i.inspection_comment,
+            i.verified_date,
+            l.product_name,
+            o.id,
+            o.name,
+            o.phone_number,
+            o.address,
+            l.lot_number,
+            l.title_is_minimal,
+            l.record_keeping
+        """
+    query += ";"
+    cursor.execute(query, params)
+    return cursor.fetchall()
+

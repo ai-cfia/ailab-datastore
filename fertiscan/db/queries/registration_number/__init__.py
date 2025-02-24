@@ -200,6 +200,41 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     cursor.execute(query, (label_id,))
     return cursor.fetchall()
 
+def search_registration_numbers(cursor: Cursor, registration_number: str):
+    """
+    This function searches for the registration numbers in the
+    database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - registration_number (str): The registration number of the product.
+    
+    Returns:
+    - The registration numbers of the product.
+    """
+    if registration_number is None or registration_number.strip() == "":
+        raise RegistrationNumberNotFoundError(
+            "No parameters provided for search. Please provide at least one search parameter."
+        )
+    query = sql.SQL(
+        """
+        SELECT 
+            id,
+            identifier,
+            label_id,
+            is_an_ingredient,
+            name,
+            edited
+        FROM registration_number_information
+        WHERE identifier = %s;
+    """
+    )
+    cursor.execute(query, (registration_number,))
+    if result := cursor.fetchone():
+        return result
+    raise RegistrationNumberNotFoundError(
+        f"Failed to find Registration Number with the given registration number {registration_number}. No data returned."
+    )
+
 def delete_registration_numbers(cursor: Cursor, label_id : UUID):
     """
     This function deletes the registration numbers from the database.
