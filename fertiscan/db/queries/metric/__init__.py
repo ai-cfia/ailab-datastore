@@ -4,11 +4,14 @@ This module represent the function for the table metric and its children unit:
 """
 
 from psycopg import Cursor
+from uuid import UUID
 
 from fertiscan.db.queries.errors import (
     MetricCreationError,
     MetricQueryError,
     MetricRetrievalError,
+    MetricUpdateError,
+    MetricDeleteError,
     UnitCreationError,
     UnitQueryError,
     handle_query_errors,
@@ -285,3 +288,82 @@ def get_unit_id(cursor: Cursor, unit):
     if result := cursor.fetchone():
         return result[0]
     raise UnitQueryError("Failed to retrieve unit id. No data returned.")
+
+@handle_query_errors(MetricDeleteError)
+def delete_metric_by_type(cursor:Cursor, label_id:UUID, metric_type:str)->int:
+    """
+    This function deletes a metric from the database based on label_id and metric_type.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (UUID): The UUID of the label.
+    - metric_type (str): The type of the metric.
+
+    Returns:
+    - number of deleted rows. (int)
+    """
+    query = """
+        DELETE FROM
+            metric
+        WHERE
+            label_id = %s AND
+            metric_type = %s
+        RETURNING ID;
+        """
+    cursor.execute(query, (label_id, metric_type))
+    return cursor.rowcount
+    
+@handle_query_errors(MetricDeleteError)
+def delete_metric(cursor:Cursor, label_id:UUID)->int:
+    """
+    This function deletes a metric from the database based on label_id and metric_type.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (UUID): The UUID of the label.
+    
+    Returns:
+    - number of deleted rows. (int)
+    """
+    rowcount=0
+    for type in ["density", "weight", "volume"]:
+        rowcount += delete_metric_by_type(
+            cursor=cursor,
+            label_id=label_id,
+            metric_type=type
+        )
+    return rowcount
+
+@handle_query_errors(MetricUpdateError)
+def upsert_metric(cursor: Cursor, label_id:UUID,metrics:dict):
+    delete_metric(cursor=cursor,label_id=label_id)
+    
+    # Weight
+    for record in metrics["weight"]:
+        new_metric(
+            cursor=cursor,
+            value= record["value"],
+            read_unit=record["unit"],
+            label_id=label_id,
+            metric_type='weight',
+            edited=record["edited"]
+        )
+    # Density
+    new_metric(
+        cursor=cursor,
+        value= metrics["density"]["value"],
+        read_unit=metrics["density"]["unit"],
+        label_id=label_id,
+        metric_type='density',
+        edited=metrics["density"]["edited"]
+    )
+    # Volume
+    new_metric(
+        cursor=cursor,
+        value= metrics["volume"]["value"],
+        read_unit=metrics["volume"]["unit"],
+        label_id=label_id,
+        metric_type='volume',
+        edited=metrics["volume"]["edited"]
+    )
+    

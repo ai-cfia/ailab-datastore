@@ -92,7 +92,6 @@ class test_registration_number(unittest.TestCase):
             self.cursor, self.label_id
         )
         RegistrationNumber.model_validate(registration_numbers)
-        print(registration_numbers)
         self.assertEqual(len(registration_numbers["registration_numbers"]), 0)
 
     def test_update_registration_number(self):
@@ -107,27 +106,47 @@ class test_registration_number(unittest.TestCase):
         old_data = registration_number.get_registration_numbers_json(
             self.cursor, self.label_id
         )
+        reg_number_model = RegistrationNumber.model_validate(old_data["registration_numbers"][0])
         self.assertEqual(
-            old_data["registration_numbers"][0]["registration_number"],
+            reg_number_model.registration_number,
             self.registration_number,
         )
         new_reg_number = "654321"
-        new_dict = old_data["registration_numbers"]
-        new_dict[0]["registration_number"] = new_reg_number
-
+        reg_number_model.registration_number = new_reg_number
+        reg_number_model.edited = True
+        reg_number_model.is_an_ingredient = not self.is_an_ingredient
+        
+        
         registration_number.update_registration_number(
-            self.cursor,
-            json.dumps(new_dict),
-            self.label_id,
+            cursor=self.cursor,
+            registration_numbers=[reg_number_model.model_dump()],
+            label_id=self.label_id,
         )
-        new_data = registration_number.get_registration_numbers_json(
+        new_data = registration_number.get_registration_numbers_from_label(
             self.cursor, self.label_id
-        )
-
-        self.assertEqual(
-            new_data["registration_numbers"][0]["registration_number"], new_reg_number
-        )
-        self.assertNotEqual(
-            new_data["registration_numbers"][0]["registration_number"],
+        )[0]
+        
+        self.assertEqual(new_data[0],new_reg_number)
+        self.assertNotEqual(new_data[0],self.registration_number)
+        self.assertTrue(new_data[3])
+        self.assertEqual(new_data[1],not self.is_an_ingredient)
+        
+    def test_delete_registration_numbers(self):
+        registration_number.new_registration_number(
+            self.cursor,
             self.registration_number,
+            self.label_id,
+            self.is_an_ingredient,
+            self.read_name,
+            self.edited,
         )
+        
+        og_data = registration_number.get_registration_numbers_from_label(self.cursor,self.label_id)
+
+        self.assertEqual(len(og_data),1)
+        
+        affected_row = registration_number.delete_registration_numbers(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(og_data),affected_row)
+        deleted_data = registration_number.get_registration_numbers_from_label(self.cursor,self.label_id)
+            
+        self.assertEqual(len(deleted_data),0)

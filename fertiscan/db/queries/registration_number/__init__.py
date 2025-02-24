@@ -37,6 +37,54 @@ def new_registration_number(
     """
     query = sql.SQL(
         """
+        INSERT INTO registration_number_information (
+            "identifier", 
+            "label_id",
+            "is_an_ingredient", 
+            "name",
+            "edited"
+        )
+        VALUES (
+            %s,
+            %s, 
+            %s,
+            %s,
+            %s
+        ) 
+        RETURNING id;
+    """
+    )
+    cursor.execute(
+        query, (registration_number, label_id, is_an_ingredient, read_name, edited)
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise RegistrationNumberCreationError(
+        "Failed to create Registration Number. No data returned."
+    )
+
+@handle_query_errors(RegistrationNumberCreationError)
+def new_registration_number_function(
+    cursor: Cursor,
+    registration_number,
+    label_id: UUID,
+    is_an_ingredient: bool,
+    read_name: str = None,
+    edited=False,
+):
+    """
+    This function creates a new registration_number in the database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - registration_number (str): The registration number of the product.
+    - label_id (uuid): The UUID of the label_information.
+    - is_an_ingredient (bool): The status of the registration number.
+    - edited (bool): The edited status of the registration number.
+    Returns:
+    - The UUID of the new registration number.
+    """
+    query = sql.SQL(
+        """
         SELECT new_registration_number(%s, %s, %s, %s, %s);
     """
     )
@@ -71,10 +119,30 @@ def get_registration_numbers_json(cursor: Cursor, label_id: UUID):
     raise RegistrationNumberRetrievalError(
         "Failed to get Registration Numbers with the given label_id. No data returned."
     )
+    
+handle_query_errors(RegistrationNumberQueryError)
+def update_registration_number(
+    cursor:Cursor,
+    label_id :UUID,
+    registration_numbers:list[dict] | None,
+    ):
+    delete_registration_numbers(cursor=cursor,label_id=label_id)
+    
+    if registration_numbers is not None:
+        for reg_number in registration_numbers:
+            new_registration_number(
+                cursor=cursor,
+                registration_number=reg_number["registration_number"],
+                is_an_ingredient=reg_number["is_an_ingredient"],
+                label_id=label_id,
+                read_name=None,
+                edited=True,
+            )
+        
 
 
 @handle_query_errors(RegistrationNumberQueryError)
-def update_registration_number(
+def update_registration_number_function(
     cursor: Cursor,
     registration_numbers,
     label_id: UUID,
@@ -130,9 +198,81 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     """
     )
     cursor.execute(query, (label_id,))
-    result = cursor.fetchall()
-    if result:
+    return cursor.fetchall()
+
+def search_registration_numbers(cursor: Cursor, registration_number: str):
+    """
+    This function searches for the registration numbers in the
+    database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - registration_number (str): The registration number of the product.
+    
+    Returns:
+    - The registration numbers of the product.
+    """
+    if registration_number is None or registration_number.strip() == "":
+        raise RegistrationNumberNotFoundError(
+            "No parameters provided for search. Please provide at least one search parameter."
+        )
+    query = sql.SQL(
+        """
+        SELECT 
+            id,
+            identifier,
+            label_id,
+            is_an_ingredient,
+            name,
+            edited
+        FROM registration_number_information
+        WHERE identifier = %s;
+    """
+    )
+    cursor.execute(query, (registration_number,))
+    if result := cursor.fetchone():
         return result
     raise RegistrationNumberNotFoundError(
-        f"Failed to get Registration Numbers with the given label_id {label_id}. No data returned."
+        f"Failed to find Registration Number with the given registration number {registration_number}. No data returned."
     )
+
+def delete_registration_numbers(cursor: Cursor, label_id : UUID):
+    """
+    This function deletes the registration numbers from the database.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (uuid): The UUID of the label_information.
+    """
+    query = sql.SQL(
+        """
+        DELETE FROM registration_number_information
+        WHERE label_id = %s;
+    """
+    )
+    cursor.execute(query, (label_id,))
+    if cursor.rowcount == 0:
+        raise RegistrationNumberQueryError(
+            f"Failed to delete Registration Numbers with the given label_id {label_id}. No rows affected."
+        )
+    else:
+        return cursor.rowcount
+    
+def upsert_registration_numbers(cursor: Cursor, label_id: UUID, reg_numbers:dict):
+    """
+    Replaces all entries for a label by deleting existing ones and inserting new ones.
+    
+    Parameters:
+    - cursor: Database cursor
+    - label_id: UUID of the label to update
+    - reg_numbers: Dictionary containing the new values to insert
+    """
+    delete_registration_numbers(cursor=cursor,label_id=label_id)
+    
+    for record in reg_numbers:
+        new_registration_number(
+            cursor=cursor,
+            registration_number=record.registration_number,
+            label_id=label_id,
+            is_an_ingredient=record.is_an_ingredient,
+            read_name=None,
+            edited=True
+        )

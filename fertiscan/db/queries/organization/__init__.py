@@ -61,8 +61,126 @@ def new_organization(cursor: Cursor, name, website, phone_number, address):
     raise OrganizationCreationError("Failed to create Organization. No data returned.")
 
 
+def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str, address:str):
+    """
+    This function serves as an upsert when an organization is verified through an inspection
+    Therefor, we are looking for similar organizations with the same naming scheme to update their information or we insert a new Organization
+    
+    Parameters:
+        - cursor (Cursor): The database cursor to execute queries.
+        - name (str): The name of the organization.
+        - website (str): The website of the organization.
+        - phone_number (str): The phone number of the organization.
+        - address (str): The address of the organization.
+    Returns:
+        - None
+    
+    """
+    query ="""
+        Select 
+            "id" 
+        FROM 
+            organization 
+        WHERE
+            name 
+        ILIKE %s;
+    """
+    cursor.execute(query, (name,))
+    res = cursor.fetchone()
+    if res[0] is None:
+        id =new_organization(
+            cursor=cursor,
+            name=name,
+            website=website,
+            phone_number=phone_number,
+            address=address,
+        )
+    else:
+        id = res[0]
+        query = """
+            UPDATE 
+                organization 
+            SET
+                "website" = %s,
+                "phone_number" = %s,
+                "address" = %s,
+                "main_location_id" = Null
+            WHERE id = %s;
+        """
+        cursor.execute(query,(website,phone_number,address,id))
+        return id
+
 @handle_query_errors(OrganizationInformationCreationError)
 def new_organization_information(
+    
+    cursor: Cursor,
+    address: str,
+    name: str,
+    website: str,
+    phone_number: str,
+    label_id: UUID,
+    edited: bool = False,
+    is_main_contact: bool = False,
+):
+    """
+    This function create a new organization information in the database using function.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+    - website (str): The website of the organization.
+    - phone_number (str): The phone number of the organization.
+    - label_id (str): The UUID of the label.
+    - edited (bool): The edited status of the organization information.
+    - is_main_contact (bool): The main contact status of the organization information.
+
+    Returns:
+    - str: The UUID of the organization information
+    """
+    if label_id is None:
+        raise OrganizationInformationCreationError(
+            "Label ID is required for organization information creation."
+        )
+    query = """
+            INSERT INTO 
+                organization_information (
+                    "name",
+                    "address",
+                    "website",
+                    "phone_number",
+                    "edited",
+                    "label_id",
+                    "is_main_contact"
+                )
+            VALUES (
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s,
+                    %s
+            )
+            RETURNING id;
+        """
+    cursor.execute(
+        query,
+        (
+            name,
+            address,
+            website,
+            phone_number,
+            edited,
+            label_id,
+            is_main_contact,
+        ),
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise OrganizationCreationError("Failed to create Organization. No data returned.")
+
+@handle_query_errors(OrganizationInformationCreationError)
+def new_organization_information_function(
     cursor: Cursor,
     address: str,
     name: str,
@@ -232,7 +350,13 @@ def get_organization_json(cursor: Cursor, fertilizer_id: UUID) -> dict:
 
 @handle_query_errors(OrganizationInformationUpdateError)
 def update_organization_info(
-    cursor: Cursor, information_id: UUID, name, website, phone_number
+    cursor: Cursor, 
+    information_id: UUID, 
+    name:str, 
+    website:str, 
+    phone_number:str,
+    address:str,
+    is_main_contact:bool
 ):
     """
     This function update a organization information in the database.
@@ -253,7 +377,9 @@ def update_organization_info(
         SET 
             name = COALESCE(%s,name),
             website = COALESCE(%s,website),
-            phone_number = COALESCE(%s,phone_number)
+            phone_number = COALESCE(%s,phone_number),
+            is_main_contact = COALESCE(%s,is_main_contact),
+            address = COALESCE(%s,address)
         WHERE 
             id = %s
         """
@@ -263,6 +389,8 @@ def update_organization_info(
             name,
             website,
             phone_number,
+            is_main_contact,
+            address,
             str(information_id),
         ),
     )
@@ -293,7 +421,7 @@ def upsert_organization_info(cursor: Cursor, organization_info, label_id: UUID):
     return cursor.fetchone()[0]
 
 
-def upsert_organization(cursor: Cursor, organization_info_id: UUID):
+def upsert_organization_function(cursor: Cursor, organization_info_id: UUID):
     """
     This function upserts an organization information in the database.
 
@@ -342,6 +470,30 @@ def get_organization(cursor: Cursor, organization_id: UUID):
     raise OrganizationNotFoundError(
         "Organization not found with organization_id: " + organization_id
     )
+
+
+def delete_absent_organisation_information_from_label(cursor:Cursor,label_id:UUID,org_ids:list[UUID]):
+    """
+    Deletes organization information entries that have the specified label_id 
+    but whose IDs are not in the provided org_ids list.
+
+    Parameters:
+    - cursor (Cursor): The database cursor
+    - label_id (UUID): The label ID to match
+    - org_ids (list[UUID]): List of organization IDs to keep
+
+    Returns:
+    - int: Number of rows deleted
+    """
+    query = """
+        DELETE FROM 
+            organization_information
+        WHERE 
+            label_id = %s 
+            AND id != ALL(%s)
+    """
+    cursor.execute(query, (label_id, org_ids))
+    return cursor.rowcount
 
 
 @handle_query_errors(OrganizationRetrievalError)
@@ -393,6 +545,125 @@ def get_full_organization(cursor: Cursor, org_id):
         """
     cursor.execute(query, (org_id,))
     return cursor.fetchone()
+
+def search_organization_information(cursor: Cursor, name:str,website:str,phone_number:str,address:str):
+    """
+    This function search for an organization information in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+
+    Returns:
+    - dict: The organization information
+    """
+    query = """
+        SELECT 
+            id, 
+            label_id,
+            name, 
+            website, 
+            phone_number, 
+            address
+        FROM 
+            organization_information
+        WHERE 
+        """
+    first = True
+    # Make sure all parameters are not empty
+    if name is None and address is None and phone_number is None and website is None and name.strip() == "" and address.strip() == "" and phone_number.strip() == "" and website.strip() == "":
+        raise OrganizationRetrievalError("No search parameters provided. Please provide at least one search parameter.")
+    parameters = ()
+    if name is not None and name.strip() != "":
+        first = False
+        query += "WHERE name ILIKE %s"
+        parameters += (name,)
+    if address is not None and address.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "address ILIKE %s"
+        parameters += (address,)
+    if phone_number is not None and phone_number.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "phone_number ILIKE %s"
+        parameters += (phone_number,)
+    if website is not None and website.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "website ILIKE %s"
+        parameters += (website,)
+    query += ";"
+    cursor.execute(query, parameters)
+    return cursor.fetchall()
+
+def search_organization(cursor: Cursor, name:str,address:str,phone_number:str,website:str):
+    """
+    This function search for an organization in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+
+    Returns:
+    - dict: The organization
+    """
+    query = """
+        SELECT 
+            id, 
+            name, 
+            website, 
+            phone_number, 
+            address
+        FROM 
+            organization
+        WHERE 
+        """
+    first = True
+    # Make sure all parameters are not empty
+    if name is None and address is None and phone_number is None and website is None and name.strip() == "" and address.strip() == "" and phone_number.strip() == "" and website.strip() == "":
+        raise OrganizationRetrievalError("No search parameters provided. Please provide at least one search parameter.")
+    parameters = ()
+    if name is not None and name.strip() != "":
+        first = False
+        query += "WHERE name ILIKE %s"
+        parameters += (name,)
+    if address is not None and address.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "address ILIKE %s"
+        parameters += (address,)
+    if phone_number is not None and phone_number.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "phone_number ILIKE %s"
+        parameters += (phone_number,)
+    if website is not None and website.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "website ILIKE %s"
+        parameters += (website,)
+    query += ";"
+    cursor.execute(query, parameters)
+    return cursor.fetchall()
 
 
 @handle_query_errors(LocationCreationError)
