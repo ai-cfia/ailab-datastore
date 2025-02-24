@@ -546,6 +546,125 @@ def get_full_organization(cursor: Cursor, org_id):
     cursor.execute(query, (org_id,))
     return cursor.fetchone()
 
+def search_organization_information(cursor: Cursor, name:str,website:str,phone_number:str,address:str):
+    """
+    This function search for an organization information in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+
+    Returns:
+    - dict: The organization information
+    """
+    query = """
+        SELECT 
+            id, 
+            label_id,
+            name, 
+            website, 
+            phone_number, 
+            address
+        FROM 
+            organization_information
+        WHERE 
+        """
+    first = True
+    # Make sure all parameters are not empty
+    if name is None and address is None and phone_number is None and website is None and name.strip() == "" and address.strip() == "" and phone_number.strip() == "" and website.strip() == "":
+        raise OrganizationRetrievalError("No search parameters provided. Please provide at least one search parameter.")
+    parameters = ()
+    if name is not None and name.strip() != "":
+        first = False
+        query += "WHERE name ILIKE %s"
+        parameters += (name,)
+    if address is not None and address.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "address ILIKE %s"
+        parameters += (address,)
+    if phone_number is not None and phone_number.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "phone_number ILIKE %s"
+        parameters += (phone_number,)
+    if website is not None and website.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "website ILIKE %s"
+        parameters += (website,)
+    query += ";"
+    cursor.execute(query, parameters)
+    return cursor.fetchall()
+
+def search_organization(cursor: Cursor, name:str,address:str,phone_number:str,website:str):
+    """
+    This function search for an organization in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - name (str): The name of the organization.
+
+    Returns:
+    - dict: The organization
+    """
+    query = """
+        SELECT 
+            id, 
+            name, 
+            website, 
+            phone_number, 
+            address
+        FROM 
+            organization
+        WHERE 
+        """
+    first = True
+    # Make sure all parameters are not empty
+    if name is None and address is None and phone_number is None and website is None and name.strip() == "" and address.strip() == "" and phone_number.strip() == "" and website.strip() == "":
+        raise OrganizationRetrievalError("No search parameters provided. Please provide at least one search parameter.")
+    parameters = ()
+    if name is not None and name.strip() != "":
+        first = False
+        query += "WHERE name ILIKE %s"
+        parameters += (name,)
+    if address is not None and address.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "address ILIKE %s"
+        parameters += (address,)
+    if phone_number is not None and phone_number.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "phone_number ILIKE %s"
+        parameters += (phone_number,)
+    if website is not None and website.strip() != "":
+        if not first:
+            query += " AND "
+        else:
+            query+="WHERE "
+            first = False
+        query += "website ILIKE %s"
+        parameters += (website,)
+    query += ";"
+    cursor.execute(query, parameters)
+    return cursor.fetchall()
+
 
 @handle_query_errors(LocationCreationError)
 def new_location(cursor: Cursor, name, address, region_id, org_id=None):

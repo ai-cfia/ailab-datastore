@@ -545,3 +545,74 @@ def get_user_analysis_by_verified(
         raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
     return inspection.get_all_user_inspection_filter_verified(cursor, user_id, verified)
 
+def search_inspection(
+    cursor:Cursor,
+    fertilizer_name:str,
+    reg_number:str,
+    lot_number:str,
+    inspector_name:str,
+    date_of_inspection:str,
+    organization_name:str,
+    organization_address:str,
+    organization_phone:str,
+):
+    """
+        This function search all the verified inspection based on the given parameters
+        Parameters:
+        - cursor: The cursor object to interact with the database.
+        - fertilizer_name: The name of the fertilizer.
+        - registration_number: The registration number of the fertilizer.
+        - lot_number: The lot number of the fertilizer.
+        - inspector_name: The name of the inspector.
+        - date_of_inspection: The date of the inspection.
+        - organization_name: The name of the organization.
+        - organization_address: The address of the organization.
+        - organization_phone: The phone number of the organization.
+        Returns:
+        - List of inspection.
+        [
+            inspection.id,
+            inspection.upload_date,
+            inspection.updated_at,
+            inspection.sample_id,  -- Not used at the moment
+            inspection.picture_set_id,
+            label_info.id as label_info_id,
+            label_info.product_name,
+            label_info.company_info_id,
+            label_info.manufacturer_info_id
+            company_info.id as company_info_id,
+            company_info.company_name
+        ]
+        """
+    label_ids = []
+    # search based on Organization info
+    if organization_name is not None or organization_address is not None or organization_phone is not None:
+        orgs = organization.search_organization_information(
+            cursor=cursor,
+            name=organization_name,
+            address=organization_address,
+            phone_number=organization_phone,
+            website=None
+        )
+        if org is not None and len(orgs) > 0:
+            for org in orgs:
+                label_ids.append(org[1])
+    # search based on registration number
+    if reg_number is not None and reg_number.strip() == "":
+        reg_result = registration_number.search_registration_numbers(
+            cursor=cursor,
+            registration_number=reg_number
+        )
+        if reg_result is not None and len(reg_result) > 0:
+            for reg in reg_result:
+                label_ids.append(reg[1])
+    return inspection.search_inspection(
+        cursor=cursor,
+        fertilizer_name=fertilizer_name,
+        registration_number=registration_number,
+        lot_number=lot_number,
+        inspector_name=inspector_name,
+        date_of_inspection=date_of_inspection,
+        organization_info=orgs
+    )
+
