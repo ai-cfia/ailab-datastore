@@ -150,3 +150,33 @@ class test_registration_number(unittest.TestCase):
         deleted_data = registration_number.get_registration_numbers_from_label(self.cursor,self.label_id)
             
         self.assertEqual(len(deleted_data),0)
+
+    def test_search_registration_number(self):
+        reg_nb_id = registration_number.new_registration_number(
+            self.cursor,
+            self.registration_number,
+            self.label_id,
+            self.is_an_ingredient,
+            self.read_name,
+            self.edited,
+        )
+        other_reg_nb = "654321"
+        other_reg_nb_id = registration_number.new_registration_number(
+            self.cursor,
+            other_reg_nb,
+            self.label_id,
+            self.is_an_ingredient,
+            self.read_name,
+            self.edited,
+        )
+        data = registration_number.search_registration_number(
+            cursor=self.cursor,
+            registration_number=self.registration_number,
+        )
+        self.assertEqual(len(data),1)
+        self.assertEqual(data[0][0],reg_nb_id)
+        self.assertEqual(data[0][1],self.registration_number)
+        self.assertEqual(data[0][2],self.label_id)
+        self.assertEqual(data[0][3],self.is_an_ingredient)
+        self.assertEqual(data[0][4],self.read_name)
+        self.assertEqual(data[0][5],self.edited)

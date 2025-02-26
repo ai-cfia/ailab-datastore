@@ -625,8 +625,7 @@ def search_organization(cursor: Cursor, name:str,address:str,phone_number:str,we
             phone_number, 
             address
         FROM 
-            organization
-        WHERE 
+            organization 
         """
     first = True
     # Make sure all parameters are not empty

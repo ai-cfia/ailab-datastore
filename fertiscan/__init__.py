@@ -654,7 +654,7 @@ def search_inspection(
                 label_ids.append(org[1])
     # search based on registration number
     if reg_number is not None and reg_number.strip() == "":
-        reg_result = registration_number.search_registration_numbers(
+        reg_result = registration_number.search_registration_number(
             cursor=cursor,
             registration_number=reg_number
         )

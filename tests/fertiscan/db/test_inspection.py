@@ -6,11 +6,13 @@ It tests the functions in the inspection module.
 import os
 import unittest
 
+from datetime import datetime
+
 import datastore.db as db
 from datastore import Role
 from datastore.db.metadata import picture_set, validator
 from datastore.db.queries import picture, user,container
-from fertiscan.db.queries import inspection
+from fertiscan.db.queries import inspection, label, organization
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
 if DB_CONNECTION_STRING is None or DB_CONNECTION_STRING == "":
@@ -154,3 +156,173 @@ class test_inspection(unittest.TestCase):
     #     self.assertEqual(len(inspection_data), 2)
     #     self.assertEqual(inspection_data[0][0], inspection_id)
     #     self.assertEqual(inspection_data[1][0], inspection_id2)
+
+    def test_search_inspection(self):
+        
+        product_name = "searched_product_name_test"
+        lot_number = "lot_number"
+        npk = "npk"
+        n = 10.0
+        p = 20.0
+        k = 30.0
+        guaranteed_analysis_title_en = "guaranteed_analysis"
+        guaranteed_analysis_title_fr = "analyse_garantie"
+        guaranteed_is_minimal = False
+        record_keeping = False
+        label_information_id = label.new_label_information(
+            self.cursor,
+            product_name,
+            lot_number,
+            npk,
+            n,
+            p,
+            k,
+            guaranteed_analysis_title_en,
+            guaranteed_analysis_title_fr,
+            guaranteed_is_minimal,
+            record_keeping,
+        )
+        inspection_id = inspection.new_inspection(
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=label_information_id,
+            container_id=self.container_id,
+            verified=False
+        )
+        
+        other_product_name = product_name # this is to test the search function
+        other_lot_number = "other_lot_number"
+        other_npk = "other_npk"
+        other_n = 100.0
+        other_p = 200.0
+        other_k = 300.0
+        other_guaranteed_analysis_title_en = "other_guaranteed_analysis"
+        other_guaranteed_analysis_title_fr = "other_analyse_garantie"
+        other_guaranteed_is_minimal = True
+        other_record_keeping = True
+        other_label_information_id = label.new_label_information(
+            self.cursor,
+            other_product_name,
+            other_lot_number,
+            other_npk,
+            other_n,
+            other_p,
+            other_k,
+            other_guaranteed_analysis_title_en,
+            other_guaranteed_analysis_title_fr,
+            other_guaranteed_is_minimal,
+            other_record_keeping,
+        )
+        other_inspection_id = inspection.new_inspection(
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=other_label_information_id,
+            container_id=self.container_id,
+            verified=False
+        )
+        # Testing search by name
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=product_name,
+            lower_bound_date=None,
+            upper_bound_date=None,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        
+        # Testing search by lot number
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=None,
+            upper_bound_date=None,
+            lot_number=lot_number,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 1)
+        self.assertEqual(inspection_data[0][0], inspection_id)
+        
+        # Testing search by dates
+        # Testing search by lower bound date
+        today = datetime.today()
+        yesterday = today.replace(day=today.day-1)
+        tomorrow = today.replace(day=today.day+1)
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=yesterday,
+            upper_bound_date=None,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=today,
+            upper_bound_date=None,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=tomorrow,
+            upper_bound_date=None,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data),0)
+        # Testing search by upper bound date
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=None,
+            upper_bound_date=today,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=None,
+            upper_bound_date=yesterday,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 0)
+        # Testing searching with both dates
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=yesterday,
+            upper_bound_date=today,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=today,
+            upper_bound_date=today,
+            lot_number=None,
+            label_ids=None,
+        )
+        self.assertEqual(len(inspection_data), 2)
+        # Testing search by label ids
+        label_ids= [label_information_id, other_label_information_id]
+        inspection_data = inspection.search_inspection(
+            self.cursor, 
+            fertilizer_name=None,
+            lower_bound_date=None,
+            upper_bound_date=None,
+            lot_number=None,
+            label_ids=label_ids,
+        )
+        self.assertEqual(len(inspection_data), 2)

@@ -5,7 +5,7 @@ This module represent the function for the table inspection:
 
 import json
 from uuid import UUID
-from datetime import date as Date
+from datetime import datetime as Date
 
 from psycopg import Cursor
 from psycopg.rows import dict_row
@@ -535,14 +535,14 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
             l.lot_number as lot_number,
             l.title_is_minimal as is_minimal_guaranteed_analysis,
             l.record_keeping as is_record_keeping,
-            r.identifier as registration_number
+            array_agg(r.identifier) as registration_numbers
         FROM 
             inspection i
         JOIN
             label_information l ON i.label_info_id = l.id
-        JOIN
+        LEFT JOIN
             organization_information o ON l.id = o.label_id AND o.is_main_contact = TRUE
-        JOIN
+        LEFT JOIN
             registration_number_information r ON l.id = r.label_id 
     """
     first = True
@@ -555,6 +555,11 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
         (label_ids is None or len(label_ids) < 1)
     ):
         raise InspectionQueryError("No search parameters provided, please provide at least one search parameter.")
+    # Check if the dates are valid
+    if lower_bound_date is not None and upper_bound_date is not None:
+        if lower_bound_date > upper_bound_date:
+            raise InspectionQueryError("The lower bound date is greater than the upper bound date.")
+    
     if fertilizer_name is not None and fertilizer_name.strip() != "":
         if first:
             query += "WHERE "
@@ -568,7 +573,7 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
             query += "WHERE "
         else:
             query += "AND "
-        query += "i.upload_date >= %s "
+        query += "DATE(i.upload_date) >= DATE(%s) "
         first = False
         params += (lower_bound_date,)
     if upper_bound_date is not None:
@@ -576,8 +581,10 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
             query += "WHERE "
         else:
             query += "AND "
-        query += "i.upload_date <= %s "
+        query += "DATE(i.upload_date) <= DATE(%s) " 
         first = False
+        # Make sure upper_bound_date time is 23:59:59 to include the whole day
+        upper_bound_date = upper_bound_date.replace(hour=23, minute=59, second=59)
         params += (upper_bound_date,)
     if lot_number is not None and lot_number.strip() != "":
         if first:

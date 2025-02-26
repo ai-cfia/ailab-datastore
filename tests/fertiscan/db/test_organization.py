@@ -589,3 +589,115 @@ class test_organization(unittest.TestCase):
     def test_get_organization_not_found(self):
         with self.assertRaises(organization.OrganizationNotFoundError):
             organization.get_organization(self.cursor, str(uuid.uuid4()))
+
+
+    def test_search_organization(self):
+        organization_id = organization.new_organization(
+            cursor=self.cursor, 
+            name=self.name, 
+            website=self.website, 
+            phone_number=self.phone, 
+            address=self.address
+        )
+        organization.new_organization(
+            cursor=self.cursor, 
+            name="other-name", 
+            website="other-website", 
+            phone_number="other-phone", 
+            address="other-address"
+        )
+        organization.new_organization(
+            cursor=self.cursor, 
+            name="partial-name", 
+            website="partial-website", 
+            phone_number="partial-phone", 
+            address=self.address
+        )
+        # test search by name
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=self.name,
+            address=None,
+            phone_number=None,
+            website=None
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0][0], organization_id)
+        self.assertEqual(data[0][1], self.name)
+        self.assertEqual(data[0][2], self.website)
+        self.assertEqual(data[0][3], self.phone)
+        self.assertEqual(data[0][4], self.address)
+        # test search Wrong name        
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name="wrong name",
+            address=None,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 0)
+        # test search by address
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=None,
+            address=self.address,
+            phone_number=None,
+            website=None
+        )
+        self.assertEqual(len(data), 2)
+        # test search by phone
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=None,
+            address=None,
+            phone_number=self.phone,
+            website=None
+        )   
+        self.assertEqual(len(data), 1)
+        # test search by website
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=None,
+            address=None,
+            phone_number=None,
+            website=self.website
+        )
+        self.assertEqual(len(data), 1)
+        # test search by multiple fields
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=self.name,
+            address=self.address,
+            phone_number=self.phone,
+            website=self.website
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0][0], organization_id)
+        # test search by multiple fields but one wrong
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=self.name,
+            address=self.address,
+            phone_number=self.phone,
+            website="wrong-website"
+        )
+        self.assertEqual(len(data), 0)
+        # testing partial matching search (2 rows have the same address, but the rest is different)
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=None,
+            address=self.address,
+            phone_number=None,
+            website=None
+        )
+        self.assertEqual(len(data), 2)
+        data = organization.search_organization(
+            cursor=self.cursor, 
+            name=self.name,
+            address= self.address,
+            phone_number=None,
+            website=None
+        )
+        self.assertEqual(len(data), 1)
+        
+        

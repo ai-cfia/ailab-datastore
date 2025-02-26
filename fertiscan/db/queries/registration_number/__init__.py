@@ -200,7 +200,7 @@ def get_registration_numbers_from_label(cursor: Cursor, label_id: UUID):
     cursor.execute(query, (label_id,))
     return cursor.fetchall()
 
-def search_registration_numbers(cursor: Cursor, registration_number: str):
+def search_registration_number(cursor: Cursor, registration_number: str):
     """
     This function searches for the registration numbers in the
     database.
@@ -229,7 +229,7 @@ def search_registration_numbers(cursor: Cursor, registration_number: str):
     """
     )
     cursor.execute(query, (registration_number,))
-    if result := cursor.fetchone():
+    if result := cursor.fetchall():
         return result
     raise RegistrationNumberNotFoundError(
         f"Failed to find Registration Number with the given registration number {registration_number}. No data returned."

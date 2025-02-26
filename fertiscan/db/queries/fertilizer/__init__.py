@@ -5,6 +5,8 @@ from psycopg import Cursor
 from psycopg.rows import dict_row
 from psycopg.sql import SQL
 
+from datetime import date as Date
+
 from fertiscan.db.queries.errors import (
     FertilizerUpsertError,
     FertilizerQueryError,
@@ -93,9 +95,9 @@ def search_fertilizer(cursor: Cursor, fertilizer_name:str, registration_number: 
             fertilizer f
         JOIN 
             inspection i ON f.latest_inspection_id = i.id
-        JOIN 
+        LEFT JOIN 
             organization o ON f.main_contact_id = o.id
-        JOIN
+        LEFT JOIN
             label_information l ON i.label_info_id = l.id
     """
     first = True
@@ -131,14 +133,14 @@ def search_fertilizer(cursor: Cursor, fertilizer_name:str, registration_number: 
             query += "WHERE "
         else:
             query += "AND "
-        query += "i.upload_date >= %s"
+        query += "DATE(i.upload_date) >= DATE(%s)"
         first = False
     if upper_bound_date is not None:
         if first:
             query += "WHERE "
         else:
             query += "AND "
-        query += "i.upload_date <= %s"
+        query += "DATE(i.upload_date) <= DATE(%s)"
         first = False
     if lot_number is not None and lot_number.strip() != "":
         if first:
@@ -147,6 +149,29 @@ def search_fertilizer(cursor: Cursor, fertilizer_name:str, registration_number: 
             query += "AND "
         query += "l.lot_number = %s"
         first = False
+        
+    # Aggregate the Registration Numbers
+    query += """ 
+        GROUP BY 
+            i.id,
+            i.verified,
+            i.upload_date,
+            i.updated_at,
+            i.inspector_id,
+            i.label_info_id,
+            i.container_id,
+            i.picture_set_id,
+            i.inspection_comment,
+            i.verified_date,
+            l.product_name,
+            o.id,
+            o.name,
+            o.phone_number,
+            o.address,
+            l.lot_number,
+            l.title_is_minimal,
+            l.record_keeping
+        """
     query += ";"
     
     cursor.execute(query, (org_ids,))
