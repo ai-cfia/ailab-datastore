@@ -17,7 +17,6 @@ from datastore import (
     BlobUploadError,
     FolderCreationError,
     UserNotOwnerError,
-    get_user_container_client,
 )
 
 load_dotenv()
@@ -97,7 +96,11 @@ async def upload_picture_unknown(
         )
         # Upload the picture to the Blob Storage
         response = await azure_storage.upload_image(
-            container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
+            container_client,
+            folder_name,
+            str(picture_set_id),
+            picture_hash,
+            str(picture_id),
         )
         # Update the picture metadata in the DB
         data = {
@@ -164,7 +167,11 @@ async def upload_picture_known(
             folder_name = str(picture_set_id)
 
         response = await azure_storage.upload_image(
-            container_client, folder_name, str(picture_set_id), picture_hash, str(picture_id)
+            container_client,
+            folder_name,
+            str(picture_set_id),
+            picture_hash,
+            str(picture_id),
         )
         picture_link = (
             container_client.url
@@ -352,7 +359,6 @@ async def register_inference_result(
         return inference_dict
     except ValueError:
         raise ValueError("The value of 'totalBoxes' is not an integer.")
-
 
 
 async def new_correction_inference_feedback(cursor, inference_dict, type: int = 1):
@@ -618,12 +624,12 @@ async def get_ml_structure(cursor):
     model_list = []
     for pipeline in pipelines:
         # (id, name, active:bool, is_default: bool, data, model_ids: array)
-        
+
         pipeline_name = pipeline[1]
         pipeline_id = pipeline[0]
         default = pipeline[3]
         if pipeline[4] is not None:
-            pipeline_data =pipeline[4]
+            pipeline_data = pipeline[4]
         else:
             pipeline_data = None
         model_ids = pipeline[5]
@@ -631,7 +637,7 @@ async def get_ml_structure(cursor):
             pipeline_data, pipeline_name, pipeline_id, default, model_ids
         )
         ml_structure["pipelines"].append(pipeline_dict)
-        
+
         for model_id in model_ids:
             if model_id not in model_list:
                 model_list.append(model_id)
@@ -651,7 +657,6 @@ async def get_ml_structure(cursor):
             )
             ml_structure["models"].append(model_dict)
     return ml_structure
-
 
 
 async def get_seed_info(cursor):
@@ -863,9 +868,11 @@ async def delete_picture_set_with_archive(
         validated_pictures = picture.get_validated_pictures(cursor, picture_set_id)
 
         dev_user_id = user.get_user_id(cursor, DEV_USER_EMAIL)
-        dev_container_client = await get_user_container_client(
-            dev_user_id, NACHET_STORAGE_URL, NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY
-        )
+        dev_container_client = None
+        # TODO: FIX
+        # dev_container_client = await get_user_container_client(
+        #    dev_user_id, NACHET_STORAGE_URL, NACHET_BLOB_ACCOUNT, NACHET_BLOB_KEY
+        # )
         if not dev_container_client.exists():
             raise BlobUploadError(
                 f"Error while connecting to the dev container: {dev_user_id}"
