@@ -10,13 +10,13 @@ based on the following parameters:
 - Lot number
 - A timeframe (lower and upper bounds dates)
 - Organization information (the entity responsable for the product)
-    - Name
-    - Phone number
-    - Address
+  - Name
+  - Phone number
+  - Address
 
 ## Rules
 
-We need to establish rules regarding our search. 
+We need to establish rules regarding our search.
 
 ### String matching
 
@@ -49,7 +49,6 @@ DEF  | IJK |
 
 **Results** | ID  | first name |  Last name | |-----|------|----| | 1   |
 **ABC**  | **XYZ** |
-
 
 ## Entity Used
 
@@ -102,10 +101,13 @@ erDiagram
   inspection ||--|| label_information : defines
   label_information ||--o| organization_information: company
   label_information ||--o|registration_number_information: defines
+
 ```
 
 ## Datastore Signature
+
 ``` python
+
 def search_inspection(
     cursor:Cursor,
     fertilizer_name:str,
