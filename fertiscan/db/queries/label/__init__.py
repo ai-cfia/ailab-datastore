@@ -15,6 +15,7 @@ from fertiscan.db.queries.errors import (
     handle_query_errors,
 )
 
+
 @handle_query_errors(LabelInformationCreationError)
 def new_label_information(
     cursor,
@@ -94,6 +95,7 @@ def new_label_information(
     raise LabelInformationCreationError(
         "Failed to create label information. No data returned."
     )
+
 
 @handle_query_errors(LabelInformationCreationError)
 def new_label_information_function(
@@ -271,6 +273,7 @@ def delete_label_info(cursor: Cursor, label_id: str):
     cursor.execute(query, (label_id,))
     return cursor.rowcount
 
+
 @handle_query_errors(LabelInformationCreationError)
 def update_label_info(
     cursor: Cursor,
@@ -325,5 +328,19 @@ def update_label_info(
             record_keeping = %s
         WHERE id = %s;
         """
-    cursor.execute(query, (name,lot_number,npk,n,p,k,title_en,title_fr,is_minimal,record_keeping,label_id))
-
+    cursor.execute(
+        query,
+        (
+            name,
+            lot_number,
+            npk,
+            n,
+            p,
+            k,
+            title_en,
+            title_fr,
+            is_minimal,
+            record_keeping,
+            label_id,
+        ),
+    )

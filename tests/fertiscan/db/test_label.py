@@ -107,7 +107,7 @@ class test_label(unittest.TestCase):
     def test_get_label_information_json_wrong_label_id(self):
         with self.assertRaises(label.LabelInformationNotFoundError):
             label.get_label_information_json(self.cursor, str(uuid.uuid4()))
-            
+
     def test_update_sub_label(self):
         label_information_id = label.new_label_information(
             self.cursor,
@@ -127,9 +127,9 @@ class test_label(unittest.TestCase):
         new_name = "new_name"
         new_lot_number = "new lot number"
         new_npk = "new npk"
-        new_npk_numerical_val= 17
+        new_npk_numerical_val = 17
         new_english_title = "new title"
-        
+
         label.update_label_info(
             cursor=self.cursor,
             label_id=label_information_id,
@@ -141,22 +141,20 @@ class test_label(unittest.TestCase):
             k=self.k,
             title_en=new_english_title,
             title_fr=self.guaranteed_analysis_title_fr,
-            is_minimal= not self.guaranteed_is_minimal,
-            record_keeping= not self.record_keeping
+            is_minimal=not self.guaranteed_is_minimal,
+            record_keeping=not self.record_keeping,
         )
-        
+
         updated_label = label.get_label_information(self.cursor, label_information_id)
-        
-        self.assertEqual(updated_label[0],label_data[0])
-        self.assertEqual(updated_label[1],new_name)
-        self.assertEqual(updated_label[2],new_lot_number)
-        self.assertEqual(updated_label[3],new_npk)
-        self.assertEqual(updated_label[4],new_npk_numerical_val)
-        self.assertEqual(updated_label[5],new_npk_numerical_val)
-        self.assertEqual(updated_label[6],self.k) # We did not change this one
-        self.assertEqual(updated_label[7],new_english_title)
-        self.assertEqual(updated_label[8],self.guaranteed_analysis_title_fr)
-        self.assertEqual(updated_label[9],not self.guaranteed_is_minimal)
-        self.assertEqual(updated_label[10],not self.record_keeping)
-        
-        
+
+        self.assertEqual(updated_label[0], label_data[0])
+        self.assertEqual(updated_label[1], new_name)
+        self.assertEqual(updated_label[2], new_lot_number)
+        self.assertEqual(updated_label[3], new_npk)
+        self.assertEqual(updated_label[4], new_npk_numerical_val)
+        self.assertEqual(updated_label[5], new_npk_numerical_val)
+        self.assertEqual(updated_label[6], self.k)  # We did not change this one
+        self.assertEqual(updated_label[7], new_english_title)
+        self.assertEqual(updated_label[8], self.guaranteed_analysis_title_fr)
+        self.assertEqual(updated_label[9], not self.guaranteed_is_minimal)
+        self.assertEqual(updated_label[10], not self.record_keeping)

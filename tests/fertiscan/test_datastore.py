@@ -91,32 +91,33 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.user_role = datastore.Role.INSPECTOR
         self.user = asyncio.run(
             datastore.new_user(
-                self.cursor, self.user_email, BLOB_CONNECTION_STRING, self.tier, self.user_role
+                self.cursor,
+                self.user_email,
+                BLOB_CONNECTION_STRING,
+                self.tier,
+                self.user_role,
             )
         )
         self.container_model = next(iter(self.user.model.containers.values()))
         self.container_controller = asyncio.run(
             datastore.get_container_controller(
-                self.cursor,
-                self.container_model.id,
-                BLOB_CONNECTION_STRING,None
+                self.cursor, self.container_model.id, BLOB_CONNECTION_STRING, None
             )
         )
         self.container_client = self.container_controller.container_client
         # Assure the user Storage space exists
         self.assertTrue(self.container_client.exists())
-        self.folder:datastore.Folder = asyncio.run(
+        self.folder: datastore.Folder = asyncio.run(
             self.container_controller.create_folder(
                 cursor=self.cursor,
                 performed_by=self.user.id,
                 folder_name="test-folder-fertiscan",
                 nb_pictures=0,
-                parent_folder_id=None
+                parent_folder_id=None,
             )
         )
         self.folder_id = self.folder.id
-        
-        
+
         self.image = Image.new("RGB", (1980, 1080), "blue")
         self.image_byte_array = io.BytesIO()
         self.image.save(self.image_byte_array, format="TIFF")
@@ -176,22 +177,24 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             print(e)
 
     def test_new_inspection(self):
-        
-        inspection_controller:fertiscan.InspectionController = fertiscan.new_inspection(
-            self.cursor,
-            self.user.id,
-            self.analysis_json,
-            self.container_controller.id,
-            folder_id=self.folder_id
+
+        inspection_controller: fertiscan.InspectionController = (
+            fertiscan.new_inspection(
+                self.cursor,
+                self.user.id,
+                self.analysis_json,
+                self.container_controller.id,
+                folder_id=self.folder_id,
+            )
         )
         self.assertIsNotNone(inspection_controller)
-        self.assertIsInstance(inspection_controller,fertiscan.InspectionController)
+        self.assertIsInstance(inspection_controller, fertiscan.InspectionController)
         analysis = inspection_controller.model
         self.assertTrue(validator.is_valid_uuid(inspection_controller.id))
-        self.assertIsInstance(analysis,fertiscan.data_inspection.Inspection)
+        self.assertIsInstance(analysis, fertiscan.data_inspection.Inspection)
         analysis = fertiscan.data_inspection.Inspection.model_validate(analysis)
         inspection_id = analysis.inspection_id
-        self.assertEqual(inspection_id,inspection_controller.id)
+        self.assertEqual(inspection_id, inspection_controller.id)
 
         self.assertTrue(validator.is_valid_uuid(analysis.product.label_id))
         label_id = analysis.product.label_id
@@ -205,7 +208,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             len(metrics), 4
         )  # There are 4 metrics in the analysis_json (1 volume, 1 density, 2 weight )
 
-        ingredients = ingredient.get_ingredient_json(self.cursor, str(analysis.product.label_id))
+        ingredients = ingredient.get_ingredient_json(
+            self.cursor, str(analysis.product.label_id)
+        )
         self.assertIsNotNone(ingredients)
         # specifications = specification.get_all_specifications(
         # cursor=self.cursor, label_id=str(analysis["product"]["label_id"])
@@ -235,13 +240,13 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # original_dataset["inspection_id"] = inspection_id
         self.maxDiff = None
         # self.assertDictEqual(analysis, original_dataset)
-        
+
         inspection_fk = inspection.get_inspection_fk(
-            cursor=self.cursor,
-            inspection_id=inspection_id)
-        self.assertEqual(self.user.id,inspection_fk[1])
-        self.assertEqual(self.folder_id,inspection_fk[2])
-        self.assertEqual(self.container_model.id,inspection_fk[3])
+            cursor=self.cursor, inspection_id=inspection_id
+        )
+        self.assertEqual(self.user.id, inspection_fk[1])
+        self.assertEqual(self.folder_id, inspection_fk[2])
+        self.assertEqual(self.container_model.id, inspection_fk[3])
         # Verify OLAP Layer
 
         query = "SELECT EXISTS (SELECT 1 FROM inspection_factual WHERE inspection_factual.inspection_id = %s)"
@@ -260,13 +265,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         company_info_id = str(label_dimension[1])
         manufacturer_info_id = str(label_dimension[3])
-        
-        self.assertEqual(
-            str(label_dimension[1][0]), str(analysis.organizations[0].id)
-        )
-        self.assertEqual(
-            str(label_dimension[1][1]), str(analysis.organizations[1].id)
-        )
+
+        self.assertEqual(str(label_dimension[1][0]), str(analysis.organizations[0].id))
+        self.assertEqual(str(label_dimension[1][1]), str(analysis.organizations[1].id))
 
         self.assertEqual(len(label_dimension[2]), self.nb_instructions)
 
@@ -295,18 +296,31 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             "instructions_en": [],
             "cautions_fr": [],
             "instructions_fr": [],
-            "guaranteed_analysis_en": {"title": None, "is_minimal": False, "nutrients": []},
-            "guaranteed_analysis_fr": {"title": None, "is_minimal": False, "nutrients": []},
+            "guaranteed_analysis_en": {
+                "title": None,
+                "is_minimal": False,
+                "nutrients": [],
+            },
+            "guaranteed_analysis_fr": {
+                "title": None,
+                "is_minimal": False,
+                "nutrients": [],
+            },
         }
 
         formatted_analysis = metadata.build_inspection_import(
-            empty_analysis, self.user.id,self.folder_id,self.container_model.id
+            empty_analysis, self.user.id, self.folder_id, self.container_model.id
         )
 
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user.id, self.folder_id, formatted_analysis.model_dump_json()
+            self.cursor,
+            self.user.id,
+            self.folder_id,
+            formatted_analysis.model_dump_json(),
         )
-        inspection_model = fertiscan.data_inspection.Inspection.model_validate(inspection_dict)
+        inspection_model = fertiscan.data_inspection.Inspection.model_validate(
+            inspection_dict
+        )
         inspection_id = inspection_model.inspection_id
         label_id = inspection_model.product.label_id
         self.assertTrue(validator.is_valid_uuid(inspection_id))
@@ -329,7 +343,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 "invalid_user_id",
                 self.analysis_json,
                 self.container_model.id,
-                self.folder_id
+                self.folder_id,
             )
 
     def test_register_analysy_missing_key(self):
@@ -340,29 +354,38 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.user.id,
                 self.analysis_json,
                 self.container_model.id,
-                self.folder_id
+                self.folder_id,
             )
 
     def test_get_inspection(self):
         formatted_analysis = metadata.build_inspection_import(
-            self.analysis_json, self.user.id,self.folder_id,self.container_model.id
+            self.analysis_json, self.user.id, self.folder_id, self.container_model.id
         )
         formatted_analysis.inspection_comment
         inspection_dict = inspection.new_inspection_with_label_info(
-            self.cursor, self.user.id, self.folder_id, formatted_analysis.model_dump_json()
+            self.cursor,
+            self.user.id,
+            self.folder_id,
+            formatted_analysis.model_dump_json(),
         )
-        inspection_model = fertiscan.data_inspection.Inspection.model_validate(inspection_dict)
+        inspection_model = fertiscan.data_inspection.Inspection.model_validate(
+            inspection_dict
+        )
 
         inspection_id = inspection_model.inspection_id
         inspection_controller = fertiscan.get_inspection(
-            cursor=self.cursor,
-            inspection_id=inspection_id)
-        get_inspection_model = metadata.Inspection.model_validate(inspection_controller.model)
+            cursor=self.cursor, inspection_id=inspection_id
+        )
+        get_inspection_model = metadata.Inspection.model_validate(
+            inspection_controller.model
+        )
 
         self.assertEqual(str(get_inspection_model.inspection_id), str(inspection_id))
         self.assertEqual(str(get_inspection_model.inspector_id), str(self.user.id))
         self.maxDiff = None
-        self.assertDictEqual(get_inspection_model.model_dump(),inspection_model.model_dump())
+        self.assertDictEqual(
+            get_inspection_model.model_dump(), inspection_model.model_dump()
+        )
 
     def test_delete_inspection(self):
         # Create a new inspection to delete later
@@ -376,13 +399,21 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
         inspection_dict = inspection_controller.model
         inspection_id = inspection_dict.inspection_id
-        self.assertEqual(inspection_controller.id,inspection_id)
+        self.assertEqual(inspection_controller.id, inspection_id)
 
         # Verify the inspection was created by directly querying the database
-        self.assertTrue(inspection.is_a_inspection_id(cursor=self.cursor,inspection_id=inspection_id))
+        self.assertTrue(
+            inspection.is_a_inspection_id(
+                cursor=self.cursor, inspection_id=inspection_id
+            )
+        )
 
         # Perform the delete operation
-        self.assertTrue(container.is_a_container(self.cursor,inspection_controller.model.container_id))
+        self.assertTrue(
+            container.is_a_container(
+                self.cursor, inspection_controller.model.container_id
+            )
+        )
         deleted_inspection = asyncio.run(
             inspection_controller.delete_inspection(
                 cursor=self.cursor,
@@ -395,10 +426,10 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(deleted_inspection.id, inspection_id)
 
         # Ensure that the inspection no longer exists in the database
-        self.assertFalse(inspection.is_a_inspection_id(self.cursor,inspection_id))
+        self.assertFalse(inspection.is_a_inspection_id(self.cursor, inspection_id))
 
         # Verify that the picture set associated with the inspection was also deleted
-        self.assertFalse(picture.is_a_picture_set_id(self.cursor,self.folder_id))
+        self.assertFalse(picture.is_a_picture_set_id(self.cursor, self.folder_id))
 
         # Verify that no blobs associated with the picture set ID remain in the container
         blobs_after = [blob.name for blob in self.container_client.list_blobs()]
@@ -415,7 +446,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             self.container_model.id,
             self.folder_id,
         )
-        self.assertIsInstance(inspection_controller,fertiscan.InspectionController)
+        self.assertIsInstance(inspection_controller, fertiscan.InspectionController)
         inspection_id = inspection_controller.id
         label_id = inspection_controller.model.product.label_id
         self.assertTrue(validator.is_valid_uuid(inspection_id))
@@ -431,7 +462,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         new_instruction_fr = ["3. de", "2. ensemble"]
         new_instruction_nb = (len(new_instruction_en) + len(new_instruction_fr)) / 2
         new_value = 100.0
-        old_value = inspection_controller.model.guaranteed_analysis.fr[0].value 
+        old_value = inspection_controller.model.guaranteed_analysis.fr[0].value
         new_title = "Nouveau titre"
         old_title = inspection_controller.model.guaranteed_analysis.title.fr
         old_name = inspection_controller.model.guaranteed_analysis.fr[0].name
@@ -487,7 +518,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 "phone_number": "New Phone",
                 "email": "New Email",
                 "website": "New Website",
-                "is_main_contact": True
+                "is_main_contact": True,
             }
         ]
         # update the dataset
@@ -507,9 +538,9 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         to_update["guaranteed_analysis"] = new_guaranteed_analysis
         to_update["organizations"] = new_organizations
         to_update["inspection_comment"] = user_feedback
-        
+
         old_label_dimension = label.get_label_dimension(self.cursor, label_id)
-        
+
         inspection_to_update = metadata.Inspection.model_validate(to_update)
         updated_inspection = inspection_controller.update_inspection(
             self.cursor,
@@ -655,12 +686,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         self.assertNotEqual(len(new_label_dimension[9]), old_guaranteed_nb)
 
     def test_update_inspection_already_verified(self):
-        inspection_controller:fertiscan.InspectionController = fertiscan.new_inspection(
-            self.cursor,
-            self.user.id,
-            self.analysis_json,
-            self.container_controller.id,
-            folder_id=self.folder_id
+        inspection_controller: fertiscan.InspectionController = (
+            fertiscan.new_inspection(
+                self.cursor,
+                self.user.id,
+                self.analysis_json,
+                self.container_controller.id,
+                folder_id=self.folder_id,
+            )
         )
         inspection_to_update = inspection_controller.model.model_copy()
         self.assertFalse(inspection_to_update.verified)
@@ -674,13 +707,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             inspection_to_update,
         )
         self.assertTrue(updated_inspection.verified)
-        updated_inspection.product.name="blocked to be updated"
+        updated_inspection.product.name = "blocked to be updated"
         self.assertRaises(
             inspection_controller.update_inspection(
                 self.cursor,
                 self.user.id,
                 updated_inspection,
             ),
-            inspection.InspectionUpdateError
+            inspection.InspectionUpdateError,
         )
-        
