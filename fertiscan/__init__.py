@@ -130,14 +130,14 @@ class InspectionController:
                 "The inspection you are trying to update is already verified"
             )
         else:
-            updated_at =inspection.update_inspection(
+            updated_at = inspection.update_inspection(
                 cursor=cursor,
                 inspection_id=updated_data.inspection_id,
                 verified=updated_data.verified,
                 inspection_comment=updated_data.inspection_comment,
             )
             updated_data.updated_at = updated_at
-            self.model.updated_at = updated_at # just in case
+            self.model.updated_at = updated_at  # just in case
         # --------
         label_to_update = updated_data.product
         label_id = updated_data.product.label_id
@@ -267,7 +267,7 @@ class InspectionController:
                 name=fertilizer_name,
                 reg_number=registration_number_value,
                 org_owner_id=organization_id,
-                latest_inspection_id=updated_data.inspection_id
+                latest_inspection_id=updated_data.inspection_id,
             )
         else:
             updated_data.verified = False
@@ -531,11 +531,11 @@ def new_inspection(
         )
         if flag == True:
             # We do this since we have no way of knowing who is the main contact
-            record.is_main_contact=True # We assume the first one is the main contact
-            flag=False
-    
+            record.is_main_contact = True  # We assume the first one is the main contact
+            flag = False
+
     # Inspection
-    inspection_id,upload_date = inspection.new_inspection(
+    inspection_id, upload_date = inspection.new_inspection(
         cursor=cursor,
         user_id=user_id,
         picture_set_id=folder_id,

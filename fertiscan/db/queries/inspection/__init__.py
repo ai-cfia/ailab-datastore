@@ -25,7 +25,7 @@ from fertiscan.db.queries.errors import (
 @handle_query_errors(InspectionCreationError)
 def new_inspection(
     cursor: Cursor, user_id, picture_set_id, label_id, container_id, verified=False
-):
+) -> tuple[UUID, datetime]:
     """
     This function uploads a new inspection to the database.
 
@@ -383,11 +383,8 @@ def get_all_organization_inspection(cursor: Cursor, org_id):
 
 
 def update_inspection(
-    cursor: Cursor,
-    inspection_id: str | UUID,
-    verified: bool,
-    inspection_comment:str
-)->datetime:
+    cursor: Cursor, inspection_id: str | UUID, verified: bool, inspection_comment: str
+) -> datetime:
     if verified:
         query = """
             UPDATE
@@ -417,7 +414,6 @@ def update_inspection(
         """
     cursor.execute(query, (verified, inspection_comment, inspection_id))
     return cursor.fetchone()[0]
-    
 
 
 @handle_query_errors(InspectionUpdateError)
