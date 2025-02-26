@@ -23,7 +23,9 @@ from fertiscan.db.queries.errors import (
 
 
 @handle_query_errors(InspectionCreationError)
-def new_inspection(cursor: Cursor, user_id, picture_set_id, label_id,container_id,verified=False):
+def new_inspection(
+    cursor: Cursor, user_id, picture_set_id, label_id, container_id, verified=False
+):
     """
     This function uploads a new inspection to the database.
 
@@ -50,12 +52,13 @@ def new_inspection(cursor: Cursor, user_id, picture_set_id, label_id,container_i
         RETURNING 
             id
         """
-    cursor.execute(query, (user_id, picture_set_id, verified,label_id,container_id))
+    cursor.execute(query, (user_id, picture_set_id, verified, label_id, container_id))
     if result := cursor.fetchone():
         return result[0]
     raise InspectionCreationError("Failed to create inspection. No data returned.")
 
-def save_inspection_original_dataset(cursor: Cursor, inspection_id:UUID,og_data):
+
+def save_inspection_original_dataset(cursor: Cursor, inspection_id: UUID, og_data):
     query = """
         UPDATE 
             "fertiscan_0.1.1".inspection_factual
@@ -64,7 +67,8 @@ def save_inspection_original_dataset(cursor: Cursor, inspection_id:UUID,og_data)
 	    WHERE 
             inspection_factual."inspection_id" = %s;
     """
-    cursor.execute(query,(og_data,inspection_id))
+    cursor.execute(query, (og_data, inspection_id))
+
 
 @handle_query_errors(InspectionCreationError)
 def new_inspection_with_label_info(cursor: Cursor, user_id, picture_set_id, label_json):
@@ -377,11 +381,9 @@ def get_all_organization_inspection(cursor: Cursor, org_id):
     cursor.execute(query, (org_id, org_id))
     return cursor.fetchall()
 
+
 def update_inspection(
-    cursor: Cursor,
-    inspection_id: str | UUID,
-    verified: bool,
-    inspection_comment:str
+    cursor: Cursor, inspection_id: str | UUID, verified: bool, inspection_comment: str
 ):
     if verified:
         query = """
@@ -396,7 +398,7 @@ def update_inspection(
                 id = %s;
         """
     else:
-            query = """
+        query = """
             UPDATE
                 inspection
             SET
@@ -406,15 +408,12 @@ def update_inspection(
             WHERE
                 id = %s;
         """
-    cursor.execute(query, (verified,inspection_comment,inspection_id))
+    cursor.execute(query, (verified, inspection_comment, inspection_id))
 
 
 @handle_query_errors(InspectionUpdateError)
 def update_inspection_function(
-    cursor: Cursor,
-    inspection_id: str | UUID,
-    user_id: str | UUID,
-    updated_data_dict
+    cursor: Cursor, inspection_id: str | UUID, user_id: str | UUID, updated_data_dict
 ) -> dict:
     """
     Update inspection data in the database.
@@ -500,7 +499,15 @@ def get_inspection_factual(cursor: Cursor, inspection_id):
     cursor.execute(query, (inspection_id,))
     return cursor.fetchone()
 
-def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Date, upper_bound_date: Date, lot_number:str, label_ids:list[UUID]) -> list:
+
+def search_inspection(
+    cursor: Cursor,
+    fertilizer_name: str,
+    lower_bound_date: Date,
+    upper_bound_date: Date,
+    lot_number: str,
+    label_ids: list[UUID],
+) -> list:
     """
     Find all inspections where the organization is listed as main contact.
 
@@ -511,7 +518,7 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
     - upper_bound_date (Date): The upper bound date of the inspection
     - lot_number (str): The lot number of the fertilizer
     - label_ids (list[UUID]): The list of label IDs to search also search for regarless of other parameters
-    
+
     Returns:
     - list: List of tuples containing inspection data
     """
@@ -548,18 +555,23 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
     first = True
     params = ()
     # check if all parameters are not none
-    if ((fertilizer_name is None or fertilizer_name.strip() == "") and
-        (lower_bound_date is None) and
-        (upper_bound_date is None) and
-        (lot_number is None or lot_number.strip() == "") and
-        (label_ids is None or len(label_ids) < 1)
+    if (
+        (fertilizer_name is None or fertilizer_name.strip() == "")
+        and (lower_bound_date is None)
+        and (upper_bound_date is None)
+        and (lot_number is None or lot_number.strip() == "")
+        and (label_ids is None or len(label_ids) < 1)
     ):
-        raise InspectionQueryError("No search parameters provided, please provide at least one search parameter.")
+        raise InspectionQueryError(
+            "No search parameters provided, please provide at least one search parameter."
+        )
     # Check if the dates are valid
     if lower_bound_date is not None and upper_bound_date is not None:
         if lower_bound_date > upper_bound_date:
-            raise InspectionQueryError("The lower bound date is greater than the upper bound date.")
-    
+            raise InspectionQueryError(
+                "The lower bound date is greater than the upper bound date."
+            )
+
     if fertilizer_name is not None and fertilizer_name.strip() != "":
         if first:
             query += "WHERE "
@@ -581,7 +593,7 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
             query += "WHERE "
         else:
             query += "AND "
-        query += "DATE(i.upload_date) <= DATE(%s) " 
+        query += "DATE(i.upload_date) <= DATE(%s) "
         first = False
         # Make sure upper_bound_date time is 23:59:59 to include the whole day
         upper_bound_date = upper_bound_date.replace(hour=23, minute=59, second=59)
@@ -596,13 +608,13 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
         params += (lot_number,)
     if label_ids is not None and len(label_ids) > 0:
         if first:
-            query += "WHERE " # This is a list for previous conditions that were met
+            query += "WHERE "  # This is a list for previous conditions that were met
         else:
             query += "OR "
         query += "l.id = ANY(%s) "
         first = False
         params += (label_ids,)
-        
+
     # Aggregate the Registration Numbers
     query += """ 
         GROUP BY 
@@ -628,4 +640,3 @@ def search_inspection(cursor: Cursor, fertilizer_name:str, lower_bound_date: Dat
     query += ";"
     cursor.execute(query, params)
     return cursor.fetchall()
-

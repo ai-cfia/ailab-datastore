@@ -719,13 +719,12 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
 
     def test_search_inspection(self):
         """
-        The seach inspection function only uses the query modules 
+        The seach inspection function only uses the query modules
         and doesn't modify the parameters nor the results from the query modules
-        
-        All the module function used to search have been tested individually. 
+
+        All the module function used to search have been tested individually.
         Therefor, we decided there are no gains from testing the global search function
-        
+
         We are still leaving this in case there are some things to be tested in the future.
         """
         self.assertTrue(True)
-        
