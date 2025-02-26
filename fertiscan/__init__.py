@@ -130,12 +130,14 @@ class InspectionController:
                 "The inspection you are trying to update is already verified"
             )
         else:
-            inspection.update_inspection(
+            updated_at =inspection.update_inspection(
                 cursor=cursor,
                 inspection_id=updated_data.inspection_id,
                 verified=updated_data.verified,
                 inspection_comment=updated_data.inspection_comment,
             )
+            updated_data.updated_at = updated_at
+            self.model.updated_at = updated_at # just in case
         # --------
         label_to_update = updated_data.product
         label_id = updated_data.product.label_id
@@ -252,7 +254,7 @@ class InspectionController:
                     "'Main contact organization information is required and was not found'"
                 )
             else:
-                organization.upsert_organization(
+                organization_id = organization.upsert_organization(
                     cursor=cursor,
                     name=main_org.name,
                     website=main_org.website,
@@ -264,12 +266,13 @@ class InspectionController:
                 cursor=cursor,
                 name=fertilizer_name,
                 reg_number=registration_number_value,
-                org_owner_id=main_org.id,
-                latest_inspection_id=updated_data.inspection_id,
+                org_owner_id=organization_id,
+                latest_inspection_id=updated_data.inspection_id
             )
         else:
             updated_data.verified = False
         # ------------
+        updated_data.updated_at = updated_at
         return data_inspection.Inspection.model_validate(updated_data)
 
     async def delete_inspection(
@@ -528,10 +531,11 @@ def new_inspection(
         )
         if flag == True:
             # We do this since we have no way of knowing who is the main contact
-            flag = False
-
+            record.is_main_contact=True # We assume the first one is the main contact
+            flag=False
+    
     # Inspection
-    formatted_analysis.inspection_id = inspection.new_inspection(
+    inspection_id,upload_date = inspection.new_inspection(
         cursor=cursor,
         user_id=user_id,
         picture_set_id=folder_id,
@@ -539,6 +543,9 @@ def new_inspection(
         label_id=label_info_id,
         container_id=container_id,
     )
+    formatted_analysis.inspection_id = inspection_id
+    formatted_analysis.upload_date = upload_date
+    formatted_analysis.updated_at = upload_date
     analysis_db = data_inspection.Inspection.model_validate(formatted_analysis)
     inspection.save_inspection_original_dataset(
         cursor=cursor,

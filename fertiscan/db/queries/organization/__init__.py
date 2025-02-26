@@ -87,7 +87,7 @@ def upsert_organization(cursor: Cursor, name:str, website:str, phone_number: str
     """
     cursor.execute(query, (name,))
     res = cursor.fetchone()
-    if res[0] is None:
+    if res is None or res[0] is None:
         id =new_organization(
             cursor=cursor,
             name=name,

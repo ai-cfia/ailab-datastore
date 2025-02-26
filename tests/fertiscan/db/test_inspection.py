@@ -7,6 +7,7 @@ import os
 import unittest
 
 from datetime import datetime
+from time import sleep
 
 import datastore.db as db
 from datastore import Role
@@ -43,7 +44,7 @@ class test_inspection(unittest.TestCase):
         db.end_query(self.con, self.cursor)
 
     def test_new_inspection(self):
-        inspection_id = inspection.new_inspection(
+        inspection_id,upload_date = inspection.new_inspection(
             cursor=self.cursor, 
             user_id=self.user_id, 
             picture_set_id=self.picture_set_id,
@@ -52,6 +53,7 @@ class test_inspection(unittest.TestCase):
             verified=False
         )
         self.assertTrue(validator.is_valid_uuid(inspection_id))
+        self.assertIsInstance(upload_date, datetime)
 
     def test_is_inspection_verified(self):
         inspection_id = inspection.new_inspection(
@@ -61,7 +63,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=False
-        )
+        )[0]
         inspection_id2 = inspection.new_inspection(
             cursor=self.cursor, 
             user_id=self.user_id, 
@@ -69,7 +71,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=True
-        )
+        )[0]
         self.assertFalse(inspection.is_inspection_verified(self.cursor, inspection_id))
         self.assertTrue(inspection.is_inspection_verified(self.cursor, inspection_id2))
 
@@ -81,7 +83,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=False
-        )
+        )[0]
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[0], False)
         self.assertEqual(inspection_data[3], self.user_id)
@@ -95,7 +97,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=False
-        )
+        )[0]
         inspection_id2 = inspection.new_inspection(
             cursor=self.cursor, 
             user_id=self.user_id, 
@@ -103,7 +105,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=False
-        )
+        )[0]
         inspection_data = inspection.get_all_user_inspection(self.cursor, self.user_id)
         self.assertEqual(len(inspection_data), 2)
         self.assertEqual(inspection_data[0][0], inspection_id)
@@ -117,7 +119,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=False
-        )
+        )[0]
         inspection_id2 = inspection.new_inspection(
             cursor=self.cursor, 
             user_id=self.user_id, 
@@ -125,7 +127,7 @@ class test_inspection(unittest.TestCase):
             label_id=None,
             container_id=self.container_id,
             verified=True
-        )
+        )[0]
         inspection_data = inspection.get_all_user_inspection_filter_verified(
             self.cursor, self.user_id, True
         )
@@ -326,3 +328,32 @@ class test_inspection(unittest.TestCase):
             label_ids=label_ids,
         )
         self.assertEqual(len(inspection_data), 2)
+
+    def test_update_inspection(self):
+        inspection_id,upload_date = inspection.new_inspection(
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False,
+        )
+        self.con.commit() # need to commit to get the time change
+        sleep(2)
+        updated_at = inspection.update_inspection(
+            cursor=self.cursor, 
+            inspection_id=inspection_id, 
+            verified=True,
+            inspection_comment="Test comment"
+        )
+        inspection_data = inspection.get_inspection(self.cursor, inspection_id)
+        inspection.delete_inspection(self.cursor,inspection_id,self.user_id)
+        picture.delete_picture_set(self.cursor,self.picture_set_id)
+        container.delete_container(self.cursor,self.container_id)
+        user.delete_user(self.cursor, self.user_id)
+        self.con.commit()
+        
+        self.assertTrue(inspection_data[0])
+        self.assertNotEqual(updated_at, upload_date)
+        self.assertEqual(updated_at, inspection_data[2])
+

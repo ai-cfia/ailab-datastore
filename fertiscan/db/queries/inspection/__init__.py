@@ -5,7 +5,7 @@ This module represent the function for the table inspection:
 
 import json
 from uuid import UUID
-from datetime import datetime as Date
+from datetime import datetime
 
 from psycopg import Cursor
 from psycopg.rows import dict_row
@@ -50,11 +50,11 @@ def new_inspection(
         VALUES 
             (%s, %s, %s,%s,%s)
         RETURNING 
-            id
+            id, upload_date;
         """
     cursor.execute(query, (user_id, picture_set_id, verified, label_id, container_id))
     if result := cursor.fetchone():
-        return result[0]
+        return result
     raise InspectionCreationError("Failed to create inspection. No data returned.")
 
 
@@ -383,8 +383,11 @@ def get_all_organization_inspection(cursor: Cursor, org_id):
 
 
 def update_inspection(
-    cursor: Cursor, inspection_id: str | UUID, verified: bool, inspection_comment: str
-):
+    cursor: Cursor,
+    inspection_id: str | UUID,
+    verified: bool,
+    inspection_comment:str
+)->datetime:
     if verified:
         query = """
             UPDATE
@@ -395,7 +398,9 @@ def update_inspection(
                 inspection_comment = %s,
                 verified_date = CURRENT_TIMESTAMP
             WHERE
-                id = %s;
+                id = %s
+            RETURNING
+                updated_at;
         """
     else:
         query = """
@@ -406,9 +411,13 @@ def update_inspection(
                 updated_at = CURRENT_TIMESTAMP,
                 inspection_comment = %s
             WHERE
-                id = %s;
+                id = %s
+            RETURNING
+                updated_at;
         """
     cursor.execute(query, (verified, inspection_comment, inspection_id))
+    return cursor.fetchone()[0]
+    
 
 
 @handle_query_errors(InspectionUpdateError)
