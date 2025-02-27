@@ -4,6 +4,7 @@ from uuid import UUID
 from azure.storage.blob import ContainerClient
 from dotenv import load_dotenv
 from psycopg import Cursor
+from datetime import datetime
 
 import datastore
 import datastore.db.queries.picture as picture
@@ -600,3 +601,88 @@ def get_user_analysis_by_verified(cursor: Cursor, user_id: UUID, verified: bool)
     if not user.is_a_user_id(cursor=cursor, user_id=user_id):
         raise user.UserNotFoundError(f"User not found based on the given id: {user_id}")
     return inspection.get_all_user_inspection_filter_verified(cursor, user_id, verified)
+
+
+def search_inspection(
+    cursor: Cursor,
+    fertilizer_name: str,
+    reg_number: str,
+    lot_number: str,
+    inspector_name: str,
+    lower_bound_date: datetime,
+    upper_bound_date: datetime,
+    organization_name: str,
+    organization_address: str,
+    organization_phone: str,
+):
+    """
+    This function search all the verified inspection based on the given parameters
+    Parameters:
+    - cursor (Cursor): The cursor object to interact with the database.
+    - fertilizer_name (str): The name of the fertilizer.
+    - reg_number (str): The registration number of the fertilizer.
+    - lot_number (str): The lot number of the fertilizer.
+    - inspector_name (str): The name of the inspector. (Not used at the moment)
+    - lower_bound_date (str): The lower bound date of the inspection.
+    - upper_bound_date (str): The upper bound date of the inspection.
+    - organization_name (str): The name of the organization.
+    - organization_address (str): The address of the organization.
+    - organization_phone (str): The phone number of the organization.
+
+    Returns:
+    - List of inspection tuple.
+    [
+        inspection.id,
+        inspection.verified
+        inspection.upload_date,
+        inspection.updated_at,
+        inspection.inspector_id
+        inspection.label_info_id,
+        inspection.container_id,
+        inspection.folder_id,
+        inspection.inspection_comment,
+        inspection.verified_date,
+        label_info.product_name,
+        organization_info.id, (main_contact_id)
+        organization_info.name,
+        organization_info.phone_number,
+        organization_info.address,
+        label_info.is_minimal,
+        label_info.record_keeping,
+        registration_number.identifiers, (list of reg numbers)
+    ]
+    """
+    label_ids = []
+    # search based on Organization info
+    if (
+        organization_name is not None
+        or organization_address is not None
+        or organization_phone is not None
+    ):
+        orgs = organization.search_organization_information(
+            cursor=cursor,
+            name=organization_name,
+            address=organization_address,
+            phone_number=organization_phone,
+            website=None,
+        )
+        if org is not None and len(orgs) > 0:
+            for org in orgs:
+                label_ids.append(org[1])
+    # search based on registration number
+    if reg_number is not None and reg_number.strip() == "":
+        reg_result = registration_number.search_registration_number(
+            cursor=cursor, registration_number=reg_number
+        )
+        if reg_result is not None and len(reg_result) > 0:
+            for reg in reg_result:
+                label_ids.append(reg[1])
+    return inspection.search_inspection(
+        cursor=cursor,
+        fertilizer_name=fertilizer_name,
+        lower_bound_date=lower_bound_date,
+        upper_bound_date=upper_bound_date,
+        lot_number=lot_number,
+        label_ids=label_ids,
+        inspector_name=inspector_name
+    )
