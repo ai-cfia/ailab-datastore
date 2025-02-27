@@ -4,6 +4,7 @@ from uuid import UUID
 from azure.storage.blob import ContainerClient
 from dotenv import load_dotenv
 from psycopg import Cursor
+from datetime import datetime
 
 import datastore
 import datastore.db.queries.picture as picture
@@ -608,7 +609,8 @@ def search_inspection(
     reg_number: str,
     lot_number: str,
     inspector_name: str,
-    date_of_inspection: str,
+    lower_bound_date: datetime,
+    upper_bound_date: datetime,
     organization_name: str,
     organization_address: str,
     organization_phone: str,
@@ -616,29 +618,38 @@ def search_inspection(
     """
     This function search all the verified inspection based on the given parameters
     Parameters:
-    - cursor: The cursor object to interact with the database.
-    - fertilizer_name: The name of the fertilizer.
-    - registration_number: The registration number of the fertilizer.
-    - lot_number: The lot number of the fertilizer.
-    - inspector_name: The name of the inspector.
-    - date_of_inspection: The date of the inspection.
-    - organization_name: The name of the organization.
-    - organization_address: The address of the organization.
-    - organization_phone: The phone number of the organization.
+    - cursor (Cursor): The cursor object to interact with the database.
+    - fertilizer_name (str): The name of the fertilizer.
+    - reg_number (str): The registration number of the fertilizer.
+    - lot_number (str): The lot number of the fertilizer.
+    - inspector_name (str): The name of the inspector. (Not used at the moment)
+    - lower_bound_date (str): The lower bound date of the inspection.
+    - upper_bound_date (str): The upper bound date of the inspection.
+    - organization_name (str): The name of the organization.
+    - organization_address (str): The address of the organization.
+    - organization_phone (str): The phone number of the organization.
+
     Returns:
-    - List of inspection.
+    - List of inspection tuple.
     [
         inspection.id,
+        inspection.verified
         inspection.upload_date,
         inspection.updated_at,
-        inspection.sample_id,  -- Not used at the moment
-        inspection.picture_set_id,
-        label_info.id as label_info_id,
+        inspection.inspector_id
+        inspection.label_info_id,
+        inspection.container_id,
+        inspection.folder_id,
+        inspection.inspection_comment,
+        inspection.verified_date,
         label_info.product_name,
-        label_info.company_info_id,
-        label_info.manufacturer_info_id
-        company_info.id as company_info_id,
-        company_info.company_name
+        organization_info.id, (main_contact_id)
+        organization_info.name,
+        organization_info.phone_number,
+        organization_info.address,
+        label_info.is_minimal,
+        label_info.record_keeping,
+        registration_number.identifiers, (list of reg numbers)
     ]
     """
     label_ids = []
@@ -669,9 +680,9 @@ def search_inspection(
     return inspection.search_inspection(
         cursor=cursor,
         fertilizer_name=fertilizer_name,
-        registration_number=registration_number,
+        lower_bound_date=lower_bound_date,
+        upper_bound_date=upper_bound_date,
         lot_number=lot_number,
-        inspector_name=inspector_name,
-        date_of_inspection=date_of_inspection,
-        organization_info=orgs,
+        label_ids=label_ids,
+        inspector_name=inspector_name
     )
