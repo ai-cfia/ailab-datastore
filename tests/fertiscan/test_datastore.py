@@ -11,6 +11,7 @@ import unittest
 from uuid import UUID
 
 from PIL import Image
+from datetime import datetime
 
 import datastore
 import datastore.db as db
@@ -27,6 +28,7 @@ from fertiscan.db.queries import (
     nutrients,
     organization,
     sub_label,
+    errors,
 )
 
 BLOB_CONNECTION_STRING = os.environ["FERTISCAN_STORAGE_URL"]
@@ -62,6 +64,8 @@ def loop_into_empty_dict(dict_data):
                 continue
             else:
                 passing = False
+        elif isinstance(value, datetime):
+            continue
         elif isinstance(value, bool):
             if not value:
                 continue
@@ -358,16 +362,14 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             )
 
     def test_get_inspection(self):
-        formatted_analysis = metadata.build_inspection_import(
-            self.analysis_json, self.user.id, self.folder_id, self.container_model.id
-        )
-        formatted_analysis.inspection_comment
-        inspection_dict = inspection.new_inspection_with_label_info(
+        inspection_controller = fertiscan.new_inspection(
             self.cursor,
             self.user.id,
-            self.folder_id,
-            formatted_analysis.model_dump_json(),
+            self.analysis_json,
+            self.container_controller.id,
+            folder_id=self.folder_id,
         )
+        inspection_dict = inspection_controller.model
         inspection_model = fertiscan.data_inspection.Inspection.model_validate(
             inspection_dict
         )
@@ -450,6 +452,15 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         inspection_id = inspection_controller.id
         label_id = inspection_controller.model.product.label_id
         self.assertTrue(validator.is_valid_uuid(inspection_id))
+
+        og_inspection_data = inspection.get_inspection(self.cursor, inspection_id)
+        # Check the updated_at is the same as the the upload date
+        self.assertEqual(og_inspection_data[1], og_inspection_data[2])
+        self.assertEqual(
+            inspection_controller.model.upload_date,
+            inspection_controller.model.updated_at,
+        )
+        self.assertEqual(og_inspection_data[1], inspection_controller.model.updated_at)
         # new values
         new_product_name = "New Product Name"
         untouched_weight = inspection_controller.model.product.metrics.weight[1].value
@@ -548,6 +559,8 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
             inspection_to_update,
         )
         updated_inspection = metadata.Inspection.model_validate(updated_inspection)
+        # check if the updated_at is updated in the model
+        # self.assertNotEqual(updated_inspection.updated_at,updated_inspection.upload_date) # This is not passing since you need to commit the cursor to get a different timestamp
 
         # check if specifications are updated
         # specifications = specification.get_all_specifications(self.cursor, label_id)
@@ -591,6 +604,11 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         # Verify user's comment are saved
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[8], user_feedback)
+
+        # Verify updated_at is updated in the db
+        # This is not passing since you need to commit the cursor to get a different timestamp
+        # self.assertNotEqual(inspection_data[1], og_inspection_data[1])
+        # self.assertNotEqual(inspection_data[1], inspection_data[2])
 
         # Verify organizations are saved
         orgs = organization.get_organizations_info_label(self.cursor, label_id)
@@ -700,7 +718,6 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         inspection_to_update.verified = True
         self.assertTrue(inspection_to_update.verified)
         inspection_to_update.product.name = "verified_product"
-        print(inspection_to_update.organizations)
         updated_inspection = inspection_controller.update_inspection(
             self.cursor,
             self.user.id,
@@ -708,7 +725,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
         )
         self.assertTrue(updated_inspection.verified)
         updated_inspection.product.name = "blocked to be updated"
-        self.assertRaises(
+        with self.assertRaises(inspection.InspectionUpdateError):
             inspection_controller.update_inspection(
                 self.cursor,
                 self.user.id,

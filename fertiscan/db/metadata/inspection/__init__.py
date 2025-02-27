@@ -148,6 +148,8 @@ class Inspection(ValidatedModel):
     ingredients: ValuesObjects
     folder_id: UUID4 
     container_id: UUID4
+    upload_date: Optional[datetime] = None
+    updated_at: Optional[datetime] = None    
     
 
 
@@ -355,7 +357,9 @@ def build_inspection_import(analysis_form: dict, user_id:UUID,folder_id:UUID,con
             ingredients=ingredients,
             folder_id=folder_id,
             container_id=container_id,
-            inspection_comment= None
+            inspection_comment= None,
+            upload_date=None,
+            updated_at=None,
         )
         return inspection_formatted
     except MetadataError:
@@ -441,7 +445,9 @@ def build_inspection_export(cursor, inspection_id) -> Inspection:
             verified=db_inspection.verified,
             ingredients=ingredients,
             folder_id=folder_id,
-            container_id=container_id
+            container_id=container_id,
+            upload_date=db_inspection.upload_date,
+            updated_at=db_inspection.updated_at,
         )
         return inspection_formatted
     except QueryError as e:
