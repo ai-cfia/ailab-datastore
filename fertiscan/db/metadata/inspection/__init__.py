@@ -38,7 +38,7 @@ class ValidatedModel(BaseModel):
 
 
 class OrganizationInformation(ValidatedModel):
-    id: Optional[str] = None
+    id: Optional[UUID4] = None
     name: Optional[str] = None
     address: Optional[str] = None
     website: Optional[str] = None
@@ -96,7 +96,7 @@ class RegistrationNumber(ValidatedModel):
 
 class ProductInformation(ValidatedModel):
     name: str | None = None
-    label_id: str | None = None
+    label_id: UUID4 | None = None
     lot_number: str | None = None
     metrics: Metrics | None = Metrics()
     npk: str | None = None
@@ -136,8 +136,8 @@ class DBInspection(ValidatedModel):
 
 
 class Inspection(ValidatedModel):
-    inspection_id: Optional[str] = None
-    inspector_id: Optional[str] = None
+    inspection_id: Optional[UUID4] = None
+    inspector_id: Optional[UUID4] = None
     inspection_comment: Optional[str] = None
     verified: Optional[bool] = False
     organizations: Optional[List[OrganizationInformation]] = []

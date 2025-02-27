@@ -216,3 +216,100 @@ class test_metric(unittest.TestCase):
         self.assertEqual(metric_data[3], self.unit_to_si_unit)
         self.assertEqual(metric_data[4], self.metric_edited)
         self.assertEqual(metric_data[5], self.metric_type)
+
+    def test_delete_metric_by_type(self):
+        volume_unit = "ml"
+        weight_unit_imperial = "lb"
+        weight_unit_metric = "kg"
+        density_unit = "lb/ml"
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            volume_unit,
+            self.label_id,
+            "volume",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_imperial,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_metric,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            density_unit,
+            self.label_id,
+            "density",
+            self.metric_edited,
+        )
+        og_metrics = metric.get_metric_by_label(cursor=self.cursor,label_id=self.label_id)
+        
+        self.assertEqual(len(og_metrics),4)
+        # delete the 2 weights 
+        metric.delete_metric_by_type(
+            cursor=self.cursor,
+            label_id=self.label_id,
+            metric_type="weight"
+        )
+        deleted_metric = metric.get_metric_by_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(deleted_metric),len(og_metrics)-2)
+        
+    def test_delete_metric(self):
+        volume_unit = "ml"
+        weight_unit_imperial = "lb"
+        weight_unit_metric = "kg"
+        density_unit = "lb/ml"
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            volume_unit,
+            self.label_id,
+            "volume",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_imperial,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            weight_unit_metric,
+            self.label_id,
+            "weight",
+            self.metric_edited,
+        )
+        metric.new_metric(
+            self.cursor,
+            self.metric_value,
+            density_unit,
+            self.label_id,
+            "density",
+            self.metric_edited,
+        )
+        og_metrics = metric.get_metric_by_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(og_metrics),4)
+        
+        metric.delete_metric(
+            cursor=self.cursor,
+            label_id=self.label_id
+        )
+        # Verify there are no metrics left
+        deleted_metrics = metric.get_metric_by_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(deleted_metrics),0)

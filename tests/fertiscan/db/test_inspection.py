@@ -42,23 +42,43 @@ class test_inspection(unittest.TestCase):
 
     def test_new_inspection(self):
         inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         self.assertTrue(validator.is_valid_uuid(inspection_id))
 
     def test_is_inspection_verified(self):
         inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         inspection_id2 = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, True
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=True
         )
         self.assertFalse(inspection.is_inspection_verified(self.cursor, inspection_id))
         self.assertTrue(inspection.is_inspection_verified(self.cursor, inspection_id2))
 
     def test_get_inspection(self):
         inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         inspection_data = inspection.get_inspection(self.cursor, inspection_id)
         self.assertEqual(inspection_data[0], False)
@@ -67,10 +87,20 @@ class test_inspection(unittest.TestCase):
 
     def test_get_all_user_inspection(self):
         inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         inspection_id2 = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, True
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         inspection_data = inspection.get_all_user_inspection(self.cursor, self.user_id)
         self.assertEqual(len(inspection_data), 2)
@@ -79,10 +109,20 @@ class test_inspection(unittest.TestCase):
 
     def test_get_all_user_inspection_filter_verified(self):
         inspection_id = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, False
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=False
         )
         inspection_id2 = inspection.new_inspection(
-            self.cursor, self.user_id, self.picture_set_id, True
+            cursor=self.cursor, 
+            user_id=self.user_id, 
+            picture_set_id=self.picture_set_id,
+            label_id=None,
+            container_id=self.container_id,
+            verified=True
         )
         inspection_data = inspection.get_all_user_inspection_filter_verified(
             self.cursor, self.user_id, True

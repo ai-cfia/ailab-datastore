@@ -4,6 +4,7 @@ This module represent the function for the table micronutrient, guaranteed and i
 """
 
 from psycopg import Cursor
+from uuid import UUID
 
 from fertiscan.db.queries.errors import (
     ElementCompoundCreationError,
@@ -11,6 +12,8 @@ from fertiscan.db.queries.errors import (
     ElementCompoundQueryError,
     GuaranteedAnalysisCreationError,
     GuaranteedAnalysisRetrievalError,
+    GuaranteedAnalysisDeleteError,
+    GuaranteedAnalysisUpdateError,
     MicronutrientCreationError,
     MicronutrientRetrievalError,
     handle_query_errors,
@@ -288,9 +291,70 @@ def get_all_micronutrients(cursor: Cursor, label_id):
     cursor.execute(query, (label_id,))
     return cursor.fetchall()
 
+def new_guaranteed_analysis(
+    cursor: Cursor,
+    read_name,
+    value,
+    unit,
+    label_id,
+    language: str,
+    element_id: int = None,
+    edited: bool = False, 
+):
+    """
+    This function add a new guaranteed in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - read_name (str): The name of the guaranteed.
+    - value (float): The value of the guaranteed.
+    - unit (str): The unit of the guaranteed.
+    - element_id (int): The element of the guaranteed.
+    - label_id (str): The label of the guaranteed.
+
+    Returns:
+    - str: The UUID of the guaranteed.
+    """
+    if language.lower() not in ["fr", "en"]:
+        raise GuaranteedAnalysisCreationError("Language not supported")
+    if (
+        (read_name is None or read_name == "")
+        and (value is None or value == "")
+        and (unit is None or unit == "")
+    ):
+        raise GuaranteedAnalysisCreationError("Read name and value cannot be empty")
+    query = """
+        INSERT INTO guaranteed (
+            read_name, 
+            value, 
+            unit, 
+            edited, 
+            label_id, 
+            element_id, 
+            language)
+	    VALUES (
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s,
+            %s
+        )
+        RETURNING id;
+        """
+    cursor.execute(
+        query, (read_name, value, unit, edited,label_id, element_id, language)
+    )
+    if result := cursor.fetchone():
+        return result[0]
+    raise GuaranteedAnalysisCreationError(
+        "Failed to create guaranteed analysis. No data returned."
+    )
+
 
 @handle_query_errors(GuaranteedAnalysisCreationError)
-def new_guaranteed_analysis(
+def new_guaranteed_analysis_function(
     cursor: Cursor,
     read_name,
     value,
@@ -392,6 +456,64 @@ def get_guaranteed_analysis_json(cursor: Cursor, label_id) -> dict:
         "Failed to retrieve guaranteed analysis json. No data returned for: "
         + str(label_id)
     )
+@handle_query_errors(GuaranteedAnalysisDeleteError)
+def delete_guaranteed_analysis(cursor:Cursor, label_id:UUID):
+    """
+    This function deletes guaranteed analysis records from the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (UUID): The UUID of the label.
+
+    Returns:
+    - int: The number of rows deleted.
+    """
+    query = """
+        DELETE FROM guaranteed
+        WHERE label_id = %s
+        RETURNING id;
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.rowcount
+
+@handle_query_errors(GuaranteedAnalysisUpdateError)
+def upsert_guaranteed_analysis(cursor:Cursor,label_id: UUID, GA:dict):
+    """
+    Replaces all entries for a label by deleting existing ones and inserting new ones.
+    
+    Parameters:
+    - cursor: Database cursor
+    - label_id: UUID of the label to update
+    - GA: Dictionary containing the new values to insert
+    """
+    delete_guaranteed_analysis(
+        cursor=cursor,
+        label_id= label_id,
+    )
+    
+    for record in GA["en"]:
+        new_guaranteed_analysis(
+            cursor=cursor,
+            read_name=record["name"],
+            value=record["value"],
+            unit = record["unit"],
+            label_id=label_id,
+            language="en",
+            element_id=None,
+            edited= True
+        ) 
+    for record in GA["fr"]:
+        new_guaranteed_analysis(
+            cursor=cursor,
+            read_name=record["name"],
+            value=record["value"],
+            unit = record["unit"],
+            label_id=label_id,
+            language="fr",
+            element_id=None,
+            edited= True
+        ) 
+    
 
 
 @handle_query_errors(GuaranteedAnalysisRetrievalError)
@@ -458,6 +580,35 @@ def get_all_guaranteeds(cursor: Cursor, label_id):
             element_compound ec ON g.element_id = ec.id
         WHERE 
             g.label_id = %s
+        """
+    cursor.execute(query, (label_id,))
+    return cursor.fetchall()
+
+@handle_query_errors(GuaranteedAnalysisRetrievalError)
+def get_guaranteed_by_label(cursor:Cursor,label_id:UUID):
+    """
+    This function get all the guaranteed in the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - label_id (str): The UUID of the label.
+
+    Returns:
+    - str: The UUID of the guaranteed.
+    """
+
+    query = """
+        SELECT 
+            g.id,
+            g.read_name,
+            g.value,
+            g.unit,
+            g.edited,
+            CONCAT(CAST(g.read_name AS TEXT),' ',g.value,' ', g.unit) AS reading
+        FROM 
+            guaranteed g
+        WHERE 
+            g.label_id = %s;
         """
     cursor.execute(query, (label_id,))
     return cursor.fetchall()
