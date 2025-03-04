@@ -299,17 +299,18 @@ async def register_inference_result(
         )
         inference_dict["pipeline_id"] = str(pipeline_id)
 
+        print('Registering inference result')
         inference_id = inference.new_inference(
             cursor, trimmed_inference, user_id, picture_id, type, pipeline_id
         )
-        nb_object = int(inference_dict["totalBoxes"])
         inference_dict["inference_id"] = str(inference_id)
 
-        # loop through the boxes
-        for box_index in range(nb_object):
+        print('Looping through boxes')
+        for box_index in range(int(inference_dict["totalBoxes"])):
             # TODO: adapt for multiple types of objects
             if type == 1:
                 # TODO : adapt for the seed_id in the inference_dict
+                print(f'Getting seed_id for {inference_dict["boxes"][box_index]["label"]}')
                 top_id = seed.get_seed_id(
                     cursor, inference_dict["boxes"][box_index]["label"]
                 )
@@ -319,6 +320,7 @@ async def register_inference_result(
             box = inference_metadata.build_object_import(
                 inference_dict["boxes"][box_index]
             )
+            print('Creating new inference object')
             object_inference_id = inference.new_inference_object(
                 cursor, inference_id, box, type, False
             )
@@ -329,7 +331,10 @@ async def register_inference_result(
                 for topN in inference_dict["boxes"][box_index]["topN"]:
 
                     # Retrieve the right seed_id
+                    print(f'Getting seed_id for {topN["label"]}')
                     seed_id = seed.get_seed_id(cursor, topN["label"])
+
+                    print('Creating new seed object')
                     id = inference.new_seed_object(
                         cursor, seed_id, object_inference_id, topN["score"]
                     )
@@ -338,15 +343,20 @@ async def register_inference_result(
                         top_score = topN["score"]
                         top_id = id
             else:
+                print(f'Getting seed_id for {inference_dict["boxes"][box_index]["label"]}')
                 seed_id = seed.get_seed_id(
                     cursor, inference_dict["boxes"][box_index]["label"]
                 )
+
+                print('Creating new seed object')
                 top_id = inference.new_seed_object(
                     cursor,
                     seed_id,
                     object_inference_id,
                     inference_dict["boxes"][box_index]["score"],
                 )
+            
+            print('Setting top_id')
             inference.set_inference_object_top_id(cursor, object_inference_id, top_id)
             inference_dict["boxes"][box_index]["top_id"] = str(top_id)
 
