@@ -42,20 +42,12 @@ sequenceDiagram;
     Datastore --> Backend : cursor
     Backend -) Datastore: get_User(email,cursor)
     Datastore --> Backend : User
-    Backend -) Datastore: get_user_container_client(user_uuid)
-    Datastore --> Backend : container_client
-    Backend -) Datastore: upload_picture_set (cursor, container_client, pictures, user_id, seed_name, zoom_level, nb_seeds)
-    Datastore --> PostgreSQL Database: is_seed_registered(seed_name)
-    Datastore --> PostgreSQL Database: is_a_user_id(user_id)
-    Datastore -) PostgreSQL Database: get_container_url()
-    Datastore ->> Datastore: build_picture_set()
-    Datastore -) PostgreSQL Database: new_picture_set(user_id)
-    Datastore -) Azure Storage: create_folder(picture_set_id)
-    loop for each picture_encoded in pictures
-      Datastore -) PostgreSQL Database: new_picture(seed_id,picture_set_id)
-      Datastore -) Azure Storage: upload_image(picture_encoded)
-      Datastore ->> Datastore: build_picture(picture_encoded,blob_url)
-      Datastore -) PostgreSQL Database: update_picture_metadata(picture_id,picture)
+    Backend -) Datastore: get_container_controller(user.model.containers[i].id)
+    Datastore --> Backend : container_controller
+    Backend -) Datastore: upload_pictures_known (cursor, container_controller, pictures, user_id, seed_id, zoom_level, nb_seeds)
+    Datastore -) Azure Storage: container_controller.upload_pictures(picture_set_id)
+    loop for each ID in picture_ids
+      Datastore -) PostgreSQL Database: new_picture_seed(seed_id,picture_set_id)
     end
 
 ```
@@ -71,7 +63,7 @@ erDiagram
     string email
     timestamp registration_date
     timestamp updated_at
-    integer permission_id
+    integer role_id
   }
   picture_set{
     uuid id PK
@@ -88,29 +80,9 @@ erDiagram
     boolean verified
     timestamp upload_date 
   }
-  group{
-    uuid id PK
-    text name
-    int permission_id FK
-    uuid owner_id FK
-    timestamp upload_date
-  }
-  permission{
+  role{
     int id
     text name
-  }
-  user_group{
-    uuid id
-    uuid user_id
-    uuid group_id
-    timestamp upload_date
-
-  }
-  group_container{
-    uuid id
-    uuid group_id
-    uuid container_id
-    timestamp upload_date
   }
   container{
     uuid id PK
@@ -123,12 +95,8 @@ erDiagram
   user ||--|{ picture_set: uploads
   picture_set ||--o{picture: contains
   picture ||--o{picture: cropped
-  user }o--o{ user_group: apart
-  user_group }o--o{group: represent
-  permission ||--|| user: has
-  permission ||--|| group: has
-  group }o--o{group_container: has
-  container }o--o{group_container: represent
+  role ||--|| user: has
   container ||--o{picture_set: contains
+  user ||--o{container: own
 
 ```

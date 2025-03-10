@@ -13,11 +13,22 @@ database.
 title: Extract from Nachet DB Structure 
 ---
 erDiagram
+    container {
+        UUID id PK
+        TEXT name
+        BOOLEAN is_public
+        TEXT storage_prefix
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        UUID created_by_id FK
+        UUID last_updated_by_id FK
+    }
   picture_set{
     uuid id PK
     json picture_set
     uuid owner_id FK
     timestamp upload_date
+    UUID container_id FK
   }
   picture{
     uuid id PK
@@ -41,6 +52,7 @@ inference{
     uuid seed_id FK
     timestamp upload_date
   }
+  container ||--o{picture_set: "has folders"
   picture_set ||--o{picture: contains
   picture ||--o{picture: cropped
   picture |o--o{picture_seed: has
@@ -66,14 +78,11 @@ training purposes. Our solution is to request confirmation from the user, who
 can decide to delete pictures from his container but let us save them, or he can
 delete everything anyway, for example if there has been a missed click.
 
-Users have asked to be able to access the pictures of folders in the directory
-section on frontend. We want them to be able to see each pictures name. Then a
-user can select a folder this will get all pictures and their inferences.
-
 ## Prerequisites
 
 - The user must be signed in and have an Azure Storage Container
 - The backend need to have a connection with the datastore
+- The backend need to have a valid datastore Container_controller
 
 ## Sequence Diagram
 
@@ -106,17 +115,16 @@ note left of FE : "Some of those pictures were validated or upload via the batch
             rect rgb(200, 50, 50)
                 FE-->BE:  /delete-permanently
             end
-            BE->>DS: delete picture_set
+            BE->>DS: Container_controller.delete_folder_permanently(picture_set_id)
         else YES
             User ->>FE: Keep them
             rect rgb(200, 50, 50)
                 FE-->BE: /delete-with-archive
             end
             rect rgb(200, 50, 50)
-                BE->>DS: archive data for validated inferences and batch import in picture_set
-                    note left of DS: "Pictures are moved in different container <br> DB entities updated" 
-                BE->>DS: delete picture_set
-                   note left of DS: "Folder and all the files left are deleted, <br>related pictures, inference are deleted." 
+                BE->>DS: delete_picture_set_with_archive
+                    note left of DS: "Pictures which are verified are moved in different container <br> DB entities updated"
+                    note left of DS: "Folder and all the files left are deleted in the user container." 
             end
        else CANCEL
             User ->>FE: cancel : nothing happens
@@ -133,7 +141,7 @@ note left of FE : "Are you sure ? Everything in this folder will be deleted and 
             rect rgb(200, 50, 50)
                 FE-->BE:  /delete-permanently
             end
-            BE->>DS: delete picture_set
+            BE->>DS: Container_controller.delete_folder_permanently(picture_set_id)
         else CANCEL
             User ->>FE: cancel : nothing happens
         
@@ -155,18 +163,20 @@ sequenceDiagram
         FE-->>BE:  /directories
             BE->>DS: get_picture_sets_info(user_id)
                 loop for each picture set
-                    DS-->DS: get_pictures(user_id, picture_set_id)
+                    DS-->DS: get picture_set & pictures data
                 end
             DS-->>BE: List of picture_set with pictures data
-        BE-->>FE: Response : List of picture_set with pictures name
+        BE-->>FE: Response : List of picture_set with pictures
     User->>FE: Select Folder
         FE->>BE: /get-folder-content
-            BE->>DS: get_pictures_inferences(user_id, picture_set_id)
-                DS-->DS: get_pictures_with_inferencse(user_id, picture_set_id)
-            DS-->>BE: Return pictures with inferences
-            BE->>DS: get_pictures_blobs(user_id, picture_set_id)
-                DS-->DS: get_blobs(user_id, picture_set_id)
-            DS-->>BE: Return pictures blobs
+            loop for each pictures in picture_set
+                    BE->>DS: get_pictures_inferences(user_id, picture_set_id)
+                    DS-->DS: get_pictures_with_inferencse(user_id, picture_set_id)
+                    DS-->>BE: Return pictures with inferences
+                    BE->>DS: container_controller.get_picture_blob(user_id, picture_set_id)
+                    DS-->DS: get_blobs(user_id, container_id,picture_set_id)
+                    DS-->>BE: Return pictures blobs
+                end
         BE-->>BE: cache pictures and inferences
         BE-->>FE: Response : True
     FE-->>User: Display folder content (list of pictures)
