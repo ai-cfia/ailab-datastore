@@ -36,9 +36,9 @@ class Metadata(BaseModel):
 
 
 class ImageData(BaseModel):
-    format: str
-    height: int
-    width: int
+    format: Optional[str] = None
+    height: Optional[int] = None
+    width: Optional[int] = None
     resolution: str
     source: str
     parent: str

@@ -189,8 +189,7 @@ class ContainerController:
         """
         Remove the children of a folder from the object.
         """
-        for child in self.model.folders[folder_id].children:
-            self.remove_folder_children(child)
+        self.model.folders[folder_id].children.clear()
         self.model.folders.pop(folder_id)
 
     # The default credentials have a time limit of 5 minutes
@@ -435,18 +434,20 @@ class ContainerController:
             )
         # Create a folder if not provided
         if folder_id is None:
-            folder_id = await self.create_folder(
+            folder_model = await self.create_folder(
                 cursor=cursor,
                 performed_by=user_id,
                 folder_name=None,
                 nb_pictures=len(hashed_pictures),
             )
+            folder_id = folder_model.id
         else:
             # Check if folder exists in the database in the container
             if not picture.is_a_picture_set_id(cursor, folder_id):
                 raise FolderCreationError(
                     f"Folder does not exist in the container: {folder_id}"
                 )
+            picture
         # Get the folder metadata
         try:
             folder = self.model.folders[folder_id]
@@ -460,8 +461,11 @@ class ContainerController:
         for picture_hash in hashed_pictures:
 
             description = "Uploaded through the API"
+            # image_properties = data_picture_set.get_image_properties(pic_encoded=picture_hash)
             picture_metadata = data_picture_set.PictureMetadata(
-                link=folder_path + "/", description=description
+                link=folder_path + "/", 
+                description=description, 
+                properties=None
             )
             # Create picture instance in DB
             picture_id = picture.new_picture_unknown(
@@ -580,7 +584,7 @@ class ContainerController:
             not self.__verify_user_can_read(cursor, user_id)
             and not self.model.is_public
         ):
-            raise ValueError(
+            raise UserNotOwnerError(
                 "The user does not have the permission to download pictures in the container: "
                 + str(self.id)
             )
@@ -590,10 +594,30 @@ class ContainerController:
                 f"Picture not found based on the given id: {picture_id}"
             )
         folder_id = picture.get_picture_picture_set_id(cursor, picture_id)
+        if not self.model.folders.__contains__(folder_id):
+            container_id = picture.get_picture_set_container_id(
+                cursor=cursor,
+                picture_set_id=folder_id,
+            )
+            if container_id != self.model.id:
+                raise picture.PictureSetNotFoundError(
+                    "The picture you are trying to fetch is not within this container"
+                )
+            else:
+                self.fetch_all_data(
+                    cursor=cursor
+                )
+                folder_model = self.model.folders.get(folder_id)
+                if folder_model is None:
+                    # This should never be the case
+                    # print(self.model.folders)
+                    # print("")
+                    # print(folder_id)
+                    raise Exception("The folder containing the picture should of been found within the container model but wasn't. An unexpected error occured please investigate the matter")
         folder = self.model.folders[folder_id]
         # Get the picture
         blob_path = azure_storage.build_blob_name(folder.path, str(picture_id), None)
-        picture_blob = azure_storage.get_blob(self.container_client, blob_path)
+        picture_blob = await azure_storage.get_blob(self.container_client, blob_path)
         return picture_blob
 
     async def delete_folder_permanently(
