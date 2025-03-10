@@ -158,4 +158,4 @@ erDiagram
 ```
 
   For more detail on the container, groups and user relationship use the
-  [Datastore Architecture](../../datastore/doc/datastore.md) 
+  [Datastore Architecture](../../datastore/doc/datastore.md)
