@@ -123,7 +123,6 @@ async def mount_container(
     - container_client: the container client object
     """
     try:
-        raise Exception("test error")
         print(f"initializing blob_service_client")
         blob_service_client = BlobServiceClient.from_connection_string(
             conn_str=connection_string, credential=credentials
