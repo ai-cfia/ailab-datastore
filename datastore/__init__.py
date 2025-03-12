@@ -447,7 +447,6 @@ class ContainerController:
                 raise FolderCreationError(
                     f"Folder does not exist in the container: {folder_id}"
                 )
-            picture
         # Get the folder metadata
         try:
             folder = self.model.folders[folder_id]

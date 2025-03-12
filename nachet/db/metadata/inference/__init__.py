@@ -148,7 +148,7 @@ def rebuild_inference(cursor, inf) -> Inference:
         )  # fetch the pipeline data (dict)
         if (
             pipeline is None
-        ):  # It was not initialized properly with data which means we ahve to build the dict manually
+        ):  # It was not initialized properly with data which means we have to build the dict manually
             pipeline = machine_learning.get_pipeline_models(
                 cursor=cursor, pipeline_id=pipeline_id
             )
