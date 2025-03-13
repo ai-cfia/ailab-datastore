@@ -136,6 +136,39 @@ def new_picture(cursor : Cursor, picture, picture_set_id: UUID, seed_id: str, nb
         return picture_id
     except Exception:
         raise PictureUploadError("Error: Picture not uploaded")
+    
+def new_picture_seed(cursor : Cursor, picture_id: UUID, seed_id: str) -> UUID:
+    """
+    This function uploads a NEW PICTURE SEED to the database.
+
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - picture_id (str): The UUID of the Picture to upload.
+    - seed_id (str): The UUID of the seed the picture is linked to.
+
+    Returns:
+    - The UUID of the picture.
+    """
+    try:
+        query = """
+            INSERT INTO 
+                picture_seed(
+                    seed_id,
+                    picture_id
+                    )
+            VALUES
+                (%s,%s)
+                """
+        cursor.execute(
+            query,
+            (
+                seed_id,
+                picture_id,
+            ),
+        )
+        return picture_id
+    except Exception:
+        raise PictureUploadError("Error: Picture not uploaded")
 
 
 def new_picture_unknown(cursor : Cursor, picture, picture_set_id: UUID, nb_objects=0) -> UUID:
@@ -279,12 +312,13 @@ def get_user_picture_sets(cursor: Cursor, user_id: UUID):
                 container_id
             """
         cursor.execute(query, (user_id,))
-        if cursor.rowcount == 0:
-            raise GetPictureSetError(f"Error: PictureSet not found for user:{user_id}")
+        # There should not be a time where a user does not have a picture set 
+        # if cursor.rowcount == 0:
+        #     raise GetPictureSetError(f"Error: PictureSet not found for user:{user_id}")
         return cursor.fetchall()
-    except Exception:
+    except Exception as e:
         raise GetPictureSetError(
-            f"Error: Error retrieving picture_sets for user:{user_id}"
+            f"Error: Error retrieving picture_sets for user:{user_id}" + str(e)
         )
     
 def get_picture_sets_by_container(cursor: Cursor, container_id: UUID):
@@ -722,7 +756,7 @@ def get_picture_picture_set_id(cursor: Cursor, picture_id:UUID)->UUID:
                 id = %s
             """
         cursor.execute(query, (picture_id,))
-        return str(cursor.fetchone()[0])
+        return cursor.fetchone()[0]
     except Exception:
         raise PictureNotFoundError(f"Error: Picture not found:{picture_id}")
 
@@ -745,7 +779,7 @@ def get_picture_set_owner_id(cursor: Cursor, picture_set_id:UUID)->UUID:
                 id = %s
             """
         cursor.execute(query, (picture_set_id,))
-        return str(cursor.fetchone()[0])
+        return cursor.fetchone()[0]
     except Exception:
         raise PictureSetNotFoundError(f"Error: PictureSet not found:{picture_set_id}")
 

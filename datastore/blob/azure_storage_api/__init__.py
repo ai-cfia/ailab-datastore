@@ -600,7 +600,7 @@ async def delete_folder(container_client: ContainerClient, picture_set_id):
 async def move_blob(
     blob_name_source,
     blob_name_dest,
-    folder_uuid,
+    folder_uuid:UUID,
     container_client_source,
     container_client_destination,
 ):

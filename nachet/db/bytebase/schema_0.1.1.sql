@@ -287,6 +287,9 @@ EXECUTE FUNCTION verified_inference();
     (m.endpoint_name='Seed-detector' and p.name='Swin transformer') or
    	(m.endpoint_name='Swin' and p.name='Swin transformer')); 
 
+    INSERT INTO "nachet_0.1.1".model_version(model_id,version,data)
+    (Select m.id,1,'{}' from "nachet_0.1.1".model as m)
+
     CREATE OR REPLACE FUNCTION "nachet_0.1.1".picture_set_default_name() 
     RETURNS TRIGGER 
     LANGUAGE plpgsql 

@@ -2,14 +2,22 @@
 This module contains the queries related to the machine learning structure (model and pipelines) in the database.
 """
 
+from uuid import UUID
+
+
 class NonExistingTaskEWarning(UserWarning):
     pass
+
+
 class PipelineCreationError(Exception):
     pass
+
+
 class PipelineNotFoundError(Exception):
     pass
 
-def new_pipeline(cursor, pipeline,pipeline_name, model_ids, active:bool=False):
+
+def new_pipeline(cursor, pipeline, pipeline_name, model_ids, active: bool = False):
     """
     This function creates a new pipeline in the database.
 
@@ -41,15 +49,16 @@ def new_pipeline(cursor, pipeline,pipeline_name, model_ids, active:bool=False):
                 active,
             ),
         )
-        pipeline_id=cursor.fetchone()[0]
+        pipeline_id = cursor.fetchone()[0]
         for model_id in model_ids:
-            new_pipeline_model(cursor,pipeline_id,model_id)
-        
+            new_pipeline_model(cursor, pipeline_id, model_id)
+
         return pipeline_id
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not uploaded")
 
-def is_a_pipeline(cursor,pipeline_id:str):
+
+def is_a_pipeline(cursor, pipeline_id: str):
     """
     This function checks if the given pipeline id is a pipeline.
 
@@ -73,17 +82,16 @@ def is_a_pipeline(cursor,pipeline_id:str):
                 """
         cursor.execute(
             query,
-            (
-                pipeline_id,
-            ),
+            (pipeline_id,),
         )
         return cursor.fetchone()[0]
-    except(ValueError):
+    except ValueError:
         return False
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
-    
-def get_pipeline_id(cursor,pipeline_name:str):
+
+
+def get_pipeline_id(cursor, pipeline_name: str):
     """
     This function gets the pipeline id from the pipeline name.
 
@@ -102,18 +110,19 @@ def get_pipeline_id(cursor,pipeline_name:str):
             """
         cursor.execute(
             query,
-            (
-                pipeline_name,
-            ),
+            (pipeline_name,),
         )
-        pipeline_id=cursor.fetchone()[0]
+        pipeline_id = cursor.fetchone()[0]
         return pipeline_id
-    except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given pipeline '{pipeline_name}' was not found")
-    except(Exception):
+    except ValueError:
+        raise NonExistingTaskEWarning(
+            f"Warning: the given pipeline '{pipeline_name}' was not found"
+        )
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
-    
-def get_pipeline(cursor,pipeline_id:str):
+
+
+def get_pipeline(cursor, pipeline_id: UUID):
     """
     This function gets the pipeline from the pipeline id.
 
@@ -128,19 +137,45 @@ def get_pipeline(cursor,pipeline_id:str):
         query = """
             SELECT data
             FROM pipeline
-            WHERE id = %s
+            WHERE id = %s;
             """
         cursor.execute(
             query,
-            (
-                pipeline_id,
-            ),
+            (pipeline_id,),
         )
-        pipeline=cursor.fetchone()[0]
+        pipeline = cursor.fetchone()[0]
         return pipeline
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
-    
+
+
+def get_pipeline_models(cursor, pipeline_id: UUID):
+    query = """
+        SELECT 
+            m.name,
+            mv."version" 
+        FROM
+            model as m
+        JOIN
+            pipeline_model as pm
+        ON
+            pm.model_id = m.id
+       	left join
+			model_version as mv 
+		on 
+			mv.model_id = m.id 
+        WHERE
+            pm.pipeline_id = %s
+        ;
+    """
+    cursor.execute(
+        query,
+        (pipeline_id,),
+    )
+    pipeline = cursor.fetchall()
+    return pipeline
+
+
 def set_active_pipeline(cursor, pipeline_id):
     """
     This function sets a pipeline active in the database.
@@ -156,12 +191,11 @@ def set_active_pipeline(cursor, pipeline_id):
             """
         cursor.execute(
             query,
-            (
-                pipeline_id,
-            ),
+            (pipeline_id,),
         )
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
+
 
 def get_active_pipeline(cursor):
     """
@@ -190,12 +224,13 @@ def get_active_pipeline(cursor):
                 p.id ;
             """
         cursor.execute(query)
-        pipelines=cursor.fetchall()
+        pipelines = cursor.fetchall()
         return pipelines
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
-    
-def set_nachet_default_pipeline(cursor,pipeline_id:str):
+
+
+def set_nachet_default_pipeline(cursor, pipeline_id: str):
     """
     This function sets the given pipeline as the default pipeline.
 
@@ -204,7 +239,7 @@ def set_nachet_default_pipeline(cursor,pipeline_id:str):
     - pipeline_id (str): The UUID of the pipeline.
     """
     try:
-        if not is_a_pipeline(cursor,pipeline_id):
+        if not is_a_pipeline(cursor, pipeline_id):
             raise PipelineCreationError("Error: pipeline not found")
         # There is supposed to be a trigger in place in the database that sets the active pipeline to False
         # when a new pipeline is set as the default However, this is a safety measure
@@ -221,14 +256,13 @@ def set_nachet_default_pipeline(cursor,pipeline_id:str):
             """
         cursor.execute(
             query,
-            (
-                pipeline_id,
-            ),
+            (pipeline_id,),
         )
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline not found")
-    
-def new_pipeline_model(cursor,pipeline_id,model_id):
+
+
+def new_pipeline_model(cursor, pipeline_id, model_id):
     """
     This function creates a new pipeline model in the database.
 
@@ -241,9 +275,9 @@ def new_pipeline_model(cursor,pipeline_id,model_id):
     - The UUID of the pipeline model.
     """
     try:
-        if not is_a_model(cursor,model_id):
+        if not is_a_model(cursor, model_id):
             raise PipelineCreationError("Error: model not found")
-        if not is_a_pipeline(cursor,pipeline_id):
+        if not is_a_pipeline(cursor, pipeline_id):
             raise PipelineCreationError("Error: pipeline not found")
         query = """
             INSERT INTO 
@@ -262,12 +296,13 @@ def new_pipeline_model(cursor,pipeline_id,model_id):
                 model_id,
             ),
         )
-        pipeline_model_id=cursor.fetchone()[0]
+        pipeline_model_id = cursor.fetchone()[0]
         return pipeline_model_id
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: pipeline model not uploaded")
 
-def get_pipeline_id_from_model_name(cursor,model_name:str):
+
+def get_pipeline_id_from_model_name(cursor, model_name: str):
     """
     This function gets the pipeline id from the model name.
 
@@ -291,18 +326,21 @@ def get_pipeline_id_from_model_name(cursor,model_name:str):
             """
         cursor.execute(
             query,
-            (
-                model_name,
-            ),
+            (model_name,),
         )
-        model_id=cursor.fetchone()[0]
+        model_id = cursor.fetchone()[0]
         return model_id
-    except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
-    except(Exception):
-        raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
+    except ValueError:
+        raise NonExistingTaskEWarning(
+            f"Warning: the given model '{model_name}' was not found"
+        )
+    except Exception:
+        raise PipelineNotFoundError(
+            f"Error: model not found for model name : {model_name}"
+        )
 
-def new_model(cursor,name,endpoint_name,task_id:int):
+
+def new_model(cursor, name, endpoint_name, task_id: int):
     """
     This function creates a new model in the database.
 
@@ -334,12 +372,13 @@ def new_model(cursor,name,endpoint_name,task_id:int):
                 task_id,
             ),
         )
-        model_id=cursor.fetchone()[0]
+        model_id = cursor.fetchone()[0]
         return model_id
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model not uploaded")
-    
-def set_active_model(cursor,model_id,version_id):
+
+
+def set_active_model(cursor, model_id, version_id):
     """
     This function sets the active model version in the database.
 
@@ -349,9 +388,9 @@ def set_active_model(cursor,model_id,version_id):
     - version_id (str): The UUID of the model version.
     """
     try:
-        if not is_a_model(cursor,model_id):
+        if not is_a_model(cursor, model_id):
             raise PipelineCreationError("Error: model not found")
-        if not is_a_model_version(cursor,version_id):
+        if not is_a_model_version(cursor, version_id):
             raise PipelineCreationError("Error: model version not found")
         query = """
             UPDATE model
@@ -365,10 +404,11 @@ def set_active_model(cursor,model_id,version_id):
                 model_id,
             ),
         )
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model not uploaded")
-    
-def is_a_model(cursor,model_id:str):
+
+
+def is_a_model(cursor, model_id: str):
     """
     This function checks if the given model id is a model.
 
@@ -392,17 +432,16 @@ def is_a_model(cursor,model_id:str):
                 """
         cursor.execute(
             query,
-            (
-                model_id,
-            ),
+            (model_id,),
         )
         return cursor.fetchone()[0]
-    except(ValueError):
+    except ValueError:
         return False
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model not found")
-    
-def get_model_id_from_name(cursor,model_name:str):
+
+
+def get_model_id_from_name(cursor, model_name: str):
     """
     This function gets the model id from the model name.
 
@@ -421,18 +460,21 @@ def get_model_id_from_name(cursor,model_name:str):
             """
         cursor.execute(
             query,
-            (
-                model_name,
-            ),
+            (model_name,),
         )
-        model_id=cursor.fetchone()[0]
+        model_id = cursor.fetchone()[0]
         return model_id
-    except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{model_name}' was not found")
-    except(Exception):
-        raise PipelineNotFoundError(f"Error: model not found for model name : {model_name}")
-    
-def get_model_id_from_endpoint(cursor,endpoint_name:str):
+    except ValueError:
+        raise NonExistingTaskEWarning(
+            f"Warning: the given model '{model_name}' was not found"
+        )
+    except Exception:
+        raise PipelineNotFoundError(
+            f"Error: model not found for model name : {model_name}"
+        )
+
+
+def get_model_id_from_endpoint(cursor, endpoint_name: str):
     """
     This function gets the model id from the endpoint name.
 
@@ -451,18 +493,19 @@ def get_model_id_from_endpoint(cursor,endpoint_name:str):
             """
         cursor.execute(
             query,
-            (
-                endpoint_name,
-            ),
+            (endpoint_name,),
         )
-        model_id=cursor.fetchone()[0]
+        model_id = cursor.fetchone()[0]
         return model_id
-    except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given model '{endpoint_name}' was not found")
-    except(Exception):
+    except ValueError:
+        raise NonExistingTaskEWarning(
+            f"Warning: the given model '{endpoint_name}' was not found"
+        )
+    except Exception:
         raise PipelineCreationError("Error: model not found")
-    
-def get_model(cursor,model_id:str):
+
+
+def get_model(cursor, model_id: str):
     """
     This function gets the model from the model id.
 
@@ -476,7 +519,8 @@ def get_model(cursor,model_id:str):
     try:
         query = """
             SELECT 
-                m.id,m.name,
+                m.id,
+                m.name,
                 m.endpoint_name,
                 t.name,
                 v.data,
@@ -493,18 +537,14 @@ def get_model(cursor,model_id:str):
                 m.active_version=v.id
             WHERE m.id = %s
             """
-        cursor.execute(
-            query,
-            (
-                model_id,
-            )
-        )
-        model=cursor.fetchone()
+        cursor.execute(query, (model_id,))
+        model = cursor.fetchone()
         return model
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model not found")
-    
-def new_model_version(cursor, model_id, version,data):
+
+
+def new_model_version(cursor, model_id, version, data):
     """
     This function creates a new model version in the database.
 
@@ -536,12 +576,13 @@ def new_model_version(cursor, model_id, version,data):
                 data,
             ),
         )
-        model_version_id=cursor.fetchone()
+        model_version_id = cursor.fetchone()
         return model_version_id[0]
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model version not uploaded")
-    
-def is_a_model_version(cursor,model_version_id:str):
+
+
+def is_a_model_version(cursor, model_version_id: str):
     """
     This function checks if the given model version id is a model version.
 
@@ -565,17 +606,16 @@ def is_a_model_version(cursor,model_version_id:str):
                 """
         cursor.execute(
             query,
-            (
-                str(model_version_id),
-            ),
+            (str(model_version_id),),
         )
         return cursor.fetchone()[0]
-    except(ValueError):
+    except ValueError:
         return False
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: model version not found")
-    
-def get_task_id(cursor,task_name):
+
+
+def get_task_id(cursor, task_name):
     """
     This function gets the task id from the task name.
 
@@ -592,21 +632,19 @@ def get_task_id(cursor,task_name):
             FROM task
             WHERE name ILIKE %s
             """
-        cursor.execute(
-            query,
-            (
-                task_name,
-            )
-        )
-        task_id=cursor.fetchone()[0]
+        cursor.execute(query, (task_name,))
+        task_id = cursor.fetchone()[0]
         return task_id
-    except(ValueError):
-        raise NonExistingTaskEWarning(f"Warning: the given task '{task_name}' was not found")
-    except(Exception) as e:
+    except ValueError:
+        raise NonExistingTaskEWarning(
+            f"Warning: the given task '{task_name}' was not found"
+        )
+    except Exception as e:
         print(e)
         raise PipelineCreationError("Error: task not found")
-    
-def new_task(cursor,task_name):
+
+
+def new_task(cursor, task_name):
     """
     This function creates a new task in the database.
 
@@ -629,11 +667,9 @@ def new_task(cursor,task_name):
             """
         cursor.execute(
             query,
-            (
-                task_name,
-            ),
+            (task_name,),
         )
-        task_id=cursor.fetchone()[0]
+        task_id = cursor.fetchone()[0]
         return task_id
-    except(Exception):
+    except Exception:
         raise PipelineCreationError("Error: task not uploaded")

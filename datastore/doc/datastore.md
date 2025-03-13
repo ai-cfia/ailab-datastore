@@ -234,16 +234,16 @@ erDiagram
         text name
     }    
 
-    USERS ||--o{ GROUPS : "creates"
     USERS ||--|| ROLE: is
-    USERS ||--o{ USER_GROUP : "group access"
+    USERS ||--o{ GROUPS : "creates"
+    GROUPS ||--o{ CONTAINER_GROUP : "access to"
     GROUPS ||--o{ USER_GROUP : "members"
+    USERS ||--o{ USER_GROUP : "group access"
     USERS ||--o{ CONTAINER : "creates"
     USERS ||--o{ CONTAINER_USER : "individual access"
     CONTAINER ||--o{ CONTAINER_USER : "access to"
-    GROUPS ||--o{ CONTAINER_GROUP : "access to"
-    PERMISSION ||--|| CONTAINER_GROUP: "allow operation"
     PERMISSION ||--|| CONTAINER_USER: "allow operation"
+    PERMISSION ||--|| CONTAINER_GROUP: "allow operation"
 ```
 
   For more detail on each app database architecture go check [Nachet

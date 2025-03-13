@@ -3,6 +3,7 @@ This module contains all the functions and classes that are used to store and re
 """
 
 import json
+from pydantic import BaseModel
 
 
 class MissingKeyError(Exception):

@@ -2,6 +2,8 @@
 This file contains the queries for the seed table.
 """
 
+from uuid import UUID
+
 
 class SeedNotFoundError(Exception):
     pass
@@ -32,14 +34,15 @@ def get_all_seeds_names(cursor):
         return cursor.fetchall()
     except Exception:
         raise Exception("Error: seeds could not be retrieved")
-    
+
+
 def get_all_seeds(cursor):
     """
     This function returns all the seed from the database.
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
-    
+
     Returns:
     - list of tuple (id,seed_name)
     """
@@ -53,8 +56,9 @@ def get_all_seeds(cursor):
         cursor.execute(query)
         return cursor.fetchall()
     except Exception:
-        raise Exception("Error: seeds could not be retrieved")    
-    
+        raise Exception("Error: seeds could not be retrieved")
+
+
 def format_seed_name(seed_name: str) -> str:
     """
     This function formats the seed name.
@@ -78,7 +82,7 @@ def format_seed_name(seed_name: str) -> str:
     return current_name
 
 
-def get_seed_id(cursor, seed_name: str) -> str:
+def get_seed_id(cursor, seed_name: str) -> UUID:
     """
     This function retrieve the UUUID of a seed.
 
@@ -99,7 +103,7 @@ def get_seed_id(cursor, seed_name: str) -> str:
             WHERE 
                 name ILIKE %s
                 """
-        seed_name= "%"+seed_name
+        seed_name = "%" + seed_name
         cursor.execute(query, (seed_name,))
         result = cursor.fetchone()[0]
         return result
@@ -108,7 +112,8 @@ def get_seed_id(cursor, seed_name: str) -> str:
     except Exception:
         raise Exception("unhandled error")
 
-def get_seed_name(cursor, seed_id:str) -> str :
+
+def get_seed_name(cursor, seed_id: str) -> str:
     """
     This function retrieves the name of a seed from the database.
 
@@ -135,7 +140,8 @@ def get_seed_name(cursor, seed_id:str) -> str :
     except Exception:
         raise Exception("unhandled error")
 
-def new_seed(cursor, seed_name: str):
+
+def new_seed(cursor, seed_name: str) -> UUID:
     """
     This function inserts a new seed into the database.
 
@@ -180,7 +186,7 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
                 FROM 
                     seed
                 WHERE 
-                    name = %s
+                    name ILIKE %s
             )
                 """
         cursor.execute(query, (seed_name,))
@@ -189,7 +195,8 @@ def is_seed_registered(cursor, seed_name: str) -> bool:
     except Exception:
         raise Exception("Error: could not check if seed name is a seed")
 
-def get_seed_object_seed_id(cursor, seed_object_id: str) -> str:
+
+def get_seed_object_seed_id(cursor, seed_object_id: str) -> UUID:
     """
     This function retrieves the seed_id of a seed object.
 

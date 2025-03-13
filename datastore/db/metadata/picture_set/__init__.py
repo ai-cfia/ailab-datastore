@@ -33,7 +33,7 @@ class PictureMetadata(BaseModel):
     privacy_flag: Optional[bool]=False
     description: Optional[str]=None
     nb_object: Optional[int] = None
-    properties: ImageProperties
+    properties: Optional[ImageProperties]
 
 def build_picture_set_metadata(user_id: str, nb_picture: int):
     """

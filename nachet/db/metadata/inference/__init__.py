@@ -1,5 +1,5 @@
 """
-This module contains the function to generate the metadata necessary to interact with the database and the other layers of Nachet for all the inference related objects. 
+This module contains the function to generate the metadata necessary to interact with the database and the other layers of Nachet for all the inference related objects.
 The metadata is generated in a json format and is used to store the metadata in the database.
 
 """
@@ -10,46 +10,54 @@ import nachet.db.queries.inference as inference
 import nachet.db.queries.machine_learning as machine_learning
 from pydantic import BaseModel, ValidationError
 from typing import Optional
+from uuid import UUID
+
 
 class MissingKeyError(Exception):
     pass
 
+
 class Seed(BaseModel):
     label: str
-    object_id: str
+    object_id: UUID
     score: float
-    
+
+
 class Box(BaseModel):
-    topX : float
-    topY : float
-    bottomX : float
-    bottomY : float
+    topX: float
+    topY: float
+    bottomX: float
+    bottomY: float
+
 
 class Model(BaseModel):
     name: str
     version: str
 
+
 class InferenceObject(BaseModel):
-    box : Box
-    box_id : str
-    color : str
-    label : str
-    object_type_id : int 
-    overlapping : bool
-    overlappingIndices : list[float]
-    score : float
+    box: Box
+    box_id: UUID
+    color: str
+    label: str
+    object_type_id: int
+    overlapping: bool
+    overlappingIndices: list[float]
+    score: float
     topN: list[Seed]
-    top_id : str
-    is_verified : bool
+    top_id: UUID
+    is_verified: bool
+
 
 class Inference(BaseModel):
+    inference_id: Optional[UUID]
     boxes: list[InferenceObject]
     filename: str
-    inference_id: str
     labelOccurrence: dict[str, int]
     totalBoxes: int
     models: Optional[list[Model]]
-    pipeline_id: Optional[str]
+    pipeline_id: Optional[UUID]
+
 
 def build_inference_import(model_inference: dict) -> str:
     """
@@ -95,12 +103,14 @@ def build_object_import(object: dict) -> str:
         "color": object["color"],
         "overlapping": object["overlapping"],
         "overlappingIndices": object["overlappingIndices"],
+        "is_verified": False,
     }
     return json.dumps(data)
 
-def compare_object_metadata(object1:dict , object2:dict) -> bool:
+
+def compare_object_metadata(object1: dict, object2: dict) -> bool:
     """
-    This function compares two object metadata to check if they are the same.
+    This function compares two Object metadata to check if they are the identical.
 
     Parameters:
     - object1: (dict) The first object to compare.
@@ -109,14 +119,15 @@ def compare_object_metadata(object1:dict , object2:dict) -> bool:
     Returns:
     - True if the objects are the same, False otherwise.
     """
-    try :
+    try:
         box1 = Box(**object1)
         box2 = Box(**object2)
         return box1 == box2
-    except ValidationError as e :
+    except ValidationError as e:
         raise e
 
-def rebuild_inference(cursor, inf) :
+
+def rebuild_inference(cursor, inf) -> Inference:
     """
     This function rebuilds the inference object from the database.
 
@@ -128,34 +139,41 @@ def rebuild_inference(cursor, inf) :
     """
     inference_id = str(inf[0])
     inference_data = json.loads(json.dumps(inf[1]))
-    pipeline_id = str(inf[2])
-    
+    pipeline_id = inf[2]
+
     models = []
-    if pipeline_id is not None :
-        pipeline = machine_learning.get_pipeline(cursor, pipeline_id)
-        models_data = pipeline["models"]
-        version = pipeline["version"]
-        for model_name in models_data :
-            model = Model(name=model_name, version=version)
+    if pipeline_id is not None:
+        pipeline = machine_learning.get_pipeline(
+            cursor, pipeline_id
+        )  # fetch the pipeline data (dict)
+        if (
+            pipeline is None
+        ):  # It was not initialized properly with data which means we have to build the dict manually
+            pipeline = machine_learning.get_pipeline_models(
+                cursor=cursor, pipeline_id=pipeline_id
+            )
+        for model in pipeline:
+            # Here is a potential issue: The models might of been uploaded in the DB without a model_version,
+            # meaning the version will be "None"
+            model = Model(name=model[0], version=str(model[1]))
             models.append(model)
-    
+
     objects = inference.get_objects_by_inference(cursor, inference_id)
     boxes = rebuild_boxes_export(cursor, objects)
 
     inf = Inference(
-        boxes = boxes,
-        filename= inference_data.get("filename"),
-        inference_id = inference_id,
-        labelOccurrence = inference_data.get("labelOccurrence"),
-        totalBoxes= inference_data.get("totalBoxes"),
-        models = models,
-        pipeline_id = pipeline_id
+        boxes=boxes,
+        filename=inference_data.get("filename"),
+        inference_id=inference_id,
+        labelOccurrence=inference_data.get("labelOccurrence"),
+        totalBoxes=inference_data.get("totalBoxes"),
+        models=models,
+        pipeline_id=pipeline_id,
     )
-    return inf.model_dump()
+    return Inference.model_validate(inf)
 
 
-
-def rebuild_boxes_export(cursor, objects) :
+def rebuild_boxes_export(cursor, objects):
     """
     This function rebuilds the boxes object from the database.
 
@@ -165,50 +183,50 @@ def rebuild_boxes_export(cursor, objects) :
     Returns:
     - The boxes object as an array of dict.
     """
-    try :
+    try:
         boxes = []
         for object in objects:
             box_id = str(object[0])
-            
+
             box_metadata = object[1]
             box_metadata = json.loads(json.dumps(box_metadata))
-            
+
             if inference.is_object_verified(cursor, box_id):
                 top_id = str(inference.get_inference_object_verified_id(cursor, box_id))
                 is_verified = True
-            else :
+            else:
                 top_id = str(inference.get_inference_object_top_id(cursor, box_id))
                 is_verified = False
             top_seed_id = str(seed.get_seed_object_seed_id(cursor, top_id))
-            
+
             seed_objects = inference.get_seed_object_by_object_id(cursor, box_id)
             topN = rebuild_topN_export(cursor, seed_objects)
-            
+
             top_score = 0
             if inference.is_object_verified(cursor, box_id):
                 top_score = 1
-            else :
+            else:
                 top_score = max(topN, key=lambda seed: seed.score).score
-            
+
             object = InferenceObject(
-                    box = Box(**box_metadata.get("box")),
-                    box_id = box_id,
-                    color = box_metadata.get("color"),
-                    label = seed.get_seed_name(cursor, top_seed_id),
-                    object_type_id = 1,
-                    overlapping = box_metadata.get("overlapping"),
-                    overlappingIndices = box_metadata.get("overlappingIndices"),
-                    score = top_score,
-                    topN = topN,
-                    top_id = top_id,
-                    is_verified = is_verified
-                )
+                box=Box(**box_metadata.get("box")),
+                box_id=box_id,
+                color=box_metadata.get("color"),
+                label=seed.get_seed_name(cursor, top_seed_id),
+                object_type_id=1,
+                overlapping=box_metadata.get("overlapping"),
+                overlappingIndices=box_metadata.get("overlappingIndices"),
+                score=top_score,
+                topN=topN,
+                top_id=top_id,
+                is_verified=is_verified,
+            )
 
             boxes.append(object)
         return boxes
-    except ValidationError as e :
+    except ValidationError as e:
         raise e
-    
+
 
 def rebuild_topN_export(cursor, seed_objects) -> list[Seed]:
     """
@@ -220,15 +238,15 @@ def rebuild_topN_export(cursor, seed_objects) -> list[Seed]:
     Returns:
     - The topN object as an array of dict.
     """
-    try :
+    try:
         topN = []
-        for seed_obj in seed_objects :
+        for seed_obj in seed_objects:
             res = Seed(
-                label = seed.get_seed_name(cursor, str(seed_obj[1])), 
-                object_id = str(seed_obj[0]), 
-                score = seed_obj[2]
+                label=seed.get_seed_name(cursor, str(seed_obj[1])),
+                object_id=str(seed_obj[0]),
+                score=seed_obj[2],
             )
             topN.append(res)
         return topN
-    except ValidationError as e :
+    except ValidationError as e:
         raise e

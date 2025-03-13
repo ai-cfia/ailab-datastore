@@ -84,8 +84,8 @@ sequenceDiagram;
     Backend -) ML: inference_request(pipeline,picture)
     ML ->> Backend : inference.json
     Backend -) Datastore: register_inference_result(inference)
-    Datastore ->> Datastore: trim_inference
-    Datastore -) PostgreSQL Database: new_inference(trimmed_inference)
+    Datastore ->> Datastore: format inference
+    Datastore -) PostgreSQL Database: new_inference(formatted_inference)
     Datastore ->> Datastore: Add {inference_id: uuid}
     loop each box 
         Datastore ->> Datastore: build_box_metadata(box_metadata)
