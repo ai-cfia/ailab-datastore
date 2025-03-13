@@ -290,6 +290,8 @@ class test_organization_information(unittest.TestCase):
         new_name = "new-name"
         new_website = "www.new.com"
         new_phone = "987654321"
+        is_main_contact = False
+        updated_address = "1223 street"
         id = organization.new_organization_information(
             self.cursor,
             self.address,
@@ -298,20 +300,29 @@ class test_organization_information(unittest.TestCase):
             self.phone,
             self.label_information_id,
             False,
-            True,
+            is_main_contact,
         )
         old_data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(old_data[0], self.name)
         self.assertEqual(old_data[1], self.website)
         self.assertEqual(old_data[2], self.phone)
         self.assertEqual(old_data[3], self.address)
+        self.assertEqual(old_data[6], is_main_contact)
         organization.update_organization_info(
-            self.cursor, id, new_name, new_website, new_phone
+            cursor=self.cursor,
+            information_id=id,
+            name=new_name,
+            website=new_website,
+            phone_number=new_phone,
+            is_main_contact=not is_main_contact,
+            address=updated_address,
         )
         data = organization.get_organization_info(self.cursor, id)
         self.assertEqual(data[0], new_name)
         self.assertEqual(data[1], new_website)
         self.assertEqual(data[2], new_phone)
+        self.assertEqual(data[3], updated_address)
+        self.assertEqual(data[6], not is_main_contact)
 
     def test_new_organization_information(self):
         id = organization.new_organization_information(
@@ -526,12 +537,38 @@ class test_organization(unittest.TestCase):
         )
         self.assertTrue(validator.is_valid_uuid(organization_id))
 
-    def test_upsert_organization(self):
+    def test_upsert_organization_function(self):
 
         organization_id = organization.new_organization(
             self.cursor, self.name, "wrong-website", "wrong-phone", "wrong-address"
         )
-        update_id = organization.upsert_organization(self.cursor, str(self.org_info_id))
+        update_id = organization.upsert_organization_function(
+            self.cursor, str(self.org_info_id)
+        )
+        self.assertEqual(organization_id, update_id)
+        organization_data = organization.get_organization(
+            self.cursor, str(organization_id)
+        )
+        self.assertEqual(organization_data[0], self.name)
+        self.assertEqual(organization_data[1], self.website)
+        self.assertEqual(organization_data[2], self.phone)
+        self.assertEqual(organization_data[3], self.address)
+
+    def test_upsert_organization(self):
+        organization_id = organization.new_organization(
+            cursor=self.cursor,
+            name=self.name,
+            website="wrong-website",
+            phone_number="wrong-phone",
+            address="wrong-address",
+        )
+        update_id = organization.upsert_organization(
+            cursor=self.cursor,
+            name=self.name,
+            website=self.website,
+            phone_number=self.phone,
+            address=self.address,
+        )
         self.assertEqual(organization_id, update_id)
         organization_data = organization.get_organization(
             self.cursor, str(organization_id)
@@ -554,3 +591,112 @@ class test_organization(unittest.TestCase):
     def test_get_organization_not_found(self):
         with self.assertRaises(organization.OrganizationNotFoundError):
             organization.get_organization(self.cursor, str(uuid.uuid4()))
+
+    def test_search_organization(self):
+        organization_id = organization.new_organization(
+            cursor=self.cursor,
+            name=self.name,
+            website=self.website,
+            phone_number=self.phone,
+            address=self.address,
+        )
+        organization.new_organization(
+            cursor=self.cursor,
+            name="other-name",
+            website="other-website",
+            phone_number="other-phone",
+            address="other-address",
+        )
+        organization.new_organization(
+            cursor=self.cursor,
+            name="partial-name",
+            website="partial-website",
+            phone_number="partial-phone",
+            address=self.address,
+        )
+        # test search by name
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=self.name,
+            address=None,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0][0], organization_id)
+        self.assertEqual(data[0][1], self.name)
+        self.assertEqual(data[0][2], self.website)
+        self.assertEqual(data[0][3], self.phone)
+        self.assertEqual(data[0][4], self.address)
+        # test search Wrong name
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name="wrong name",
+            address=None,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 0)
+        # test search by address
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=None,
+            address=self.address,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 2)
+        # test search by phone
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=None,
+            address=None,
+            phone_number=self.phone,
+            website=None,
+        )
+        self.assertEqual(len(data), 1)
+        # test search by website
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=None,
+            address=None,
+            phone_number=None,
+            website=self.website,
+        )
+        self.assertEqual(len(data), 1)
+        # test search by multiple fields
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=self.name,
+            address=self.address,
+            phone_number=self.phone,
+            website=self.website,
+        )
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0][0], organization_id)
+        # test search by multiple fields but one wrong
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=self.name,
+            address=self.address,
+            phone_number=self.phone,
+            website="wrong-website",
+        )
+        self.assertEqual(len(data), 0)
+        # testing partial matching search (2 rows have the same address, but the rest is different)
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=None,
+            address=self.address,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 2)
+        data = organization.search_organization(
+            cursor=self.cursor,
+            name=self.name,
+            address=self.address,
+            phone_number=None,
+            website=None,
+        )
+        self.assertEqual(len(data), 1)

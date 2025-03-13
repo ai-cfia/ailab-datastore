@@ -6,6 +6,7 @@ The metadata is generated in a json format and is used to store the metadata in 
 
 from datetime import datetime
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import UUID4, BaseModel, ValidationError, model_validator
 
@@ -37,7 +38,7 @@ class ValidatedModel(BaseModel):
 
 
 class OrganizationInformation(ValidatedModel):
-    id: Optional[str] = None
+    id: Optional[UUID4] = None
     name: Optional[str] = None
     address: Optional[str] = None
     website: Optional[str] = None
@@ -95,7 +96,7 @@ class RegistrationNumber(ValidatedModel):
 
 class ProductInformation(ValidatedModel):
     name: str | None = None
-    label_id: str | None = None
+    label_id: UUID4 | None = None
     lot_number: str | None = None
     metrics: Metrics | None = Metrics()
     npk: str | None = None
@@ -145,10 +146,14 @@ class Inspection(ValidatedModel):
     instructions: SubLabel
     guaranteed_analysis: GuaranteedAnalysis
     ingredients: ValuesObjects
-    picture_set_id: UUID4
+    folder_id: UUID4 
+    container_id: UUID4
+    upload_date: Optional[datetime] = None
+    updated_at: Optional[datetime] = None    
+    
 
 
-def build_inspection_import(analysis_form: dict, user_id, picture_set_id: UUID4) -> str:
+def build_inspection_import(analysis_form: dict, user_id:UUID,folder_id:UUID,container_id:UUID) -> Inspection:
     """
     This funtion build an inspection json object from the pipeline of digitalization analysis.
     This serves as the metadata for the inspection object in the database.
@@ -344,10 +349,13 @@ def build_inspection_import(analysis_form: dict, user_id, picture_set_id: UUID4)
             guaranteed_analysis=guaranteed,
             registration_numbers=reg_numbers,
             ingredients=ingredients,
-            picture_set_id=picture_set_id,
+            folder_id=folder_id,
+            container_id=container_id,
+            inspection_comment= None,
+            upload_date=None,
+            updated_at=None,
         )
-        Inspection(**inspection_formatted.model_dump())
-        return inspection_formatted.model_dump_json()
+        return inspection_formatted
     except MetadataError:
         raise
     except ValidationError as e:
@@ -356,7 +364,7 @@ def build_inspection_import(analysis_form: dict, user_id, picture_set_id: UUID4)
         raise BuildInspectionImportError(f"Unexpected error: {e}") from e
 
 
-def build_inspection_export(cursor, inspection_id) -> str:
+def build_inspection_export(cursor, inspection_id) -> Inspection:
     """
     This funtion build an inspection json object from the database.
     """
@@ -412,6 +420,12 @@ def build_inspection_export(cursor, inspection_id) -> str:
         # Get the inspection information
         db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
         db_inspection = DBInspection.model_validate(db_inspection)
+        
+        inspection_fk = inspection.get_inspection_fk(
+            cursor=cursor,
+            inspection_id=inspection_id)
+        container_id = inspection_fk[3]
+        folder_id = inspection_fk[2]
 
         inspection_formatted = Inspection(
             inspection_id=str(inspection_id),
@@ -424,10 +438,12 @@ def build_inspection_export(cursor, inspection_id) -> str:
             product=product_info,
             verified=db_inspection.verified,
             ingredients=ingredients,
-            picture_set_id=db_inspection.picture_set_id,
+            folder_id=folder_id,
+            container_id=container_id,
+            upload_date=db_inspection.upload_date,
+            updated_at=db_inspection.updated_at,
         )
-
-        return inspection_formatted.model_dump_json()
+        return inspection_formatted
     except QueryError as e:
         raise BuildInspectionExportError(f"Error fetching data: {e}") from e
     except Exception as e:

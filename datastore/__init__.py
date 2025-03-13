@@ -505,7 +505,7 @@ class ContainerController:
         - user_id (str): The UUID of the user.
 
         Returns:
-        - A list of the pictures of the folder.
+        - A list of the pictures (BLOB) of the folder.
         """
         # Check if user exists
         if self.container_client is None or not self.container_client.exists():

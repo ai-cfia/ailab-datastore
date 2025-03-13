@@ -317,3 +317,44 @@ class test_sub_label(unittest.TestCase):
                 self.sub_type_id,
                 False,
             )
+            
+    def test_upsert_sub_label(self):
+        sub_label.new_sub_label(
+            self.cursor,
+            self.text_fr,
+            self.text_en,
+            self.label_id,
+            self.sub_type_id,
+            False,
+        )
+        od_data  = sub_label.get_all_sub_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(od_data),1)
+        data = {
+            self.type_en: {
+                "en": [
+                "1. Dissolve 50g in 10L of water.",
+                "2. Apply every 2 weeks.",
+                "3. Store in a cool, dry place."
+                ],
+                "fr": [
+                "1. Dissoudre 50g dans 10L d'eau.",
+                "2. Appliquer toutes les 2 semaines.",
+                "3. Conserver dans un endroit frais et sec."
+                ]
+            },  
+            self.type_2_en: {
+                "en": [
+                "Keep out of reach of children.",
+                "Avoid contact with skin and eyes."
+                ],
+                "fr": [
+                "Tenir hors de port\u00e9e des enfants.",
+                "\u00c9viter le contact avec la peau et les yeux."
+                ]
+            },
+        }
+        
+        sub_label.upsert_sub_label(self.cursor,self.label_id,data)
+        
+        updated = sub_label.get_all_sub_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(updated),5)
