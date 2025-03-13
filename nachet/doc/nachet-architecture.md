@@ -21,7 +21,7 @@
 ``` mermaid
 
 ---
-title: Nachet DB Structure
+title: Nachet DB Structure (simplified Users-Container)
 ---
 erDiagram
   user{
