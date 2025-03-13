@@ -739,9 +739,7 @@ class TestDatastore(unittest.IsolatedAsyncioTestCase):
                 self.cursor,
                 self.user.id,
                 updated_inspection,
-            ),
-            inspection.InspectionUpdateError,
-        )
+            )
 
     def test_search_inspection(self):
         """

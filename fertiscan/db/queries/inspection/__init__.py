@@ -6,6 +6,7 @@ This module represent the function for the table inspection:
 import json
 from uuid import UUID
 from datetime import datetime
+from datetime import date as Date
 
 from psycopg import Cursor
 from psycopg.rows import dict_row
