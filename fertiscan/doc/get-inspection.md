@@ -10,72 +10,97 @@ from the database with only its id .
 
 - The inspection id must be of a valid inspection
 
+## Post Condition
+
+- The User receive an InspectionController allowing them to vizualize the model attribute
+
 ## Entity Used
 
 ``` mermaid
-
 ---
-title: FertiScan DB Structure
+title: FertiScan Inspection DB Structure
 ---
 erDiagram
-  users{
-    uuid id PK
-    string email
-    timestamp registration_date
-    timestamp updated_at
-    uuid default_set_id FK
-  }
+    
   inspection {
+    uuid id PK
+    boolean verified
+    timestamp upload_date
+    timestamp updated_at
     uuid inspector_id FK
-    uuid label_info_id Fk
+    uuid label_info_id FK
+    uuid fertilizer_id FK
     uuid sample_id FK
-    uuid company_id FK
-    uuid manufacturer_id FK
+    uuid picture_set_id FK
+    uuid container_id FK
   }
-  organization_information{
+
+  fertilizer {
+    uuid id PK
+    string name "Unique"
+    string registration_number
+    timestamp upload_date
+    timestamp update_at
+    uuid latest_inspection_id FK
+    uuid owner_id FK
+  }organization_information{
     uuid id PK
     string name 
     string website
     string phone_number
-    uuid location_id FK
-  }
-  location{
-    uuid id PK
     string address
-    uuid organization_id FK
-    uuid region_id FK
+    boolean edited
   }
-  label_information{
+  organization {
+    uuid id PK
+    uuid information_id FK
+    uuid main_location_id FK
+  }
+  label_information {
     uuid id PK
     string lot_number
     string npk
-    string registration_number
     float n
     float p
-    float k
-    uuid company_info_id FK
-    uuid manufacturer_info_id FK
+    float k 
+    string guaranteed_title_en
+    string guaranteed_title_fr
+    boolean title_is_minimal
+    boolean record_keeping
   }
-  sub_label{
+  
+  metric{
     uuid id PK
-    text content_fr
-    text content_en
+    float value
+    boolean edited
+    ENUM metric_type 
+    uuid unit_id FK
+    uuid label_id FK
+  }
+  unit{
+    uuid id PK
+    string unit
+    float to_si_unit
+  }
+  
+  registration_number_information{
+    uuid id PK
+    string identifier
+    string name
+    boolean is_an_ingredient 
+  }
+  sub_label {
+    uuid id PK
+    text text_content_fr
+    text text_content_en
     boolean edited
     uuid label_id FK
     uuid sub_type_id FK
   }
-  sub_type{
-    id uuid PK
+  sub_type {
+    uuid id PK
     text type_fr "unique"
     text type_en "unique"
-  }
-  specification{
-    id uuid PK
-    float humidity
-    float ph
-    float solubility
-    boolean edited
-    uuid label_id FK
   }
   micronutrient{
     uuid id PK
@@ -83,6 +108,7 @@ erDiagram
     float value
     string unit
     boolean edited
+    language language
     uuid label_id FK
     int element_id FK
   }
@@ -101,33 +127,38 @@ erDiagram
     string name
     boolean edited
     uuid label_id FK
+    language language
   }
-    metric{
-    uuid id PK
-    float value
-    boolean edited
-    ENUM metric_type 
-    uuid unit_id FK
-    uuid label_id FK
+    
+  element_compound{
+    int id PK
+    string name_fr
+    string name_en
+    string symbol
   }
-  unit{
-    uuid id PK
-    string unit
-    float to_si_unit
+  sample {
+    id uuid
+    json data
   }
-  organization_information ||--|| location: Hosts
+  
+
+  metric }o--|| unit: defines
+  inspection ||--|| sample :"has"
+  fertilizer ||--|| organization: responsible
+  organization ||--||organization_information : defines
+  inspection ||--|| fertilizer : about
   inspection ||--|| label_information : defines
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
-  label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
-  label_information ||--o| organization_information: company
-  label_information ||--o| organization_information: manufacturer
+  label_information ||--o{ registration_number_information: has
+  label_information ||--o{ organization_information: responsible
   label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
-  metric }|--|| unit: defines
 
+  micronutrient |o--|| element_compound: is
+  guaranteed |o--|| element_compound: is
 ```
 
 ## Sequence of Getting the inspection
@@ -136,81 +167,81 @@ erDiagram
 sequenceDiagram
     title FertiScan Get Inspection Form
     actor C as Client
-    participant FE as Frontend
-    participant BE as FertiScan
-    participant DS as DataStore
-    participant Metadata
+    participant F as Fertiscan
+    participant data as metadata.inspection
+
+    box Query Module
+    participant Qins as inspection
+    participant organization
+    participant Qlabel as label
+    participant Qorg as organization
+    participant Qm as metric
+    participant Qi as ingredient
+    participant Qga as nutrients
+    participant Qsl as sub_label
+    participant Qrg as registration_number
+    participant Qf as fertilizer
+    end
     participant DB as Database
 
-C -) FE: Select form to view
-FE -) BE: get_inspection(inspection_id,user_id)
-BE -) DS: get_full_inspection(cursor,inspection_id)
-DS -) DB: is_inspection(inspection_id)?
-DS --> DS: did we received fks?
-DS -) DB: get_inspection_fks(inspection_id)
-DB --> DS : label_id, user_id, ...
-DS -) DS: check fks
-DS -) Metadata: build_inspection_export(inspection_id,label_id)
-activate Metadata
-Note right of Metadata: Process detailed <br> under this graph
-Metadata -->> DS: inspection_json
-deactivate Metadata
-DS -->> BE: inspection_json
-BE -->> FE: inspection_json
-FE -->> C: Display inspection
 
-```
+C ->> F: get_inspection(cursor,inspection_id)
+activate F
+F ->> DB: Validate inspection_id exists
+F ->> data: build_inspection_export()
+activate data
 
-## Sequence of build_inspection_export
+data ->>Qins: get_inspection()
+Qins ->> DB: SELECT inspection
 
-```mermaid
-sequenceDiagram
-    title FertiScan Get Inspection Form
-    participant DS as DataStore
-    participant M as Metadata
-    participant P as Pydantic models
-    participant DB as Database
+data ->>Qins: get_inspection()
+Qins ->> DB: SELECT inspection
+DB -->>data: label_information_id
 
-DS -) M: build_inspection_export(inspection_id,label_id)
-M -) M : inspection_json = {inspection_id: inspection_id}
-M -) DB: get_label_info_json(label_id)
-DB --> M: label_info_json
-M -) DB: get_metrics_json(label_id)
-DB --> M: metrics_json
-M -) M : label_info_json.update(metrics_json)
-M -->> P : ProductInfo(label_info_json)
-M -) M : inspection_json.update(label_info_json)
-M -) DB: get_sub_label_json(label_id)
-DB --> M: sub_label_json
-loop for each sub_label.keys()
-    M-->>P: SubLabel(sub_label.get(keys))
-end
-M -) M : inspection_json.update(sub_label_json)
+data ->>Qlabel: get_label_information_json()
+Qlabel ->> DB: SELECT get_label_info_json()
+DB -->>data: dict
+data ->>data: ProductInformation(**product_info)
 
-M -) DB: get_ingredients_json(label_id)
-DB --> M: ingredient_json
-M -->> P: ValuesObject(ingredient_json)
-M -) M : inspection_json.update(ingredient_json)
+data ->>Qm: get_metrics_json()
+Qm ->> DB: SELECT get_metrics_json()
+DB -->>data: dict
+data ->>data: Metrics.model_validate()
 
-M -) DB: get_nutrients_json(label_id)
-DB --> M: nutrients_json
-M --> P: ValuesObject(nutrients_json)
-M -) M : inspection_json.update(nutrients_json)
+data ->>Qrg: get_registration_numbers_json()
+Qrg ->> DB: SELECT get_registration_numbers_json()
+DB -->>data: dict
+data ->>data: RegistrationNumber.model_validate()
 
-M -) DB: get_guaranteed_analysis_json(label_id)
-DB --> M: guaranteed_analysis_json
-loop for each guaranteed_analysis entry
-    M-->>P: Value(guaranteed_analysis_json[i])
-end
-M -) M : inspection_json.update(guaranteed_analysis_json)
+data ->>Qorg: get_organizations_info_json()
+Qorg ->> DB: SELECT get_organizations_info_json()
+DB -->>data: dict
+data ->>data: OrganizationInformation.model_validate()
 
-M -) DB: get_specifications_json(label_id)
-DB --> M: specification_json
-M -->> P: Specifications(specification_json)
-M -) M : inspection_json.update(specification_json)
+data ->>Qsl: get_sub_label_json()
+Qsl ->> DB: SELECT get_sub_label_json()
+DB -->>data: dict
+data ->>data: SubLabel.model_validate()
 
-M -) P: Inspection(inspection_json)
+data ->>Qga: get_guaranteed_analysis_json()
+Qga ->> DB: SELECT get_guaranteed_analysis_json()
+DB -->>data: dict
+data ->>data: GuaranteedAnalysis.model_validate()
 
-M --> DS: inspection_json.dump_model()
+alt if not record_keeping
+
+data ->>Qi: get_ingredient_json()
+Qi ->> DB: SELECT get_ingredient_json()
+DB -->>data: dict
+data ->>data: ValuesObjects.model_validate()
+end 
+
+data->>data: Inspection()
+data-->F:inspection model
+deactivate data
+create Participant IC as Inspection Controller
+F ->>IC: InspectionController(inspection_model)
+F -->C: Inspection Controller
+deactivate F
 
 ```

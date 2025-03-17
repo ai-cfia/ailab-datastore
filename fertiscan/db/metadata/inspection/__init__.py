@@ -417,7 +417,7 @@ def build_inspection_export(cursor, inspection_id) -> Inspection:
         else:
             ingredients = ValuesObjects(en=[], fr=[])
 
-        # Get the inspection information
+        # Get the inspection information (Useless since we already fetched get_inspection()... )
         db_inspection = inspection.get_inspection_dict(cursor, inspection_id)
         db_inspection = DBInspection.model_validate(db_inspection)
         
