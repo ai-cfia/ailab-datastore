@@ -4,8 +4,9 @@
 
 The User wants to digitalize a label picture on FertiScan. Therefore, the BE
 uses it's models to digitalize the content and sends over a JSON with all the
-information taken from the pictures. We need to parse the JSON, saves correctly
-the information into the DB linked to the pictures received.
+information taken from the pictures. We need to parse the JSON, extract its
+information and transform it into the right format then save correctly the
+information into the DB linked to the pictures received.
 
 ## Prerequisites
 
@@ -46,26 +47,13 @@ erDiagram
     uuid container_id FK
   }
 
-  fertilizer {
-    uuid id PK
-    string name "Unique"
-    string registration_number
-    timestamp upload_date
-    timestamp update_at
-    uuid latest_inspection_id FK
-    uuid owner_id FK
-  }organization_information{
+organization_information{
     uuid id PK
     string name 
     string website
     string phone_number
     string address
     boolean edited
-  }
-  organization {
-    uuid id PK
-    uuid information_id FK
-    uuid main_location_id FK
   }
   label_information {
     uuid id PK
@@ -147,64 +135,11 @@ erDiagram
     string name_en
     string symbol
   }
-  sample {
-    id uuid
-    json data
-  }
-  
 
-
-
-
- 
-
-  inspection_factual {
-    uuid inspection_id PK
-    uuid inspector_id
-    uuid label_info_id
-    uuid time_id FK
-    uuid sample_id
-    uuid company_id
-    uuid manufacturer_id
-    uuid picture_set_id
-    timestamp inspection_date
-    json original_dataset
-  }
-  label_dimension {
-    uuid label_id PK
-    uuid company_info_id
-    uuid company_location_id
-    uuid manufacturer_info_id
-    uuid manufacturer_location_id
-    uuid[] instructions_ids "DEFAULT '{}'"
-    uuid[] cautions_ids "DEFAULT '{}'"
-    uuid[] first_aid_ids "DEFAULT '{}'"
-    uuid[] warranties_ids "DEFAULT '{}'"
-    uuid[] specification_ids "DEFAULT '{}'"
-    uuid[] ingredient_ids "DEFAULT '{}'"
-    uuid[] micronutrient_ids "DEFAULT '{}'"
-    uuid[] guaranteed_ids "DEFAULT '{}'"
-    uuid[] weight_ids "DEFAULT '{}'"
-    uuid[] volume_ids "DEFAULT '{}'"
-    uuid[] density_ids "DEFAULT '{}'"
-  }
-  time_dimension {
-    uuid id PK
-    date date_value
-    int year
-    int month
-    int day
-    text month_name
-    text day_name
-  }
 
   inspection_factual ||--o{ time_dimension : "References"
   inspection_factual ||--o{ label_dimension : "References"
   metric }o--|| unit: defines
-  inspection ||--|| sample :"has"
-  fertilizer ||--|| organization: responsible
-  organization ||--||organization_information : defines
-  inspection ||--|| fertilizer : about
   inspection ||--|| label_information : defines
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
@@ -221,6 +156,11 @@ erDiagram
 ```
 
 ## Sequence of saving
+
+The sequence of saving an inspection comes in two steps
+
+1. Uploading the pictures
+2. Uploading the label data
 
 ```mermaid
 sequenceDiagram
@@ -257,92 +197,81 @@ sequenceDiagram
 sequenceDiagram
 
     participant User
-  
+    participant FS as Fertiscan
+    participant data as metadata module
+    box Query Module
+    participant Qins as inspection
+    participant organization
+    participant Qlabel as label
+    participant Qorg as organization
+    participant Qm as metric
+    participant Qi as ingredient
+    participant Qga as nutrients
+    participant Qsl as sub_label
+    participant Qrg as registration_number
+    participant Qf as fertilizer
+    end
     participant DB as Database
-    participant Function as new_inspection()
-    participant olap as OLAP dimension
 
-    links olap: {"Inspection_Factual": "","Label_Dimension": "","Time_Dimension": ""}
+    User->>FS: Call new_inspection() 
+    activate FS
 
-    User->>DB: Call new_inspection()
-    DB ->> Function: 
-    activate Function
+    FS ->>DB: Verify permissions and parameters received
 
-    Note over Function: Process Company Information
-    Function->>DB: Call new_organization_info_located for Company
-    DB-->>Function: Return company_id
-    Function->>Function: Update input_json with company_id
+    FS ->> data: build_inspection_import()
+    data ->> data: extract & transform Inspection data into Inspection model
+    data -->>FS: formatted inspection
 
-    Note over Function: Process Manufacturer Information
-    Function->>DB: Call new_organization_info_located for Manufacturer
-    DB-->>Function: Return manufacturer_id
-    Function->>Function: Update input_json with manufacturer_id
+    FS ->> Qlabel: new_label_information()
+    Qlabel ->>DB: INSERT INTO label_information
+    DB --> FS: label_information_id
 
-    Note over Function: Process Label Information
-    Function->>DB: Call new_label_information
-    DB -) olap: TRIGGER: Create new label_dimension
-    DB-->>Function: Return label_info_id
-    Function->>Function: Update input_json with label_info_id
-
-    Note over Function: Process Weight Metrics
-    loop For each weight record
-        Function->>DB: Call new_metric_unit for Weight
-        DB -) olap: TRIGGER: UPDATE label_dimension append weight_ids
-        DB-->>Function: Return weight_id
+    loop for each metrics
+      FS ->> Qm: new_metric()
+      Qm ->>DB: SELECT new_metric_unit()
     end
 
-    Note over Function: Process Density Metric
-    Function->>DB: Call new_metric_unit for Density
-    DB -) olap: TRIGGER: UPDATE label_dimension append density_ids
-    DB-->>Function: Return density_id
-
-    Note over Function: Process Volume Metric
-    Function->>DB: Call new_metric_unit for Volume
-    DB -) olap: TRIGGER: UPDATE label_dimension append volume_ids
-    DB-->>Function: Return volume_id
-
-    Note over Function: Process Specifications
-    loop For each specification record
-        Function->>DB: Call new_specification
-        DB -) olap: TRIGGER: UPDATE label_dimension append specification_ids
-        DB-->>Function: Return specification_id
+    loop for each ingredients
+      FS ->> Qi: new_ingredient()
+      Qi ->>DB: SELECT SELECT new_ingredient()
     end
 
-    Note over Function: Process Ingredients
-    loop For each ingredient record
-        Function->>DB: Call new_ingredient
-        DB -) olap: TRIGGER: UPDATE label_dimension append ingredient_ids
-        DB-->>Function: Return ingredient_id
+    loop for each sub_label_type
+      FS ->>DB: get sub_type id
+      loop for each sub_label record
+        FS ->> Qsl: new_sub_label()
+        Qsl ->>DB: INSERT INTO sub_label
+      end
     end
 
-    Note over Function: Process Sub Labels
-    loop For each sub label record
-        Function->>DB: Call new_sub_label
-        DB -) olap: TRIGGER: UPDATE label_dimension append child_label_ids child_label = sub_label_type
-        DB-->>Function: Return sub_label_id
+    loop for each guaranteed_analysis record
+      FS ->> Qga: new_guaranteed_analysis()
+      Qga ->>DB: INSERT INTO guaranteed
     end
 
-    Note over Function: Process Micronutrients
-    loop For each micronutrient record
-        Function->>DB: Call new_micronutrient
-        DB -) olap: TRIGGER: UPDATE label_dimension append micronutrients_ids
-        DB-->>Function: Return micronutrient_id
+    loop for each registration_number record
+      FS ->> Qrg: new_registration_number()
+      Qrg ->>DB: INSERT INTO registration_number_information
     end
 
-    Note over Function: Process Guaranteed Analysis
-    loop For each guaranteed analysis record
-        Function->>DB: Call new_guaranteed_analysis
-        DB -) olap: TRIGGER: UPDATE label_dimension append guaranteed_ids
-        DB-->>Function: Return guaranteed_analysis_id
+    loop for each organization_information record
+      FS ->> Qrg: new_organization_information()
+      Qrg ->>DB: INSERT INTO organization_information
     end
 
-    Note over Function: Insert Inspection
-    Function->>DB: Insert into inspection
-    DB-->>Function: Return inspection_id_value
-    Function->>Function: Update input_json with inspection_id_value
+    FS ->> Qins: new_inspection()
+    Qins ->>DB: INSERT INTO inspection
+    DB--> FS: inspection id
 
-    DB->>olap: TRIGGER: update inspection_factual SET original_dataset = input_json
+    FS --> FS: Add ids to Inspection model
+    FS --> FS: Inspection.model_validate()
 
-    Function-->>User: Return input_json
-    deactivate Function
+    FS ->>Qins: save_inspection_original_dataset()
+    Qins ->> DB: UPDATE inspection_factual SET original_dataset
+
+    create participant IC as InspectionController
+    FS ->> IC: InspectionController(validated_inspection_model)
+    FS-->User: InspectionController
+
+    deactivate FS
 ```
