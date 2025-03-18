@@ -168,7 +168,7 @@ sequenceDiagram
     actor C as Client
     participant FE as Frontend
     participant BE as Backend
-    participant FS as FertiScan.Inspection_Controller
+    participant FS as FertiScan
     participant DS as DataStore.Container_Controller
     participant DB as Database
     participant blob as BLOB Storage
@@ -180,13 +180,9 @@ sequenceDiagram
     DS ->> blob: Upload images in new folder
     DS --> BE: folder_id UUID
     
-    BE ->> FS: register analysis
-    DS ->> DS: formatted_form = build_inspection_import(form)
-    DS ->> DB: new_inspection(user_id,picture_set_id,formatted_form.json)
-    DB --> DS: formatted_form_with_ids.json
-
-    DS --> BE: formatted_form_with_ids.json
-    BE ->> FE: Display_result(reworked_form_with_ids.json)
+    BE ->> FS: new_inspection()
+    FS --> BE: InspectionController
+    BE ->> FE: Display_result()
     FE --> C: Build HTML page based on the received json for confirmation
 
 ```

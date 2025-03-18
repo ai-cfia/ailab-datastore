@@ -12,7 +12,8 @@ from the database with only its id .
 
 ## Post Condition
 
-- The User receive an InspectionController allowing them to vizualize the model attribute
+- The User receive an InspectionController allowing them to vizualize the model
+  attribute
 
 ## Entity Used
 
