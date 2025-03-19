@@ -14,7 +14,6 @@ architecture-beta
     service model(cloud)[AI Model] in Nachet
     service DS(server)[Datastore] in Nachet
     
-    
     frontend: R -- L :backend
     ML: L -- R :model
     ML: L -- R :backend

@@ -1,5 +1,27 @@
 # FertiScan DB Architecture
 
+```mermaid
+
+architecture-beta
+    group Fertiscan(internet)[Fertiscan]
+
+    service db(database)[Database] in Fertiscan
+    service disk1(database)[BLOB Storage] in Fertiscan
+    service backend(server)[Backend] in Fertiscan
+    service frontend(server)[Frontend] in Fertiscan
+    service ML(server)[Pipeline] in Fertiscan
+    service model(cloud)[AI Model] in Fertiscan
+    service DS(server)[Datastore] in Fertiscan
+
+    frontend: R -- L :backend
+    ML: L -- R :model
+    ML: L -- R :backend
+    DS: T -- B :backend
+    db: L -- R :DS
+    DS: L -- R :disk1
+
+```
+
 ## Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
