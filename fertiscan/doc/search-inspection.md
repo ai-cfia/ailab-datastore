@@ -58,13 +58,13 @@ The results would be the following:
 - For an entry with multiple parameters being evaluated, all parameters are
   evaluated using a logical "**AND**" therefor they mist all be a match for the
   entry to be returned as a result. Meaning if you search (**ABC**,**XYZ**) in
-  the following dataset 
+  the following dataset
 
 | ID  | first name |  Last name |
 |-----|------|----|
 | 1   | **ABC**  | **XYZ** |
 | 2   | **ABC**  | IJK |
-| 3   | DEF  | **XYZ** | 
+| 3   | DEF  | **XYZ** |
 | 4   | DEF  | IJK |
 
 The results would be the following:
