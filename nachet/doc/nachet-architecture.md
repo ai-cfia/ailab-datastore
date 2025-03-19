@@ -1,5 +1,29 @@
-# Database Architecture
+# Architecture
   
+```mermaid
+
+architecture-beta
+
+    group Nachet(internet)[Nachet]
+
+    service db(database)[Database] in Nachet
+    service disk1(database)[BLOB Storage] in Nachet
+    service backend(server)[Backend] in Nachet
+    service frontend(server)[Frontend] in Nachet
+    service ML(server)[Pipeline] in Nachet
+    service model(cloud)[AI Model] in Nachet
+    service DS(server)[Datastore] in Nachet
+    
+    
+    frontend: R -- L :backend
+    ML: L -- R :model
+    ML: L -- R :backend
+    DS: T -- B :backend
+    db: L -- R :DS
+    DS: L -- R :disk1
+
+```
+
 ## Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
