@@ -24,17 +24,34 @@ We need to establish rules regarding our search.
   capitalisation of words must not be considered. Meaning if you search "ABC in
   the following dataset
 
-**Dataset** | ID  | Name | |-----|------| | 1   | ABC  | | 2   | abc  |
+**Dataset** 
+| ID  | Name | 
+|-----|------| 
+| 1   | ABC  | 
+| 2   | abc  |
 
-**Results** | ID  | Name | |-----|------| | 1   | ABC  | | 2   | abc  |
+**Results** 
+| ID  | Name | 
+|-----|------| 
+| 1   | ABC  | 
+| 2   | abc  |
 
 - The results must be an exact match to the parameter given, meaning if you
   search "**ABC**" in the following dataset
 
-**Dataset** | ID  | Name | |-----|------| | 1   | **ABC**  | | 2   | **ABC**D |
-| 3   | **AB**   | | 4   | abc  |
+**Dataset** 
+| ID  | Name | 
+|-----|------|
+| 1   | **ABC**  | 
+| 2   | **ABC**D |
+| 3   | **AB**   |
+| 4   | abc  |
 
-**Results** | ID  | Name | |-----|------| | 1   | **ABC**  | | 4   | abc  |
+**Results** 
+| ID  | Name | 
+|-----|------| 
+| 1   | **ABC**  | 
+| 4   | abc  |
 
 ### Multiple Parameters
 
@@ -43,12 +60,18 @@ We need to establish rules regarding our search.
   entry to be returned as a result. Meaning if you search (**ABC**,**XYZ**) in
   the following dataset
 
-**Dataset** | ID  | first name |  Last name | |-----|------|----| | 1   |
-**ABC**  | **XYZ** | | 2   | **ABC**  | IJK | | 3   | DEF  | **XYZ** | | 4   |
-DEF  | IJK |
+**Dataset** 
+| ID  | first name |  Last name | 
+|-----|------|----| 
+| 1   | **ABC**  | **XYZ** | 
+| 2   | **ABC**  | IJK | 
+| 3   | DEF  | **XYZ** | 
+| 4   | DEF  | IJK |
 
-**Results** | ID  | first name |  Last name | |-----|------|----| | 1   |
-**ABC**  | **XYZ** |
+**Results** 
+| ID  | first name |  Last name | 
+|-----|------|----| 
+| 1   | **ABC**  | **XYZ** |
 
 ## Entity Used
 

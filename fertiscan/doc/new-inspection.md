@@ -136,9 +136,6 @@ organization_information{
     string symbol
   }
 
-
-  inspection_factual ||--o{ time_dimension : "References"
-  inspection_factual ||--o{ label_dimension : "References"
   metric }o--|| unit: defines
   inspection ||--|| label_information : defines
   label_information ||--|{ ingredient: has
