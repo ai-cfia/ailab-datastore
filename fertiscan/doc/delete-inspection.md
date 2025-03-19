@@ -1,7 +1,5 @@
 # Deleting an Inspection Record
 
-
-
 ## **Preconditions:**
 
 - The inspection record must exist prior to the update.

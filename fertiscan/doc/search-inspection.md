@@ -24,33 +24,33 @@ We need to establish rules regarding our search.
   capitalisation of words must not be considered. Meaning if you search "ABC in
   the following dataset
 
-**Dataset** 
-| ID  | Name | 
-|-----|------| 
-| 1   | ABC  | 
+| ID  | Name |
+|-----|------|
+| 1   | ABC  |
 | 2   | abc  |
 
-**Results** 
-| ID  | Name | 
-|-----|------| 
-| 1   | ABC  | 
+The results would be the following:
+
+| ID  | Name |
+|-----|------|
+| 1   | ABC  |
 | 2   | abc  |
 
 - The results must be an exact match to the parameter given, meaning if you
   search "**ABC**" in the following dataset
 
-**Dataset** 
-| ID  | Name | 
+| ID  | Name |
 |-----|------|
-| 1   | **ABC**  | 
+| 1   | **ABC**  |
 | 2   | **ABC**D |
 | 3   | **AB**   |
 | 4   | abc  |
 
-**Results** 
-| ID  | Name | 
-|-----|------| 
-| 1   | **ABC**  | 
+The results would be the following:
+
+| ID  | Name |
+|-----|------|
+| 1   | **ABC**  |
 | 4   | abc  |
 
 ### Multiple Parameters
@@ -58,19 +58,19 @@ We need to establish rules regarding our search.
 - For an entry with multiple parameters being evaluated, all parameters are
   evaluated using a logical "**AND**" therefor they mist all be a match for the
   entry to be returned as a result. Meaning if you search (**ABC**,**XYZ**) in
-  the following dataset
+  the following dataset 
 
-**Dataset** 
-| ID  | first name |  Last name | 
-|-----|------|----| 
-| 1   | **ABC**  | **XYZ** | 
-| 2   | **ABC**  | IJK | 
+| ID  | first name |  Last name |
+|-----|------|----|
+| 1   | **ABC**  | **XYZ** |
+| 2   | **ABC**  | IJK |
 | 3   | DEF  | **XYZ** | 
 | 4   | DEF  | IJK |
 
-**Results** 
-| ID  | first name |  Last name | 
-|-----|------|----| 
+The results would be the following:
+
+| ID  | first name |  Last name |
+|-----|------|----|
 | 1   | **ABC**  | **XYZ** |
 
 ## Entity Used

@@ -61,8 +61,9 @@ erDiagram
   object }o--|| object_type: is 
 ```
 
-- `object` represents object identified on the picture. There should be a box created on the picture by the model to frame the object.
-- `seed_object` represent the guess of what the model think is the object 
+- `object` represents object identified on the picture. There should be a box
+  created on the picture by the model to frame the object.
+- `seed_object` represent the guess of what the model think is the object
 
 ## Sequence of saving the inference
 
