@@ -3,8 +3,8 @@
 ## Contexte
 
 We have a process in place to requests our pipelines to perfom an inference on a
-picture in our blob storage and register the result in the database. Therefore,
-we would need a process to register the user's feedback of said inference
+picture and register the result in the database. Therefore, we would need a
+process to register the user's feedback of said inference
 
 ## Prerequisites
 

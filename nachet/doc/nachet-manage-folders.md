@@ -170,7 +170,7 @@ sequenceDiagram
     User->>FE: Select Folder
         FE->>BE: /get-folder-content
             loop for each pictures in picture_set
-                    BE->>DS: get_pictures_inferences(user_id, picture_set_id)
+                    BE->>DS: get_picture_inference(user_id, picture_set_id)
                     DS-->DS: get_pictures_with_inferencse(user_id, picture_set_id)
                     DS-->>BE: Return pictures with inferences
                     BE->>DS: container_controller.get_picture_blob(user_id, picture_set_id)
