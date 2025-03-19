@@ -4,14 +4,15 @@
 
 We have a process in place to requests our pipelines to perfom an inference on a
 picture in our blob storage. Therefore, we would need a process to save the
-inference result and also incorporate a a user validation
+inference result.
 
 ## Prerequisites
 
 - The user must be signed in
 
-- The user has picture uploaded in the blob storage and with its metadata saved
-  within the DB.
+- The user has already uploaded a picture in the blob storage with a Container Controller.
+
+### Database
 
 ``` mermaid
 
@@ -60,45 +61,70 @@ erDiagram
   object }o--|| object_type: is 
 ```
 
+- `object` represents object identified on the picture. There should be a box
+  created on the picture by the model to frame the object.
+- `seed_object` represent the guess of what the model think is the object
+
 ## Sequence of saving the inference
 
 ``` mermaid
 
 sequenceDiagram;
   actor User
-  box grey Ai-Lab services
-  participant Frontend
-  participant Backend
-  participant Datastore
-  participant ML
+  participant FE as Frontend
+  participant BE as Backend
+  participant DS as Datastore
+  box query module
+    participant inf as inference
+    participant seed as seed
   end
+  participant CC as Container Controller
+  participant ML as Pipeline
+
   box grey Storage services
-  participant PostgreSQL Database
-  participant Azure Storage
+    participant DB as PostgreSQL Database
+    participant AZ as Azure Storage
   end
 
-    User ->> Frontend: Classify picture
-    Frontend -) Backend: Classify_picture(picture_id)
-    Backend -) Datastore: get_picture_url(picture_id)
-    Datastore ->> Backend : picture_url
-    Backend -) ML: inference_request(pipeline,picture)
-    ML ->> Backend : inference.json
-    Backend -) Datastore: register_inference_result(inference)
-    Datastore ->> Datastore: trim_inference
-    Datastore -) PostgreSQL Database: new_inference(trimmed_inference)
-    Datastore ->> Datastore: Add {inference_id: uuid}
-    loop each box 
-        Datastore ->> Datastore: build_box_metadata(box_metadata)
-        Datastore ->> PostgreSQL: new_inference_object(box_metadata)
-        Datastore ->> Datastore: Add {box_id: uuid}
-        loop each guess
-            Datastore -) PostgreSQL: get_seed_id(seed_name)
-            Datastore ->> PostgreSQL: new_seed_object(box_id,seed_id)
-            Datastore ->> Datastore: Add {object_id: uuid}
-        end
-        Datastore  ->> PostgreSQL: set_inference_object_top_id(object_id, top_seed_object_id)
-        Datastore ->> Backend: inference_with_id.json
-    end
+    User ->>FE: Classify picture
+    FE -) BE: Classify_picture(picture_id)
+    BE -) CC: picture_url = model.Folders.path + "/" + str(picture_id)
+    BE -) CC: get_picture_blob()
+    CC-) AZ: download_blob()
+    AZ -->BE: picture in BLOB format
+    BE -) ML: inference_request(pipeline,picture)
+    ML ->> BE : inference.json
+    
+    BE -) DS: register_inference_result(inference, picture_id)
+    
+    DS ->> DS: format inference
+    DS ->> DB: get_pipeline_id if not given as parameters
 
+    DS->>inf: new_inference()
+    inf-)DB:INSERT INTO inference
+
+    loop for each box
+    
+        DS->>inf: new_inference_object()
+        inf-)DB:INSERT INTO object
+
+        loop for each inference guess
+
+            DS ->>DS: verify if it is the top guess
+            DS ->> seed: get_seed_id()
+            seed -) DB: SELECT seed WHERE name ILIKE
+
+            DS ->> inf: new_seed_object()
+            inf-)DB: INSERT INTO seed_obj
+        end
+
+        DS ->>inf: set_inference_object_top_id(top_inference_guess_id)
+        
+    end
+    
+    DS->>DS: Inference.model_validate(formatted_inference_with_ids)
+    DS-->BE: inference_model (dict)
+    BE-->FE: inference_model
+    FE-->User: Display inference results
 
 ```

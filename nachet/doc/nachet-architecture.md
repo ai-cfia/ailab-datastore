@@ -1,5 +1,28 @@
-# Database Architecture
+# Architecture
   
+```mermaid
+
+architecture-beta
+
+    group Nachet(internet)[Nachet]
+
+    service db(database)[Database] in Nachet
+    service disk1(database)[BLOB Storage] in Nachet
+    service backend(server)[Backend] in Nachet
+    service frontend(server)[Frontend] in Nachet
+    service ML(server)[Pipeline] in Nachet
+    service model(cloud)[AI Model] in Nachet
+    service DS(server)[Datastore] in Nachet
+    
+    frontend: R -- L :backend
+    ML: L -- R :model
+    ML: L -- R :backend
+    DS: T -- B :backend
+    db: L -- R :DS
+    DS: L -- R :disk1
+
+```
+
 ## Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
@@ -21,7 +44,7 @@
 ``` mermaid
 
 ---
-title: Nachet DB Structure
+title: Nachet DB Structure (simplified Users-Container)
 ---
 erDiagram
   user{
@@ -119,30 +142,6 @@ erDiagram
     uuid user_id FK
     timestamp update_date
   }
-  group{
-    uuid id PK
-    text name
-    int permission_id FK
-    uuid owner_id FK
-    timestamp upload_date
-  }
-  permission{
-    int id
-    text name
-  }
-  user_group{
-    uuid id
-    uuid user_id
-    uuid group_id
-    timestamp upload_date
-
-  }
-  group_container{
-    uuid id
-    uuid group_id
-    uuid container_id
-    timestamp upload_date
-  }
   container{
     uuid id PK
     uuid owner_id FK
@@ -151,6 +150,7 @@ erDiagram
     timestamp updated_at
   }
 
+  container ||--o{ picture_set: contain
   user ||--|{ picture_set: uploads
   picture_set ||--o{picture: contains
   picture ||--o{picture: cropped
@@ -159,22 +159,26 @@ erDiagram
   object_type ||--|| seed: is
   user ||--o{ inference: requests
   inference ||--|| picture: infers
-  inference }o--|| pipeline: uses
   inference ||--o{ object: detects
   object ||--o{ seed_object: is
   seed_object }o--|| seed: is
   object }o--|| object_type: is 
-  user ||--||pipeline_default: select
+
+  inference }o--|| pipeline: uses
   pipeline_default }o--||pipeline: is
   pipeline }o--o{ pipeline_model: uses
   model }o--o{ pipeline_model: uses
   model_version ||--o{ model: has
-  user }o--o{ user_group: apart
-  user_group }o--o{group: represent
-  permission ||--|| user: has
-  permission ||--|| group: has
-  group }o--o{group_container: has
-  container }o--o{group_container: represent
-  container ||--o{picture_set: contains
+  user ||--||pipeline_default: select
+
+  user ||--|{ picture_set: uploads
+  picture_set ||--o{picture: contains
+  picture ||--o{picture: cropped
+  picture |o--o{picture_seed: has
+  picture_seed }o--o| seed: has
+  
 
 ```
+
+  For more detail on the container, groups and user relationship use the
+  [Datastore Architecture](../../datastore/doc/datastore.md)

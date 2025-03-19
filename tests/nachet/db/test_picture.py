@@ -1,5 +1,5 @@
 """
-This is a test script for the database packages. 
+This is a test script for the database packages.
 It tests the functions in the user, seed and picture modules.
 """
 
@@ -15,7 +15,7 @@ import datastore.db.__init__ as db
 from nachet.db.metadata import picture as picture_data
 from datastore.db.metadata import picture_set as picture_set_data
 from datastore.db.metadata import validator
-from datastore.db.queries import picture, user
+from datastore.db.queries import picture, user, container
 import nachet.db.queries.seed as seed
 
 DB_CONNECTION_STRING = os.environ.get("NACHET_DB_URL")
@@ -40,7 +40,7 @@ class test_pictures_functions(unittest.TestCase):
         self.seed_id = seed.new_seed(self.cursor, self.seed_name)
 
         # prepare the user
-        self.user_id = user.register_user(self.cursor, "test@email")
+        self.user_id = user.register_user(self.cursor, "test@email", 1)
 
         # prepare the picture_set and picture
         self.image = Image.new("RGB", (1980, 1080), "blue")
@@ -56,6 +56,14 @@ class test_pictures_functions(unittest.TestCase):
         )
         self.folder_name = "test_folder"
 
+        self.container_id = container.create_container(
+            cursor=self.cursor,
+            name="test-nachet-picture-queries",
+            user_id=self.user_id,
+            is_public=False,
+            storage_prefix="test-user",
+        )
+
     def tearDown(self):
         self.con.rollback()
         db.end_query(self.con, self.cursor)
@@ -66,7 +74,10 @@ class test_pictures_functions(unittest.TestCase):
         """
         # prepare the picture_set
         picture_set_id = picture.new_picture_set(
-            self.cursor, self.picture_set, self.user_id
+            cursor=self.cursor,
+            picture_set_metadata=self.picture_set,
+            user_id=self.user_id,
+            container_id=self.container_id,
         )
 
         # create the new picture in the db

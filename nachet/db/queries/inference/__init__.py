@@ -3,20 +3,28 @@ This module contains the queries related to the inference related tables.
 
 """
 
+from uuid import UUID
+
+
 class InferenceCreationError(Exception):
     pass
 
-class SeedObjectCreationError(Exception):  
+
+class SeedObjectCreationError(Exception):
     pass
+
 
 class InferenceNotFoundError(Exception):
     pass
 
+
 class InferenceObjectNotFoundError(Exception):
     pass
 
+
 class InferenceAlreadyVerifiedError(Exception):
     pass
+
 
 """
 
@@ -24,7 +32,10 @@ INFERENCE TABLE QUERIES
 
 """
 
-def new_inference(cursor, inference, user_id: str, picture_id:str,type, pipeline_id:str):
+
+def new_inference(
+    cursor, inference, user_id: UUID, picture_id: UUID, type: int, pipeline_id: UUID
+) -> UUID:
     """
     This function uploads a new inference to the database.
 
@@ -35,7 +46,7 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type, pipeline
     - picture_id (str): The UUID of the picture the inference is related to.
 
     Returns:
-    - The inference dict with the UUIDs of the inference, boxes and topN.
+    -  id of the inference row (UUID).
     """
     try:
         query = """
@@ -59,13 +70,13 @@ def new_inference(cursor, inference, user_id: str, picture_id:str,type, pipeline
                 pipeline_id,
             ),
         )
-        inference_id=cursor.fetchone()[0]
+        inference_id = cursor.fetchone()[0]
         return inference_id
-    except Exception:
-        raise InferenceCreationError("Error: inference not uploaded")
+    except Exception as e:
+        raise InferenceCreationError("Error: inference not uploaded " + str(e))
 
 
-def get_inference(cursor, inference_id: str):
+def get_inference(cursor, inference_id: UUID):
     """
     This function gets an inference from the database.
 
@@ -90,16 +101,17 @@ def get_inference(cursor, inference_id: str):
         return res
     except Exception:
         raise InferenceNotFoundError(f"Error: could not get inference {inference_id}")
-    
-def get_inference_picture_id(cursor, inference_id: str):
+
+
+def get_inference_picture_id(cursor, inference_id: UUID):
     """
     This functions retrieve picture_id of a given inference
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
     - inference_id (str): The UUID of the inference.
     """
-    try :
+    try:
         query = """
             SELECT 
                 picture_id
@@ -113,20 +125,24 @@ def get_inference_picture_id(cursor, inference_id: str):
         return result
     except Exception:
         raise InferenceNotFoundError(
-            f"Error: could not get picture_id for the inference {inference_id}")
-    
-def get_inference_by_picture_id(cursor, picture_id: str):
+            f"Error: could not get picture_id for the inference {inference_id}"
+        )
+
+
+def get_inference_by_picture_id(cursor, picture_id: UUID):
     """
     This functions retrieve inference of a given picture
-    
+
     Parameters:
     - cursor (cursor): The cursor of the database.
     - picture_id (str): The UUID of the picture.
     """
-    try :
+    try:
         query = """
             SELECT 
-                id, inference, pipeline_id
+                id, 
+                inference, 
+                pipeline_id
             FROM 
                 inference
             WHERE 
@@ -137,7 +153,9 @@ def get_inference_by_picture_id(cursor, picture_id: str):
         return result
     except Exception:
         raise InferenceNotFoundError(
-            f"Error: could not get inference for the picture {picture_id}")
+            f"Error: could not get inference for the picture {picture_id}"
+        )
+
 
 def set_inference_feedback_user_id(cursor, inference_id, user_id):
     """
@@ -157,11 +175,13 @@ def set_inference_feedback_user_id(cursor, inference_id, user_id):
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (user_id,inference_id))
+        cursor.execute(query, (user_id, inference_id))
     except Exception as e:
         print(e)
-        raise Exception(f"Error: could not set feedback_user_id {user_id} for inference {inference_id}")
-    
+        raise Exception(
+            f"Error: could not set feedback_user_id {user_id} for inference {inference_id}"
+        )
+
 
 def set_inference_verified(cursor, inference_id, is_verified):
     """
@@ -181,14 +201,17 @@ def set_inference_verified(cursor, inference_id, is_verified):
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (is_verified,inference_id))
+        cursor.execute(query, (is_verified, inference_id))
     except Exception:
-        raise Exception(f"Error: could not update verified {is_verified} for inference {inference_id}")
-    
+        raise Exception(
+            f"Error: could not update verified {is_verified} for inference {inference_id}"
+        )
+
+
 def is_inference_verified(cursor, inference_id):
     """
     Check if an inference is verified or not.
-    
+
     return True if verified, False otherwise
     """
     try:
@@ -204,12 +227,15 @@ def is_inference_verified(cursor, inference_id):
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception(f"Error: could not select verified column for inference {inference_id}")
+        raise Exception(
+            f"Error: could not select verified column for inference {inference_id}"
+        )
+
 
 def is_object_verified(cursor, object_id):
     """
     Check if an object is verified or not.
-    
+
     return True if verified, False otherwise
     """
     try:
@@ -223,16 +249,19 @@ def is_object_verified(cursor, object_id):
             """
         cursor.execute(query, (str(object_id),))
         res = cursor.fetchone()[0]
-        return (res is not None)
+        return res is not None
     except ValueError:
         return False
     except Exception:
-        raise Exception(f"Error: could not select verified_id column for object {object_id}")
+        raise Exception(
+            f"Error: could not select verified_id column for object {object_id}"
+        )
+
 
 def get_inference_object_verified_id(cursor, object_id):
     """
     Check if an object is verified or not.
-    
+
     return True if verified, False otherwise
     """
     try:
@@ -245,25 +274,29 @@ def get_inference_object_verified_id(cursor, object_id):
                 id = %s
             """
         cursor.execute(query, (str(object_id),))
-        return cursor.fetchone()[0] 
+        return cursor.fetchone()[0]
     except ValueError as e:
         return e
     except Exception:
-        raise Exception(f"Error: could not get verified_id column for object {object_id}")
+        raise Exception(
+            f"Error: could not get verified_id column for object {object_id}"
+        )
+
 
 def verify_inference_status(cursor, inference_id, user_id):
     """
     Set inference verified if inference is fully verified and set the user as the feedback user
     """
     objects = get_objects_by_inference(cursor, inference_id)
-    if all(obj[4] is not None for obj in objects) :
+    if all(obj[4] is not None for obj in objects):
         set_inference_feedback_user_id(cursor, inference_id, user_id)
         set_inference_verified(cursor, inference_id, True)
+
 
 def check_inference_exist(cursor, inference_id):
     """
     Check if an inference exists in the database.
-    
+
     return True if exists, False otherwise
     """
     try:
@@ -280,14 +313,22 @@ def check_inference_exist(cursor, inference_id):
         return res is not None
     except Exception:
         raise Exception(f"Error: could not check if inference {inference_id} exists")
-    
+
+
 """
 
 OBJECT TABLE QUERIES
 
 """
 
-def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int,manual_detection:bool=False):
+
+def new_inference_object(
+    cursor,
+    inference_id: UUID,
+    box_metadata: str,
+    type_id: int,
+    manual_detection: bool = False,
+):
     """
     This function uploads a new inference object to the database.
 
@@ -325,16 +366,17 @@ def new_inference_object(cursor, inference_id: str,box_metadata:str,type_id:int,
     except Exception:
         raise InferenceCreationError("Error: inference object not uploaded")
 
-def get_inference_object(cursor, inference_object_id: str):
+
+def get_inference_object(cursor, inference_object_id: UUID):
     """
-        This function gets an object from the database.
+    This function gets an object from the database.
 
-        Parameters:
-        - cursor (cursor): The cursor of the database.
-        - inference_object_id (str): The UUID of the object.
+    Parameters:
+    - cursor (cursor): The cursor of the database.
+    - inference_object_id (str): The UUID of the object.
 
-        Returns:
-        - The object.
+    Returns:
+    - The object.
     """
     try:
         query = """
@@ -348,7 +390,7 @@ def get_inference_object(cursor, inference_object_id: str):
                 valid,
                 top_id,
                 upload_date,
-                update_at
+                updated_at
             FROM 
                 object
             WHERE 
@@ -357,12 +399,17 @@ def get_inference_object(cursor, inference_object_id: str):
         cursor.execute(query, (inference_object_id,))
         res = cursor.fetchone()
         if res is None:
-            raise Exception(f"Error: could not find inference object for id {inference_object_id}")
+            raise Exception(
+                f"Error: could not find inference object for id {inference_object_id}"
+            )
         return res
     except Exception:
-        raise InferenceObjectNotFoundError(f"Error: could not get inference object for id {inference_object_id}")
+        raise InferenceObjectNotFoundError(
+            f"Error: could not get inference object for id {inference_object_id}"
+        )
 
-def get_objects_by_inference(cursor, inference_id: str):
+
+def get_objects_by_inference(cursor, inference_id: UUID):
     """
     This function gets all objects from the database related to an inference.
 
@@ -376,7 +423,16 @@ def get_objects_by_inference(cursor, inference_id: str):
     try:
         query = """
             SELECT 
-                *
+                id,
+                box_metadata,
+                inference_id,
+                type_id,
+                verified_id,
+                valid,
+                top_id,
+                upload_date,
+                updated_at,
+                manual_detection
             FROM 
                 object
             WHERE 
@@ -385,12 +441,17 @@ def get_objects_by_inference(cursor, inference_id: str):
         cursor.execute(query, (inference_id,))
         res = cursor.fetchall()
         if res is None:
-            raise Exception(f"Error: could not find objects for inference {inference_id}")
+            raise Exception(
+                f"Error: could not find objects for inference {inference_id}"
+            )
         return res
     except Exception:
-        raise InferenceObjectNotFoundError(f"Error: could not get objects for inference {inference_id}")
+        raise InferenceObjectNotFoundError(
+            f"Error: could not get objects for inference {inference_id}"
+        )
 
-def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
+
+def set_inference_object_top_id(cursor, inference_object_id: UUID, top_id: str):
     """
     This function sets the top_id of an inference.
 
@@ -405,15 +466,19 @@ def set_inference_object_top_id(cursor, inference_object_id: str, top_id:str):
                 object
             SET
                 top_id = %s,
-                update_at = now()
+                updated_at = now()
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (top_id,inference_object_id))
-    except Exception:
-        raise Exception(f"Error: could not set top_id {top_id} for inference {inference_object_id}")
-    
-def get_inference_object_top_id(cursor, inference_object_id: str):
+        cursor.execute(query, (top_id, inference_object_id))
+    except Exception as e:
+        raise Exception(
+            f"Error: could not set top_id {top_id} for inference {inference_object_id}"
+            + str(e)
+        )
+
+
+def get_inference_object_top_id(cursor, inference_object_id: UUID):
     """
     This function gets the top_id of an inference.
 
@@ -437,10 +502,14 @@ def get_inference_object_top_id(cursor, inference_object_id: str):
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception(f"Error: could not get top_inference_id for inference {inference_object_id}")
+        raise Exception(
+            f"Error: could not get top_inference_id for inference {inference_object_id}"
+        )
 
 
-def set_inference_object_verified_id(cursor, inference_object_id: str, verified_id:str):
+def set_inference_object_verified_id(
+    cursor, inference_object_id: UUID, verified_id: UUID
+):
     """
     This function sets the verified_id of an object.
 
@@ -458,11 +527,14 @@ def set_inference_object_verified_id(cursor, inference_object_id: str, verified_
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (verified_id,inference_object_id))
+        cursor.execute(query, (verified_id, inference_object_id))
     except Exception:
-        raise Exception(f"Error: could not update verified_id for object {inference_object_id}")
-    
-def set_inference_object_valid(cursor, inference_object_id: str, is_valid:bool):
+        raise Exception(
+            f"Error: could not update verified_id for object {inference_object_id}"
+        )
+
+
+def set_inference_object_valid(cursor, inference_object_id: UUID, is_valid: bool):
     """
     This function sets the is_valid of an object.
 
@@ -480,14 +552,17 @@ def set_inference_object_valid(cursor, inference_object_id: str, is_valid:bool):
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (is_valid,inference_object_id))
+        cursor.execute(query, (is_valid, inference_object_id))
     except Exception:
-        raise Exception(f"Error: could not update valid for object {inference_object_id}")
+        raise Exception(
+            f"Error: could not update valid for object {inference_object_id}"
+        )
+
 
 def check_inference_object_exist(cursor, inference_object_id):
     """
     Check if an inference object exists in the database.
-    
+
     return True if exists, False otherwise
     """
     try:
@@ -503,7 +578,10 @@ def check_inference_object_exist(cursor, inference_object_id):
         res = cursor.fetchone()
         return res[0]
     except Exception:
-        raise Exception(f"Error: could not check if inference object {inference_object_id} exists")
+        raise Exception(
+            f"Error: could not check if inference object {inference_object_id} exists"
+        )
+
 
 """
 
@@ -511,7 +589,8 @@ SEED OBJECT TABLE QUERIES
 
 """
 
-def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
+
+def new_seed_object(cursor, seed_id: UUID, object_id: str, score: float):
     """
     This function uploads a new seed object (seed prediction) to the database.
 
@@ -549,7 +628,7 @@ def new_seed_object(cursor, seed_id: str, object_id:str,score:float):
         raise SeedObjectCreationError("Error: seed object not uploaded")
 
 
-def set_object_box_metadata(cursor,object_id:str, metadata:str):
+def set_object_box_metadata(cursor, object_id: str, metadata: str):
     """
     This function sets the metadata of an object.
 
@@ -567,11 +646,14 @@ def set_object_box_metadata(cursor,object_id:str, metadata:str):
             WHERE 
                 id = %s
             """
-        cursor.execute(query, (metadata,object_id))
+        cursor.execute(query, (metadata, object_id))
     except Exception:
-        raise Exception(f"Error: could not set metadata {metadata} for object {object_id}")
+        raise Exception(
+            f"Error: could not set metadata {metadata} for object {object_id}"
+        )
 
-def get_seed_object_id(cursor, seed_id: str, object_id:str):
+
+def get_seed_object_id(cursor, seed_id: UUID, object_id: str):
     """
     This function gets the seed object from the feedback table.
     """
@@ -586,15 +668,18 @@ def get_seed_object_id(cursor, seed_id: str, object_id:str):
             AND 
                 so.object_id = %s
             """
-        cursor.execute(query, (seed_id,object_id))
+        cursor.execute(query, (seed_id, object_id))
         if cursor.rowcount == 0:
             return None
         res = cursor.fetchone()[0]
         return res
     except Exception:
-        raise Exception(f"Error: could not get seed_object_id for seed_id {seed_id} for object {object_id}")
+        raise Exception(
+            f"Error: could not get seed_object_id for seed_id {seed_id} for object {object_id}"
+        )
 
-def get_seed_object_by_object_id(cursor, object_id: str):
+
+def get_seed_object_by_object_id(cursor, object_id: UUID):
     try:
         query = """
             SELECT 

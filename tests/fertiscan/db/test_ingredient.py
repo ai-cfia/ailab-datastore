@@ -8,6 +8,7 @@ import unittest
 
 import datastore.db as db
 from datastore.db.metadata import validator
+import fertiscan.db.metadata.inspection as metadata
 from fertiscan.db.queries import ingredient, label
 
 DB_CONNECTION_STRING = os.environ.get("FERTISCAN_DB_URL")
@@ -170,3 +171,108 @@ class test_ingredient(unittest.TestCase):
         self.assertEqual(len(ingredient_obj.get("ingredients").get("fr")),1)
         # make sure that the record keeping label does not display any ingredients
         self.assertEqual(len(ingredient_empty.get("ingredients").get("fr")),0)
+
+    def test_get_ingredient_label(self):
+        ingredient_id = ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            self.language,
+            False,
+            False,
+            False,
+        )
+        self.assertTrue(validator.is_valid_uuid(ingredient_id))
+        
+        get_ingredient = ingredient.get_ingredient_label(cursor=self.cursor,label_id=self.label_id)
+        self.assertEqual(len(get_ingredient),1)
+        self.assertEqual(get_ingredient[0][0],ingredient_id)
+        
+    def test_delete_ingredient_label(self):
+        ingredient_id = ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            self.language,
+            False,
+            False,
+            False,
+        )
+        self.assertTrue(validator.is_valid_uuid(ingredient_id))
+        
+        og_ingredient = ingredient.get_ingredient_label(
+            cursor=self.cursor,
+            label_id=self.label_id,
+        )
+        self.assertEqual(len(og_ingredient),1)
+        self.assertEqual(og_ingredient[0][0],ingredient_id)
+        
+        nb_row = ingredient.delete_ingredient_label(
+            cursor=self.cursor,
+            label_id=self.label_id
+        )
+        self.assertEqual(nb_row,len(og_ingredient))
+        deleted_ingredient = ingredient.get_ingredient_label(
+            cursor=self.cursor,
+            label_id=self.label_id,
+        )
+        self.assertEqual(len(deleted_ingredient),0)
+        self.assertEqual(og_ingredient[0][0],ingredient_id)
+        
+    def test_upsert_ingredient_label(self):
+        ingredient_id1 = ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            "fr",
+            False,
+            False,
+            False,
+        )
+        ingredient_id2 = ingredient.new_ingredient(
+            self.cursor,
+            self.ingredient_name,
+            self.value,
+            self.unit,
+            self.label_id,
+            "en",
+            False,
+            False,
+            False,
+        )
+        og_ingredient = ingredient.get_ingredient_label(
+            cursor=self.cursor,
+            label_id=self.label_id,
+        )
+        self.assertEqual(len(og_ingredient),2)
+        
+        # Creating the structure for the upsert
+        default_ingredient = metadata.Value(
+            value=self.value,
+            unit=self.unit,
+            name=self.ingredient_name,
+            edited=True
+        )
+        en = [default_ingredient,default_ingredient]
+        fr = [default_ingredient,default_ingredient]
+        ingredient_dict = metadata.ValuesObjects(en=en,fr=fr)
+        ingredient.upsert_ingredient(
+            cursor=self.cursor,
+            label_id=self.label_id,
+            ingredients=ingredient_dict.model_dump()
+        )
+        # Validating the data has been correctly deleted and reinserted
+        updated_ingredients = ingredient.get_ingredient_label(
+            cursor=self.cursor,
+            label_id=self.label_id,
+        )
+        self.assertEqual(len(updated_ingredients),len(en)+len(fr))
+        for record in updated_ingredients:
+            self.assertNotEqual(record[0],ingredient_id1)
+            self.assertNotEqual(record[0],ingredient_id2)

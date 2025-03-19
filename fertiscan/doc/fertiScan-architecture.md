@@ -1,5 +1,27 @@
 # FertiScan DB Architecture
 
+```mermaid
+
+architecture-beta
+    group Fertiscan(internet)[Fertiscan]
+
+    service db(database)[Database] in Fertiscan
+    service disk1(database)[BLOB Storage] in Fertiscan
+    service backend(server)[Backend] in Fertiscan
+    service frontend(server)[Frontend] in Fertiscan
+    service ML(server)[Pipeline] in Fertiscan
+    service model(cloud)[AI Model] in Fertiscan
+    service DS(server)[Datastore] in Fertiscan
+
+    frontend: R -- L :backend
+    ML: L -- R :model
+    ML: L -- R :backend
+    DS: T -- B :backend
+    db: L -- R :DS
+    DS: L -- R :disk1
+
+```
+
 ## Needs
 
 - A User must be able to take a picture on the app and it must be saved in the
@@ -34,19 +56,93 @@ title: FertiScan Operational Transaction DB Structure
     ]
 }}%%
 erDiagram
-  users {
-    uuid id PK
-    string email
-    timestamp registration_date
-    timestamp updated_at
-    uuid default_set_id FK
-  }
+    users {
+        UUID id PK
+        TEXT email
+        TIMESTAMP registration_date
+        TIMESTAMP updated_at
+        UUID role_id
+    }
+
+    groups {
+        UUID id PK
+        TEXT name
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        UUID created_by_id FK
+    }
+
+    user_group {
+        UUID id PK
+        UUID user_id FK
+        UUID group_id FK
+        TIMESTAMP updated_at
+        UUID assigned_by_id FK
+    }
+
+    container {
+        UUID id PK
+        TEXT name
+        BOOLEAN is_public
+        TEXT storage_prefix
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        UUID created_by_id FK
+        UUID last_updated_by_id FK
+    }
+
+    container_user {
+        UUID id PK
+        UUID user_id FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        UUID created_by_id FK
+        UUID last_updated_by_id FK
+        UUID container_id FK
+        int permission_id FK
+    }
+
+    container_group {
+        UUID id PK
+        UUID group_id FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        UUID created_by_id FK
+        UUID last_updated_by_id FK
+        UUID container_id FK
+        int permission_id FK
+    }
+
+    role{
+        int id
+        text name
+    }
+
+    permission{
+        int id PK
+        text name
+    }    
+
+    users ||--o{ groups : "creates"
+    role ||--|| users: is
+    users ||--o{ user_group : "group access"
+    groups ||--o{ user_group : "members"
+    users ||--o{ container : "creates"
+    container ||--o{ container_user : "access to"
+    users ||--o{ container_user : "individual access"
+    groups ||--o{ container_group : "access to"
+    container ||--o{ container_group : "access to"
+    container_group ||--|| permission: "allow operation"
+    container_user ||--|| permission: "allow operation"
+
+    
   picture_set {
     uuid id PK
     json picture_set
     uuid owner_id FK
     date upload_date
     string name
+    uuid container_id FK
   }
   picture {
     uuid id PK
@@ -56,6 +152,10 @@ erDiagram
     boolean verified
     timestamp upload_date
   }
+  container ||--o{picture_set: folders
+  users ||--o{picture_set: owns
+  picture_set ||--|{picture : contains
+
   inspection {
     uuid id PK
     boolean verified
@@ -66,7 +166,12 @@ erDiagram
     uuid fertilizer_id FK
     uuid sample_id FK
     uuid picture_set_id FK
+    uuid container_id FK
   }
+
+  users ||--o{inspection: does
+  inspection ||--o| picture_set :has
+
   fertilizer {
     uuid id PK
     string name "Unique"
@@ -75,41 +180,18 @@ erDiagram
     timestamp update_at
     uuid latest_inspection_id FK
     uuid owner_id FK
+  }organization_information{
+    uuid id PK
+    string name 
+    string website
+    string phone_number
+    string address
+    boolean edited
   }
   organization {
     uuid id PK
     uuid information_id FK
     uuid main_location_id FK
-  }
-  organization_information{
-    uuid id PK
-    string name 
-    string website
-    string phone_number
-    uuid location_id FK
-    boolean edited
-  }
-  location {
-    uuid id PK
-    string name
-    string address
-    uuid region_id FK
-    uuid owner_id FK
-  }
-  sample {
-    uuid id PK
-    uuid number
-    date collection_date
-    uuid location FK
-  }
-  province {
-    int id PK
-    string name "Unique"
-  }
-  region {
-    uuid id PK
-    int province_id FK
-    string name
   }
   label_information {
     uuid id PK
@@ -117,15 +199,25 @@ erDiagram
     string npk
     float n
     float p
-    float k
-    uuid company_info_id FK
-    uuid manufacturer_info_id FK
+    float k 
+    string guaranteed_title_en
+    string guaranteed_title_fr
+    boolean title_is_minimal
+    boolean record_keeping
   }
-  registration_number_information{
+  
+  metric{
     uuid id PK
-    string identifier
-    string name
-    boolean is_an_ingredient 
+    float value
+    boolean edited
+    ENUM metric_type 
+    uuid unit_id FK
+    uuid label_id FK
+  }
+  unit{
+    uuid id PK
+    string unit
+    float to_si_unit
   }
   sub_label {
     uuid id PK
@@ -139,15 +231,6 @@ erDiagram
     uuid id PK
     text type_fr "unique"
     text type_en "unique"
-  }
-  specification {
-    uuid id PK
-    float humidity
-    float ph
-    float solubility
-    boolean edited
-    uuid label_id FK
-    enum language
   }
   micronutrient{
     uuid id PK
@@ -176,52 +259,45 @@ erDiagram
     uuid label_id FK
     language language
   }
+    
+  registration_number_information{
+    uuid id PK
+    string identifier
+    string name
+    boolean is_an_ingredient 
+  }
   element_compound{
     int id PK
     string name_fr
     string name_en
     string symbol
   }
-    metric{
-    uuid id PK
-    float value
-    boolean edited
-    ENUM metric_type 
-    uuid unit_id FK
-    uuid label_id FK
+  sample {
+    id uuid
+    json data
   }
-  unit{
-    uuid id PK
-    string unit
-    float to_si_unit
-  }
-  inspection ||--|| sample :has
-  picture_set ||--|{picture : contains
-  fertilizer ||--|| organization: responsable
-  organization_information ||--|| location: Hosts
-  location ||--|| region: defines
-  region ||--|| province: apart
+  
+
+  metric }o--|| unit: defines
+  inspection ||--|| sample :"has"
+  fertilizer ||--|| organization: responsible
+  organization ||--||organization_information : defines
   inspection ||--|| fertilizer : about
-  inspection }o--|| users :inspect
-  inspection ||--o| picture_set :has
   inspection ||--|| label_information : defines
   label_information ||--|{ ingredient: has
   label_information ||--|{ guaranteed: has
   label_information ||--|{ micronutrient: has
-  label_information ||--|{ specification: has
   label_information ||--|{ sub_label: has
   label_information ||--o{ registration_number_information: has
-  label_information ||--o| organization_information: company
-  label_information ||--o| organization_information: manufacturer
-  organization_information ||--|| organization: defines
+  label_information ||--o{ organization_information: responsible
   label_information ||--|{ metric: has
   sub_label }o--|| sub_type: defines
-  users ||--o{ picture_set: owns
-  metric }o--|| unit: defines
 
   micronutrient |o--|| element_compound: is
   guaranteed |o--|| element_compound: is
 
+
+ 
 ```
 
 ### FertiScan Operational Analytic Database Architecture

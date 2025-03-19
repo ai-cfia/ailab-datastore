@@ -3,15 +3,15 @@
 ## Contexte
 
 We have a process in place to requests our pipelines to perfom an inference on a
-picture in our blob storage and register the result in the database. Therefore,
-we would need a process to register the user's feedback of said inference
+picture and register the result in the database. Therefore, we would need a
+process to register the user's feedback of said inference
 
 ## Prerequisites
 
 - The user must be signed in
 
-- The user has a picture uploaded in the blob storage and with its metadata saved
-  within the DB.
+- The user has a picture uploaded in the blob storage and with its metadata
+  saved within the DB.
 
 - The inference result has been saved into the DB.
 
@@ -75,19 +75,15 @@ sequenceDiagram;
         Frontend -) Backend: Inference result positive (user_id, boxes)
         Backend -) Datastore: new_perfect_inference_feeback(inference_id, user_id, boxes_id)
         Note over Backend, Datastore : Each box_id is an inference object in db
-        alt if inference not already verified
-                Datastore ->> Database: Set each object.valid = True & object.verified_id=object.top_id
-        end
+        Datastore ->> Database: Set each object.valid = True & object.verified_id=object.top_id
+        Note over Datastore, Database: We do not check if the inference is validated or the object is already verified<br>User request was to be able to modify validated inference in case of mistake
     else Annotated Inference
         Frontend -) Backend: Inference feedback (inference_feedback.json,user_id,inference_id)
         Backend ->> Datastore: new_correction_feedback(inference_feedback.json)
-        alt inference not already verified
-            Datastore -> Database: Get Inference_result(inference_id)
-            loop each Boxes
-                alt object not already verified
-                    Datastore-)Database: update object.verified & object.valid
-                end
-            end
+        Datastore -> Database: Get Inference_result(inference_id)
+        loop each Boxes
+            Datastore-)Database: update object.verified & object.valid
+            Note over Datastore, Database: We do not check if the inference is validated or the object is already verified<br>User request was to be able to modify validated inference in case of mistake
         end
     end
 

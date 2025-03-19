@@ -1,14 +1,17 @@
 # Inspection documentation
 
-This document reprensent all the documentation around an Inspection and the json
-object representing it.
+This document reprensent what an Inspection Model is
 
-## Inspection Json
+## Inspection Model Example
 
 ```JSON
 {
     "inspection_id": "inspection uuid",
-    "owner_id": "Organization uuid",
+    "container_id": "container_uuid",
+    "folder_id": "folder_uuid",
+    "inspector_id": "Organization uuid",
+    "upload_date": "timestamp of the creation of this inspection",
+    "updated_at": "timestamp of the latest update on this inspection",
     "organizations": [
       {
           "name": "Name of company",
@@ -28,12 +31,14 @@ object representing it.
       }
     ],
     "product": {
+        "name" : "Name of the fertilizer",
+        "label_id": "label_information id",
         "k": 0.0,
         "n": 0.0,
         "p": 0.0,
-        "id": "label_information_id",
         "npk": "0-0-0",
-        "record_keeping": null,
+        "warranty": "Warranty of the product (not tracked)",
+        "record_keeping": false,
         "verified": false,
         "name": "Product/Fertilizer Name",
         "metrics": {
@@ -52,30 +57,11 @@ object representing it.
                 "value": 0.0
             }
         },
-        "lot_number": "lot_number on the label",
         "registration_numbers": [{
             "registration_number": "F12345678",
             "is_an_ingredient": false,
             "edited": false
         }],
-    },
-    "cautions": {
-        "en": [
-            "List of cautions",
-            "on the Label"
-        ],
-        "fr": [
-            "Liste d'avertissement ",
-            "sur l'étiquette"
-        ]
-    },
-    "first_aid": {
-        "en": [
-            "List of first_aid advice on the label"
-        ],
-        "fr": [
-            "Liste des conseils de premier soins sur l'étiquette"
-        ]
     },
     "ingredients": {
         "en": [
@@ -113,6 +99,16 @@ object representing it.
             "2. sur l'étiquette"
         ]
     },
+    "cautions": {
+        "en": [
+            "List of cautions",
+            "on the Label"
+        ],
+        "fr": [
+            "Liste d'avertissement ",
+            "sur l'étiquette"
+        ]
+    },
     "micronutrients": {
         "en": [
             {
@@ -136,22 +132,6 @@ object representing it.
                 "name": "Zinc (Zn)",
                 "unit": "%",
                 "value": 0.05
-            }
-        ]
-    },
-    "specifications": {
-        "en": [
-            {
-                "ph": 0.0,
-                "humidity": 0.0,
-                "solubility": 0.0
-            }
-        ],
-        "fr": [
-            {
-                "ph": 0.0,
-                "humidity": 0.0,
-                "solubility": 0.0
             }
         ]
     },

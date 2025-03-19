@@ -1,40 +1,60 @@
 # Deleting an Inspection Record
 
-## Sequence Diagram of the DB function
-
-**Preconditions:**
+## **Preconditions:**
 
 - The inspection record must exist prior to the update.
+- The InspectionController must of been fetch
 
-**Postconditions:**
+## **Postconditions:**
 
 - The inspection record is deleted along with the underlying table records.
+- The pictures and folder are deleted from the Storage
+
+### delete_inspection()
 
 ```mermaid
+
+---
+title: FertiScan Delete Inspection Sequence
+---
+
 sequenceDiagram
     participant Client
+    participant IC as Inspection Controller
+    box Query Module
+    participant Qins as inspection
+    end
     participant DB as DB
-    participant Inspection as Inspection
-    participant Sample as Sample
-    participant LabelInfo as Label_Information
-    participant Fertilizer as Fertilizer
+    participant AZ as Azure Storage
 
-    Client->>DB: delete_inspection(inspection_id, inspector_id)
+    Client->>IC: delete_inspection()
 
-    DB->>Inspection: validate_inspection_ownership(inspection_id, inspector_id)
-    DB->>Inspection: DELETE where id=inspection_id
-    Inspection-->>DB: inspection_record
+    IC ->> DB: verify parameters validity and user permissions
+    
+    IC ->> Qins: delete_inspection()
+    Qins ->> DB: SELECT delete_inspection()
+    DB->>DB: DELETE where id=inspection_id RETURNING *
+    DB->>DB: trigger DELETE sample where id=deleted_inspection.sample_id
+    DB->>DB: trigger cascade DELETE label_information where id=deleted_inspection.label_info_id
+    DB->>DB: replace fertilizer.latest_inspection_id
+    DB-->IC: return deleted inspection data
+    create participant CC as Container Controller
+    IC->>CC: get_container_controller(model.container_id)
+    IC->>CC: delete_folder_permanently(model.folder_id)
+    CC->>AZ: delete folder and pictures related to the inspection
 
-    DB->>Sample: trigger DELETE where id=deleted_inspection.sample_id
-    DB->>LabelInfo: trigger DELETE where id=deleted_inspection.label_info_id
-
-    DB->>Fertilizer: cascade DELETE where latest_inspection_id=deleted_inspection.id
-
-    DB-->>Client: inspection_record
+    IC-->>Client: deleted inspection database dict
 
 ```
 
+#### label_information Cascade
+
 ```mermaid
+
+---
+title: FertiScan DB table label_information Cascade Sequence
+---
+
 sequenceDiagram
     participant DB as DB
     participant LabelInfo as Label_Information
@@ -60,21 +80,10 @@ sequenceDiagram
 
 ```
 
-```mermaid
-sequenceDiagram
-    participant DB as DB
-    participant OrganizationInfo as Organization_Information
-    participant Location as Location
-
-    DB->>OrganizationInfo: DELETE
-    OrganizationInfo->>Location: trigger DELETE where id=deleted_org_info.location_id
-
-```
-
-### Output JSON Format
+### Output JSON Format (`DBInspection`)
 
 ```json
-{
+DBInspection = {
   "id": "uuid-of-deleted-inspection",
   "verified": false,
   "upload_date": "timestamp-of-upload",
@@ -85,24 +94,4 @@ sequenceDiagram
   "picture_set_id": "uuid-of-picture-set",
   "fertilizer_id": "uuid-of-fertilizer"
 }
-```
-
-## Sequence diagram of fertiscan datastore python function
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Datastore as Fertiscan Datastore
-    participant DB as Database
-    participant BlobStorage as Blob Storage
-
-    Client->>Datastore: delete_inspection(inspection_id, user_id, container_client)
-
-    Datastore->>DB: delete_inspection(cursor, inspection_id, user_id)
-    DB-->>Datastore: deleted_inspection_record
-
-    Datastore->>BlobStorage: delete_picture_set_permanently(cursor, user_id, deleted_inspection_record.picture_set_id, container_client)
-    BlobStorage-->>Datastore: picture_set_deleted_confirmation
-
-    Datastore-->>Client: deleted_inspection_record
 ```

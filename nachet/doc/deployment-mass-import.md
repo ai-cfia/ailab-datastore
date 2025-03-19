@@ -2,6 +2,9 @@
 
 ## Contexte
 
+This is a python script outside the scope of the live solution, but still
+answers a needs of Nachet.
+
 We have a set of already existing picture in our Blob storage. We would like to
 save the metadata of our files into the DB.
 

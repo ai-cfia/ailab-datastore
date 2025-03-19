@@ -5,67 +5,101 @@
 **Preconditions:**
 
 - The inspection record must exist prior to the update.
+- The inspection controller needs to be fetched and used to call
+  `update_inspection()`
 
 **Postconditions:**
 
-- Records for organizations, labels, metrics, specifications, ingredients,
-  micronutrients, guaranteed analysis, sub-labels, and fertilizers are created
-  or updated.
+- Records for organizations, labels, metrics, ingredients, micronutrients,
+  guaranteed analysis, sub-labels, and fertilizers are created or updated.
 - The existing inspection record is updated with the latest information.
+- An updated version of the model is returned
 
 ```mermaid
 sequenceDiagram
     participant Client
+    participant IC as Fertiscan.Inspection_Controller
+
+    box Query Module
+    participant Qins as inspection
+    participant organization
+    participant Qlabel as label
+    participant Qorg as organization
+    participant Qm as metric
+    participant Qi as ingredient
+    participant Qga as nutrients
+    participant Qsl as sub_label
+    participant Qrg as registration_number
+    participant fertilizer as fertilizer
+    end
     participant DB as Database
-    participant OrganizationInfoTable as Organization_Info_Table
-    participant LabelTable as Label_Table
-    participant MetricsTable as Metrics_Table
-    participant SpecificationsTable as Specifications_Table
-    participant IngredientsTable as Ingredients_Table
-    participant MicronutrientsTable as Micronutrients_Table
-    participant GuaranteedTable as Guaranteed_Table
-    participant SubLabelsTable as Sub_Labels_Table
-    participant InspectionTable as Inspection_Table
-    participant OrganizationTable as Organization_Table
-    participant FertilizerTable as Fertilizer_Table
 
-    Client->>+DB: update_inspection(inspection_id, inspector_id, input_data)
+    Client->>+IC: update_inspection(cursor, user_id, updated_data: dict | Inspection)
 
-    DB->>+OrganizationInfoTable: upsert_organization_info(company_data)
-    OrganizationInfoTable-->>DB: company_info_id
+    IC->>DB: Validate user permissions & inspection state
 
-    DB->>+OrganizationInfoTable: upsert_organization_info(manufacturer_data)
-    OrganizationInfoTable-->>DB: manufacturer_info_id
+    IC->> Qins: update_inspection()
+    Qins-->>IC: updated_at timestamp
 
-    DB->>+LabelTable: UPDATE label_information WHERE id=label_info_id
-    LabelTable-->>DB: label_info_id
+    Qins->>DB: UPDATE inspection SET verified, comment
 
-    DB->>+MetricsTable: update_metrics(label_info_id, metrics_data)
+    IC->> Qlabel: update_label_info()
 
-    DB->>+SpecificationsTable: update_specifications(label_info_id, specifications_data)
+    Qlabel->>DB: UPDATE label_information WHERE updated_data.product.label_id = label_id
 
-    DB->>+IngredientsTable: update_ingredients(label_info_id, ingredients_data)
-
-    DB->>+MicronutrientsTable: update_micronutrients(label_info_id, micronutrients_data)
-
-    DB->>+GuaranteedTable: update_guaranteed(label_info_id, guaranteed_data)
-
-    DB->>+SubLabelsTable: update_sub_labels(label_info_id, sub_labels_data)
-
-    DB->>+InspectionTable: UPDATE inspection WHERE id=inspection_id
-
-    alt verified is true
-        DB->>+OrganizationTable: insert_organization(name, company_info_id, location_id)
-        OrganizationTable-->>DB: organization_id
-
-        DB->>+FertilizerTable: upsert_fertilizer(fertilizer_name, registration_number, organization_id, inspection_id)
+    IC ->> Qorg : delete_absent_organisation_information_from_label()
+    loop For each organization
+        alt organization_information exists
+            IC->>Qorg: update_organization_info()
+            Qorg->>DB: UPDATE organisation_information WHERE ID = updated_data.organizations[i].org.id
+        else new organization input from user
+            IC->>Qorg:new_organization_information: new_organization_information()
+            Qorg->>DB: INSERT INTO organisation_information
+        end
     end
 
-    DB-->>-Client: Return updated inspection data
+    IC ->> Qm: upsert_metric()
+    Qm ->>DB: DELETE metric WHERE label_id
+    Qm ->>DB: INSERT INTO metric
+
+    IC ->>Qi: upsert_ingredient()
+    Qi ->>DB: DELETE ingredient WHERE label_id
+    Qi ->>DB: INSERT INTO ingredient
+
+    IC ->>Qga: upsert_guaranteed_analysis()
+    Qga ->>DB: DELETE guaranteed WHERE label_id
+    Qga ->>DB: INSERT INTO guaranteed
+
+    IC ->>Qsl: upsert_sub_label()
+    Qsl ->>DB: SELECT sub_type
+    Qsl ->>DB: DELETE sub_label WHERE label_id
+    Qsl ->>DB: INSERT INTO sub_label
+
+    IC ->>Qrg: update_registration_number()
+    Qrg ->>DB: DELETE registration_number WHERE label_id
+    Qrg ->>DB: INSERT INTO registration_number
+
+    alt verified is true
+
+        IC->>IC: Find if there is a registration number<br> for this fertilizer
+
+        IC->>IC: upsert_organization(main_org_data)
+        IC->>Qorg: SELECT id FROM organization WHERE name ILIKE main_org_name
+        Qorg->>DB: organization_id
+
+        IC->>fertilizer: upsert_fertilizer()
+        fertilizer->>DB: INSERT INTO fertilizer ON CONFLICT (name) DO UPDATE RETURNING id;
+
+    end
+    IC -->>Client: updated_data with updated ids and timestamp
 
 ```
 
 ## Triggers to update
+
+These triggers need to be updated to have the OLAP layer fully working. However,
+this layer is not a necessity to the application and its development as been
+paused
 
 ```mermaid
 
@@ -105,120 +139,4 @@ deactivate if
 deactivate in
 
 
-```
-
-## Input and Output JSON Format
-
-The input and output JSON formats for the `update_inspection` function are as
-follows:
-
-### Input JSON Format
-
-```json
-{
-  "company": {
-    "id": "66218ae7-0eba-48b4-a06b-b1563bd40f3e",
-    "name": "GreenGrow Fertilizers Inc.",
-    "address": "123 Greenway Blvd, Springfield IL 62701 USA",
-    "website": "www.greengrowfertilizers.com",
-    "phone_number": "+1 800 555 0199"
-  },
-  "product": {
-    "k": 20.0,
-    "n": 20.0,
-    "p": 20.0,
-    "id": "0dcab2ce-206a-4763-a7bb-838a30e227da",
-    "npk": "20-20-20",
-    "verified": false,
-    "name": "SuperGrow 20-20-20",
-    "metrics": {
-      "volume": { "unit": "L", "value": 20.8 },
-      "weight": [
-        { "unit": "kg", "value": 25.0 },
-        { "unit": "lb", "value": 55.0 }
-      ],
-      "density": { "unit": "g/cm³", "value": 1.2 }
-    },
-    "warranty": "Guaranteed analysis of nutrients.",
-    "lot_number": "L987654321",
-    "registration_number": "F12345678"
-  },
-  "cautions": {
-    "en": [
-      "Keep out of reach of children.",
-      "Avoid contact with skin and eyes."
-    ],
-    "fr": [
-      "Tenir hors de portée des enfants.",
-      "Éviter le contact avec la peau et les yeux."
-    ]
-  },
-  "first_aid": {
-    "en": [
-      "In case of contact with eyes, rinse immediately with plenty of water and seek medical advice."
-    ],
-    "fr": [
-      "En cas de contact avec les yeux, rincer immédiatement à grande eau et consulter un médecin."
-    ]
-  },
-  "ingredients": {
-    "en": [
-      { "name": "Bone meal", "unit": "%", "value": 5.0 },
-      { "name": "Seaweed extract", "unit": "%", "value": 3.0 },
-      { "name": "Humic acid", "unit": "%", "value": 2.0 },
-      { "name": "Clay", "unit": null, "value": null },
-      { "name": "Sand", "unit": null, "value": null },
-      { "name": "Perlite", "unit": null, "value": null }
-    ],
-    "fr": [
-      { "name": "Farine d'os", "unit": "%", "value": 5.0 },
-      { "name": "Extrait d'algues", "unit": "%", "value": 3.0 },
-      { "name": "Acide humique", "unit": "%", "value": 2.0 },
-      { "name": "Argile", "unit": null, "value": null },
-      { "name": "Sable", "unit": null, "value": null },
-      { "name": "Perlite", "unit": null, "value": null }
-    ]
-  },
-  "instructions": {
-    "en": [
-      "1. Dissolve 50g in 10L of water.",
-      "2. Apply every 2 weeks.",
-      "3. Store in a cool, dry place."
-    ],
-    "fr": [
-      "1. Dissoudre 50g dans 10L d'eau.",
-      "2. Appliquer toutes les 2 semaines.",
-      "3. Conserver dans un endroit frais et sec."
-    ]
-  },
-  "manufacturer": {
-    "id": "0f2fe699-3484-4c77-b920-33c3716bcfe3",
-    "name": "AgroTech Industries Ltd.",
-    "address": "456 Industrial Park Rd, Oakville ON L6H 5V4 Canada",
-    "website": "www.agrotechindustries.com",
-    "phone_number": "+1 416 555 0123"
-  },
-  "inspection_id": "72437b2d-8f1e-4ad2-96f0-8a6b5e77f176",
-  "micronutrients": {
-    "en": [
-      { "name": "Iron (Fe)", "unit": "%", "value": 0.1 },
-      { "name": "Zinc (Zn)", "unit": "%", "value": 0.05 },
-      { "name": "Manganese (Mn)", "unit": "%", "value": 0.05 }
-    ],
-    "fr": [
-      { "name": "Fer (Fe)", "unit": "%", "value": 0.1 },
-      { "name": "Zinc (Zn)", "unit": "%", "value": 0.05 },
-      { "name": "Manganèse (Mn)", "unit": "%", "value": 0.05 }
-    ]
-  },
-  "specifications": {
-    "en": [{ "ph": 6.5, "humidity": 10.0, "solubility": 100.0 }],
-    "fr": [{ "ph": 6.5, "humidity": 10.0, "solubility": 100.0 }]
-  },
-  "guaranteed_analysis": [
-    { "name": "Total Nitrogen (N)", "unit": "%", "value": 20.0 },
-    { "name": "Available Phosphate (P2O5)", "unit": "%", "value": 20.0 },
-    { "name": "Soluble Potash (K2O)", "unit": "%", "value": 20.0 }
-  ]
-}
 ```
