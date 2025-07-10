@@ -1,9 +1,0 @@
-# Codeowners list
-
-* @ai-cfia/Data
-fertiscan @ai-cfia/fertiscan
-nachet @ai-cfia/nachet
-/.github/ @ai-cfia/devops
-Dockerfile @ai-cfia/devops
-docker-compose.yml @ai-cfia/devops
-docker-compose.*.yml @ai-cfia/devops
